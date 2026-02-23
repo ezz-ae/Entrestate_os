@@ -35,3 +35,25 @@ next-env.d.ts
 _Entrestate*Full Market*.yaml
 *Full Market*.yaml
 docs/artifacts/
+
+# private specs
+Enterprise Decision Infrastructure Finalization.yaml
+Entrestate.yaml
+
+# data outputs
+data/
+datasets/
+exports/
+outputs/
+*.csv
+*.tsv
+*.parquet
+*.feather
+*.xlsx
+*.xls
+*.jsonl
+*.ndjson
+*.sqlite
+*.db
+*.geojson
+*.gpkg
