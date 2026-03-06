@@ -253,7 +253,6 @@ export async function getProjectBySlug(slug: string): Promise<{
       engine_affordability,
       engine_stress_test,
       payment_plan_structured,
-      units,
       evidence_sources,
       evidence_exclusions,
       evidence_assumptions,
