@@ -340,6 +340,7 @@ export function ChatInterface({
   const [vacancyPct, setVacancyPct] = useState(6)
   const [opexPct, setOpexPct] = useState(18)
   const [slashActiveIndex, setSlashActiveIndex] = useState(0)
+  const [canvasOpen, setCanvasOpen] = useState(false)
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
@@ -392,6 +393,15 @@ export function ChatInterface({
     if (!latestAssistantMessage) return ""
     return messageText(latestAssistantMessage)
   }, [latestAssistantMessage])
+
+  const hasConversation = useMemo(() => {
+    const stream = messages as any[]
+    return stream.some((message) => message.role === "user" || message.role === "assistant")
+  }, [messages])
+
+  useEffect(() => {
+    if (!hasConversation) setCanvasOpen(false)
+  }, [hasConversation])
 
   useEffect(() => {
     if (comparisonRows.length === 0) {
@@ -701,17 +711,130 @@ export function ChatInterface({
     }
   }
 
+  if (!hasConversation) {
+    return (
+      <div className="mx-auto w-full max-w-4xl">
+        <section className="rounded-2xl border border-border/70 bg-card/60 p-5 md:p-8">
+          <div className="mb-6 text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Chat</p>
+            <h2 className="mt-2 text-2xl font-semibold text-foreground md:text-3xl">Ask anything real estate</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Start with one prompt. Type <span className="font-medium text-foreground">/</span> for command mode.
+            </p>
+          </div>
+
+          <form onSubmit={submitMessage} className="space-y-3">
+            <div className="relative">
+              <Textarea
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => {
+                  void onInputKeyDown(event)
+                }}
+                placeholder="Ask for project screening, price checks, area risk briefs, and full investor memos. Type / for commands."
+                className="min-h-40 resize-y text-base"
+              />
+
+              {isSlashPaletteOpen ? (
+                <div className="absolute bottom-[100%] left-0 right-0 mb-2 rounded-xl border border-border/70 bg-card/95 p-2 shadow-xl backdrop-blur">
+                  {filteredSlashCommands.length === 0 ? (
+                    <p className="px-2 py-1 text-xs text-muted-foreground">No matching commands.</p>
+                  ) : (
+                    filteredSlashCommands.map((command, index) => {
+                      const Icon = command.icon
+                      const isActive = index === slashActiveIndex
+                      return (
+                        <button
+                          key={command.id}
+                          type="button"
+                          onClick={() => void activateSlashCommand(command)}
+                          className={`flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left transition ${
+                            isActive ? "bg-primary/12" : "hover:bg-background"
+                          }`}
+                        >
+                          <Icon className="mt-0.5 h-3.5 w-3.5 text-primary" />
+                          <span>
+                            <span className="block text-xs font-medium text-foreground">{command.title}</span>
+                            <span className="block text-[11px] text-muted-foreground">{command.description}</span>
+                          </span>
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                {dailyLimit === null
+                  ? "Unlimited chats in your current plan."
+                  : `${Math.max(remaining ?? 0, 0)} of ${dailyLimit} chats remaining today.`}
+              </p>
+              <Button type="submit" disabled={submitBlocked} className="min-w-24 px-6">
+                {status === "streaming" ? "Running" : "Send"}
+              </Button>
+            </div>
+          </form>
+
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {commandPrompts.map((command) => {
+              const Icon = command.icon
+              return (
+                <button
+                  key={command.label}
+                  type="button"
+                  onClick={() => void sendPrompt(command.prompt)}
+                  disabled={status !== "ready"}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs text-foreground transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {command.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {limitMessage ? (
+            <p className="mt-3 text-sm text-amber-600">
+              {limitMessage} <Link href="/pricing" className="underline">Subscribe</Link>
+            </p>
+          ) : null}
+
+          {isLimitError ? (
+            <p className="mt-3 text-sm text-amber-600">
+              You have finished your daily limit for your current plan. <Link href="/pricing" className="underline">Subscribe</Link>
+            </p>
+          ) : null}
+
+          {error && !isLimitError ? <p className="mt-3 text-sm text-red-500">{error.message}</p> : null}
+        </section>
+      </div>
+    )
+  }
+
   return (
-    <div className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+    <div className={canvasOpen ? "grid gap-4 xl:grid-cols-[1.25fr_0.75fr]" : "grid gap-4"}>
       <section className="rounded-2xl border border-border/70 bg-card/60 p-4 md:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/80 px-3 py-2.5">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             <p className="text-sm font-medium text-foreground">Chat</p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{status === "streaming" ? "Analyzing" : "Ready"}</span>
-            {dataFreshness ? <span>• Data as of: {new Date(dataFreshness).toLocaleString()}</span> : null}
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-muted-foreground">
+              <span>{status === "streaming" ? "Analyzing" : "Ready"}</span>
+              {dataFreshness ? <span> • Data as of: {new Date(dataFreshness).toLocaleString()}</span> : null}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCanvasOpen((current) => !current)}
+              className="h-8 px-3 text-xs"
+            >
+              {canvasOpen ? "Hide Canvas" : "Show Canvas"}
+            </Button>
           </div>
         </div>
 
@@ -789,7 +912,7 @@ export function ChatInterface({
                 void onInputKeyDown(event)
               }}
               placeholder="Ask for project screening, price checks, area risk briefs, and full investor memos. Type / for commands."
-              className="min-h-28 resize-y text-base"
+              className="min-h-20 resize-y text-base"
             />
 
             {isSlashPaletteOpen ? (
@@ -849,6 +972,7 @@ export function ChatInterface({
         {error && !isLimitError ? <p className="mt-3 text-sm text-red-500">{error.message}</p> : null}
       </section>
 
+      {canvasOpen ? (
       <aside className="rounded-2xl border border-border/70 bg-card/60 p-4 md:p-5">
         <div className="mb-4 flex items-center gap-2">
           <Gauge className="h-4 w-4 text-primary" />
@@ -1086,6 +1210,7 @@ export function ChatInterface({
           </div>
         ) : null}
       </aside>
+      ) : null}
     </div>
   )
 }
