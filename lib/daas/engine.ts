@@ -9,7 +9,7 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   area: ["area", "area_clean", "district", "community", "sub_area"],
   developer: ["developer_canonical", "developer", "developer_name", "master_developer"],
   status: ["final_status", "status", "market_timing", "project_status", "status_band", "delivery_band"],
-  priceFrom: ["final_price_from", "price_from_aed", "starting_price", "price_start", "price_aed"],
+  priceFrom: ["price_from_aed", "starting_price", "price_start", "price_aed"],
   priceTo: ["final_price_to", "price_to", "price_to_aed", "max_price"],
   yieldGross: ["gross_yield", "yield_gross", "rental_yield", "yield"],
   yieldNet: ["net_yield", "yield_net"],

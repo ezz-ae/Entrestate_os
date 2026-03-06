@@ -8,6 +8,11 @@ export type RelationContract = {
 
 export const REQUIRED_RELATIONS: RelationContract[] = [
   {
+    name: "inventory_spine",
+    type: "VIEW",
+    requiredColumns: ["name", "developer", "area", "price_from_aed"],
+  },
+  {
     name: "automation_inventory_view_v1",
     type: ["VIEW", "BASE TABLE"],
     requiredColumns: [
@@ -35,6 +40,7 @@ export const REQUIRED_RELATIONS: RelationContract[] = [
     type: "BASE TABLE",
     requiredColumns: [
       "asset_id",
+      "score",
       "score_0_100",
       "classification",
       "safety_band",
@@ -45,6 +51,16 @@ export const REQUIRED_RELATIONS: RelationContract[] = [
       "risk_flags",
       "drivers",
     ],
+  },
+  {
+    name: "area_roi_summary",
+    type: "VIEW",
+    requiredColumns: ["area", "projects", "avg_price", "avg_yield", "efficiency"],
+  },
+  {
+    name: "developer_performance",
+    type: "VIEW",
+    requiredColumns: ["developer", "projects", "reliability", "efficiency", "avg_price"],
   },
   {
     name: "investor_override_audit",
@@ -81,6 +97,9 @@ export const REQUIRED_RELATIONS: RelationContract[] = [
 ]
 
 export const REQUIRED_FUNCTIONS = [
+  "rank_investors",
+  "refresh_market_scores",
+  "get_area_absorption",
   "automation_inventory_for_investor_v1",
   "automation_ranked_for_investor_v1",
   "compute_match_score",

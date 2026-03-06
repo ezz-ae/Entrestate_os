@@ -10,11 +10,11 @@ import { MarketPulsePopover } from "@/components/market-pulse-popover"
 import { SmartChat } from "@/components/smart-chat"
 
 const navLinks = [
-  { label: "Chat", href: "/chat" },
-  { label: "Search", href: "/search" },
-  { label: "Map", href: "/map" },
-  { label: "Workspace", href: "/workspace" },
-  { label: "Apps", href: "/apps" },
+  { label: "Decision Tunnel", href: "/chat" },
+  { label: "Properties", href: "/properties" },
+  { label: "Areas", href: "/areas" },
+  { label: "Developers", href: "/developers" },
+  { label: "Market Data", href: "/top-data" },
 ]
 
 export function Navbar() {

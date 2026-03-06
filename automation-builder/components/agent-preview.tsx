@@ -71,3 +71,5 @@ export function AutomationPreview({ draft }: AutomationPreviewProps) {
     </Card>
   )
 }
+
+export const AgentPreview = AutomationPreview

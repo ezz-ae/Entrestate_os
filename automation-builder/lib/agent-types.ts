@@ -2,6 +2,8 @@ import { z } from "zod"
 
 export const AutomationRoleEnum = z.enum(["lead_qualifier", "buyer_matcher", "investor_advisor"])
 export type AutomationRole = z.infer<typeof AutomationRoleEnum>
+export const AgentRoleEnum = AutomationRoleEnum
+export type AgentRole = AutomationRole
 
 export const CompanyTypeEnum = z.enum(["broker", "developer", "investment"])
 export type CompanyType = z.infer<typeof CompanyTypeEnum>

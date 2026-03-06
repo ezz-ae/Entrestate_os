@@ -22,13 +22,13 @@ export default function LeadAgentLandingPage() {
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-accent">
               <span className="w-2 h-2 rounded-full bg-accent" />
-              Insta DM Lead Agent
+              Insta DM Lead Desk
             </div>
             <h1 className="text-3xl md:text-5xl font-serif text-foreground leading-tight text-balance">
-              Chat with the real estate lead agent.
+              Chat with the real estate lead desk.
             </h1>
             <p className="text-base text-muted-foreground leading-relaxed">
-              Answer a few questions, and our team will match you with the right inventory. The agent is designed to
+              Answer a few questions, and our team will match you with the right inventory. This flow is designed to
               qualify intent and route serious leads quickly.
             </p>
 
@@ -55,7 +55,7 @@ export default function LeadAgentLandingPage() {
                 href="/apps/lead-agent"
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
               >
-                Agent setup
+                Lead desk setup
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link

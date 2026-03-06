@@ -7,30 +7,30 @@ const releases = [
   {
     version: "v1.8",
     date: "Feb 2026",
-    title: "Media brief library and project picker",
+    title: "Media brief library and project selector",
     notes: [
       "Brief cards flow directly into storyboard, image, and timeline creation.",
       "Project media is injected into creation flows.",
-      "Unified studio palette with data workspace colors.",
+      "Unified studio palette with market dashboard colors.",
     ],
   },
   {
     version: "v1.7",
     date: "Jan 2026",
-    title: "Market Intelligence Desk workspace",
+    title: "Market research desk",
     notes: [
-      "Market snapshot loader connected to Entrestate Intelligence Engine.",
+      "Market snapshot loader connected to the Entrestate data spine.",
       "Market profiling and sampling improvements.",
-      "New workspace entry points for market exploration.",
+      "New dashboard entry points for market exploration.",
     ],
   },
   {
     version: "v1.6",
     date: "Dec 2025",
-    title: "Apps surface and cold calling console",
+    title: "Workflow hub and cold-calling desk",
     notes: [
-      "Apps hub refreshed with descriptions and matching.",
-      "Cold calling app surface added for outbound execution.",
+      "Workflow hub refreshed with clearer descriptions and matching.",
+      "Cold-calling desk added for outbound execution.",
     ],
   },
 ]

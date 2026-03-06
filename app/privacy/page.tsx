@@ -134,7 +134,7 @@ If you believe we have collected information from a child, please contact us imm
 
 • Posting the updated policy on our website
 • Sending an email to your registered address
-• Displaying a prominent notice in our workspace
+• Displaying a prominent notice in our platform
 
 Your continued use of our services after changes become effective constitutes acceptance of the revised policy.`,
   },

@@ -655,7 +655,7 @@ function MarketsContent() {
       return
     }
 
-    if (action === "Save to workspace") {
+    if (action === "Save to saved searches") {
       if (!saved) {
         handleSaveToggle()
       }
@@ -1207,7 +1207,7 @@ function MarketsContent() {
               </div>
 
               <div className="pt-6 space-y-1">
-                {["Narrow this down further", "Compare top results", "Show the calculation", "Save to workspace"].map(action => (
+                {["Narrow this down further", "Compare top results", "Show the calculation", "Save to saved searches"].map(action => (
                   <button
                     key={action}
                     type="button"
@@ -1420,7 +1420,7 @@ export default function MarketsPage() {
                   Markets
                 </h1>
                 <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-                  Loading the explorer workspace…
+                  Loading market explorer…
                 </p>
               </div>
             </div>

@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { createGateway } from "@ai-sdk/gateway"
 import { put } from "@vercel/blob"
+import { resolveGatewayOrGeminiModel } from "@/lib/ai-provider"
 
 export const dynamic = "force-dynamic"
 
@@ -23,13 +23,16 @@ interface ErrorResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const apiKey = process.env.AI_GATEWAY_API_KEY
+    const resolved = resolveGatewayOrGeminiModel({
+      gatewayModel: process.env.MEDIA_IMAGE_MODEL || "google/gemini-3-pro-image",
+      geminiModel: process.env.MEDIA_IMAGE_MODEL || "gemini-3-pro-image",
+    })
 
-    if (!apiKey) {
+    if (!resolved) {
       return NextResponse.json<ErrorResponse>(
         {
           error: "Configuration error",
-          details: "No media gateway key configured. Please add AI_GATEWAY_API_KEY to environment variables.",
+          details: "No AI provider key configured. Add GEMINI_KEY or AI_GATEWAY_API_KEY.",
         },
         { status: 500 },
       )
@@ -56,11 +59,7 @@ export async function POST(request: NextRequest) {
 
     const geminiAspectRatio = geminiAspectRatioMap[aspectRatio] || "1:1"
 
-    const gateway = createGateway({
-      apiKey: apiKey,
-    })
-
-    const model = gateway("google/gemini-3-pro-image")
+    const model = resolved.model
 
     if (mode === "text-to-image") {
       const imageGenerationPrompt = `Generate a high-quality image based on this description: ${prompt}. The image should be visually appealing and match the description as closely as possible.`

@@ -2,6 +2,7 @@ import { generateText } from "ai"
 import { createGateway } from "@ai-sdk/gateway"
 import { google } from "@ai-sdk/google"
 import type { Node, Edge } from "@xyflow/react"
+import { ensureGeminiApiKeyEnv, normalizeGeminiModel } from "@/lib/ai-provider"
 
 export const maxDuration = 30
 
@@ -39,8 +40,20 @@ export async function POST(req: Request) {
         controller.enqueue(encoder.encode(JSON.stringify(update) + "\n"))
       }
 
-      const apiKey = process.env.AI_GATEWAY_API_KEY
-      const gateway = apiKey ? createGateway({ apiKey }) : null
+      const gatewayApiKey = process.env.AI_GATEWAY_API_KEY?.trim()
+      const gateway = gatewayApiKey ? createGateway({ apiKey: gatewayApiKey }) : null
+      const geminiApiKey = ensureGeminiApiKeyEnv()
+      const hasTextModelProvider = Boolean(gateway || geminiApiKey)
+
+      const resolveTextNodeModel = (modelId: string | undefined) => {
+        if (gateway) return gateway(modelId || "google/gemini-2.5-flash")
+        return google(normalizeGeminiModel(modelId, "gemini-2.5-flash"))
+      }
+
+      const resolveImageNodeModel = (modelId: string | undefined) => {
+        if (gateway) return gateway(modelId || "google/gemini-2.5-flash-image")
+        return google(normalizeGeminiModel(modelId, "gemini-2.5-flash-image"))
+      }
 
       try {
         const { nodes, edges }: { nodes: Node[]; edges: Edge[] } = await req.json()
@@ -264,14 +277,14 @@ export async function POST(req: Request) {
                 break
 
               case "textModel":
-                if (!gateway) {
-                  throw new Error("Media gateway key is not configured.")
+                if (!hasTextModelProvider) {
+                  throw new Error("No AI provider key configured. Add GEMINI_KEY or AI_GATEWAY_API_KEY.")
                 }
                 const prompt = inputs.length > 0 ? String(inputs[0]) : node.data.prompt || ""
 
                 if (node.data.structuredOutput && node.data.schema) {
                   const textResult = await generateText({
-                    model: gateway(node.data.model || "openai/gpt-5"),
+                    model: resolveTextNodeModel(node.data.model),
                     prompt: `${prompt}\n\nRespond in JSON format matching this schema: ${node.data.schema}`,
                     temperature: node.data.temperature || 0.7,
                     maxTokens: node.data.maxTokens || 2000,
@@ -289,7 +302,7 @@ export async function POST(req: Request) {
                   })
                 } else {
                   const textResult = await generateText({
-                    model: gateway(node.data.model || "openai/gpt-5"),
+                    model: resolveTextNodeModel(node.data.model),
                     prompt: prompt,
                     temperature: node.data.temperature || 0.7,
                     maxTokens: node.data.maxTokens || 2000,
@@ -309,7 +322,7 @@ export async function POST(req: Request) {
               case "imageGeneration":
                 const imagePrompt = inputs.length > 0 ? String(inputs[0]) : ""
                 const imageResult = await generateText({
-                  model: google(node.data.model || "gemini-2.5-flash-image"),
+                  model: resolveImageNodeModel(node.data.model),
                   prompt: imagePrompt,
                 })
 

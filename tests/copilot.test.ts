@@ -1,0 +1,108 @@
+import fs from "node:fs"
+import path from "node:path"
+import { describe, expect, it } from "vitest"
+import { buildDealScreenerQuery } from "@/lib/copilot/executor"
+import { collectGuardrailWarnings, validateToolOutput } from "@/lib/copilot/guardrails"
+import {
+  copilotSystemPrompt,
+  dealScreenerInputSchema,
+  developerDueDiligenceInputSchema,
+  generateInvestorMemoInputSchema,
+} from "@/lib/copilot/tools"
+
+function sqlText(sql: unknown) {
+  const fragment = sql as { strings?: string[] }
+  if (fragment?.strings) return fragment.strings.join("")
+  return String(sql)
+}
+
+describe("copilot schemas", () => {
+  it("accepts screener request for 2BR under AED 2M with BUY signal", () => {
+    const parsed = dealScreenerInputSchema.parse({
+      filters: {
+        budget_max_aed: 2_000_000,
+        beds_min: 2,
+        beds_max: 2,
+        timing_signal: "BUY",
+      },
+      sort_by: "engine_god_metric",
+      limit: 10,
+    })
+
+    expect(parsed.filters.budget_max_aed).toBe(2_000_000)
+    expect(parsed.filters.timing_signal).toBe("BUY")
+  })
+
+  it("requires tool-calling in system prompt", () => {
+    expect(copilotSystemPrompt).toContain("Always call at least one tool")
+  })
+
+  it("accepts developer due diligence lookup", () => {
+    const parsed = developerDueDiligenceInputSchema.parse({ developer_name: "Emaar" })
+    expect(parsed.developer_name).toBe("Emaar")
+  })
+
+  it("accepts investor memo generation payload", () => {
+    const parsed = generateInvestorMemoInputSchema.parse({
+      project_name: "Marina Vista",
+      sections: ["price_reality", "area_risk", "developer", "stress_test"],
+    })
+    expect(parsed.project_name).toBe("Marina Vista")
+    expect(parsed.sections).toHaveLength(4)
+  })
+})
+
+describe("copilot route", () => {
+  it("enforces required tool choice", () => {
+    const routePath = path.join(process.cwd(), "app/api/copilot/route.ts")
+    const source = fs.readFileSync(routePath, "utf8")
+    expect(source).toContain('toolChoice: "required"')
+  })
+})
+
+describe("copilot SQL builder", () => {
+  it("builds deal screener SQL with key filters", () => {
+    const sql = buildDealScreenerQuery(
+      dealScreenerInputSchema.parse({
+        filters: {
+          budget_max_aed: 2_000_000,
+          beds_min: 2,
+          beds_max: 2,
+          timing_signal: "BUY",
+        },
+        sort_by: "engine_god_metric",
+        limit: 10,
+      }),
+    )
+
+    const text = sqlText(sql)
+    expect(text).toContain("FROM inventory_full")
+    expect(text).toContain("l1_canonical_price <=")
+    expect(text).toContain("bedrooms_max >=")
+    expect(text).toContain("bedrooms_min <=")
+    expect(text).toContain("l3_timing_signal =")
+    expect(text).toContain("ORDER BY engine_god_metric DESC")
+    expect(text).toContain("LIMIT")
+  })
+})
+
+describe("copilot guardrails", () => {
+  it("flags low confidence and missing DLD overlays", () => {
+    expect(validateToolOutput({ l1_confidence: "LOW" }).warning).toContain("LOW confidence")
+    expect(validateToolOutput({ l4_dld_avg_txn_price: null }).warning).toContain("No DLD transaction")
+  })
+
+  it("collects warnings recursively from arrays", () => {
+    const warnings = collectGuardrailWarnings({
+      rows: [
+        { l1_confidence: "LOW" },
+        { l1_canonical_price: null },
+        { l4_dld_avg_txn_price: null },
+      ],
+    })
+
+    expect(warnings).toContain("LOW confidence — limited data sources")
+    expect(warnings).toContain("Price data unavailable")
+    expect(warnings).toContain("No DLD transaction overlay available")
+  })
+})

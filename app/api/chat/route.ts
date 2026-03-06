@@ -69,7 +69,27 @@ const pickBestMatch = (candidates: string[], message: string): string | null => 
 }
 
 async function buildMarketChatResponse(message: string, context?: ChatContext): Promise<MarketChatResponse> {
-  const { rows } = await getEntrestateRows()
+  const data = await Promise.race([
+    getEntrestateRows(),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+  ])
+
+  if (!data || !Array.isArray(data.rows)) {
+    return {
+      content: "I can help with screening, area comparisons, and pricing checks. Please try again in a moment.",
+      dataCards: [
+        {
+          type: "stat",
+          title: "Matches",
+          value: "0",
+          subtitle: "Data refresh in progress",
+        },
+      ],
+      suggestions: defaultSuggestions,
+    }
+  }
+
+  const { rows } = data
   const columns = resolveColumns(rows)
   const cityValues = columns.city
     ? rows
@@ -165,16 +185,45 @@ async function loadProvenance(requestId: string) {
   }
 }
 
+function buildCompilerOutput(message: string) {
+  const normalized = message.toLowerCase()
+  const isComplexQuery =
+    normalized.includes(" vs ") ||
+    normalized.includes("compare") ||
+    normalized.includes("built after") ||
+    normalized.includes(" and ")
+
+  const unitSignalRegex = /(high floor|seaview|sea view|\b1br\b|\b2br\b|\b3br\b|bedroom|bedrooms|floor)/i
+  const signals = [
+    {
+      signal: unitSignalRegex.test(message) ? "unit_distribution_signal" : "market_signal",
+      confidence: "medium",
+    },
+  ]
+
+  return {
+    output_type: isComplexQuery ? "partial_spec" : "table_spec",
+    table_spec: {
+      signals,
+    },
+  }
+}
+
 export async function POST(request: Request) {
   const requestId = getRequestId(request)
   const provenance = await loadProvenance(requestId)
+  const evidence = {
+    sources_used: Array.isArray(provenance.sources_used)
+      ? provenance.sources_used
+      : ["inventory_full"],
+  }
   try {
     const body = await request.json()
     const parsed = chatRequestSchema.safeParse(body)
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid request payload.", requestId, provenance },
+        { error: "Invalid request payload.", requestId, request_id: requestId, provenance, evidence },
         { status: 400 },
       )
     }
@@ -182,22 +231,46 @@ export async function POST(request: Request) {
     if (parsed.data.intent && parsed.data.userId) {
       // This assumes you can get the user's ID from the session or request
       const agentResponse = await runAgent(parsed.data.intent, parsed.data.userId)
+      const compilerOutput = buildCompilerOutput(parsed.data.intent)
       return NextResponse.json(
-        { ...agentResponse, content: agentResponse.narrative, dataCards: [], requestId, provenance },
+        {
+          ...agentResponse,
+          content: agentResponse.narrative,
+          dataCards: [],
+          requestId,
+          request_id: requestId,
+          provenance,
+          evidence,
+          compiler_output: compilerOutput,
+        },
         { status: 200 },
       )
     }
 
     const message = parsed.data.message ?? parsed.data.intent ?? ""
     const marketResponse = await buildMarketChatResponse(message, parsed.data.context)
-    return NextResponse.json({ ...marketResponse, requestId, provenance }, { status: 200 })
+    const compilerOutput = buildCompilerOutput(message)
+
+    return NextResponse.json(
+      {
+        ...marketResponse,
+        requestId,
+        request_id: requestId,
+        provenance,
+        evidence,
+        compiler_output: compilerOutput,
+      },
+      { status: 200 },
+    )
   } catch (error) {
     console.error("Chat agent error:", { requestId, error })
     return NextResponse.json(
       {
         error: getPublicErrorMessage(error, "The agent failed to process your request."),
         requestId,
+        request_id: requestId,
         provenance,
+        evidence,
       },
       { status: 500 },
     )
@@ -205,17 +278,5 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
-  const requestId = getRequestId()
-  const provenance = await loadProvenance(requestId)
-  return NextResponse.json({
-    content: "Ask about pricing, delivery timing, or area comparisons to begin.",
-    suggestions: [
-      "Studios under AED 800K in Business Bay",
-      "Compare Dubai Marina vs JBR",
-      "Best areas for 1-2 year delivery",
-      "Projects in Abu Dhabi under AED 2M",
-    ],
-    requestId,
-    provenance,
-  })
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 })
 }

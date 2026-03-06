@@ -103,6 +103,19 @@ describeDb("database contract", () => {
     expectType(row.drivers_type, ["text", "jsonb", "json"])
   })
 
+  it("enforces market_scores_v1.score type", async () => {
+    const rows = await prisma.$queryRaw<{ data_type: string }[]>(Prisma.sql`
+      SELECT data_type
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'market_scores_v1'
+        AND column_name = 'score'
+    `)
+
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows[0].data_type).toBe("double precision")
+  })
+
   it("exposes required functions", async () => {
     const rows = await prisma.$queryRaw<{ proname: string }[]>(Prisma.sql`
       SELECT proname
@@ -164,6 +177,20 @@ describeDb("database contract", () => {
       "match_score",
       "final_rank",
     ]
+    for (const key of required) {
+      expect(keys.has(key)).toBe(true)
+    }
+  })
+
+  it("returns area absorption shape", async () => {
+    const rows = await prisma.$queryRaw<Record<string, unknown>[]>(Prisma.sql`
+      SELECT *
+      FROM get_area_absorption(NULL)
+      LIMIT 1
+    `)
+    if (rows.length === 0) return
+    const keys = new Set(Object.keys(rows[0] ?? {}))
+    const required = ["area", "projects", "buy_signals", "safe_projects", "efficiency", "supply_pressure"]
     for (const key of required) {
       expect(keys.has(key)).toBe(true)
     }

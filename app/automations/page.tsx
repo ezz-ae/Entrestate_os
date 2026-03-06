@@ -4,17 +4,17 @@ import { Bot, MessageCircle, Megaphone } from "lucide-react"
 
 const automationCards = [
   {
-    title: "WhatsApp Agent",
+    title: "WhatsApp Lead Desk",
     detail: "Lead qualification and follow-up sequences.",
     icon: MessageCircle,
   },
   {
-    title: "IG DM Agent",
+    title: "IG DM Lead Desk",
     detail: "Instant intake and investor matching in DMs.",
     icon: Bot,
   },
   {
-    title: "Ads Agent",
+    title: "Ads Workflow",
     detail: "Campaign briefs tied to Time Tables and notes.",
     icon: Megaphone,
   },
@@ -27,10 +27,10 @@ export default function AutomationsPage() {
       <div className="pt-28 pb-20 md:pt-36 md:pb-28">
         <div className="mx-auto w-full max-w-[1200px] px-6">
           <header className="mb-8">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Automations</p>
-            <h1 className="mt-3 text-3xl md:text-5xl font-serif text-foreground">Agents that execute the decision.</h1>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Execution</p>
+            <h1 className="mt-3 text-3xl md:text-5xl font-serif text-foreground">Workflows that execute the decision.</h1>
             <p className="mt-3 text-sm text-muted-foreground max-w-2xl">
-              Automations inherit the evidence trail so outbound activity stays aligned with the data spine.
+              Workflows inherit the evidence trail so outbound activity stays aligned with market data.
             </p>
           </header>
 

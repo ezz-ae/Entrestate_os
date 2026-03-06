@@ -5,25 +5,23 @@ import { ThemeSwitcher } from "@/components/theme-switcher"
 import { ArrowRight } from "lucide-react"
 
 const footerLinks = {
-  Platform: [
-    { label: "Chat", href: "/chat" },
-    { label: "Search", href: "/search" },
-    { label: "Map", href: "/map" },
-    { label: "Library", href: "/library" },
+  Explore: [
+    { label: "Decision Tunnel", href: "/chat" },
+    { label: "Properties", href: "/properties" },
+    { label: "Areas", href: "/areas" },
+    { label: "Developers", href: "/developers" },
   ],
-  Apps: [
-    { label: "Agent-First Builder", href: "/apps/agent-builder" },
-  { label: "Media Creator", href: "/agents" },
-    { label: "Cold Calling", href: "/apps/coldcalling" },
-    { label: "Insta DM Lead Agent", href: "/apps/lead-agent" },
-  ],
-  Workspace: [
-    { label: "Market Intelligence Desk", href: "/workspace/data-scientist" },
+  Investor: [
+    { label: "Market Dashboard", href: "/top-data" },
+    { label: "Golden Visa", href: "/golden-visa" },
     { label: "Market Score", href: "/market-score" },
-    { label: "Investor Match Desk", href: "/agent-runtime" },
-    { label: "Dashboards", href: "/workspace/dashboards" },
-  { label: "Market Data Integration", href: "/workspace/daas" },
-    { label: "Agent Creator", href: "/workspace/agent-creator" },
+    { label: "Pricing", href: "/pricing" },
+  ],
+  Insights: [
+    { label: "Markets", href: "/markets" },
+    { label: "Search", href: "/search" },
+    { label: "Reports", href: "/reports" },
+    { label: "Library", href: "/library" },
   ],
   Company: [
     { label: "About", href: "/about" },
@@ -48,18 +46,18 @@ export function Footer() {
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wider text-accent">Entrestate OS</p>
               <h3 className="text-xl md:text-2xl font-serif text-foreground">
-                Decision infrastructure for real estate teams.
+                A clear decision desk for UAE real estate teams.
               </h3>
               <p className="text-sm text-muted-foreground max-w-xl">
-                Markets, agents, and execution surfaces live in one system. Use it to study, decide, and move with clarity.
+                Markets, project evidence, and investor workflows in one place so teams can study, decide, and move with confidence.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/workspace"
+                href="/chat"
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
               >
-                Open workspace
+                Open Decision Tunnel
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
@@ -83,8 +81,8 @@ export function Footer() {
               <span className="text-base font-medium tracking-tight text-foreground">entrestate</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
-              Market intelligence, execution agents, and marketing systems built for real estate operators who need
-              precision, not noise.
+              Market coverage, project evidence, and investor-first workflows built for operators who need precision,
+              not noise.
             </p>
           </div>
 

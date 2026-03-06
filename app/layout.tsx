@@ -9,9 +9,9 @@ const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", wei
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" })
 
 export const metadata: Metadata = {
-  title: "Entrestate - Real Estate Market Technology",
+  title: "Entrestate - UAE Real Estate Decision Desk",
   description:
-    "A professional workspace for studying markets, understanding price behavior, and operating decisions through data, analysis, and agents.",
+    "A professional platform for studying UAE markets, understanding price behavior, and making disciplined property decisions.",
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
   },

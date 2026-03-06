@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { createGateway } from "@ai-sdk/gateway"
+import { resolveGatewayOrGeminiModel } from "@/lib/ai-provider"
 
 export const dynamic = "force-dynamic"
 
@@ -15,13 +15,16 @@ interface ErrorResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const apiKey = process.env.AI_GATEWAY_API_KEY
+    const resolved = resolveGatewayOrGeminiModel({
+      gatewayModel: process.env.MEDIA_TEXT_MODEL || "google/gemini-2.5-flash",
+      geminiModel: process.env.MEDIA_TEXT_MODEL || "gemini-2.5-flash",
+    })
 
-    if (!apiKey) {
+    if (!resolved) {
       return NextResponse.json<ErrorResponse>(
         {
           error: "Configuration error",
-          details: "No gateway key configured.",
+          details: "No AI provider key configured. Add GEMINI_KEY or AI_GATEWAY_API_KEY.",
         },
         { status: 500 },
       )
@@ -33,12 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json<ErrorResponse>({ error: "Prompt is required" }, { status: 400 })
     }
 
-    const gateway = createGateway({
-      apiKey: apiKey,
-    })
-
-    const modelId = process.env.MEDIA_TEXT_MODEL || "google/gemini-2.5-flash"
-    const model = gateway(modelId)
+    const model = resolved.model
 
     const systemPrompt = `
       You are an expert prompt writer specializing in image and video generation.

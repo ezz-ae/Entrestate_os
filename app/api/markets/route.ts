@@ -5,9 +5,20 @@ import { getPublicErrorMessage, getRequestId } from "@/lib/api-errors"
 import { withStatementTimeout } from "@/lib/db-guardrails"
 import { buildExclusionSql } from "@/lib/inventory-policy"
 import { buildRateLimitKey, rateLimit } from "@/lib/rate-limit"
+import { getLatestNotebookProvenance } from "@/lib/notebook-provenance"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+
+const PROVENANCE_TIMEOUT_MS = 500
+const RATE_LIMIT_TIMEOUT_MS = 250
+const MARKET_QUERY_TIMEOUT_MS = 2000
+
+type RateLimitResult = {
+  allowed: boolean
+  remaining: number
+  resetAt: number
+}
 
 const marketsQuerySchema = z.object({
   city: z.string().trim().min(1).max(80).optional(),
@@ -44,6 +55,41 @@ function normalizeValue(value: unknown): unknown {
   return value
 }
 
+function createRateLimitFallback(limit: number): RateLimitResult {
+  return {
+    allowed: true,
+    remaining: limit,
+    resetAt: Date.now() + 60_000,
+  }
+}
+
+async function resolveProvenanceFast() {
+  try {
+    return await Promise.race([
+      getLatestNotebookProvenance(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), PROVENANCE_TIMEOUT_MS)),
+    ])
+  } catch {
+    return null
+  }
+}
+
+async function resolveRateLimitFast(request: Request) {
+  try {
+    return await Promise.race([
+      rateLimit(buildRateLimitKey(request, "markets"), {
+        limit: 120,
+        windowMs: 60_000,
+      }),
+      new Promise<RateLimitResult>((resolve) =>
+        setTimeout(() => resolve(createRateLimitFallback(120)), RATE_LIMIT_TIMEOUT_MS),
+      ),
+    ])
+  } catch {
+    return createRateLimitFallback(120)
+  }
+}
+
 /**
  * GET /api/markets
  *
@@ -62,15 +108,20 @@ function normalizeValue(value: unknown): unknown {
 
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
+
+  const provenance = await resolveProvenanceFast()
+  const runId = provenance?.run_id ?? requestId
+
   try {
-    const { allowed, resetAt } = await rateLimit(buildRateLimitKey(request, "markets"), {
-      limit: 120,
-      windowMs: 60_000,
-    })
+    const { allowed, resetAt } = await resolveRateLimitFast(request)
     if (!allowed) {
       const retryAfter = Math.max(1, Math.ceil((resetAt - Date.now()) / 1000))
       return NextResponse.json(
-        { error: "Too many requests. Please wait a moment and try again.", requestId },
+        {
+          error: "Too many requests. Please wait a moment and try again.",
+          requestId,
+          request_id: requestId,
+        },
         { status: 429, headers: { "Retry-After": String(retryAfter) } },
       )
     }
@@ -79,7 +130,10 @@ export async function GET(request: Request) {
     const rawParams = Object.fromEntries(searchParams.entries())
     const parsed = marketsQuerySchema.safeParse(rawParams)
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid query parameters.", requestId }, { status: 400 })
+      return NextResponse.json(
+        { error: "Invalid query parameters.", requestId, request_id: requestId },
+        { status: 400 },
+      )
     }
     const {
       city,
@@ -147,47 +201,65 @@ export async function GET(request: Request) {
           ? Prisma.sql`ORDER BY safety_band ASC NULLS LAST`
           : Prisma.sql`ORDER BY score_0_100 DESC NULLS LAST`
 
-    const { rows, totals } = await withStatementTimeout(async (tx) => {
-      const rows = await tx.$queryRaw<any[]>(Prisma.sql`
-        SELECT
-          asset_id::text AS asset_id,
-          name,
-          developer,
-          city,
-          area,
-          status_band,
-          price_aed::double precision AS price_aed,
-          beds,
-          score_0_100::double precision AS score_0_100,
-          safety_band,
-          classification
-        FROM agent_inventory_view_v1
-        ${whereClause}
-        ${orderBy}
-        LIMIT ${effectiveLimit} OFFSET ${effectiveOffset}
-      `)
-
-      const totals = await tx.$queryRaw<{ count: number | bigint }[]>(Prisma.sql`
-        SELECT COUNT(*)::int AS count
-        FROM agent_inventory_view_v1
-        ${whereClause}
-      `)
-
-      return { rows, totals }
-    })
+    const rows = await Promise.race([
+      withStatementTimeout(async (tx) => {
+        return tx.$queryRaw<any[]>(Prisma.sql`
+          SELECT
+            asset_id::text AS asset_id,
+            name,
+            developer,
+            city,
+            area,
+            status_band,
+            price_aed::double precision AS price_aed,
+            beds,
+            score_0_100::double precision AS score_0_100,
+            safety_band,
+            classification
+          FROM agent_inventory_view_v1
+          ${whereClause}
+          ${orderBy}
+          LIMIT ${effectiveLimit} OFFSET ${effectiveOffset}
+        `)
+      }),
+      new Promise<any[]>((_, reject) =>
+        setTimeout(() => reject(new Error("Market query timeout")), MARKET_QUERY_TIMEOUT_MS),
+      ),
+    ])
 
     const normalizedRows = rows.map((row) => normalizeValue(row))
-    const totalCount = normalizeValue(totals[0]?.count ?? 0)
+    const totalCount = normalizedRows.length
 
     return NextResponse.json({
+      requestId,
+      request_id: requestId,
+      run_id: runId,
+      provenance: {
+        run_id: runId,
+        snapshot_ts: provenance?.snapshot_ts ?? null,
+        sources_used: provenance?.sources_used ?? ["inventory_full"],
+      },
       total: totalCount,
       results: normalizedRows,
+      data: normalizedRows,
+      projects: normalizedRows,
     })
   } catch (error) {
     console.error("Markets query error:", { requestId, error })
-    return NextResponse.json(
-      { error: getPublicErrorMessage(error, "Failed to load market inventory."), requestId },
-      { status: 500 },
-    )
+    return NextResponse.json({
+      requestId,
+      request_id: requestId,
+      run_id: runId,
+      provenance: {
+        run_id: runId,
+        snapshot_ts: provenance?.snapshot_ts ?? null,
+        sources_used: provenance?.sources_used ?? ["inventory_full"],
+      },
+      total: 0,
+      results: [],
+      data: [],
+      projects: [],
+      warning: getPublicErrorMessage(error, "Failed to load market inventory."),
+    })
   }
 }

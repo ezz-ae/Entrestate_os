@@ -17,7 +17,7 @@ const principles = [
   {
     icon: Scale,
     title: "Fairness through separation",
-    description: "Users study. Agents execute. The platform connects the two without conflicts of interest.",
+    description: "Users study. Advisors execute. The platform connects the two without conflicts of interest.",
   },
   {
     icon: BookOpen,
@@ -43,10 +43,12 @@ export default function AboutPage() {
           <div className="max-w-2xl mb-20">
             <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">About</p>
             <h1 className="text-3xl md:text-5xl font-serif text-foreground leading-tight text-balance">
-              A real estate market technology firm
+              A real estate market research and decision firm
             </h1>
             <p className="mt-6 text-base md:text-lg text-muted-foreground leading-relaxed">
-              Entrestate builds professional tools for understanding real estate markets and executing decisions through verified agents. We do not sell properties, list units, or broker deals directly. We build infrastructure for market clarity and structured execution.
+              Entrestate builds professional workflows for understanding real estate markets and executing decisions
+              through verified advisors. We do not sell properties, list units, or broker deals directly. We focus on
+              market clarity and structured execution.
             </p>
           </div>
 
@@ -68,17 +70,21 @@ export default function AboutPage() {
                 Make real estate markets understandable and actionable
               </h2>
               <p className="text-sm text-primary-foreground/70 leading-relaxed">
-                Real estate decisions are often made with incomplete information, opaque pricing, and unclear processes. Entrestate exists to change that. We bring data, analysis, and professional execution into one platform. Users get market clarity. Agents get structure. Both get transparency.
+                Real estate decisions are often made with incomplete information, opaque pricing, and unclear
+                processes. Entrestate exists to change that. We bring data, analysis, and professional execution into
+                one platform. Users get market clarity. Advisors get structure. Both get transparency.
               </p>
             </div>
             <div className="p-8 md:p-10 bg-card border border-border rounded-lg flex flex-col justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">Approach</p>
                 <h2 className="text-2xl md:text-3xl font-serif text-foreground leading-tight mb-4">
-                  Technology first, opinion never
+                  Evidence first, opinion never
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  We build market dashboards, search tools, calculators, and comparison engines. We publish reports and insights. But we never tell users what to buy, sell, or hold. The platform provides understanding. Users make their own decisions.
+                  We provide market dashboards, search tools, calculators, and comparison workflows. We publish
+                  reports and insights. But we never tell users what to buy, sell, or hold. The platform provides
+                  understanding. Users make their own decisions.
                 </p>
               </div>
             </div>
@@ -109,7 +115,7 @@ export default function AboutPage() {
           <div className="p-8 md:p-12 bg-card border border-border rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
               <h2 className="text-2xl font-serif text-foreground mb-2">Explore Entrestate</h2>
-              <p className="text-sm text-muted-foreground">Start with the markets, read the Library, or open the Workspace.</p>
+              <p className="text-sm text-muted-foreground">Start with Markets, review the Library, or open the Decision Tunnel.</p>
             </div>
             <Link
               href="/markets"

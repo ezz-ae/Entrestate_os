@@ -267,3 +267,5 @@ export const automationTemplates: AutomationTemplate[] = [
     },
   },
 ]
+
+export const agentTemplates = automationTemplates

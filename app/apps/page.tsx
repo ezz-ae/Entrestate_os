@@ -14,12 +14,18 @@ import {
   Image,
   Sparkles,
   Plus,
+  Shield,
+  FileText,
+  FolderSearch,
+  PieChart,
+  Gauge,
+  ClipboardCheck,
 } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Apps - Entrestate",
   description:
-    "Launch focused apps for marketing, agents, data, and execution within the Entrestate platform.",
+    "Launch focused real estate workflows for marketing, client intake, market research, and execution.",
 }
 
 const apps = [
@@ -57,15 +63,15 @@ const apps = [
     cta: "Open image studio",
   },
   {
-    title: "Agent-First Builder",
-    description: "Build real estate agents with a guided wizard and a clear business flow.",
-    flipLine: "Launch a client-ready agent without touching technical settings.",
+    title: "Client Intake Builder",
+    description: "Build client intake flows with a guided setup and clear business rules.",
+    flipLine: "Launch a client-ready intake flow with clear qualification stages.",
     href: "/apps/agent-builder",
     learnHref: "/apps/docs/agent-first-builder",
     icon: Workflow,
-    tag: "Automation",
+    tag: "Client Desk",
     highlight: "Best for: qualification + matching",
-    cta: "Create an agent",
+    cta: "Open intake builder",
   },
   {
     title: "Cold Calling",
@@ -79,7 +85,7 @@ const apps = [
     cta: "Open call desk",
   },
   {
-    title: "Insta DM Lead Agent",
+    title: "Insta DM Lead Desk",
     description: "Qualify real estate leads inside Instagram DMs, sites, QR codes, and landing pages.",
     flipLine: "Turn inbound messages into qualified leads with clear next steps.",
     href: "/apps/lead-agent",
@@ -87,12 +93,78 @@ const apps = [
     icon: MessageCircle,
     tag: "Lead Desk",
     highlight: "Best for: inbound capture",
-    cta: "Deploy the agent",
+    cta: "Open lead desk",
+  },
+  {
+    title: "Deal Screener",
+    description: "Rank projects by god metric, stress, timing, and affordability.",
+    flipLine: "Deterministic filtering on inventory_full with evidence-ready results.",
+    href: "/market-score",
+    learnHref: "/docs",
+    icon: FolderSearch,
+    tag: "Investment Desk",
+    highlight: "Best for: sourcing candidates",
+    cta: "Open screener",
+  },
+  {
+    title: "Golden Visa Qualifier",
+    description: "Identify high-confidence AED 2M+ candidates for visa pathways.",
+    flipLine: "Filter by area, developer, stress grade, and timing signal.",
+    href: "/golden-visa",
+    learnHref: "/docs",
+    icon: Shield,
+    tag: "Investment Desk",
+    highlight: "Best for: visa workflows",
+    cta: "Open qualifier",
+  },
+  {
+    title: "Stress Test Engine",
+    description: "Review stress grade and resilience scenarios across projects.",
+    flipLine: "Surface downside survivability before commitment.",
+    href: "/tools/stress-test",
+    learnHref: "/docs",
+    icon: Gauge,
+    tag: "Investment Desk",
+    highlight: "Best for: risk controls",
+    cta: "Run stress tests",
+  },
+  {
+    title: "Investor Memo Generator",
+    description: "Generate institutional-grade due diligence memos.",
+    flipLine: "Combine price reality, area risk, developer DD, and stress tests.",
+    href: "/tools/memo",
+    learnHref: "/docs",
+    icon: FileText,
+    tag: "Investment Desk",
+    highlight: "Best for: IC-ready memos",
+    cta: "Generate memo",
+  },
+  {
+    title: "Evidence Drawer",
+    description: "Inspect sources, exclusions, assumptions, and confidence.",
+    flipLine: "Verify every claim before making a decision.",
+    href: "/tools/evidence",
+    learnHref: "/docs",
+    icon: ClipboardCheck,
+    tag: "Investment Desk",
+    highlight: "Best for: auditability",
+    cta: "Open evidence",
+  },
+  {
+    title: "Portfolio Builder",
+    description: "Assemble multi-project portfolios by risk and intent.",
+    flipLine: "Blend assets into conservative or growth baskets.",
+    href: "/tools/portfolio",
+    learnHref: "/docs",
+    icon: PieChart,
+    tag: "Investment Desk",
+    highlight: "Best for: allocation",
+    cta: "Build portfolio",
   },
 ]
 
 const featuredApps = apps.filter((app) =>
-  ["Agent-First Builder", "Storyboard Builder", "Insta DM Lead Agent"].includes(app.title),
+  ["Client Intake Builder", "Storyboard Builder", "Insta DM Lead Desk"].includes(app.title),
 )
 
 const cardTones = [
@@ -104,7 +176,7 @@ const cardTones = [
 const dataPillars = [
   {
     title: "Live inventory + media",
-    detail: "Apps pull from the same verified listings, media, and pricing spine.",
+    detail: "Workflows pull from the same verified listings, media, and pricing spine.",
   },
   {
     title: "Decision-ready outputs",
@@ -118,14 +190,14 @@ const dataPillars = [
 
 const dataAccordions = [
   {
-    title: "How apps stay synced with the data spine",
+    title: "How workflows stay synced with the data spine",
     detail:
-      "Each app reads the same live inventory, pricing, and media feeds, so every output aligns with what you can actually sell.",
+      "Each workflow reads the same live inventory, pricing, and media feeds, so every output aligns with what you can actually sell.",
   },
   {
-    title: "What happens after an app creates a result",
+    title: "What happens after a workflow creates a result",
     detail:
-      "Results can be saved to Workspace, exported to client decks, or moved into your CRM with consistent formatting.",
+      "Results can be saved to your dashboard, exported to client decks, or moved into your CRM with consistent formatting.",
   },
   {
     title: "How updates reach your team",
@@ -144,13 +216,13 @@ export default function AppsPage() {
         <div className="mx-auto w-full max-w-[1440px] px-6 relative">
           <div className="max-w-3xl mb-10">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
-              Smart Apps
+              Real Estate Workflows
             </p>
             <h1 className="text-3xl md:text-5xl font-serif text-foreground leading-tight text-balance animate-fade-in-up">
               Choose the surface for the decision you need to make.
             </h1>
             <p className="mt-6 text-base md:text-lg text-muted-foreground leading-relaxed animate-fade-in-up-1">
-              Entrestate apps translate market intelligence into focused execution. Each surface is built for a
+              Entrestate workflows translate market evidence into focused execution. Each surface is built for a
               single, high-stakes job.
             </p>
           </div>
@@ -173,10 +245,10 @@ export default function AppsPage() {
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Featured apps</p>
-            <h2 className="text-xl font-semibold text-foreground mt-2">Start fast with the most used surfaces</h2>
+            <h2 className="text-xl font-semibold text-foreground mt-2">Start fast with the most used workflows</h2>
           </div>
           <Link href="/apps" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-            View all apps
+            View all workflows
           </Link>
         </div>
         <div className="mt-6 overflow-x-auto pb-4">
@@ -246,7 +318,7 @@ export default function AppsPage() {
                       <div>
                         <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
                           <Sparkles className="h-3.5 w-3.5" />
-                          One-line summary
+                          Quick summary
                         </div>
                         <p className="mt-4 text-base text-foreground leading-relaxed">{app.flipLine}</p>
                         <p className="mt-4 text-xs text-muted-foreground">{app.highlight}</p>
@@ -257,7 +329,7 @@ export default function AppsPage() {
                           className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border/70 bg-secondary/60 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary/80 transition-colors"
                         >
                           <Plus className="h-4 w-4" />
-                          Add to workspace
+                          Open workflow
                         </Link>
                         <Link
                           href={app.learnHref}
@@ -267,7 +339,7 @@ export default function AppsPage() {
                         </Link>
                         <ExplainWithChat
                           prompt={`Explain the ${app.title} app, when to use it, and the best first step.`}
-                          label="Explain in chat"
+                          label="Explain this workflow"
                           variant="ghost"
                           size="sm"
                           className="w-full justify-center text-xs"
@@ -286,19 +358,19 @@ export default function AppsPage() {
         <div className="rounded-2xl border border-border/70 bg-card/70 p-8 md:p-10">
           <div className="flex flex-wrap items-center justify-between gap-6">
             <div className="max-w-2xl">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">Agent creation</p>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Lead desk setup</p>
               <h2 className="text-2xl md:text-3xl font-serif text-foreground mt-2">
-                Build a client-ready agent in under five minutes.
+                Build a client-ready lead flow in under five minutes.
               </h2>
               <p className="mt-3 text-sm text-muted-foreground">
-                Choose a role, add business inputs, and publish a lead-ready agent for your team.
+                Choose a role, add business inputs, and publish a lead-ready flow for your team.
               </p>
             </div>
             <Link
               href="/apps/agent-builder"
               className="inline-flex items-center gap-2 rounded-md bg-primary text-primary-foreground px-5 py-3 text-sm font-medium hover:bg-primary/90 transition-colors"
             >
-              Create an agent
+              Open lead builder
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -308,12 +380,12 @@ export default function AppsPage() {
       <section className="mx-auto w-full max-w-[1440px] px-6 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8">
           <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Connected intelligence</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Connected market data</p>
             <h2 className="text-2xl font-semibold text-foreground mt-2">
-              Every app speaks the same market language.
+              Every workflow speaks the same market language.
             </h2>
             <p className="mt-3 text-sm text-muted-foreground">
-              Use one data spine with multiple surfaces so your team never works from different truths.
+              Use one data spine with multiple workflows so your team never works from different truths.
             </p>
           </div>
           <div className="space-y-3">

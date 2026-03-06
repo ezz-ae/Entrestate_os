@@ -5,7 +5,9 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "guardian": "python3 scripts/guardian.py",
     "lint": "eslint .",
+    "precompile": "pnpm guardian",
     "postinstall": "prisma generate",
     "smoke": "tsx scripts/smoke.ts",
     "start": "next start",

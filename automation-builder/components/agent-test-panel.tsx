@@ -108,3 +108,5 @@ export function AutomationTestPanel({ draft, activeAutomationId, template, onEns
     </Card>
   )
 }
+
+export const AgentTestPanel = AutomationTestPanel

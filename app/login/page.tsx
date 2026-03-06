@@ -54,7 +54,7 @@ export default function LoginPage() {
 
         <div className="max-w-md">
           <blockquote className="text-2xl font-serif text-primary-foreground leading-relaxed">
-            {"\"The workspace gave us clarity on pricing behavior we couldn't see anywhere else. We made better decisions, faster.\""}
+            {"\"This platform gave us clarity on pricing behavior we couldn't see anywhere else. We made better decisions, faster.\""}
           </blockquote>
           <div className="mt-6">
             <p className="text-primary-foreground font-medium">Ahmed Al-Rashid</p>

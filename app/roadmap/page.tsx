@@ -4,29 +4,29 @@ import { Footer } from "@/components/footer"
 const roadmap = [
   {
     title: "Now",
-    focus: "Operational clarity",
+    focus: "Coverage and clarity",
     items: [
-      "Decision Infrastructure language normalization",
-      "Media Creator script library",
-      "Workspace data ingestion for bulk feeds",
+      "Property-first language across every core page",
+      "Cleaner project evidence summaries",
+      "Expanded inventory coverage checks",
     ],
   },
   {
     title: "Next",
-    focus: "Decision surface automation",
+    focus: "Investor workflow depth",
     items: [
-      "Occalizer pressure controls in campaign views",
-      "Lead Direction scoring with Fairness %",
-      "Scenario Management templates in workspace",
+      "Deeper area and developer risk briefing",
+      "Portfolio stress views by investor profile",
+      "Faster memo and underwriting workflows",
     ],
   },
   {
     title: "Later",
-    focus: "Full Decision Zipper Layer",
+    focus: "Institutional portfolio oversight",
     items: [
-      "Semantic inventory kernel with 5-layer model",
-      "Scenario recommendations engine",
-      "Multi-tenant governance for brokerage groups",
+      "Cross-market portfolio comparison",
+      "Fund-level scenario planning",
+      "Governance workflows for brokerage groups",
     ],
   },
 ]

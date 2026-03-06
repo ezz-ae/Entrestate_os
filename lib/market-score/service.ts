@@ -43,6 +43,10 @@ const HORIZON_BANDS: Record<string, string[]> = {
   "4yr+": ["Handover2028_29", "Handover2030Plus"],
 }
 
+function ensureRows<T>(rows: T[] | null | undefined): T[] {
+  return Array.isArray(rows) ? rows : []
+}
+
 export async function getMarketScoreSummary(
   filters: MarketScoreFilters,
   routing: RoutingParams,
@@ -55,7 +59,7 @@ export async function getMarketScoreSummary(
   const baseSql = buildSummaryBaseSql(routing, overrideFlags, includePriceTier, contract)
   const filterSql = buildFilterSql(filters, { includePriceTier })
 
-  const [totalRows, avgScoreRows, safetyRows, classRows, statusAvgRows, safetyAvgRows, priceAvgRows] =
+  const [totalRowsRaw, avgScoreRowsRaw, safetyRowsRaw, classRowsRaw, statusAvgRowsRaw, safetyAvgRowsRaw, priceAvgRowsRaw] =
     await Promise.all([
       db.$queryRaw<{ count: number }[]>(buildCountQuery(baseSql, filterSql)),
       db.$queryRaw<{ avg_score: number }[]>(buildAverageQuery(baseSql, filterSql)),
@@ -68,7 +72,15 @@ export async function getMarketScoreSummary(
         : Promise.resolve([]),
     ])
 
-  const [cities, areas, statusBands, priceTiers, safetyBands, conservativePool, balancedPool] = await Promise.all([
+  const totalRows = ensureRows(totalRowsRaw)
+  const avgScoreRows = ensureRows(avgScoreRowsRaw)
+  const safetyRows = ensureRows(safetyRowsRaw)
+  const classRows = ensureRows(classRowsRaw)
+  const statusAvgRows = ensureRows(statusAvgRowsRaw)
+  const safetyAvgRows = ensureRows(safetyAvgRowsRaw)
+  const priceAvgRows = ensureRows(priceAvgRowsRaw)
+
+  const [citiesRaw, areasRaw, statusBandsRaw, priceTiersRaw, safetyBandsRaw, conservativePoolRaw, balancedPoolRaw] = await Promise.all([
     db.$queryRaw<{ value: string }[]>(buildDistinctOptionsQuery(baseSql, "city")),
     db.$queryRaw<{ value: string }[]>(
       buildDistinctOptionsQuery(
@@ -101,6 +113,14 @@ export async function getMarketScoreSummary(
       ),
     ),
   ])
+
+  const cities = ensureRows(citiesRaw)
+  const areas = ensureRows(areasRaw)
+  const statusBands = ensureRows(statusBandsRaw)
+  const priceTiers = ensureRows(priceTiersRaw)
+  const safetyBands = ensureRows(safetyBandsRaw)
+  const conservativePool = ensureRows(conservativePoolRaw)
+  const balancedPool = ensureRows(balancedPoolRaw)
 
   const total = totalRows[0]?.count ?? 0
   const enrichPercent = (rows: SummaryDistribution[]) =>
@@ -243,7 +263,7 @@ export async function buildTruthChecks(db: DbClient) {
     contract,
   )
 
-  const [conservativeRows, balancedRows, speculativeLeakRows, horizonViolationRows] = await Promise.all([
+  const [conservativeRowsRaw, balancedRowsRaw, speculativeLeakRowsRaw, horizonViolationRowsRaw] = await Promise.all([
     db.$queryRaw<SummaryDistribution[]>(buildDistributionQuery(conservativeBase, "safety_band")),
     db.$queryRaw<SummaryDistribution[]>(buildDistributionQuery(balancedBase, "safety_band")),
     db.$queryRaw<{ count: number }[]>(
@@ -273,6 +293,11 @@ export async function buildTruthChecks(db: DbClient) {
       ),
     ),
   ])
+
+  const conservativeRows = ensureRows(conservativeRowsRaw)
+  const balancedRows = ensureRows(balancedRowsRaw)
+  const speculativeLeakRows = ensureRows(speculativeLeakRowsRaw)
+  const horizonViolationRows = ensureRows(horizonViolationRowsRaw)
 
   return {
     conservativeReady: conservativeRows,

@@ -1,8 +1,7 @@
-import { readFile } from "node:fs/promises"
-import path from "node:path"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { CheckCircle2, AlertTriangle, Clock, Database } from "lucide-react"
+import { getMarketPulse } from "@/lib/decision-infrastructure"
 
 const services = [
   {
@@ -12,13 +11,13 @@ const services = [
     icon: CheckCircle2,
   },
   {
-    name: "Workspace insights",
+    name: "Investor desk insights",
     status: "Operational",
     detail: "Market views online",
     icon: CheckCircle2,
   },
   {
-    name: "Media Creator",
+    name: "Media workflows",
     status: "Operational",
     detail: "Storyboards and timelines stable",
     icon: CheckCircle2,
@@ -47,23 +46,17 @@ const incidents = [
 ]
 
 async function getSnapshotSummary() {
-  try {
-    const filePath = path.join(process.cwd(), "docs", "neon-data-snapshot.md")
-    const content = await readFile(filePath, "utf-8")
-    const generatedMatch = content.match(/Generated:\s*(.+)/)
-    const generated = generatedMatch?.[1]?.trim() ?? null
-    const countFor = (name: string) => {
-      const match = content.match(new RegExp(`\\*\\*${name}\\*\\*:\\s*(\\d+)`))
-      return match ? Number(match[1]) : null
-    }
-    return {
-      generated,
-      masterCount: countFor("entrestate_master"),
-      mediaCount: countFor("media_enrichment"),
-      scoredCount: countFor("market_scores_v1"),
-    }
-  } catch {
-    return null
+  const pulse = await getMarketPulse()
+  const summary = pulse.summary as Record<string, unknown> | null
+  const projects = typeof summary?.projects === "number" ? summary.projects : null
+  const highConfidence = pulse.confidence_distribution.find((item) => String(item.label ?? "").toUpperCase() === "HIGH")
+  const buySignals = pulse.timing_signals.find((item) => String(item.label ?? "").toUpperCase() === "BUY")
+
+  return {
+    generated: pulse.data_as_of,
+    masterCount: projects,
+    mediaCount: highConfidence?.count ?? null,
+    scoredCount: buySignals?.count ?? null,
   }
 }
 
@@ -80,7 +73,7 @@ export default async function StatusPage() {
               Entrestate market health
             </h1>
             <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-              Live availability for market coverage, workspace, and media creation.
+              Live availability for market coverage, investor workflows, and media production.
             </p>
           </div>
 
@@ -112,16 +105,16 @@ export default async function StatusPage() {
                 </p>
               </div>
               <div className="rounded-lg border border-border/60 bg-secondary/30 p-4">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">Projects scored</p>
-                <p className="text-xl font-semibold text-foreground mt-2">
-                  {snapshot?.scoredCount?.toLocaleString() ?? "—"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-border/60 bg-secondary/30 p-4">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">Media coverage</p>
-                <p className="text-xl font-semibold text-foreground mt-2">
-                  {snapshot?.mediaCount?.toLocaleString() ?? "—"}
-                </p>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">High confidence rows</p>
+                  <p className="text-xl font-semibold text-foreground mt-2">
+                    {snapshot?.scoredCount?.toLocaleString() ?? "—"}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/60 bg-secondary/30 p-4">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">BUY timing signals</p>
+                  <p className="text-xl font-semibold text-foreground mt-2">
+                    {snapshot?.mediaCount?.toLocaleString() ?? "—"}
+                  </p>
               </div>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">

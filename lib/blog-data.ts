@@ -17,14 +17,14 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
-    slug: "decision-infrastructure-not-ai-theater",
-    title: "Decision Infrastructure, Not AI Theater",
+    slug: "disciplined-decisions-not-market-noise",
+    title: "Disciplined Decisions, Not Market Noise",
     excerpt:
-      "Why Entrestate OS is built on operational physics, not prediction hype.",
+      "Why Entrestate OS is built on disciplined market evidence, not hype.",
     content: `
-# Decision Infrastructure, Not AI Theater
+# Disciplined Decisions, Not Market Noise
 
-Real estate volatility does not reward guesswork. Entrestate OS treats intelligence as infrastructure: enforce correctness, protect capital, and sustain lawful behavior under uncertainty.
+Real estate volatility does not reward guesswork. Entrestate OS treats market evidence as the foundation: enforce correctness, protect capital, and sustain lawful behavior under uncertainty.
 
 ## The Shift
 - Replace forecasting with disciplined decision surfaces.
@@ -32,7 +32,7 @@ Real estate volatility does not reward guesswork. Entrestate OS treats intellige
 - Treat market presence as a controlled system.
 
 ## What It Enables
-Decision Infrastructure creates a stable operating layer for brokers: predictable risk controls, measurable signal quality, and repeatable execution.
+Disciplined decision workflows create a stable operating layer for brokers: predictable risk controls, measurable signal quality, and repeatable execution.
     `.trim(),
     author: {
       name: "Nadia El-Masri",
@@ -145,7 +145,7 @@ Entrestate OS treats inventory as semantic anchors. Pages are generated from ver
 - Page semantics drive ads, not guesswork.
 
 ## Outcome
-Inventory becomes infrastructure, not just content.
+Inventory becomes a decision foundation, not just content.
     `.trim(),
     author: {
       name: "Hassan Al-Mansouri",

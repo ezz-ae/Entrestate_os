@@ -62,10 +62,10 @@ export default function SignUpPage() {
 
         <div className="max-w-md">
           <h2 className="text-3xl font-serif text-primary-foreground leading-tight mb-4">
-            A professional workspace for studying markets and operating decisions.
+            A professional platform for studying markets and operating decisions.
           </h2>
           <p className="text-primary-foreground/60 leading-relaxed">
-            Explore market data, analyze price behavior, compare scenarios, and work with verified agents when you are ready to act.
+            Explore market data, analyze price behavior, compare scenarios, and work with verified advisors when you are ready to act.
           </p>
         </div>
 
@@ -76,7 +76,7 @@ export default function SignUpPage() {
           </div>
           <div>
             <p className="text-3xl font-serif text-primary-foreground">Verified</p>
-            <p className="text-sm text-primary-foreground/60 mt-1">Agents</p>
+            <p className="text-sm text-primary-foreground/60 mt-1">Advisors</p>
           </div>
           <div>
             <p className="text-3xl font-serif text-primary-foreground">Signed</p>

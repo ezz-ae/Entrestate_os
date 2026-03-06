@@ -109,7 +109,7 @@ export default function ForgotPasswordPage() {
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
               </div>
-              <span className="text-foreground">SOC 2 Type II certified infrastructure</span>
+              <span className="text-foreground">SOC 2 Type II certified security controls</span>
             </div>
           </div>
         </div>

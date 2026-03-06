@@ -24,11 +24,11 @@ import type { MarketScoreCharts, MarketScoreSummary } from "@/lib/market-score/t
 
 const tools = [
   { icon: BarChart3, label: "Dashboards", description: "Layered market views", href: "/workspace/dashboards" },
-  { icon: Database, label: "Market Intelligence Desk", description: "Explore market signals and build briefs", href: "/workspace/data-scientist" },
+  { icon: Database, label: "Market Research Desk", description: "Explore market signals and build briefs", href: "/workspace/data-scientist" },
   { icon: ShieldCheck, label: "Market Score", description: "Score validation and match checks", href: "/market-score" },
   { icon: TrendingUp, label: "Investor Match Desk", description: "Match client profiles to the right inventory", href: "/agent-runtime" },
-  { icon: Layers, label: "Market Data Integration", description: "Data products and download packs", href: "/workspace/daas" },
-  { icon: Bot, label: "Agent Creator", description: "Design automation agents", href: "/workspace/agent-creator" },
+  { icon: Layers, label: "Market Data Packs", description: "Data products and download packs", href: "/workspace/daas" },
+  { icon: Bot, label: "Lead Flow Builder", description: "Set up client intake and routing flows", href: "/workspace/agent-creator" },
   { icon: Search, label: "Search", description: "City, area, project search", href: "/workspace/search" },
   { icon: Bookmark, label: "Saved Searches", description: "Your bookmarked queries", href: "/workspace/saved-searches" },
   { icon: GitCompare, label: "Comparisons", description: "Side-by-side scenarios", href: "/workspace/comparisons" },
@@ -86,7 +86,7 @@ export default function WorkspacePage() {
   const [dataLoading, setDataLoading] = useState(true)
 
   const coreToolLabels = [
-    "Market Intelligence Desk",
+    "Market Research Desk",
     "Market Score",
     "Investor Match Desk",
     "Dashboards",
@@ -188,12 +188,12 @@ export default function WorkspacePage() {
           {/* Header */}
           <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6 mb-12">
             <div className="max-w-xl">
-              <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">Workspace</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">Investor Desk</p>
               <h1 className="text-3xl md:text-5xl font-serif text-foreground leading-tight">
                 Choose your next focus.
               </h1>
               <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-                Keep it simple: start with the core tools, then open advanced work only when you need it.
+                Keep it simple: start with the core workflows, then open advanced work only when you need it.
               </p>
             </div>
             <div className="flex gap-2">
@@ -273,12 +273,12 @@ export default function WorkspacePage() {
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">More tools</p>
                   <h3 className="text-lg font-medium text-foreground mt-2">Deep dives & utilities</h3>
                   <p className="text-sm text-muted-foreground mt-3">
-                    Use these when you need a specific output. Each tool is focused and short.
+                    Use these when you need a specific output. Each workflow is focused and short.
                   </p>
                   <div className="mt-6 space-y-3 text-sm text-muted-foreground">
                     <p>• Quick searches for listings and inventory.</p>
                     <p>• Comparisons and saved decision notes.</p>
-                    <p>• Data sources, math tools, and automation.</p>
+                    <p>• Data sources, math tools, and intake flows.</p>
                   </div>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-background/40 p-6">

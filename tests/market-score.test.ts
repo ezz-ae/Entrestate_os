@@ -59,6 +59,7 @@ describe("market score queries", () => {
 describe("market score summary", () => {
   it("returns summary data with stubbed db", async () => {
     const responses: unknown[] = [
+      [{ table_name: "automation_inventory_view_v1" }],
       [{ exists: false }],
       [{ count: 10 }],
       [{ avg_score: 72.4 }],
@@ -95,6 +96,7 @@ describe("market score summary", () => {
 describe("truth checks", () => {
   it("returns keys for truth checks", async () => {
     const responses: unknown[] = [
+      [{ table_name: "automation_inventory_view_v1" }],
       [{ label: "Capital Safe", count: 3 }],
       [{ label: "Opportunistic", count: 10 }],
       [{ count: 0 }],

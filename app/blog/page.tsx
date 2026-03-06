@@ -42,7 +42,7 @@ export default function BlogPage() {
             </Badge>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Insights & Updates</h1>
             <p className="text-lg text-muted-foreground">
-              Decision infrastructure, operational physics, and market intelligence from the Entrestate OS team.
+              Real estate strategy, market evidence, and execution insights from the Entrestate team.
             </p>
           </div>
 

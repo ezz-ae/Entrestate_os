@@ -6,7 +6,7 @@ import { Mail, PhoneCall, ArrowRight, FileText } from "lucide-react"
 const supportChannels = [
   {
     title: "Email support",
-    description: "Reach our operations team for workspace, data, or agent questions.",
+    description: "Reach our operations team for dashboard, data, or advisor workflow questions.",
     icon: Mail,
     action: "support@entrestate.ai",
   },
@@ -18,7 +18,7 @@ const supportChannels = [
   },
   {
     title: "Documentation",
-    description: "Read the decision infrastructure primers and workflow guides.",
+    description: "Read market methodology notes and workflow guides.",
     icon: FileText,
     action: "Browse docs",
   },
