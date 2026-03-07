@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { CopilotProvider } from "@/components/copilot-provider"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ export default function RootLayout({
             {children}
           </CopilotProvider>
         </ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   )
