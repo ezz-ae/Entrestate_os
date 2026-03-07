@@ -3,22 +3,18 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from "react"
 import { DefaultChatTransport } from "ai"
-import { useCopilot } from "@/components/copilot-provider"
+import { useChat } from "@ai-sdk/react"
 import {
   BarChart3,
   BookmarkPlus,
-  Building2,
-  CheckCircle2,
   FileText,
   Gauge,
   Loader2,
   Radar,
   Scale,
   Search,
-  Send,
   SlidersHorizontal,
   Sparkles,
-  TrendingUp,
   WandSparkles,
   type LucideIcon,
 } from "lucide-react"
@@ -26,7 +22,6 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 
 type ChatInterfaceProps = {
-  id?: string
   initialDailyLimit?: number | null
   initialRemaining?: number | null
 }
@@ -187,10 +182,10 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[]): Workspace
 
   if (rows.length === 0) {
     return [
-      { title: "Matched projects", value: "0", subtitle: "Ask a question to screen inventory" },
-      { title: "Avg asking price", value: "-", subtitle: "Appears after a search query" },
-      { title: "Market signal", value: "-", subtitle: "BUY · HOLD · WAIT timing signal" },
-      { title: "Data confidence", value: "-", subtitle: "HIGH · MEDIUM · LOW quality tier" },
+      { title: "Matches", value: "0", subtitle: "Run a query to load inventory" },
+      { title: "Average price", value: "-", subtitle: "Waiting for market response" },
+      { title: "Signal", value: "-", subtitle: "No timing signal yet" },
+      { title: "Confidence", value: "-", subtitle: "Awaiting source confidence" },
     ]
   }
 
@@ -221,10 +216,10 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[]): Workspace
   const avgScore = scoreValues.length > 0 ? scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length : null
 
   return [
-    { title: "Matched projects", value: rows.length.toLocaleString(), subtitle: "From live inventory scan" },
-    { title: "Avg asking price", value: formatAed(avgPrice), subtitle: "Across matched results" },
-    { title: "Market signal", value: topTiming, subtitle: "Dominant timing signal in results" },
-    { title: "Data confidence", value: topConfidence, subtitle: `Avg investor score: ${formatMetric(avgScore)}` },
+    { title: "Matches", value: rows.length.toLocaleString(), subtitle: "Live inventory rows" },
+    { title: "Average price", value: formatAed(avgPrice), subtitle: "Current result set" },
+    { title: "Signal", value: topTiming, subtitle: "Most frequent timing signal" },
+    { title: "Confidence", value: topConfidence, subtitle: `Avg score ${formatMetric(avgScore)}` },
   ]
 }
 
@@ -266,56 +261,20 @@ function resolveDataFreshness(toolOutputs: Record<string, unknown>[]) {
   return null
 }
 
-const capabilityCards = [
-  {
-    label: "Screen Properties",
-    description: "Find ranked projects by budget, area, and return profile using live scoring data.",
-    example: "2BR under AED 2M, BUY signal, Grade A risk",
-    prompt: "Find 2BR projects under AED 2M with BUY timing signal and stress grade A or B. Rank by investor score and show yield for each.",
-    icon: Search,
-  },
-  {
-    label: "Compare Markets",
-    description: "Side-by-side analysis of areas or projects across price, yield, and risk metrics.",
-    example: "Dubai Marina vs JBR: yield, risk, and timing",
-    prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing signal. Which is the better entry point right now and why?",
-    icon: Scale,
-  },
-  {
-    label: "Stress Test",
-    description: "Model cash flows, DSCR, and investment risk under different market scenarios.",
-    example: "7% vacancy, 5.5% mortgage, 30% down payment",
-    prompt: "Stress-test a 2BR investment under AED 2M in Dubai. Assumptions: 30% down payment, 5.25% interest rate, 6% vacancy, 18% operating costs. Show net cash flow, DSCR, and stress-adjusted returns.",
-    icon: SlidersHorizontal,
-  },
-  {
-    label: "Investor Memo",
-    description: "Generate a structured due diligence brief with price reality, developer track record, and risk verdict.",
-    example: "Full memo: Marina Vista — pricing, risk, verdict",
-    prompt: "Generate a full investor memo for Marina Vista. Include: price reality check versus area average, developer reliability score, stress grade assessment, timing signal context, and final investment verdict.",
-    icon: FileText,
-  },
-]
-
 const commandPrompts = [
   {
-    label: "Screen",
-    prompt: "Find 2BR projects under AED 2M with BUY timing signal and stress grade A or B. Rank by investor score.",
-    icon: Search,
-  },
-  {
     label: "Compare",
-    prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing signal. Which is the better entry point?",
+    prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing signal.",
     icon: Scale,
   },
   {
-    label: "Stress test",
-    prompt: "Stress-test a 2BR under AED 2M in Dubai: 30% down, 5.25% interest, 6% vacancy. Show DSCR and net cash flow.",
+    label: "Simulate",
+    prompt: "Stress-test a 2BR under AED 2M in Dubai with conservative assumptions.",
     icon: Radar,
   },
   {
-    label: "Investor memo",
-    prompt: "Generate a full investor memo for Marina Vista: price reality, area risk, developer diligence, stress test, and verdict.",
+    label: "Report",
+    prompt: "Generate a full investor memo for Marina Vista with price reality, area risk, developer diligence, and stress test.",
     icon: FileText,
   },
 ]
@@ -365,17 +324,10 @@ const slashCommands: SlashCommand[] = [
 ]
 
 export function ChatInterface({
-  id,
   initialDailyLimit = 3,
   initialRemaining = 3,
 }: ChatInterfaceProps) {
-  const [mounted, setMounted] = useState(false)
   const [input, setInput] = useState("")
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   const [dailyLimit, setDailyLimit] = useState<number | null>(initialDailyLimit)
   const [remaining, setRemaining] = useState<number | null>(initialRemaining)
   const [limitMessage, setLimitMessage] = useState<string | null>(null)
@@ -390,10 +342,13 @@ export function ChatInterface({
   const [slashActiveIndex, setSlashActiveIndex] = useState(0)
   const [canvasOpen, setCanvasOpen] = useState(false)
 
-  const { messages, sendMessage, status, error } = useCopilot()
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/copilot",
+    }),
+  })
 
   useEffect(() => {
-    if (!mounted) return;
     let cancelled = false
 
     const loadUsage = async () => {
@@ -464,6 +419,7 @@ export function ChatInterface({
     () => comparisonRows.find((row) => row.label === selectedProject) ?? null,
     [comparisonRows, selectedProject],
   )
+
   const simulationAssumptions = useMemo(
     () =>
       `down payment ${downPaymentPct}%, interest ${interestRatePct.toFixed(2)}%, vacancy ${vacancyPct}%, operating cost ${opexPct}%`,
@@ -534,18 +490,15 @@ export function ChatInterface({
   const dynamicSuggestions = useMemo(() => {
     if (!selectedRow) {
       return [
-        "Find BUY signal projects under AED 2M in Dubai Marina with stress grade A or B.",
-        "Which Dubai area offers the best yield-to-price ratio right now?",
-        "Compare Emaar vs Damac reliability — which developer carries lower delivery risk?",
-        "What does a BUY signal mean and how is it calculated in this platform?",
+        "Find BUY signal projects under AED 2M in Dubai Marina.",
+        "Show developers with reliability above 8 and stress grade A/B.",
       ]
     }
 
     return [
-      `Generate a full investor memo for ${selectedRow.label} — pricing, risk, developer track record, and verdict.`,
-      `How does ${selectedRow.label} compare to top alternatives in ${selectedRow.area} on yield and risk grade?`,
-      `Stress test ${selectedRow.label}: model 8% vacancy, 5.5% interest rate, and conservative rent assumptions.`,
-      `What are the key investment risks for ${selectedRow.label} and what would change the outlook?`,
+      `Generate an investor memo for ${selectedRow.label}.`,
+      `Run price reality check for ${selectedRow.label}.`,
+      `Compare ${selectedRow.label} against top alternatives in ${selectedRow.area}.`,
     ]
   }, [selectedRow])
 
@@ -596,20 +549,6 @@ export function ChatInterface({
   }
 
   const onInputKeyDown = async (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-      event.preventDefault()
-      const value = input.trim()
-      if (!value) return
-      if (value.startsWith("/") && filteredSlashCommands.length > 0) {
-        const command = filteredSlashCommands[slashActiveIndex] ?? filteredSlashCommands[0]
-        if (command) await activateSlashCommand(command)
-      } else {
-        await sendPrompt(value)
-        setInput("")
-      }
-      return
-    }
-
     if (!isSlashPaletteOpen || filteredSlashCommands.length === 0) return
 
     if (event.key === "ArrowDown") {
@@ -774,60 +713,30 @@ export function ChatInterface({
 
   if (!hasConversation) {
     return (
-      <div className="mx-auto w-full max-w-5xl">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10">
-            <Sparkles className="h-6 w-6 text-primary" />
+      <div className="mx-auto w-full max-w-4xl">
+        <section className="rounded-2xl border border-border/70 bg-card/60 p-5 md:p-8">
+          <div className="mb-6 text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Chat</p>
+            <h2 className="mt-2 text-2xl font-semibold text-foreground md:text-3xl">Ask anything real estate</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Start with one prompt. Type <span className="font-medium text-foreground">/</span> for command mode.
+            </p>
           </div>
-          <h1 className="text-2xl font-semibold text-foreground md:text-3xl">Real Estate AI Copilot</h1>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
-            Screen properties, compare markets, stress test investments, and generate investor memos — powered by live UAE data.
-          </p>
-        </div>
 
-        {/* Capability tiles */}
-        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {capabilityCards.map((card) => {
-            const Icon = card.icon
-            return (
-              <button
-                key={card.label}
-                type="button"
-                disabled={status !== "ready" || chatBlocked}
-                onClick={() => void sendPrompt(card.prompt)}
-                className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/70 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-card disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <div className="mb-3 flex items-center gap-2.5">
-                  <div className="rounded-xl border border-border/50 bg-background/60 p-2">
-                    <Icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="text-sm font-semibold text-foreground">{card.label}</span>
-                </div>
-                <p className="text-xs leading-relaxed text-muted-foreground">{card.description}</p>
-                <p className="mt-2 line-clamp-1 text-[11px] text-primary/60 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                  → {card.example}
-                </p>
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Input card */}
-        <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/70">
-          <form onSubmit={submitMessage}>
-            <div className="relative p-4 pb-2">
+          <form onSubmit={submitMessage} className="space-y-3">
+            <div className="relative">
               <Textarea
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => { void onInputKeyDown(event) }}
-                placeholder="Ask about a project, area, or investment scenario. Type / for quick commands."
-                className="min-h-28 resize-none border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0"
-                disabled={chatBlocked}
+                onKeyDown={(event) => {
+                  void onInputKeyDown(event)
+                }}
+                placeholder="Ask for project screening, price checks, area risk briefs, and full investor memos. Type / for commands."
+                className="min-h-40 resize-y text-base"
               />
 
               {isSlashPaletteOpen ? (
-                <div className="absolute bottom-[100%] left-4 right-4 mb-2 rounded-xl border border-border/70 bg-card/98 p-2 shadow-xl backdrop-blur">
+                <div className="absolute bottom-[100%] left-0 right-0 mb-2 rounded-xl border border-border/70 bg-card/95 p-2 shadow-xl backdrop-blur">
                   {filteredSlashCommands.length === 0 ? (
                     <p className="px-2 py-1 text-xs text-muted-foreground">No matching commands.</p>
                   ) : (
@@ -839,11 +748,13 @@ export function ChatInterface({
                           key={command.id}
                           type="button"
                           onClick={() => void activateSlashCommand(command)}
-                          className={`flex w-full items-start gap-2.5 rounded-lg px-3 py-2.5 text-left transition ${isActive ? "bg-primary/10" : "hover:bg-background"}`}
+                          className={`flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left transition ${
+                            isActive ? "bg-primary/12" : "hover:bg-background"
+                          }`}
                         >
-                          <Icon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary" />
+                          <Icon className="mt-0.5 h-3.5 w-3.5 text-primary" />
                           <span>
-                            <span className="block text-xs font-semibold text-foreground">{command.title}</span>
+                            <span className="block text-xs font-medium text-foreground">{command.title}</span>
                             <span className="block text-[11px] text-muted-foreground">{command.description}</span>
                           </span>
                         </button>
@@ -854,82 +765,80 @@ export function ChatInterface({
               ) : null}
             </div>
 
-            <div className="flex items-center justify-between gap-3 border-t border-border/50 px-4 py-3">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {slashCommands.slice(0, 4).map((cmd) => (
-                  <button
-                    key={cmd.id}
-                    type="button"
-                    onClick={() => setInput(`/${cmd.id}`)}
-                    className="rounded-full border border-border/60 bg-background/60 px-2.5 py-0.5 text-[11px] text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
-                  >
-                    /{cmd.id}
-                  </button>
-                ))}
-                <span className="hidden text-[11px] text-muted-foreground sm:block">· ⌘↵ to send</span>
-              </div>
-              <div className="flex flex-shrink-0 items-center gap-3">
-                {dailyLimit !== null ? (
-                  <p className="hidden text-xs text-muted-foreground sm:block">
-                    {Math.max(remaining ?? 0, 0)}/{dailyLimit} today
-                  </p>
-                ) : null}
-                <Button type="submit" disabled={submitBlocked}>
-                  <Send className="mr-1.5 h-3.5 w-3.5" />
-                  Analyse
-                </Button>
-              </div>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                {dailyLimit === null
+                  ? "Unlimited chats in your current plan."
+                  : `${Math.max(remaining ?? 0, 0)} of ${dailyLimit} chats remaining today.`}
+              </p>
+              <Button type="submit" disabled={submitBlocked} className="min-w-24 px-6">
+                {status === "streaming" ? "Running" : "Send"}
+              </Button>
             </div>
           </form>
-        </div>
 
-        {limitMessage ? (
-          <p className="mt-3 text-sm text-amber-500">
-            {limitMessage} <Link href="/pricing" className="underline">Upgrade plan</Link>
-          </p>
-        ) : null}
-        {isLimitError ? (
-          <p className="mt-3 text-sm text-amber-500">
-            Daily limit reached. <Link href="/pricing" className="underline">Upgrade to continue</Link>
-          </p>
-        ) : null}
-        {error && !isLimitError ? <p className="mt-3 text-sm text-red-400">{error.message}</p> : null}
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {commandPrompts.map((command) => {
+              const Icon = command.icon
+              return (
+                <button
+                  key={command.label}
+                  type="button"
+                  onClick={() => void sendPrompt(command.prompt)}
+                  disabled={status !== "ready"}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs text-foreground transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {command.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {limitMessage ? (
+            <p className="mt-3 text-sm text-amber-600">
+              {limitMessage} <Link href="/pricing" className="underline">Subscribe</Link>
+            </p>
+          ) : null}
+
+          {isLimitError ? (
+            <p className="mt-3 text-sm text-amber-600">
+              You have finished your daily limit for your current plan. <Link href="/pricing" className="underline">Subscribe</Link>
+            </p>
+          ) : null}
+
+          {error && !isLimitError ? <p className="mt-3 text-sm text-red-500">{error.message}</p> : null}
+        </section>
       </div>
     )
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[1.4fr_0.6fr]">
-      <section className="overflow-hidden rounded-2xl border border-border bg-card p-4 md:p-5">
-
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/40 px-3 py-2.5">
+    <div className={canvasOpen ? "grid gap-4 xl:grid-cols-[1.25fr_0.75fr]" : "grid gap-4"}>
+      <section className="rounded-2xl border border-border/70 bg-card/60 p-4 md:p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/80 px-3 py-2.5">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            <p className="text-sm font-semibold text-foreground">AI Copilot</p>
-            {dataFreshness ? (
-              <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] text-muted-foreground">
-                Data: {new Date(dataFreshness).toLocaleDateString()}
-              </span>
-            ) : null}
+            <p className="text-sm font-medium text-foreground">Chat</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`flex items-center gap-1.5 text-xs ${status === "streaming" ? "text-primary" : "text-muted-foreground"}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${status === "streaming" ? "animate-pulse bg-primary" : "bg-emerald-400"}`} />
-              {status === "streaming" ? "Analysing" : "Ready"}
-            </span>
+            <div className="text-xs text-muted-foreground">
+              <span>{status === "streaming" ? "Analyzing" : "Ready"}</span>
+              {dataFreshness ? <span> • Data as of: {new Date(dataFreshness).toLocaleString()}</span> : null}
+            </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={() => setCanvasOpen((current) => !current)}
-              className="h-7 px-2.5 text-xs xl:hidden"
+              className="h-8 px-3 text-xs"
             >
-              {canvasOpen ? "Hide" : "Canvas"}
+              {canvasOpen ? "Hide Canvas" : "Show Canvas"}
             </Button>
           </div>
         </div>
 
-        <div className="relative z-10 mb-3 flex flex-wrap gap-1.5">
+        <div className="mb-3 flex flex-wrap gap-2">
           {commandPrompts.map((command) => {
             const Icon = command.icon
             return (
@@ -938,31 +847,31 @@ export function ChatInterface({
                 type="button"
                 onClick={() => void sendPrompt(command.prompt)}
                 disabled={status !== "ready"}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background px-3 py-1.5 text-xs text-foreground transition hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Icon className="h-3 w-3" />
+                <Icon className="h-3.5 w-3.5" />
                 {command.label}
               </button>
             )
           })}
 
-          {dynamicSuggestions.slice(0, 2).map((suggestion) => (
+          {dynamicSuggestions.map((suggestion) => (
             <button
               key={suggestion}
               type="button"
               onClick={() => void sendPrompt(suggestion)}
               disabled={status !== "ready"}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary/35 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <WandSparkles className="h-3 w-3" />
-              <span className="max-w-48 truncate">{suggestion}</span>
+              <WandSparkles className="h-3.5 w-3.5" />
+              <span className="max-w-56 truncate">{suggestion}</span>
             </button>
           ))}
         </div>
 
-        <div className="relative z-10 h-[58vh] space-y-3 overflow-y-auto rounded-xl border border-border/60 bg-background/55 p-3 backdrop-blur-sm md:h-[60vh]">
+        <div className="h-[58vh] space-y-3 overflow-y-auto rounded-xl border border-border/60 bg-background/50 p-3 md:h-[60vh]">
           {(messages as any[]).length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border/60 bg-background/75 p-4 text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
               Ask for anything real estate. Compare projects, simulate scenarios, draft reports, and run live intelligence from one chat.
             </div>
           ) : null}
@@ -970,41 +879,31 @@ export function ChatInterface({
           {(messages as any[]).map((message) => (
             <div
               key={message.id}
-              className={`animate-msg-in ${message.role === "user" ? "ml-auto max-w-[85%]" : "mr-auto max-w-[95%]"}`}
+              className={message.role === "user" ? "ml-auto max-w-[92%]" : "mr-auto max-w-[92%]"}
             >
-              {message.role === "user" ? (
-                <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/85 px-4 py-3 text-sm text-primary-foreground shadow-[0_12px_24px_-14px_rgba(37,99,235,0.5)]">
-                  {messageText(message) || "..."}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-background/95 via-card/90 to-background/85 px-4 py-3.5 text-sm text-foreground shadow-[0_16px_28px_-18px_rgba(56,189,248,0.3)]">
-                  <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    <Sparkles className="h-2.5 w-2.5" />
-                    Copilot
-                  </p>
-                  <p className="whitespace-pre-wrap leading-relaxed">
-                    {messageText(message) || "Running analysis..."}
-                  </p>
-                </div>
-              )}
+              <div
+                className={
+                  message.role === "user"
+                    ? "rounded-2xl bg-primary px-4 py-3 text-sm text-primary-foreground"
+                    : "rounded-2xl border border-border/60 bg-card px-4 py-3 text-sm text-foreground"
+                }
+              >
+                {messageText(message) || (message.role === "assistant" ? "Running analysis..." : "...")}
+              </div>
             </div>
           ))}
 
           {status === "streaming" ? (
             <div className="mr-auto max-w-[92%]">
-              <div className="inline-flex items-center gap-2.5 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card/90 to-background/85 px-4 py-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <span className="chat-dot-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                  <span className="chat-dot-2 h-1.5 w-1.5 rounded-full bg-primary" />
-                  <span className="chat-dot-3 h-1.5 w-1.5 rounded-full bg-primary" />
-                </span>
-                Analysing live market data
+              <div className="inline-flex items-center gap-2 rounded-2xl border border-border/60 bg-card px-4 py-2.5 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Running tools and assembling response
               </div>
             </div>
           ) : null}
         </div>
 
-        <form onSubmit={submitMessage} className="relative z-10 mt-4 space-y-3">
+        <form onSubmit={submitMessage} className="mt-4 space-y-3">
           <div className="relative">
             <Textarea
               value={input}
@@ -1012,7 +911,7 @@ export function ChatInterface({
               onKeyDown={(event) => {
                 void onInputKeyDown(event)
               }}
-              placeholder="Ask for project screening, price checks, area risk briefs, and full investor memos."
+              placeholder="Ask for project screening, price checks, area risk briefs, and full investor memos. Type / for commands."
               className="min-h-20 resize-y text-base"
             />
 
@@ -1049,12 +948,11 @@ export function ChatInterface({
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
               {dailyLimit === null
-                ? "Unlimited · ⌘↵ to send"
-                : `${Math.max(remaining ?? 0, 0)}/${dailyLimit} today · ⌘↵ to send`}
+                ? "Unlimited chats in your current plan."
+                : `${Math.max(remaining ?? 0, 0)} of ${dailyLimit} chats remaining today.`}
             </p>
-            <Button type="submit" disabled={submitBlocked} className="gap-1.5">
-              <Send className="h-3.5 w-3.5" />
-              {status === "streaming" ? "Analysing…" : "Send"}
+            <Button type="submit" disabled={submitBlocked} className="min-w-24 px-6">
+              {status === "streaming" ? "Running" : "Send"}
             </Button>
           </div>
         </form>
@@ -1074,48 +972,42 @@ export function ChatInterface({
         {error && !isLimitError ? <p className="mt-3 text-sm text-red-500">{error.message}</p> : null}
       </section>
 
-      <aside className={`overflow-hidden rounded-2xl border border-border bg-card p-4 md:p-5 ${canvasOpen ? "block" : "hidden xl:block"}`}>
-
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Gauge className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold text-foreground">Decision Canvas</h3>
-          </div>
-          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">Live</span>
+      {canvasOpen ? (
+      <aside className="rounded-2xl border border-border/70 bg-card/60 p-4 md:p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Gauge className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">Intelligence Canvas</h3>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
           {workspaceCards.map((card) => (
-            <article
-              key={card.title}
-              className="rounded-xl border border-border bg-muted/30 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted/50"
-            >
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{card.title}</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{card.value}</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">{card.subtitle}</p>
+            <article key={card.title} className="rounded-xl border border-border/60 bg-background/80 p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{card.title}</p>
+              <p className="mt-1 text-lg font-semibold text-foreground">{card.value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{card.subtitle}</p>
             </article>
           ))}
         </div>
 
-        <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
+        <div className="mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
           <div className="mb-2 flex items-center gap-2">
             <BarChart3 className="h-3.5 w-3.5 text-primary" />
-            <p className="text-xs font-semibold text-foreground">Performance Curves</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Signal Curves</p>
           </div>
 
           {comparisonRows.length < 2 ? (
-            <p className="text-xs text-muted-foreground">Run a comparison query to see score and yield trend curves.</p>
+            <p className="text-xs text-muted-foreground">Need at least two rows to draw trend curves.</p>
           ) : (
             <div className="space-y-2">
-              <div className="rounded-lg border border-border/60 bg-gradient-to-br from-card/90 to-background/80 p-2">
-                <p className="mb-1 text-[11px] font-medium text-muted-foreground">Investor Score</p>
+              <div className="rounded-lg border border-border/60 bg-card/80 p-2">
+                <p className="mb-1 text-[11px] text-muted-foreground">Score trend</p>
                 <svg viewBox="0 0 220 64" className="h-16 w-full">
                   <path d={buildAreaPath(scoreSparkPath)} fill="rgba(59,130,246,0.16)" />
                   <path d={scoreSparkPath} stroke="rgb(59,130,246)" strokeWidth="2" fill="none" />
                 </svg>
               </div>
-              <div className="rounded-lg border border-border/60 bg-gradient-to-br from-card/90 to-background/80 p-2">
-                <p className="mb-1 text-[11px] font-medium text-muted-foreground">Gross Yield %</p>
+              <div className="rounded-lg border border-border/60 bg-card/80 p-2">
+                <p className="mb-1 text-[11px] text-muted-foreground">Yield trend</p>
                 <svg viewBox="0 0 220 64" className="h-16 w-full">
                   <path d={buildAreaPath(yieldSparkPath)} fill="rgba(34,197,94,0.16)" />
                   <path d={yieldSparkPath} stroke="rgb(34,197,94)" strokeWidth="2" fill="none" />
@@ -1125,14 +1017,14 @@ export function ChatInterface({
           )}
         </div>
 
-        <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
+        <div className="mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
           <div className="mb-2 flex items-center gap-2">
             <BarChart3 className="h-3.5 w-3.5 text-primary" />
-            <p className="text-xs font-semibold text-foreground">Project Comparison</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Live Compare</p>
           </div>
 
           {comparisonRows.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Ask to compare projects or areas to populate this panel.</p>
+            <p className="text-xs text-muted-foreground">Run a compare query to populate live rows.</p>
           ) : (
             <div className="space-y-2">
               {comparisonRows.map((row) => (
@@ -1142,8 +1034,8 @@ export function ChatInterface({
                   onClick={() => setSelectedProject(row.label)}
                   className={`w-full rounded-lg border px-2.5 py-2 text-left transition ${
                     row.label === selectedProject
-                      ? "border-primary/60 bg-primary/12 shadow-[0_14px_28px_-20px_rgba(37,99,235,0.5)]"
-                      : "border-border/60 bg-gradient-to-br from-card/90 to-background/80 hover:border-primary/30"
+                      ? "border-primary/60 bg-primary/10"
+                      : "border-border/60 bg-card/80 hover:border-primary/30"
                   }`}
                 >
                   <p className="truncate text-xs font-medium text-foreground">{row.label}</p>
@@ -1179,14 +1071,14 @@ export function ChatInterface({
           )}
         </div>
 
-        <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
+        <div className="mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
           <div className="mb-2 flex items-center gap-2">
             <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
-            <p className="text-xs font-semibold text-foreground">Investment Simulator</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Simulation Lab</p>
           </div>
 
           {!selectedRow ? (
-            <p className="text-xs text-muted-foreground">Select a project from the comparison table to model its cash flows and risk.</p>
+            <p className="text-xs text-muted-foreground">Select a project from Live Compare to run a simulation.</p>
           ) : (
             <>
               <p className="text-xs font-medium text-foreground">{selectedRow.label}</p>
@@ -1249,31 +1141,23 @@ export function ChatInterface({
               </div>
 
               {simulationMetrics ? (
-                <div className="mt-3 grid grid-cols-2 gap-1.5">
-                  {[
-                    { label: "Loan amount", value: formatAed(simulationMetrics.loanAmount) },
-                    { label: "Monthly mortgage", value: formatAed(simulationMetrics.monthlyPayment) },
-                    { label: "Net annual rent", value: formatAed(simulationMetrics.effectiveAnnualRent) },
-                    { label: "Annual cash flow", value: formatAed(simulationMetrics.annualNetCashFlow), highlight: (simulationMetrics.annualNetCashFlow ?? 0) >= 0 },
-                    { label: "Stress cash flow", value: formatAed(simulationMetrics.stressAdjustedCashFlow) },
-                    { label: "DSCR ratio", value: formatMetric(simulationMetrics.dscr, 2) },
-                  ].map((item) => (
-                    <div key={item.label} className="rounded-lg border border-border/50 bg-background/40 px-2.5 py-2">
-                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground">{item.label}</p>
-                      <p className={`mt-0.5 text-xs font-semibold tabular-nums ${item.highlight ? "text-emerald-400" : "text-foreground"}`}>{item.value}</p>
-                    </div>
-                  ))}
+                <div className="mt-3 space-y-1.5 rounded-lg border border-border/60 bg-card/80 p-2.5 text-[11px] text-muted-foreground">
+                  <p>Loan amount: <span className="text-foreground">{formatAed(simulationMetrics.loanAmount)}</span></p>
+                  <p>Monthly payment: <span className="text-foreground">{formatAed(simulationMetrics.monthlyPayment)}</span></p>
+                  <p>Effective annual rent: <span className="text-foreground">{formatAed(simulationMetrics.effectiveAnnualRent)}</span></p>
+                  <p>Annual net cash flow: <span className="text-foreground">{formatAed(simulationMetrics.annualNetCashFlow)}</span></p>
+                  <p>Stress-adjusted cash flow: <span className="text-foreground">{formatAed(simulationMetrics.stressAdjustedCashFlow)}</span></p>
+                  <p>DSCR: <span className="text-foreground">{formatMetric(simulationMetrics.dscr, 2)}</span></p>
                 </div>
               ) : null}
 
-              <Button type="button" className="mt-3 w-full gap-1.5" variant="secondary" onClick={() => void runSimulationInChat()}>
-                <TrendingUp className="h-3.5 w-3.5" />
-                Run in AI chat
+              <Button type="button" className="mt-3 w-full" variant="secondary" onClick={() => void runSimulationInChat()}>
+                Push simulation to chat
               </Button>
 
-              <Button type="button" className="mt-2 w-full gap-1.5" variant="outline" onClick={() => void saveToShortlist()}>
-                <BookmarkPlus className="h-3.5 w-3.5" />
-                Save to watchlist
+              <Button type="button" className="mt-2 w-full" variant="outline" onClick={() => void saveToShortlist()}>
+                <BookmarkPlus className="mr-1.5 h-3.5 w-3.5" />
+                Save selected to shortlist
               </Button>
 
               {shortlistResult.message ? (
@@ -1285,13 +1169,13 @@ export function ChatInterface({
           )}
         </div>
 
-        <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
+        <div className="mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
           <div className="mb-2 flex items-center gap-2">
             <FileText className="h-3.5 w-3.5 text-primary" />
-            <p className="text-xs font-semibold text-foreground">Report Export</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Report Studio</p>
           </div>
           <p className="text-xs text-muted-foreground">
-            Save the AI's analysis as a structured investor report you can download and share.
+            Save the latest assistant output as a report draft and download it.
           </p>
           <Button
             type="button"
@@ -1320,12 +1204,13 @@ export function ChatInterface({
         </div>
 
         {latestAssistantText ? (
-          <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
+          <div className="mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Latest output</p>
             <p className="mt-2 line-clamp-6 text-xs text-foreground">{latestAssistantText}</p>
           </div>
         ) : null}
       </aside>
+      ) : null}
     </div>
   )
 }

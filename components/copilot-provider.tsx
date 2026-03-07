@@ -1,10 +1,19 @@
 "use client"
 
-import { createContext, useContext, ReactNode, useState, useEffect } from "react"
-import { useChat, type UseChatHelpers } from "@ai-sdk/react"
-import { DefaultChatTransport } from "ai"
+import { createContext, useContext, ReactNode, useState } from "react"
+import { useChat, type Message } from "@ai-sdk/react"
 
-type CopilotContextValue = UseChatHelpers<any> & {
+// Manually define the context value type for stability
+type CopilotContextValue = {
+  messages: Message[]
+  input: string
+  handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement>) => void
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+  append: (message: Message | Omit<Message, "id">) => Promise<string | null | undefined>
+  isLoading: boolean
+  status: "idle" | "streaming" | "submitted" | "ready"
+  error: Error | undefined
+  id: string | undefined
   isSidebarOpen: boolean
   toggleSidebar: () => void
   openSidebar: () => void
@@ -17,14 +26,22 @@ export function CopilotProvider({ children, initialId }: { children: ReactNode; 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // Initialize the global chat instance
-  const chatHelpers = useChat({
+  const { 
+    messages, 
+    input, 
+    handleInputChange, 
+    handleSubmit, 
+    append,
+    isLoading, 
+    status, 
+    error, 
+    id 
+  } = useChat({
     id: initialId,
-    transport: new DefaultChatTransport({
-      api: "/api/copilot",
-      body: { id: initialId },
-    }),
+    api: "/api/copilot",
+    body: { id: initialId }, // Pass the session ID to the backend
     onError: (error) => {
-      console.error("Copilot error:", error)
+      console.error("Copilot Provider Error:", error)
     },
   })
 
@@ -35,7 +52,15 @@ export function CopilotProvider({ children, initialId }: { children: ReactNode; 
   return (
     <CopilotContext.Provider
       value={{
-        ...chatHelpers,
+        messages,
+        input,
+        handleInputChange,
+        handleSubmit,
+        append,
+        isLoading,
+        status,
+        error,
+        id,
         isSidebarOpen,
         toggleSidebar,
         openSidebar,

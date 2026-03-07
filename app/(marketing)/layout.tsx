@@ -1,7 +1,9 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { Space_Grotesk, Fraunces, JetBrains_Mono } from "next/font/google"
 import Link from "next/link"
 import { MarketingProviders } from "./marketing-providers"
+import { SmartChat } from "@/components/smart-chat"
 import "./seq.css"
 
 export const metadata: Metadata = {
@@ -10,13 +12,25 @@ export const metadata: Metadata = {
     "Create storyboards, visuals, and launch-ready video timelines from project media.",
 }
 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space",
+})
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+})
+
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" })
+
 export default function MarketingLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <div className="seq-scope font-sans antialiased">
+    <div className={`seq-scope ${spaceGrotesk.variable} ${fraunces.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
       <header className="app-header fixed top-0 left-0 right-0 z-50 h-14 border-b border-[var(--border-default)] bg-[var(--surface-0)]/90 backdrop-blur">
         <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2 text-[var(--text-primary)]">
@@ -48,6 +62,7 @@ export default function MarketingLayout({
         </div>
       </header>
       <MarketingProviders>{children}</MarketingProviders>
+      <SmartChat />
     </div>
   )
 }

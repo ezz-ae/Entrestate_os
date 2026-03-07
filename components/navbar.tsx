@@ -1,17 +1,16 @@
 "use client"
 
 import type React from "react"
-import { Suspense, useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu, X, ArrowRight } from "lucide-react"
 import { AccountMenu } from "@/components/account-menu"
 import { MarketPulsePopover } from "@/components/market-pulse-popover"
-import { LlmSidebar } from "@/components/llm-search/sidebar"
-import { useCopilot } from "@/components/copilot-provider"
-import { MessageSquare } from "lucide-react"
+import { SmartChat } from "@/components/smart-chat"
 
 const navLinks = [
+  { label: "Chat", href: "/chat" },
   { label: "Overview", href: "/overview" },
   { label: "Market Data", href: "/top-data" },
   { label: "Areas", href: "/areas" },
@@ -23,7 +22,6 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  const { toggleSidebar, openSidebar } = useCopilot()
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -92,13 +90,6 @@ export function Navbar() {
             </div>
 
             <div className="flex items-center gap-3">
-              <button
-                onClick={toggleSidebar}
-                className="hidden md:flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/80 transition-colors"
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                Copilot
-              </button>
               <Link
                 href="/contact"
                 className="hidden sm:flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
@@ -145,15 +136,6 @@ export function Navbar() {
         />
         <div className="relative h-full flex flex-col justify-center items-center px-6">
           <nav className="flex flex-col items-center gap-1">
-            <button
-              onClick={() => {
-                openSidebar()
-                setIsMobileMenuOpen(false)
-              }}
-              className="text-3xl font-medium text-foreground hover:text-accent transition-all duration-500 py-2 opacity-100 translate-y-0"
-            >
-              Chat
-            </button>
             {navLinks.map((link, i) => (
               <Link
                 key={link.label}
@@ -192,9 +174,7 @@ export function Navbar() {
           </div>
         </div>
       </div>
-      <Suspense fallback={null}>
-        <LlmSidebar />
-      </Suspense>
+      <SmartChat />
     </>
   )
 }
