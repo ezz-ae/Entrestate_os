@@ -11,10 +11,11 @@ import { SmartChat } from "@/components/smart-chat"
 
 const navLinks = [
   { label: "Chat", href: "/chat" },
-  { label: "Properties", href: "/properties" },
+  { label: "Overview", href: "/overview" },
+  { label: "Market Data", href: "/top-data" },
   { label: "Areas", href: "/areas" },
   { label: "Developers", href: "/developers" },
-  { label: "Market Data", href: "/top-data" },
+  { label: "Properties", href: "/properties" },
 ]
 
 export function Navbar() {

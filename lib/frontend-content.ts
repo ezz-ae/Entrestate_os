@@ -1,6 +1,6 @@
 import "server-only"
 import { Prisma, dbQuery } from "@/lib/db"
-import { getInventoryTableSql } from "@/lib/inventory-table"
+import { getDetailTableSql } from "@/lib/inventory-table"
 
 export type HomepageSectionRow = {
   id: string
@@ -35,7 +35,7 @@ export type ApiContentRow = {
   tier_required: string | null
 }
 
-const INVENTORY_TABLE_SQL = getInventoryTableSql()
+const DETAIL_TABLE_SQL = getDetailTableSql()
 
 export async function getHomepageContentSections() {
   const rows = await dbQuery<HomepageSectionRow>(Prisma.sql`
@@ -73,7 +73,7 @@ export async function getMarketPulseSummary() {
       ROUND(AVG(l1_canonical_yield::numeric) FILTER (WHERE l1_canonical_yield > 0), 1) AS avg_yield,
       COUNT(CASE WHEN l3_timing_signal = 'BUY' THEN 1 END)::int AS buy_signals,
       COUNT(CASE WHEN l1_confidence = 'HIGH' THEN 1 END)::int AS high_confidence
-    FROM ${INVENTORY_TABLE_SQL}
+    FROM ${DETAIL_TABLE_SQL}
   `)
 
   return {
@@ -93,7 +93,7 @@ export async function getOutcomeIntentCounts() {
     SELECT
       LOWER(TRIM(intent)) AS intent,
       COUNT(*)::int AS count
-    FROM ${INVENTORY_TABLE_SQL},
+    FROM ${DETAIL_TABLE_SQL},
       LATERAL unnest(COALESCE(outcome_intent, ARRAY[]::text[])) AS intent
     GROUP BY 1
     ORDER BY count DESC

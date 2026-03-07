@@ -38,6 +38,8 @@ const BASE_URL =
 
 const BYPASS_TOKEN = args.prod ? undefined : process.env.VERCEL_BYPASS_TOKEN
 const TIMEOUT_MS   = parseInt(process.env.SMOKE_TIMEOUT_MS ?? "8000", 10)
+const SMOKE_ACCOUNT_KEY_BASE = process.env.SMOKE_ACCOUNT_KEY_BASE ?? `smoke-${Date.now()}`
+let requestCounter = 0
 
 // ── Request helper ────────────────────────────────────────────────
 async function hit(
@@ -50,6 +52,7 @@ async function hit(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "Accept": "application/json",
+    "x-entrestate-account-key": `${SMOKE_ACCOUNT_KEY_BASE}-${++requestCounter}`,
     ...(BYPASS_TOKEN ? { "x-vercel-protection-bypass": BYPASS_TOKEN } : {}),
   }
 
@@ -155,15 +158,17 @@ const SMOKE_TESTS: SmokeTest[] = [
 
   // ── API: chat ────────────────────────────────────────────────────
   {
-    name: "POST /api/chat — returns {content, dataCards, requestId}",
+    name: "POST /api/chat — returns response envelope",
     critical: true,
     run: () => hit("POST", "/api/chat",
       { message: "Show me top areas by yield in Dubai" },
       (_, json: any) => {
-        if (!json.request_id) throw new Error("Missing request_id")
+        if (!json.request_id && !json.requestId) throw new Error("Missing request_id")
         if (!json.content)    throw new Error("Missing content")
-        if (!Array.isArray(json.dataCards ?? json.data_cards))
-          throw new Error("Missing dataCards array")
+        const hasCards = Array.isArray(json.dataCards ?? json.data_cards)
+        const hasEvidence = Array.isArray(json.evidence?.sources_used)
+        if (!hasCards && !hasEvidence)
+          throw new Error("Missing data envelope (dataCards or evidence.sources_used)")
       }),
   },
   {

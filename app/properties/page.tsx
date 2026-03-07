@@ -40,15 +40,51 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
     <main id="main-content">
       <Navbar />
       <div className="mx-auto max-w-[1400px] px-6 pb-20 pt-28 md:pt-36">
-        <header className="mb-8">
+        <header className="mb-6">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Properties</p>
           <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">UAE Project Inventory</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Browse {result.total.toLocaleString()} projects with pricing, stress, timing, and confidence signals.
+            {result.total.toLocaleString()} projects — each scored for pricing, market timing, stress resilience, and data confidence.
           </p>
         </header>
 
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {/* Filter / Signal chips */}
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Filter by signal:</span>
+          {(["BUY", "HOLD", "WAIT"] as const).map((signal) => {
+            const colors = signal === "BUY"
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+              : signal === "HOLD"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                : "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+            return (
+              <a
+                key={signal}
+                href={`?timing=${signal}`}
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${colors} ${params.timing === signal ? "ring-1 ring-offset-1 ring-current" : ""}`}
+              >
+                {signal}
+              </a>
+            )
+          })}
+          {(["A", "B", "C"] as const).map((grade) => (
+            <a
+              key={grade}
+              href={`?stress=${grade}`}
+              className={`rounded-full border border-border/60 bg-card/60 px-3 py-1 text-xs font-medium text-muted-foreground transition hover:border-primary/40 hover:text-foreground ${params.stress === grade ? "border-primary/60 bg-primary/10 text-foreground" : ""}`}
+            >
+              Risk Grade {grade}
+            </a>
+          ))}
+          {(params.timing || params.stress) ? (
+            <a href="/properties" className="rounded-full border border-border/60 px-3 py-1 text-xs text-muted-foreground transition hover:text-foreground">
+              Clear filters
+            </a>
+          ) : null}
+        </div>
+
+        <section className="relative grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 xl:grid-cols-3">
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(900px_circle_at_50%_-10%,rgba(59,130,246,0.22),transparent_58%)]" />
           {result.projects.map((project) => (
             <ProjectCard
               key={String(project.slug)}

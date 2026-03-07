@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { MapPin } from "lucide-react"
 import { formatAed, formatYield } from "@/components/decision/formatters"
 
 type AreaCardProps = {
@@ -39,75 +40,101 @@ function tileCoordinate(latitude: number, longitude: number, zoom: number) {
 }
 
 function slugifyProject(name: string) {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 }
 
 function buildStaticMapTileUrl(areaName: string, city?: string | null) {
   const normalizedCity = (city ?? "dubai").toLowerCase().trim()
   const center = CITY_CENTERS[normalizedCity] ?? CITY_CENTERS.dubai
-
   const jitterLat = (hashToUnit(`${areaName}-lat`) - 0.5) * 0.18
   const jitterLon = (hashToUnit(`${areaName}-lon`) - 0.5) * 0.22
-
   const lat = Math.min(Math.max(center.lat + jitterLat, 22.8), 26.7)
   const lon = Math.min(Math.max(center.lon + jitterLon, 51.8), 56.9)
   const zoom = 11
   const { x, y } = tileCoordinate(lat, lon, zoom)
-
   return `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`
 }
 
 export function AreaCard(area: AreaCardProps) {
   const mapImageUrl = buildStaticMapTileUrl(area.area, area.city)
-  const topProjects = Array.isArray(area.top_projects) ? area.top_projects.slice(0, 3) : []
+  const topProjects = Array.isArray(area.top_projects) ? area.top_projects.slice(0, 4) : []
 
   return (
-    <article className="group relative block overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40">
-      <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/0 transition group-hover:border-primary/35" />
-      <div className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(520px_circle_at_50%_-200px,rgba(59,130,246,0.18),transparent_55%)] opacity-70" />
-
-      <div className="relative h-28 overflow-hidden rounded-xl border border-border/60 bg-muted/20">
+    <article className="group relative isolate block overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.4)]">
+      {/* Map image */}
+      <div className="relative h-36 overflow-hidden bg-muted/30">
         <img
           src={mapImageUrl}
           alt={`Map of ${area.area}`}
           loading="lazy"
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          style={{ filter: "saturate(0.85) brightness(0.95)" }}
         />
-        <div className="pointer-events-none absolute left-5 top-8 h-2.5 w-2.5 rounded-full border border-white/80 bg-primary shadow-[0_0_0_4px_rgba(59,130,246,0.28)]" />
-      </div>
-
-      <div className="relative z-20">
-        <p className="mt-3 text-base font-semibold text-foreground">{area.area}</p>
-        <p className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground">{area.city ?? "UAE"}</p>
-      </div>
-
-      <div className="relative z-20 mt-2 space-y-1 text-xs text-muted-foreground">
-        <p>Projects: {area.projects?.toLocaleString() ?? "—"}</p>
-        <p>Avg price: {formatAed(area.avg_price)}</p>
-        <p>Avg yield: {formatYield(area.avg_yield)}</p>
-      </div>
-
-      {topProjects.length > 0 ? (
-        <div className="absolute inset-x-4 bottom-4 z-20 translate-y-3 rounded-xl border border-primary/20 bg-background/90 p-3 opacity-0 shadow-xl backdrop-blur-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Top projects</p>
-          <ul className="mt-1 flex flex-wrap gap-1.5 text-xs text-foreground">
-            {topProjects.map((project) => (
-              <li key={`${area.slug}-${project}`}>
-                <Link
-                  href={`/properties/${slugifyProject(project)}`}
-                  className="rounded-full border border-border/70 bg-card px-2 py-1 text-[11px] text-foreground transition hover:border-primary/40 hover:text-primary"
-                >
-                  {project}
-                </Link>
-              </li>
-            ))}
-          </ul>
+        {/* Gradient over map */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-card via-card/10 to-transparent" />
+        {/* Map pin */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="relative flex items-center justify-center">
+            <div className="h-3 w-3 rounded-full border-2 border-white bg-primary shadow-md" />
+            <div className="absolute h-6 w-6 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: "2s" }} />
+          </div>
         </div>
-      ) : null}
+        {/* City label */}
+        {area.city ? (
+          <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full border border-white/20 bg-black/40 px-2.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+            <MapPin className="h-2.5 w-2.5" />
+            {area.city}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Content */}
+      <div className="p-4">
+        {/* Area name + project count */}
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-base font-semibold text-foreground">{area.area}</p>
+          {area.projects ? (
+            <span className="flex-shrink-0 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {area.projects} projects
+            </span>
+          ) : null}
+        </div>
+
+        {/* Key metrics — always visible */}
+        <div className="mt-3 flex gap-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Avg Price</p>
+            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatAed(area.avg_price)}</p>
+          </div>
+          <div className="h-auto w-px bg-border/60" />
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Avg Yield</p>
+            <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+              {formatYield(area.avg_yield)}
+            </p>
+          </div>
+        </div>
+
+        {/* Hover reveal — top projects */}
+        {topProjects.length > 0 ? (
+          <div className="mt-3 translate-y-2 overflow-hidden opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+            <div className="border-t border-border/60 pt-3">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Top Projects</p>
+              <div className="flex flex-wrap gap-1.5">
+                {topProjects.map((project) => (
+                  <Link
+                    key={`${area.slug}-${project}`}
+                    href={`/properties/${slugifyProject(project)}`}
+                    className="relative z-30 rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-[11px] text-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+                  >
+                    {project}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       <Link href={`/areas/${area.slug}`} className="absolute inset-0 z-10" aria-label={`Open ${area.area} area details`} />
     </article>

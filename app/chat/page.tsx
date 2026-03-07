@@ -25,12 +25,9 @@ export default async function ChatPage({
     <main id="main-content">
       <Navbar />
       <div className="mx-auto max-w-[1600px] px-6 pb-14 pt-28 md:pt-32">
-        <header className="mb-5">
-          <h1 className="text-3xl font-semibold text-foreground md:text-4xl">Chat</h1>
-          {billingParam === "success" ? (
-            <p className="mt-2 text-sm text-emerald-600">Subscription activated. Your new tier is syncing now.</p>
-          ) : null}
-        </header>
+        {billingParam === "success" ? (
+          <p className="mb-4 text-sm text-emerald-600">Subscription activated. Your new tier is syncing now.</p>
+        ) : null}
         <ChatInterface
           initialDailyLimit={usage.limit}
           initialRemaining={usage.remaining}

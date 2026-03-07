@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server"
 import { getPublicErrorMessage, getRequestId } from "@/lib/api-errors"
 import { Prisma, dbQuery } from "@/lib/db"
-import { getInventoryTableSql } from "@/lib/inventory-table"
+import { getDetailTableSql } from "@/lib/inventory-table"
 import { hasTierAccess } from "@/lib/tier-access"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const INVENTORY_TABLE_SQL = getInventoryTableSql()
+const DETAIL_TABLE_SQL = getDetailTableSql()
 
 export async function GET(request: Request, context: { params: Promise<{ name: string }> }) {
   const requestId = getRequestId(request)
@@ -29,7 +29,7 @@ export async function GET(request: Request, context: { params: Promise<{ name: s
         l1_confidence,
         l1_source_coverage,
         engine_god_metric
-      FROM ${INVENTORY_TABLE_SQL}
+      FROM ${DETAIL_TABLE_SQL}
       WHERE LOWER(name) = LOWER(${projectName})
       LIMIT 1
     `)

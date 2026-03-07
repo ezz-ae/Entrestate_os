@@ -38,6 +38,26 @@ function asText(value: unknown, fallback = "—") {
   return typeof value === "string" && value.trim().length > 0 ? value : fallback
 }
 
+function formatAedValue(value: number | null) {
+  return value === null ? "—" : formatAed(value)
+}
+
+function formatYieldValue(value: number | null) {
+  return value === null ? "—" : formatYield(value)
+}
+
+function formatTimestamp(value: string | null) {
+  if (!value) return "—"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
 function valueFromKeys(record: GenericObject, keys: string[]) {
   for (const key of keys) {
     if (key in record) return record[key]
@@ -84,12 +104,14 @@ function sectionSubtitle(confidence: string | null, lastUpdated: string | null) 
 }
 
 function SectionShell({
+  section,
   title,
   subtitle,
   confidence,
   lastUpdated,
   children,
 }: {
+  section: string
   title: string
   subtitle: string | null
   confidence: string | null
@@ -97,18 +119,25 @@ function SectionShell({
   children: React.ReactNode
 }) {
   return (
-    <article className="rounded-2xl border border-border/70 bg-card/70 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-2">
+    <article className="overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.10)] dark:hover:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.35)]">
+
+      {/* Section header */}
+      <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border/60 px-4 py-3.5">
         <div>
           <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{subtitle ?? sectionSubtitle(confidence, lastUpdated)}</p>
+          {subtitle ? (
+            <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground line-clamp-2">{subtitle}</p>
+          ) : null}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-shrink-0 items-center gap-2">
           <ConfidenceBadge confidence={confidence} />
-          <span className="text-[11px] text-muted-foreground">{lastUpdated ?? "—"}</span>
+          {lastUpdated ? (
+            <span className="text-[10px] text-muted-foreground">{formatTimestamp(lastUpdated)}</span>
+          ) : null}
         </div>
       </div>
-      <div className="mt-3">{children}</div>
+
+      <div className="p-4">{children}</div>
     </article>
   )
 }
@@ -130,11 +159,11 @@ function MarketPulseView({ data }: { data: unknown }) {
       </div>
       <div className="rounded-lg border border-border/60 bg-background/40 p-3">
         <p className="text-[11px] text-muted-foreground">Avg price</p>
-        <p className="mt-1 text-lg font-semibold text-foreground">{formatAed(avgPrice ?? 0)}</p>
+        <p className="mt-1 text-lg font-semibold text-foreground">{formatAedValue(avgPrice)}</p>
       </div>
       <div className="rounded-lg border border-border/60 bg-background/40 p-3">
         <p className="text-[11px] text-muted-foreground">Avg yield</p>
-        <p className="mt-1 text-lg font-semibold text-foreground">{formatYield(avgYield)}</p>
+        <p className="mt-1 text-lg font-semibold text-foreground">{formatYieldValue(avgYield)}</p>
       </div>
       <div className="rounded-lg border border-border/60 bg-background/40 p-3">
         <p className="text-[11px] text-muted-foreground">BUY signals</p>
@@ -173,8 +202,8 @@ function TimingSignalsView({ data }: { data: unknown }) {
               <TimingSignalBadge signal={signal.key} />
               <p className="text-base font-semibold text-foreground">{count.toLocaleString()}</p>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">Avg price: {formatAed(avgPrice ?? 0)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Avg yield: {formatYield(avgYield)}</p>
+            <p className="mt-2 text-xs text-muted-foreground">Avg price: {formatAedValue(avgPrice)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Avg yield: {formatYieldValue(avgYield)}</p>
           </div>
         )
       })}
@@ -244,7 +273,7 @@ function AffordabilityView({ data }: { data: unknown }) {
             <p className="text-sm font-medium text-foreground">{tier}</p>
             <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
               <span>{projects.toLocaleString()} projects</span>
-              <span>{formatYield(avgYield)}</span>
+              <span>{formatYieldValue(avgYield)}</span>
               {buySignals !== null ? <span>{buySignals.toLocaleString()} BUY</span> : null}
             </div>
           </div>
@@ -288,7 +317,7 @@ function TopProjectsTableView({ data }: { data: unknown }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-border/60">
       <table className="min-w-full text-left text-xs">
-        <thead className="bg-background/70 text-muted-foreground">
+        <thead className="bg-background/85 text-muted-foreground">
           <tr>
             <th className="px-3 py-2">Project</th>
             <th className="px-3 py-2">Area</th>
@@ -312,12 +341,12 @@ function TopProjectsTableView({ data }: { data: unknown }) {
             const godMetric = asNumber(valueFromKeys(row, ["god_metric", "engine_god_metric", "score"]))
 
             return (
-              <tr key={`${name}-${index}`} className="border-t border-border/50 bg-card/30">
+              <tr key={`${name}-${index}`} className="border-t border-border/50 bg-card/30 transition hover:bg-primary/5">
                 <td className="px-3 py-2 font-medium text-foreground">{name}</td>
                 <td className="px-3 py-2 text-muted-foreground">{area}</td>
                 <td className="px-3 py-2 text-muted-foreground">{developer}</td>
-                <td className="px-3 py-2 text-muted-foreground">{formatAed(price ?? 0)}</td>
-                <td className="px-3 py-2 text-muted-foreground">{formatYield(yieldValue)}</td>
+                <td className="px-3 py-2 text-muted-foreground">{formatAedValue(price)}</td>
+                <td className="px-3 py-2 text-muted-foreground">{formatYieldValue(yieldValue)}</td>
                 <td className="px-3 py-2">
                   <StressGradeBadge grade={stressGrade} />
                 </td>
@@ -355,7 +384,7 @@ function AreaIntelligenceView({ data }: { data: unknown }) {
             <p className="text-sm font-medium text-foreground">{area}</p>
             <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
               <span>{projects.toLocaleString()} projects</span>
-              <span>{formatAed(avgPrice ?? 0)}</span>
+              <span>{formatAedValue(avgPrice)}</span>
               <span>Eff {formatScore(efficiency)}</span>
               <span>Supply {formatScore(supply)}</span>
             </div>
@@ -415,7 +444,7 @@ function GoldenVisaView({ data }: { data: unknown }) {
         </div>
         <div>
           <p className="text-[11px] text-muted-foreground">Avg price</p>
-          <p className="text-base font-semibold text-foreground">{formatAed(avgPrice ?? 0)}</p>
+          <p className="text-base font-semibold text-foreground">{formatAedValue(avgPrice)}</p>
         </div>
         <div>
           <p className="text-[11px] text-muted-foreground">Safe count</p>
@@ -521,7 +550,7 @@ function renderSection(section: string, data: unknown) {
 
 export function TopDataSection({ section, title, subtitle, confidence, lastUpdated, data }: TopDataSectionProps) {
   return (
-    <SectionShell title={title} subtitle={subtitle} confidence={confidence} lastUpdated={lastUpdated}>
+    <SectionShell section={section} title={title} subtitle={subtitle} confidence={confidence} lastUpdated={lastUpdated}>
       {renderSection(section, data)}
     </SectionShell>
   )

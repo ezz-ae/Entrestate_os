@@ -3,6 +3,7 @@ import path from "node:path"
 import { describe, expect, it } from "vitest"
 import { buildDealScreenerQuery } from "@/lib/copilot/executor"
 import { collectGuardrailWarnings, validateToolOutput } from "@/lib/copilot/guardrails"
+import { getDetailTableName } from "@/lib/inventory-table"
 import {
   copilotSystemPrompt,
   dealScreenerInputSchema,
@@ -76,10 +77,12 @@ describe("copilot SQL builder", () => {
     )
 
     const text = sqlText(sql)
-    expect(text).toContain("FROM inventory_full")
+    expect(text).toContain(`FROM ${getDetailTableName()}`)
     expect(text).toContain("l1_canonical_price <=")
-    expect(text).toContain("bedrooms_max >=")
-    expect(text).toContain("bedrooms_min <=")
+    expect(text).toContain("COALESCE(bedrooms_max, bedrooms_min) >=")
+    expect(text).toContain("COALESCE(bedrooms_min, bedrooms_max) <=")
+    expect(text).toContain("COALESCE(l1_confidence, 'LOW') IN ('MEDIUM', 'HIGH')")
+    expect(text).toContain("TRIM(COALESCE(developer, '')) <>")
     expect(text).toContain("l3_timing_signal =")
     expect(text).toContain("ORDER BY engine_god_metric DESC")
     expect(text).toContain("LIMIT")

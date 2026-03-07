@@ -1,6 +1,18 @@
 import "server-only"
 import { Prisma } from "@prisma/client"
 import { withStatementTimeout } from "@/lib/db-guardrails"
+import {
+  getAreasTableName,
+  getAreasTableSql,
+  getDetailTableName,
+  getDetailTableSql,
+  getDevelopersTableName,
+  getDevelopersTableSql,
+  getInventoryTableName,
+  getInventoryTableSql,
+  getStatusTableName,
+  getStatusTableSql,
+} from "@/lib/inventory-table"
 
 const STATEMENT_TIMEOUT_MS = 9000
 
@@ -10,6 +22,46 @@ const PROJECT_SORT_COLUMNS = {
   yield: "l1_canonical_yield",
   reliability: "l2_developer_reliability",
 } as const
+
+const CURATED_PROJECT_SORT_COLUMNS = {
+  god_metric: "investment_score",
+  price: "price",
+  yield: "yield",
+  reliability: "developer_reliability",
+} as const
+
+const UAE_CITIES = [
+  "dubai",
+  "abu dhabi",
+  "sharjah",
+  "ajman",
+  "ras al khaimah",
+  "fujairah",
+  "umm al quwain",
+  "al ain",
+] as const
+
+const PROPERTIES_TABLE_NAME = getInventoryTableName()
+const PROPERTIES_TABLE_SQL = getInventoryTableSql()
+const DETAIL_TABLE_NAME = getDetailTableName()
+const DETAIL_TABLE_SQL = getDetailTableSql()
+const AREAS_TABLE_NAME = getAreasTableName()
+const AREAS_TABLE_SQL = getAreasTableSql()
+const DEVELOPERS_TABLE_NAME = getDevelopersTableName()
+const DEVELOPERS_TABLE_SQL = getDevelopersTableSql()
+const STATUS_TABLE_NAME = getStatusTableName()
+const STATUS_TABLE_SQL = getStatusTableSql()
+
+function tableEndsWith(tableName: string, suffix: string) {
+  return tableName.toLowerCase().endsWith(suffix.toLowerCase())
+}
+
+const USE_CURATED_PROPERTIES_VIEW =
+  tableEndsWith(PROPERTIES_TABLE_NAME, "entrestate_projects_api") ||
+  tableEndsWith(PROPERTIES_TABLE_NAME, "entrestate_projects_api_full")
+
+const USE_CURATED_AREAS_VIEW = tableEndsWith(AREAS_TABLE_NAME, "entrestate_areas_api")
+const USE_CURATED_DEVELOPERS_VIEW = tableEndsWith(DEVELOPERS_TABLE_NAME, "entrestate_developers_api")
 
 type SortBy = keyof typeof PROJECT_SORT_COLUMNS
 
@@ -40,6 +92,62 @@ export type ListPropertiesInput = {
 
 function toSqlList(values: string[]) {
   return Prisma.join(values.map((value) => Prisma.sql`${value}`))
+}
+
+type QualityOptions = {
+  requirePrice?: boolean
+  requireStress?: boolean
+  requireArea?: boolean
+  requireDeveloper?: boolean
+  requireConfidence?: boolean
+  onlyUae?: boolean
+  excludeGarbageDeveloper?: boolean
+  requireBedroomSanity?: boolean
+}
+
+function buildQualityClauses(options: QualityOptions = {}): Prisma.Sql[] {
+  const clauses: Prisma.Sql[] = []
+
+  if (options.requirePrice) {
+    clauses.push(Prisma.sql`COALESCE(l1_canonical_price, 0) > 0`)
+  }
+
+  if (options.requireStress) {
+    clauses.push(Prisma.sql`l2_stress_test_grade IS NOT NULL`)
+  }
+
+  if (options.requireArea) {
+    clauses.push(Prisma.sql`TRIM(COALESCE(final_area, area, '')) <> ''`)
+  }
+
+  if (options.requireDeveloper) {
+    clauses.push(Prisma.sql`TRIM(COALESCE(developer, '')) <> ''`)
+  }
+
+  if (options.requireConfidence) {
+    clauses.push(Prisma.sql`COALESCE(l1_confidence, 'LOW') IN ('MEDIUM', 'HIGH')`)
+  }
+
+  if (options.onlyUae) {
+    clauses.push(
+      Prisma.sql`LOWER(COALESCE(NULLIF(TRIM(final_city), ''), NULLIF(TRIM(city), ''), '')) IN (${toSqlList([...UAE_CITIES])})`,
+    )
+  }
+
+  if (options.excludeGarbageDeveloper) {
+    clauses.push(Prisma.sql`LOWER(COALESCE(developer, '')) NOT LIKE '%breadcrumb%'`)
+    clauses.push(Prisma.sql`LOWER(COALESCE(developer, '')) NOT LIKE '%@id%'`)
+    clauses.push(Prisma.sql`LOWER(COALESCE(developer, '')) NOT LIKE '%http%'`)
+    clauses.push(Prisma.sql`LENGTH(COALESCE(developer, '')) <= 80`)
+  }
+
+  if (options.requireBedroomSanity) {
+    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`)
+    clauses.push(Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`)
+    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`)
+  }
+
+  return clauses
 }
 
 function normalizeValue(value: unknown): unknown {
@@ -95,12 +203,47 @@ export function slugifyName(value: string) {
 }
 
 function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
-  if (!filters) return []
-  const clauses: Prisma.Sql[] = [Prisma.sql`name IS NOT NULL`]
+  const clauses: Prisma.Sql[] = USE_CURATED_PROPERTIES_VIEW
+    ? [
+        Prisma.sql`name IS NOT NULL`,
+        Prisma.sql`COALESCE(price, 0) > 0`,
+        Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`,
+        Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`,
+        Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`,
+        Prisma.sql`TRIM(COALESCE(area, '')) <> ''`,
+        Prisma.sql`TRIM(COALESCE(developer, '')) <> ''`,
+        Prisma.sql`COALESCE(confidence, 'LOW') IN ('MEDIUM', 'HIGH')`,
+      ]
+    : [
+        Prisma.sql`name IS NOT NULL`,
+        ...buildQualityClauses({
+          requirePrice: true,
+          requireStress: true,
+          requireArea: true,
+          requireDeveloper: true,
+          requireConfidence: true,
+          onlyUae: true,
+          excludeGarbageDeveloper: true,
+          requireBedroomSanity: true,
+        }),
+      ]
   const gradeOrder = ["A", "B", "C", "D"] as const
 
+  if (!filters) return clauses
+
+  if (typeof filters.bedsMin === "number" || typeof filters.bedsMax === "number") {
+    clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) BETWEEN 0 AND 10`)
+    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`)
+    clauses.push(Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`)
+    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`)
+  }
+
   if (filters.area) {
-    clauses.push(Prisma.sql`LOWER(COALESCE(final_area, area)) LIKE LOWER(${`%${filters.area}%`})`)
+    clauses.push(
+      USE_CURATED_PROPERTIES_VIEW
+        ? Prisma.sql`LOWER(area) LIKE LOWER(${`%${filters.area}%`})`
+        : Prisma.sql`LOWER(COALESCE(final_area, area)) LIKE LOWER(${`%${filters.area}%`})`,
+    )
   }
   if (filters.developer) {
     clauses.push(Prisma.sql`LOWER(developer) LIKE LOWER(${`%${filters.developer}%`})`)
@@ -109,45 +252,60 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
     clauses.push(Prisma.sql`outcome_intent @> ARRAY[${filters.intent}]::text[]`)
   }
   if (typeof filters.budgetMaxAed === "number") {
-    clauses.push(Prisma.sql`l1_canonical_price <= ${filters.budgetMaxAed}`)
+    clauses.push(
+      USE_CURATED_PROPERTIES_VIEW
+        ? Prisma.sql`price <= ${filters.budgetMaxAed}`
+        : Prisma.sql`l1_canonical_price <= ${filters.budgetMaxAed}`,
+    )
   }
   if (typeof filters.budgetMinAed === "number") {
-    clauses.push(Prisma.sql`l1_canonical_price >= ${filters.budgetMinAed}`)
+    clauses.push(
+      USE_CURATED_PROPERTIES_VIEW
+        ? Prisma.sql`price >= ${filters.budgetMinAed}`
+        : Prisma.sql`l1_canonical_price >= ${filters.budgetMinAed}`,
+    )
   }
   if (typeof filters.bedsMin === "number") {
-    clauses.push(
-      Prisma.sql`(
-        bedrooms_max >= ${filters.bedsMin}
-        OR bedrooms_min >= ${filters.bedsMin}
-      )`,
-    )
+    clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) >= ${filters.bedsMin}`)
   }
   if (typeof filters.bedsMax === "number") {
-    clauses.push(
-      Prisma.sql`(
-        bedrooms_min <= ${filters.bedsMax}
-        OR bedrooms_max <= ${filters.bedsMax}
-      )`,
-    )
+    clauses.push(Prisma.sql`COALESCE(bedrooms_min, bedrooms_max) <= ${filters.bedsMax}`)
   }
   if (filters.timingSignal) {
-    clauses.push(Prisma.sql`l3_timing_signal = ${filters.timingSignal}`)
+    clauses.push(
+      USE_CURATED_PROPERTIES_VIEW
+        ? Prisma.sql`timing_signal = ${filters.timingSignal}`
+        : Prisma.sql`l3_timing_signal = ${filters.timingSignal}`,
+    )
   }
   if (filters.stressGradeMin) {
     const index = gradeOrder.indexOf(filters.stressGradeMin)
     const allowed = gradeOrder.slice(0, index + 1)
-    clauses.push(Prisma.sql`l2_stress_test_grade IN (${toSqlList([...allowed])})`)
+    clauses.push(
+      USE_CURATED_PROPERTIES_VIEW
+        ? Prisma.sql`stress_grade IN (${toSqlList([...allowed])})`
+        : Prisma.sql`l2_stress_test_grade IN (${toSqlList([...allowed])})`,
+    )
   }
   if (filters.affordabilityTier) {
-    clauses.push(Prisma.sql`LOWER(COALESCE(l2_affordability_tier, '')) = LOWER(${filters.affordabilityTier})`)
+    clauses.push(
+      USE_CURATED_PROPERTIES_VIEW
+        ? Prisma.sql`LOWER(COALESCE(affordability_tier, '')) = LOWER(${filters.affordabilityTier})`
+        : Prisma.sql`LOWER(COALESCE(l2_affordability_tier, '')) = LOWER(${filters.affordabilityTier})`,
+    )
   }
 
   if (filters.goldenVisaRequired) {
     clauses.push(
-      Prisma.sql`(
-        l1_canonical_price >= 2000000
-        OR LOWER(COALESCE(hotness_factors ->> 'golden_visa_eligible', hotness_factors ->> 'golden_visa', 'false')) IN ('true', 'yes', '1')
-      )`,
+      USE_CURATED_PROPERTIES_VIEW
+        ? Prisma.sql`(
+            COALESCE(price, 0) >= 2000000
+            OR LOWER(COALESCE(golden_visa_eligible, 'false')) IN ('true', 'yes', '1')
+          )`
+        : Prisma.sql`(
+            l1_canonical_price >= 2000000
+            OR LOWER(COALESCE(hotness_factors ->> 'golden_visa_eligible', hotness_factors ->> 'golden_visa', 'false')) IN ('true', 'yes', '1')
+          )`,
     )
   }
 
@@ -168,37 +326,69 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
 
   const clauses = buildPropertyClauses(input.filters)
   const whereClause = clauses.length > 0 ? Prisma.sql`WHERE ${Prisma.join(clauses, " AND ")}` : Prisma.empty
-  const sortColumn = Prisma.raw(PROJECT_SORT_COLUMNS[sortBy])
+  const sortColumn = Prisma.raw(
+    USE_CURATED_PROPERTIES_VIEW ? CURATED_PROJECT_SORT_COLUMNS[sortBy] : PROJECT_SORT_COLUMNS[sortBy],
+  )
+
+  const selectQuery = USE_CURATED_PROPERTIES_VIEW
+    ? Prisma.sql`
+        SELECT
+          name,
+          developer,
+          area,
+          area AS final_area,
+          bedrooms_min,
+          bedrooms_max,
+          COALESCE(bedrooms_min, bedrooms_max) AS beds,
+          price AS l1_canonical_price,
+          yield AS l1_canonical_yield,
+          status AS l1_canonical_status,
+          confidence AS l1_confidence,
+          source_coverage AS l1_source_coverage,
+          investment_score AS l2_investment_score,
+          developer_reliability AS l2_developer_reliability,
+          affordability_tier AS l2_affordability_tier,
+          stress_grade AS l2_stress_test_grade,
+          timing_signal AS l3_timing_signal,
+          NULL::jsonb AS engine_stress_test,
+          investment_score AS engine_god_metric
+        FROM ${PROPERTIES_TABLE_SQL}
+        ${whereClause}
+        ORDER BY ${sortColumn} DESC NULLS LAST
+        LIMIT ${pageSize}
+        OFFSET ${offset}
+      `
+    : Prisma.sql`
+        SELECT
+          name,
+          developer,
+          area,
+          final_area,
+          bedrooms_min,
+          bedrooms_max,
+          COALESCE(bedrooms_min, bedrooms_max) AS beds,
+          l1_canonical_price,
+          l1_canonical_yield,
+          l2_stress_test_grade,
+          l2_developer_reliability,
+          l2_affordability_tier,
+          l3_timing_signal,
+          engine_stress_test,
+          engine_god_metric,
+          l1_confidence,
+          l1_source_coverage
+        FROM ${PROPERTIES_TABLE_SQL}
+        ${whereClause}
+        ORDER BY ${sortColumn} DESC NULLS LAST
+        LIMIT ${pageSize}
+        OFFSET ${offset}
+      `
 
   const [rows, countRows] = await Promise.all([
-    runQuery(Prisma.sql`
-      SELECT
-        name,
-        developer,
-        area,
-        final_area,
-        bedrooms_min,
-        bedrooms_max,
-        COALESCE(bedrooms_min, bedrooms_max) AS beds,
-        l1_canonical_price,
-        l1_canonical_yield,
-        l2_stress_test_grade,
-        l2_developer_reliability,
-        l2_affordability_tier,
-        l3_timing_signal,
-        engine_stress_test,
-        engine_god_metric,
-        l1_confidence,
-        l1_source_coverage
-      FROM inventory_full
-      ${whereClause}
-      ORDER BY ${sortColumn} DESC NULLS LAST
-      LIMIT ${pageSize}
-      OFFSET ${offset}
-    `),
+    runQuery(selectQuery),
     runQuery<{ count: number }>(Prisma.sql`
       SELECT COUNT(*)::int AS count
-      FROM inventory_full
+      FROM ${PROPERTIES_TABLE_SQL}
       ${whereClause}
     `),
   ])
@@ -257,7 +447,7 @@ export async function getProjectBySlug(slug: string): Promise<{
       evidence_exclusions,
       evidence_assumptions,
       hotness_factors
-    FROM inventory_full
+    FROM ${DETAIL_TABLE_SQL}
     WHERE LOWER(name) LIKE LOWER('%' || ${candidateName} || '%')
     ORDER BY engine_god_metric DESC NULLS LAST
     LIMIT 30
@@ -280,7 +470,7 @@ export async function getProjectBySlug(slug: string): Promise<{
         ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price,
         ROUND(AVG(l1_canonical_yield::numeric), 1) AS avg_yield,
         ROUND(AVG(engine_god_metric::numeric), 1) AS avg_efficiency
-      FROM inventory_full
+      FROM ${DETAIL_TABLE_SQL}
       WHERE LOWER(COALESCE(final_area, area)) = LOWER(${areaName})
       GROUP BY 1
     `),
@@ -291,7 +481,7 @@ export async function getProjectBySlug(slug: string): Promise<{
         ROUND(AVG(l2_developer_reliability::numeric), 1) AS reliability,
         ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
         array_agg(DISTINCT COALESCE(final_area, area)) AS areas
-      FROM inventory_full
+      FROM ${DETAIL_TABLE_SQL}
       WHERE LOWER(developer) = LOWER(${developerName})
       GROUP BY 1
     `),
@@ -306,7 +496,7 @@ export async function getProjectBySlug(slug: string): Promise<{
         l3_timing_signal,
         engine_god_metric,
         l1_confidence
-      FROM inventory_full
+      FROM ${DETAIL_TABLE_SQL}
       WHERE LOWER(COALESCE(final_area, area)) = LOWER(${areaName})
         AND LOWER(name) <> LOWER(${String(project.name)})
       ORDER BY engine_god_metric DESC NULLS LAST
@@ -334,21 +524,48 @@ export async function listAreas(): Promise<{
   data_as_of: string
   areas: Array<DecisionRecord & { slug: string }>
 }> {
-  const rows = await runQuery(Prisma.sql`
-    SELECT
-      COALESCE(final_area, area) AS area,
-      MODE() WITHIN GROUP (ORDER BY city) AS city,
-      COUNT(*)::int AS projects,
-      ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price,
-      ROUND(AVG(l1_canonical_yield::numeric), 1) AS avg_yield,
-      ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
-      ROUND(AVG(l3_supply_pressure::numeric), 2) AS supply_pressure,
-      COUNT(CASE WHEN l3_timing_signal = 'BUY' THEN 1 END)::int AS buy_signals
-    FROM inventory_full
-    GROUP BY 1
-    HAVING COUNT(*) >= 3
-    ORDER BY efficiency DESC NULLS LAST
-  `)
+  const rows = USE_CURATED_AREAS_VIEW
+    ? await runQuery(Prisma.sql`
+        SELECT
+          area,
+          NULL::text AS city,
+          total_projects::int AS projects,
+          avg_price,
+          avg_yield,
+          avg_investment_score AS efficiency,
+          NULL::numeric AS supply_pressure,
+          CASE WHEN dominant_timing = 'BUY' THEN total_projects::int ELSE 0 END AS buy_signals
+        FROM ${AREAS_TABLE_SQL}
+        WHERE TRIM(COALESCE(area, '')) <> ''
+          AND COALESCE(total_projects, 0) >= 2
+        ORDER BY avg_investment_score DESC NULLS LAST
+      `)
+    : await runQuery(Prisma.sql`
+        SELECT
+          COALESCE(final_area, area) AS area,
+          MODE() WITHIN GROUP (ORDER BY COALESCE(NULLIF(TRIM(final_city), ''), NULLIF(TRIM(city), ''), 'Dubai')) AS city,
+          COUNT(*)::int AS projects,
+          ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price,
+          ROUND(AVG(l1_canonical_yield::numeric), 1) AS avg_yield,
+          ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
+          ROUND(AVG(l3_supply_pressure::numeric), 2) AS supply_pressure,
+          COUNT(CASE WHEN l3_timing_signal = 'BUY' THEN 1 END)::int AS buy_signals
+        FROM ${DETAIL_TABLE_SQL}
+        WHERE ${Prisma.join(
+          buildQualityClauses({
+            requirePrice: true,
+            requireStress: true,
+            requireArea: true,
+            requireConfidence: true,
+            onlyUae: true,
+            requireBedroomSanity: true,
+          }),
+          " AND ",
+        )}
+        GROUP BY 1
+        HAVING COUNT(*) >= 3
+        ORDER BY efficiency DESC NULLS LAST
+      `)
 
   const profiles = await runOptionalQuery<{ area_name: string; image_url: string | null; area_type: string | null }>(Prisma.sql`
     SELECT
@@ -371,7 +588,7 @@ export async function listAreas(): Promise<{
           PARTITION BY COALESCE(final_area, area)
           ORDER BY engine_god_metric DESC NULLS LAST
         ) AS row_rank
-      FROM inventory_full
+      FROM ${DETAIL_TABLE_SQL}
       WHERE name IS NOT NULL
     )
     SELECT
@@ -413,6 +630,16 @@ export async function getAreaBySlug(slug: string): Promise<{
   developers: DecisionRecord[]
 } | null> {
   const areaName = slug.replace(/-/g, " ")
+  const areaQualityClauses = buildQualityClauses({
+    requirePrice: true,
+    requireStress: true,
+    requireArea: true,
+    requireConfidence: true,
+    onlyUae: true,
+    requireBedroomSanity: true,
+  })
+  const areaWhere = Prisma.sql`LOWER(COALESCE(final_area, area)) LIKE LOWER('%' || ${areaName} || '%') AND ${Prisma.join(areaQualityClauses, " AND ")}`
+  const developerAreaWhere = Prisma.sql`${areaWhere} AND TRIM(COALESCE(developer, '')) <> ''`
 
   const [statsRows, projectsRows, developerRows, profileRows] = await Promise.all([
     runQuery(Prisma.sql`
@@ -423,8 +650,8 @@ export async function getAreaBySlug(slug: string): Promise<{
         ROUND(AVG(l1_canonical_yield::numeric), 1) AS avg_yield,
         ROUND(AVG(l3_supply_pressure::numeric), 2) AS supply_pressure,
         COUNT(CASE WHEN l3_timing_signal = 'BUY' THEN 1 END)::int AS buy_signals
-      FROM inventory_full
-      WHERE LOWER(COALESCE(final_area, area)) LIKE LOWER('%' || ${areaName} || '%')
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${areaWhere}
       GROUP BY 1
       ORDER BY projects DESC
       LIMIT 1
@@ -439,8 +666,8 @@ export async function getAreaBySlug(slug: string): Promise<{
         l3_timing_signal,
         engine_god_metric,
         l1_confidence
-      FROM inventory_full
-      WHERE LOWER(COALESCE(final_area, area)) LIKE LOWER('%' || ${areaName} || '%')
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${areaWhere}
       ORDER BY engine_god_metric DESC NULLS LAST
       LIMIT 40
     `),
@@ -448,8 +675,8 @@ export async function getAreaBySlug(slug: string): Promise<{
       SELECT
         developer,
         COUNT(*)::int AS projects
-      FROM inventory_full
-      WHERE LOWER(COALESCE(final_area, area)) LIKE LOWER('%' || ${areaName} || '%')
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${developerAreaWhere}
       GROUP BY 1
       ORDER BY projects DESC
       LIMIT 12
@@ -488,18 +715,44 @@ export async function listDevelopers(): Promise<{
   data_as_of: string
   developers: Array<DecisionRecord & { slug: string }>
 }> {
-  const rows = await runQuery(Prisma.sql`
-    SELECT
-      developer,
-      COUNT(*)::int AS projects,
-      ROUND(AVG(l2_developer_reliability::numeric), 1) AS reliability,
-      ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
-      ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price
-    FROM inventory_full
-    WHERE developer IS NOT NULL
-    GROUP BY 1
-    ORDER BY reliability DESC NULLS LAST
-  `)
+  const developerQualityClauses = buildQualityClauses({
+    requirePrice: true,
+    requireStress: true,
+    requireArea: true,
+    requireDeveloper: true,
+    requireConfidence: true,
+    onlyUae: true,
+    excludeGarbageDeveloper: true,
+    requireBedroomSanity: true,
+  })
+
+  const rows = USE_CURATED_DEVELOPERS_VIEW
+    ? await runQuery(Prisma.sql`
+        SELECT
+          name AS developer,
+          total_projects::int AS projects,
+          avg_score AS reliability,
+          avg_score AS efficiency,
+          avg_price,
+          areas AS top_areas
+        FROM ${DEVELOPERS_TABLE_SQL}
+        WHERE TRIM(COALESCE(name, '')) <> ''
+          AND COALESCE(total_projects, 0) >= 2
+        ORDER BY avg_score DESC NULLS LAST
+      `)
+    : await runQuery(Prisma.sql`
+        SELECT
+          developer,
+          COUNT(*)::int AS projects,
+          ROUND(AVG(l2_developer_reliability::numeric), 1) AS reliability,
+          ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
+          ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price
+        FROM ${DETAIL_TABLE_SQL}
+        WHERE ${Prisma.join(developerQualityClauses, " AND ")}
+        GROUP BY 1
+        HAVING COUNT(*) >= 3
+        ORDER BY reliability DESC NULLS LAST
+      `)
 
   const profiles = await runOptionalQuery<{ name: string; logo_url: string | null; founded_year: string | null; hq: string | null }>(Prisma.sql`
     SELECT
@@ -522,8 +775,8 @@ export async function listDevelopers(): Promise<{
           PARTITION BY developer
           ORDER BY COUNT(*) DESC
         ) AS row_rank
-      FROM inventory_full
-      WHERE developer IS NOT NULL
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${Prisma.join(developerQualityClauses, " AND ")}
       GROUP BY 1, 2
     )
     SELECT
@@ -543,8 +796,8 @@ export async function listDevelopers(): Promise<{
           PARTITION BY developer
           ORDER BY engine_god_metric DESC NULLS LAST
         ) AS row_rank
-      FROM inventory_full
-      WHERE developer IS NOT NULL
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${Prisma.join(developerQualityClauses, " AND ")}
         AND name IS NOT NULL
     )
     SELECT
@@ -571,7 +824,10 @@ export async function listDevelopers(): Promise<{
     developers: rows.map((row) => {
       const key = String(row.developer ?? "").toLowerCase()
       const profile = profileMap.get(key)
-      const topAreas = topAreasMap.get(key) ?? []
+      const inlineTopAreas = Array.isArray((row as DecisionRecord).top_areas)
+        ? ((row as DecisionRecord).top_areas as string[])
+        : []
+      const topAreas = inlineTopAreas.length > 0 ? inlineTopAreas : topAreasMap.get(key) ?? []
       const topProjects = topProjectsMap.get(key) ?? []
       return {
         ...row,
@@ -593,6 +849,18 @@ export async function getDeveloperBySlug(slug: string): Promise<{
   area_presence: DecisionRecord[]
 } | null> {
   const developerName = slug.replace(/-/g, " ")
+  const developerQualityClauses = buildQualityClauses({
+    requirePrice: true,
+    requireStress: true,
+    requireArea: true,
+    requireDeveloper: true,
+    requireConfidence: true,
+    onlyUae: true,
+    excludeGarbageDeveloper: true,
+    requireBedroomSanity: true,
+  })
+
+  const developerWhere = Prisma.sql`LOWER(developer) LIKE LOWER('%' || ${developerName} || '%') AND ${Prisma.join(developerQualityClauses, " AND ")}`
 
   const [developerRows, projectRows, areaRows, profileRows] = await Promise.all([
     runQuery(Prisma.sql`
@@ -602,9 +870,9 @@ export async function getDeveloperBySlug(slug: string): Promise<{
         ROUND(AVG(l2_developer_reliability::numeric), 1) AS reliability,
         ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
         ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price,
-        COUNT(CASE WHEN l2_stress_test_grade IN ('A', 'B') THEN 1 END)::int AS safe_projects
-      FROM inventory_full
-      WHERE LOWER(developer) LIKE LOWER('%' || ${developerName} || '%')
+      COUNT(CASE WHEN l2_stress_test_grade IN ('A', 'B') THEN 1 END)::int AS safe_projects
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${developerWhere}
       GROUP BY 1
       ORDER BY projects DESC
       LIMIT 1
@@ -619,8 +887,8 @@ export async function getDeveloperBySlug(slug: string): Promise<{
         l3_timing_signal,
         engine_god_metric,
         l1_confidence
-      FROM inventory_full
-      WHERE LOWER(developer) LIKE LOWER('%' || ${developerName} || '%')
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${developerWhere}
       ORDER BY engine_god_metric DESC NULLS LAST
       LIMIT 40
     `),
@@ -628,8 +896,8 @@ export async function getDeveloperBySlug(slug: string): Promise<{
       SELECT
         COALESCE(final_area, area) AS area,
         COUNT(*)::int AS projects
-      FROM inventory_full
-      WHERE LOWER(developer) LIKE LOWER('%' || ${developerName} || '%')
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${developerWhere}
       GROUP BY 1
       ORDER BY projects DESC
       LIMIT 15
@@ -667,6 +935,15 @@ export async function getDeveloperBySlug(slug: string): Promise<{
 }
 
 export async function getMarketPulse() {
+  const qualityClauses = buildQualityClauses({
+    requirePrice: true,
+    requireStress: true,
+    requireArea: true,
+    requireConfidence: true,
+    onlyUae: true,
+    requireBedroomSanity: true,
+  })
+
   const [summaryRows, timingRows, gradeRows, confidenceRows] = await Promise.all([
     runQuery(Prisma.sql`
       SELECT
@@ -674,23 +951,27 @@ export async function getMarketPulse() {
         ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price,
         ROUND(AVG(l1_canonical_yield::numeric), 1) AS avg_yield,
         ROUND(AVG(engine_god_metric::numeric), 1) AS avg_efficiency
-      FROM inventory_full
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${Prisma.join(qualityClauses, " AND ")}
     `),
     runQuery(Prisma.sql`
       SELECT l3_timing_signal AS label, COUNT(*)::int AS count
-      FROM inventory_full
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${Prisma.join(qualityClauses, " AND ")}
       GROUP BY 1
       ORDER BY count DESC
     `),
     runQuery(Prisma.sql`
       SELECT l2_stress_test_grade AS label, COUNT(*)::int AS count
-      FROM inventory_full
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${Prisma.join(qualityClauses, " AND ")}
       GROUP BY 1
       ORDER BY count DESC
     `),
     runQuery(Prisma.sql`
       SELECT l1_confidence AS label, COUNT(*)::int AS count
-      FROM inventory_full
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE ${Prisma.join(qualityClauses, " AND ")}
       GROUP BY 1
       ORDER BY count DESC
     `),
@@ -724,7 +1005,7 @@ export async function getTopDataSections() {
   const pulse = await getMarketPulse()
   return {
     data_as_of: pulse.data_as_of,
-    source: "inventory_full",
+    source: DETAIL_TABLE_NAME,
     sections: [
       {
         slug: "market-pulse",
@@ -768,7 +1049,7 @@ export async function getOutcomeIntentCounts() {
     SELECT
       LOWER(TRIM(intent)) AS intent,
       COUNT(*)::int AS count
-    FROM inventory_full,
+    FROM ${DETAIL_TABLE_SQL},
       LATERAL unnest(COALESCE(outcome_intent, ARRAY[]::text[])) AS intent
     GROUP BY 1
     ORDER BY count DESC
@@ -804,7 +1085,7 @@ export async function getPriceRealityByProjectName(name: string) {
       l1_source_coverage,
       evidence_sources,
       evidence_assumptions
-    FROM inventory_full
+    FROM ${DETAIL_TABLE_SQL}
     WHERE LOWER(name) LIKE LOWER('%' || ${name} || '%')
     LIMIT 10
   `)
@@ -823,7 +1104,7 @@ export async function getStressTestByProjectName(name: string) {
       l2_stress_test_grade,
       l1_confidence,
       evidence_assumptions
-    FROM inventory_full
+    FROM ${DETAIL_TABLE_SQL}
     WHERE LOWER(name) LIKE LOWER('%' || ${name} || '%')
     LIMIT 10
   `)
@@ -843,7 +1124,7 @@ export async function getDeveloperReliabilityByName(name: string) {
       ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
       COUNT(CASE WHEN l2_stress_test_grade IN ('A', 'B') THEN 1 END)::int AS safe_projects,
       array_agg(DISTINCT COALESCE(final_area, area)) AS areas
-    FROM inventory_full
+    FROM ${DETAIL_TABLE_SQL}
     WHERE LOWER(developer) LIKE LOWER('%' || ${name} || '%')
     GROUP BY 1
   `)
@@ -864,7 +1145,7 @@ export async function getEvidenceByProjectName(name: string) {
       evidence_exclusions,
       evidence_assumptions,
       hotness_factors
-    FROM inventory_full
+    FROM ${DETAIL_TABLE_SQL}
     WHERE LOWER(name) LIKE LOWER('%' || ${name} || '%')
     LIMIT 10
   `)
@@ -872,5 +1153,19 @@ export async function getEvidenceByProjectName(name: string) {
   return {
     data_as_of: new Date().toISOString(),
     rows,
+  }
+}
+
+export async function getDataFreshnessStatus() {
+  const rows = await runOptionalQuery(Prisma.sql`
+    SELECT *
+    FROM ${STATUS_TABLE_SQL}
+    LIMIT 1
+  `)
+
+  return {
+    data_as_of: new Date().toISOString(),
+    source: STATUS_TABLE_NAME,
+    row: (rows[0] as DecisionRecord | undefined) ?? null,
   }
 }

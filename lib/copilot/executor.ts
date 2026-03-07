@@ -1,7 +1,7 @@
 import "server-only"
 import { Prisma } from "@prisma/client"
 import { withStatementTimeout } from "@/lib/db-guardrails"
-import { getInventoryTableSql } from "@/lib/inventory-table"
+import { getDetailTableSql } from "@/lib/inventory-table"
 import type {
   AreaRiskBriefInput,
   DealScreenerInput,
@@ -20,7 +20,18 @@ const DEAL_SORT_COLUMNS = {
   l2_developer_reliability: "l2_developer_reliability",
 } as const
 
-const INVENTORY_TABLE_SQL = getInventoryTableSql()
+const UAE_CITIES = [
+  "dubai",
+  "abu dhabi",
+  "sharjah",
+  "ajman",
+  "ras al khaimah",
+  "fujairah",
+  "umm al quwain",
+  "al ain",
+] as const
+
+const COPILOT_TABLE_SQL = getDetailTableSql()
 
 type DbRow = Record<string, unknown>
 
@@ -39,6 +50,62 @@ function nowIso() {
 
 function toSqlList(values: string[]) {
   return Prisma.join(values.map((value) => Prisma.sql`${value}`))
+}
+
+type QualityOptions = {
+  requirePrice?: boolean
+  requireStress?: boolean
+  requireArea?: boolean
+  requireDeveloper?: boolean
+  requireConfidence?: boolean
+  onlyUae?: boolean
+  excludeGarbageDeveloper?: boolean
+  requireBedroomSanity?: boolean
+}
+
+function buildQualityClauses(options: QualityOptions = {}): Prisma.Sql[] {
+  const clauses: Prisma.Sql[] = []
+
+  if (options.requirePrice) {
+    clauses.push(Prisma.sql`COALESCE(l1_canonical_price, 0) > 0`)
+  }
+
+  if (options.requireStress) {
+    clauses.push(Prisma.sql`l2_stress_test_grade IS NOT NULL`)
+  }
+
+  if (options.requireArea) {
+    clauses.push(Prisma.sql`TRIM(COALESCE(final_area, area, '')) <> ''`)
+  }
+
+  if (options.requireDeveloper) {
+    clauses.push(Prisma.sql`TRIM(COALESCE(developer, '')) <> ''`)
+  }
+
+  if (options.requireConfidence) {
+    clauses.push(Prisma.sql`COALESCE(l1_confidence, 'LOW') IN ('MEDIUM', 'HIGH')`)
+  }
+
+  if (options.onlyUae) {
+    clauses.push(
+      Prisma.sql`LOWER(COALESCE(NULLIF(TRIM(final_city), ''), NULLIF(TRIM(city), ''), '')) IN (${toSqlList([...UAE_CITIES])})`,
+    )
+  }
+
+  if (options.excludeGarbageDeveloper) {
+    clauses.push(Prisma.sql`LOWER(COALESCE(developer, '')) NOT LIKE '%breadcrumb%'`)
+    clauses.push(Prisma.sql`LOWER(COALESCE(developer, '')) NOT LIKE '%@id%'`)
+    clauses.push(Prisma.sql`LOWER(COALESCE(developer, '')) NOT LIKE '%http%'`)
+    clauses.push(Prisma.sql`LENGTH(COALESCE(developer, '')) <= 80`)
+  }
+
+  if (options.requireBedroomSanity) {
+    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`)
+    clauses.push(Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`)
+    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`)
+  }
+
+  return clauses
 }
 
 function normalizeValue(value: unknown): unknown {
@@ -95,21 +162,18 @@ function buildDealScreenerFilters(filters: DealScreenerInput["filters"]): Prisma
   }
 
   if (typeof filters.beds_min === "number") {
-    clauses.push(
-      Prisma.sql`(
-        bedrooms_max >= ${filters.beds_min}
-        OR bedrooms_min >= ${filters.beds_min}
-      )`,
-    )
+    clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) >= ${filters.beds_min}`)
   }
 
   if (typeof filters.beds_max === "number") {
-    clauses.push(
-      Prisma.sql`(
-        bedrooms_min <= ${filters.beds_max}
-        OR bedrooms_max <= ${filters.beds_max}
-      )`,
-    )
+    clauses.push(Prisma.sql`COALESCE(bedrooms_min, bedrooms_max) <= ${filters.beds_max}`)
+  }
+
+  if (typeof filters.beds_min === "number" || typeof filters.beds_max === "number") {
+    clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) BETWEEN 0 AND 10`)
+    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`)
+    clauses.push(Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`)
+    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`)
   }
 
   if (typeof filters.golden_visa_required === "boolean" && filters.golden_visa_required) {
@@ -139,7 +203,19 @@ function buildDealScreenerFilters(filters: DealScreenerInput["filters"]): Prisma
 }
 
 function buildDealScreenerQuery(input: DealScreenerInput): Prisma.Sql {
-  const clauses = buildDealScreenerFilters(input.filters)
+  const clauses = [
+    ...buildQualityClauses({
+      requirePrice: true,
+      requireStress: true,
+      requireArea: true,
+      requireDeveloper: true,
+      requireConfidence: true,
+      onlyUae: true,
+      excludeGarbageDeveloper: true,
+      requireBedroomSanity: true,
+    }),
+    ...buildDealScreenerFilters(input.filters),
+  ]
   const whereClause = clauses.length > 0 ? Prisma.sql`WHERE ${Prisma.join(clauses, " AND ")}` : Prisma.empty
   const sortColumn = Prisma.raw(DEAL_SORT_COLUMNS[input.sort_by])
 
@@ -173,7 +249,7 @@ function buildDealScreenerQuery(input: DealScreenerInput): Prisma.Sql {
       evidence_sources,
       evidence_exclusions,
       evidence_assumptions
-    FROM ${INVENTORY_TABLE_SQL}
+    FROM ${COPILOT_TABLE_SQL}
     ${whereClause}
     ORDER BY ${sortColumn} DESC NULLS LAST
     LIMIT ${input.limit}
@@ -194,6 +270,15 @@ export async function executeDealScreener(input: DealScreenerInput): Promise<Too
 }
 
 export async function executePriceRealityCheck(input: PriceRealityCheckInput): Promise<ToolEnvelope<DbRow>> {
+  const qualityClauses = buildQualityClauses({
+    requirePrice: true,
+    requireStress: true,
+    requireArea: true,
+    requireConfidence: true,
+    onlyUae: true,
+    requireBedroomSanity: true,
+  })
+
   const query = Prisma.sql`
     SELECT
       name,
@@ -204,8 +289,9 @@ export async function executePriceRealityCheck(input: PriceRealityCheckInput): P
       l1_source_coverage,
       evidence_sources,
       evidence_assumptions
-    FROM ${INVENTORY_TABLE_SQL}
+    FROM ${COPILOT_TABLE_SQL}
     WHERE LOWER(name) LIKE LOWER('%' || ${input.project_name} || '%')
+      AND ${Prisma.join(qualityClauses, " AND ")}
     LIMIT 5
   `
   const rows = await runQuery(query)
@@ -220,6 +306,15 @@ export async function executePriceRealityCheck(input: PriceRealityCheckInput): P
 }
 
 export async function executeAreaRiskBrief(input: AreaRiskBriefInput): Promise<ToolEnvelope<DbRow>> {
+  const qualityClauses = buildQualityClauses({
+    requirePrice: true,
+    requireStress: true,
+    requireArea: true,
+    requireConfidence: true,
+    onlyUae: true,
+    requireBedroomSanity: true,
+  })
+
   const query = Prisma.sql`
     SELECT
       COALESCE(final_area, area) AS area,
@@ -230,8 +325,9 @@ export async function executeAreaRiskBrief(input: AreaRiskBriefInput): Promise<T
       ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
       COUNT(CASE WHEN l3_timing_signal = 'BUY' THEN 1 END)::int AS buy_signals,
       COUNT(CASE WHEN l2_stress_test_grade IN ('A', 'B') THEN 1 END)::int AS safe_projects
-    FROM ${INVENTORY_TABLE_SQL}
+    FROM ${COPILOT_TABLE_SQL}
     WHERE LOWER(COALESCE(final_area, area)) LIKE LOWER('%' || ${input.area_name} || '%')
+      AND ${Prisma.join(qualityClauses, " AND ")}
     GROUP BY 1
   `
   const rows = await runQuery(query)
@@ -248,6 +344,17 @@ export async function executeAreaRiskBrief(input: AreaRiskBriefInput): Promise<T
 export async function executeDeveloperDueDiligence(
   input: DeveloperDueDiligenceInput,
 ): Promise<ToolEnvelope<DbRow>> {
+  const qualityClauses = buildQualityClauses({
+    requirePrice: true,
+    requireStress: true,
+    requireArea: true,
+    requireDeveloper: true,
+    requireConfidence: true,
+    onlyUae: true,
+    excludeGarbageDeveloper: true,
+    requireBedroomSanity: true,
+  })
+
   const query = Prisma.sql`
     SELECT
       developer,
@@ -257,8 +364,9 @@ export async function executeDeveloperDueDiligence(
       COUNT(CASE WHEN l2_stress_test_grade IN ('A', 'B') THEN 1 END)::int AS safe_projects,
       ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price,
       array_agg(DISTINCT COALESCE(final_area, area)) AS areas
-    FROM ${INVENTORY_TABLE_SQL}
+    FROM ${COPILOT_TABLE_SQL}
     WHERE LOWER(developer) LIKE LOWER('%' || ${input.developer_name} || '%')
+      AND ${Prisma.join(qualityClauses, " AND ")}
     GROUP BY 1
   `
   const rows = await runQuery(query)
@@ -273,6 +381,15 @@ export async function executeDeveloperDueDiligence(
 }
 
 async function loadProjectContext(projectName: string): Promise<DbRow | null> {
+  const qualityClauses = buildQualityClauses({
+    requirePrice: true,
+    requireStress: true,
+    requireArea: true,
+    requireConfidence: true,
+    onlyUae: true,
+    requireBedroomSanity: true,
+  })
+
   const query = Prisma.sql`
     SELECT
       name,
@@ -285,8 +402,9 @@ async function loadProjectContext(projectName: string): Promise<DbRow | null> {
       l1_source_coverage,
       evidence_sources,
       evidence_assumptions
-    FROM ${INVENTORY_TABLE_SQL}
+    FROM ${COPILOT_TABLE_SQL}
     WHERE LOWER(name) LIKE LOWER('%' || ${projectName} || '%')
+      AND ${Prisma.join(qualityClauses, " AND ")}
     LIMIT 1
   `
 
