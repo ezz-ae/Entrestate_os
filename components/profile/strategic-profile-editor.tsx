@@ -1,16 +1,21 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Save } from "lucide-react"
+import { Loader2, Save, PlayCircle, BarChart3 } from "lucide-react"
+import { ProjectCard } from "@/components/decision/project-card"
+import { getSimulatedProjects } from "@/lib/profile/simulation"
 
 export default function StrategicProfileEditor({ initialProfile, disabled }: { initialProfile: any; disabled?: boolean }) {
   const [profile, setProfile] = useState(initialProfile)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [simulationMode, setSimulationMode] = useState(false)
+
+  const simulatedProjects = useMemo(() => getSimulatedProjects(profile), [profile])
 
   const handleSave = async () => {
     if (disabled) return;
@@ -104,7 +109,7 @@ export default function StrategicProfileEditor({ initialProfile, disabled }: { i
       <div className="flex items-center gap-4 border-t border-border pt-8">
         <Button
           onClick={handleSave}
-          disabled={loading}
+          disabled={loading || disabled}
           className="flex h-10 min-w-32 items-center gap-2"
         >
           {loading ? (
@@ -116,12 +121,45 @@ export default function StrategicProfileEditor({ initialProfile, disabled }: { i
             </>
           )}
         </Button>
+        <Button
+          variant="outline"
+          onClick={() => setSimulationMode(!simulationMode)}
+          disabled={disabled}
+          className="flex h-10 items-center gap-2"
+        >
+          {simulationMode ? <BarChart3 className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
+          {simulationMode ? "Hide Simulation" : "Simulate Impact"}
+        </Button>
         {saved && (
           <span className="text-xs font-medium text-emerald-500 animate-in fade-in slide-in-from-left-2">
             Strategic profile updated and synchronized.
           </span>
         )}
       </div>
+
+      {simulationMode && (
+        <div className="rounded-xl border border-border bg-secondary/20 p-6 animate-in fade-in slide-in-from-top-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <PlayCircle className="h-4 w-4 text-accent" />
+              Live Match Simulation
+            </h3>
+            <span className="text-xs text-muted-foreground">
+              See how your settings rank real-world project archetypes
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {simulatedProjects.map((project) => (
+              <div key={project.slug} className="relative">
+                <div className="absolute -top-3 right-4 z-10 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                  Match: {project.match_score}%
+                </div>
+                <ProjectCard {...project} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -2,12 +2,24 @@ import { Navbar } from "@/components/navbar"
 import { ChatInterface } from "@/components/ChatInterface"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
 import { FREE_COPILOT_DAILY_LIMIT, getCopilotDailyUsage } from "@/lib/copilot-usage"
+import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 
 export default async function ChatPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
+  // Check for mobile user agent to handle "no chat page on mobile" requirement
+  const headersList = await headers()
+  const userAgent = headersList.get("user-agent") || ""
+  const isMobile = /mobile|android|iphone|ipad|phone/i.test(userAgent)
+
+  if (isMobile) {
+    // If mobile, redirect to home and the Navbar/Sidebar logic will take over
+    redirect("/?openChat=true")
+  }
+
   const entitlement = await getCurrentEntitlement()
   const params = (await searchParams) ?? {}
   const billingParam = Array.isArray(params.billing) ? params.billing[0] : params.billing

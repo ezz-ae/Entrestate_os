@@ -2,7 +2,7 @@
 
 import { MessageCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { sendSmartChatMessage, setSmartChatState } from "@/lib/smart-chat-store"
+import { useCopilot } from "@/components/copilot-provider"
 import { Button } from "@/components/ui/button"
 
 type ExplainWithChatProps = {
@@ -22,16 +22,13 @@ export function ExplainWithChat({
   variant = "outline",
   size = "sm",
 }: ExplainWithChatProps) {
+  const { append, openSidebar } = useCopilot()
+
   const handleClick = () => {
-    setSmartChatState({ isOpen: true, isMinimized: false })
-    void sendSmartChatMessage({
-      query: `${prompt} Explain it in clear real estate language.`,
-      quickSuggestions: [
-        prompt,
-        "Give me a short summary and key takeaways.",
-        "Explain like I'm briefing a client.",
-      ],
-      context,
+    openSidebar()
+    void append({
+      role: "user",
+      content: `${prompt} Explain it in clear real estate language.`,
     })
   }
 

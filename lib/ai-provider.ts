@@ -40,8 +40,10 @@ export function resolveGatewayOrGeminiModel(options: { gatewayModel: string; gem
 
   const geminiKey = ensureGeminiApiKeyEnv()
   if (geminiKey) {
+    // Prefer Pro models for Copilot if available, otherwise Flash
+    const preferredModel = normalizeGeminiModel(options.geminiModel, "gemini-1.5-pro")
     return {
-      model: google(normalizeGeminiModel(options.geminiModel, "gemini-2.5-flash")),
+      model: google(preferredModel),
       provider: "gemini" as const,
     }
   }

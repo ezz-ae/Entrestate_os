@@ -1,51 +1,103 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
+import { useCopilot } from "@/components/copilot-provider"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   Clock,
   Compass,
-  Grid3x3,
   TrendingUp,
-  MoreHorizontal,
-  Bell,
-  ArrowUpFromDot,
-  Plus,
   Pin,
-  Target,
-  Star,
-  LayoutGrid,
-  FolderClosed,
-  BarChart3,
-  Search,
-  Users,
-  MoreVertical,
-  Calendar,
-  Mail,
+  Send,
+  Sparkles,
+  MessageSquare,
+  X,
 } from "lucide-react"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import Image from "next/image"
 import { UpgradeModal } from "./upgrade-modal"
 import { AccountMenu } from "./account-menu"
 
-const historyItems = [
-  "Build a market brief for Austin 2024",
-  "Compare cap rates: multifamily vs industrial",
-  "Summarize rate outlook for Q3",
-  "Find comps for Class A office in Seattle",
-  "Create a deal memo for 120 units",
-  "Zoning changes in Miami 2025",
-  "Top metros for rent growth this quarter",
-  "Explain DSCR and underwriting assumptions",
-  "Synthesize lease rollover risks",
-  "Estimate NOI for a 50k sqft retail",
-]
+// A new, polished message bubble component
+function MessageBubble({ message }: { message: any }) {
+  const isUser = message.role === 'user'
+  return (
+    <div 
+      key={message.id} 
+      className={`flex items-start gap-2.5 animate-in slide-in-from-bottom-2 fade-in-0 duration-300 ${isUser ? 'justify-end' : ''}`}
+    >
+      {!isUser && (
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Sparkles className="h-4 w-4" />
+        </div>
+      )}
+      <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${
+        isUser 
+          ? 'bg-primary text-primary-foreground rounded-tr-md' 
+          : 'bg-muted/60 text-foreground rounded-tl-md'
+      }`}>
+        <p className="whitespace-pre-wrap">{message.content}</p>
+      </div>
+    </div>
+  )
+}
 
 export function LlmSidebar() {
+  const { messages, input, handleInputChange, handleSubmit, isLoading, isSidebarOpen, closeSidebar, toggleSidebar, id: currentId, openSidebar } = useCopilot()
   const [openPanel, setOpenPanel] = useState<string | null>(null)
   const [pinnedPanel, setPinnedPanel] = useState<string | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showAccountMenu, setShowAccountMenu] = useState(false)
+  const [historyItems, setHistoryItems] = useState<any[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Handle auto-open and session loading from URL
+  useEffect(() => {
+    if (searchParams.get("openChat") === "true") {
+      openSidebar()
+    }
+    const sessionId = searchParams.get("id")
+    if (sessionId && sessionId !== currentId) {
+      openSidebar()
+    }
+  }, [searchParams, currentId, openSidebar])
+
+  // Load history from API
+  useEffect(() => {
+    if (openPanel === "history" || pinnedPanel === "history" || (isSidebarOpen && historyItems.length === 0)) {
+      loadHistory()
+    }
+  }, [openPanel, pinnedPanel, isSidebarOpen, historyItems.length])
+
+  const loadHistory = async () => {
+    setLoadingHistory(true)
+    try {
+      const res = await fetch("/api/copilot/sessions")
+      if (res.ok) {
+        const data = await res.json()
+        setHistoryItems(data.sessions || [])
+      }
+    } catch (err) {
+      console.error("Failed to load history:", err)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  const loadSession = (sessionId: string) => {
+    router.push(`/chat?id=${sessionId}`)
+    openSidebar()
+  }
+
+  // Auto-scroll to bottom of chat
+  useEffect(() => {
+    if (isSidebarOpen && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [messages, isSidebarOpen])
 
   const handlePanelChange = (panel: string) => {
     setOpenPanel(panel)
@@ -61,386 +113,217 @@ export function LlmSidebar() {
     }
   }
 
+  // If the global sidebar is open, force the panel open
+  const effectiveOpenPanel = isSidebarOpen ? "chat" : openPanel
+
   const sidebarContent = (
     <div
-      className={`relative hidden md:flex border-r border-border bg-background py-4 transition-all duration-300 ease-in-out z-50 h-full ${
-        openPanel ? "w-[280px]" : "w-16"
-      }`}
+      className={`fixed inset-y-0 left-0 z-50 flex h-full border-r border-border bg-background transition-all duration-300 ease-in-out md:static ${
+        effectiveOpenPanel ? "w-[420px]" : "w-[72px]"
+      } ${!effectiveOpenPanel && "md:w-[72px]"}`}
       onMouseLeave={() => {
-        if (!pinnedPanel) {
+        if (!pinnedPanel && !isSidebarOpen) {
           setOpenPanel(null)
         }
       }}
     >
-      <div className="flex flex-col h-full w-16 shrink-0 items-center">
-        <Button variant="ghost" size="icon" className="mb-6 h-10 w-10 shrink-0">
-          <div className="flex h-8 w-8 items-center justify-center">
-            <Image src="/icon.svg" alt="Entrestate" width={28} height={28} className="object-contain" />
+      {/* Navigation Rail */}
+      <div className="flex flex-col h-full w-[72px] shrink-0 items-center border-r border-border bg-card/50">
+        <Button variant="ghost" size="icon" className="my-4 h-12 w-12 shrink-0">
+          <div className="flex h-9 w-9 items-center justify-center">
+            <Image src="/icon.svg" alt="Entrestate" width={32} height={32} className="object-contain" />
           </div>
         </Button>
 
         <Button
-          variant="ghost"
-          className="mb-8 h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent rounded-full bg-muted/50"
+          onClick={toggleSidebar}
+          className={`group relative mb-6 h-12 w-12 shrink-0 rounded-xl transition-all ${
+            isSidebarOpen ? "bg-primary text-primary-foreground shadow-md" : "bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground"
+          }`}
         >
-          <Plus className="h-5 w-5 shrink-0" />
+          {isSidebarOpen ? <X className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+          <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
+            Copilot
+          </span>
         </Button>
 
-        <nav className="flex flex-1 flex-col gap-1">
-          <div className="relative mb-2">
+        <nav className="flex flex-1 flex-col gap-2 w-full px-2">
+          <div className="group relative flex justify-center">
             <Button
               variant="ghost"
-              onMouseEnter={() => handlePanelChange("history")}
-              className={`h-10 w-10 shrink-0 mx-auto transition-colors ${
-                openPanel === "history"
-                  ? "text-foreground bg-accent"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              onClick={() => handlePanelChange("history")}
+              onMouseEnter={() => !isSidebarOpen && handlePanelChange("history")}
+              className={`h-12 w-12 shrink-0 transition-colors ${
+                effectiveOpenPanel === "history" ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
               }`}
             >
               <Clock className="h-5 w-5" />
             </Button>
-            <div className="text-[9px] text-muted-foreground text-center mt-1 font-medium">History</div>
+            <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
+              History
+            </span>
           </div>
 
-          <div className="relative mb-2">
+          <div className="group relative flex justify-center">
             <Button
               variant="ghost"
-              onMouseEnter={() => handlePanelChange("discover")}
-              className={`h-10 w-10 shrink-0 mx-auto transition-colors ${
-                openPanel === "discover"
-                  ? "text-foreground bg-accent"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
+              onMouseEnter={() => !isSidebarOpen && handlePanelChange("discover")}
+              className="h-12 w-12 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <Compass className="h-5 w-5" />
             </Button>
-            <div className="text-[9px] text-muted-foreground text-center mt-1 font-medium">Discover</div>
+            <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
+              Discover
+            </span>
           </div>
 
-          <div className="relative mb-2">
+          <div className="group relative flex justify-center">
             <Button
               variant="ghost"
-              onMouseEnter={() => handlePanelChange("workspaces")}
-              className={`h-10 w-10 shrink-0 mx-auto transition-colors ${
-                openPanel === "workspaces"
-                  ? "text-foreground bg-accent"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              <Grid3x3 className="h-5 w-5" />
-            </Button>
-            <div className="text-[9px] text-muted-foreground text-center mt-1 font-medium">Workspaces</div>
-          </div>
-
-          <div className="relative mb-2">
-            <Button
-              variant="ghost"
-              onMouseEnter={() => handlePanelChange("markets")}
-              className={`h-10 w-10 shrink-0 mx-auto transition-colors ${
-                openPanel === "markets"
-                  ? "text-foreground bg-accent"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
+              onMouseEnter={() => !isSidebarOpen && handlePanelChange("markets")}
+              className="h-12 w-12 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <TrendingUp className="h-5 w-5" />
             </Button>
-            <div className="text-[9px] text-muted-foreground text-center mt-1 font-medium">Markets</div>
-          </div>
-
-          <div className="relative mb-2">
-            <Button
-              variant="ghost"
-              onMouseEnter={() => handlePanelChange("more")}
-              className={`h-10 w-10 shrink-0 mx-auto transition-colors ${
-                openPanel === "more"
-                  ? "text-foreground bg-accent"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              <MoreHorizontal className="h-5 w-5" />
-            </Button>
-            <div className="text-[9px] text-muted-foreground text-center mt-1 font-medium">More</div>
-          </div>
-
-          <div className="relative mb-2">
-            <Button
-              variant="ghost"
-              onMouseEnter={() => handlePanelChange("notifications")}
-              className={`h-10 w-10 shrink-0 transition-colors ${
-                openPanel === "notifications"
-                  ? "text-foreground bg-accent"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              <Bell className="h-5 w-5 shrink-0" />
-            </Button>
+            <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
+              Markets
+            </span>
           </div>
         </nav>
 
-        <div className="flex flex-col gap-1 pt-4 items-center">
+        <div className="flex flex-col gap-2 pb-4 items-center w-full px-2">
           <Button
             variant="ghost"
             onClick={() => setShowAccountMenu(!showAccountMenu)}
-            className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent p-0"
+            className="h-12 w-12 shrink-0 p-0 rounded-full overflow-hidden"
           >
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full overflow-visible ring-2 ring-primary/60">
-              <div className="h-9 w-9 rounded-full overflow-hidden">
-                <Image src="/avatars/avatar-01.svg" alt="Profile" width={36} height={36} className="object-cover" />
-              </div>
-              <span className="absolute -bottom-1 -right-1 text-[7px] font-bold bg-primary text-primary-foreground px-1 py-0.5 rounded">
-                pro
-              </span>
-            </div>
+            <Image src="/avatars/avatar-01.svg" alt="Profile" width={36} height={36} className="object-cover" />
           </Button>
-          <div className="text-[9px] text-muted-foreground text-center font-medium">Profile</div>
-
-          <Button
-            variant="ghost"
-            onClick={() => setShowUpgradeModal(true)}
-            className="h-10 w-10 shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent"
-          >
-            <ArrowUpFromDot className="h-5 w-5 shrink-0" />
-          </Button>
-          <div className="text-[9px] text-muted-foreground text-center font-medium">Upgrade</div>
         </div>
       </div>
 
-      {openPanel && (
-        <div key={openPanel} className="w-[216px] bg-background border-r border-border">
-          {openPanel === "history" && (
-            <div className="flex flex-col h-full animate-in fade-in duration-300">
-              <div className="flex items-center justify-between px-3 py-2.5">
-                <h2 className="text-sm font-semibold">History</h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-6 w-6 transition-colors ${pinnedPanel === "history" ? "text-primary" : ""}`}
-                  onClick={() => handlePinToggle("history")}
-                >
-                  <Pin
-                    className={`h-3.5 w-3.5 transition-transform ${pinnedPanel === "history" ? "rotate-45" : ""}`}
-                  />
+      {/* Panel Content */}
+      {effectiveOpenPanel && (
+        <div className="flex flex-1 flex-col h-full bg-background min-w-0">
+          
+          {/* Chat Panel (Copilot) */}
+          {isSidebarOpen ? (
+            <div className="flex flex-col h-full animate-in slide-in-from-left-5 duration-300">
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-semibold">Copilot</h2>
+                </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={closeSidebar}>
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="px-3 py-1.5">
-                <h3 className="text-[11px] font-medium text-muted-foreground">Recent</h3>
-              </div>
-              <ScrollArea className="flex-1 px-1.5">
-                <div className="space-y-0 pb-2">
-                  {historyItems.map((item, index) => (
-                    <button
-                      key={index}
-                      className="group w-full text-left px-2 py-1.5 text-[13px] leading-tight text-foreground hover:bg-accent rounded transition-all duration-200 relative"
-                    >
-                      <span className="block truncate pr-4">{item}</span>
-                      <span className="absolute right-2 top-1.5 bottom-1.5 w-8 bg-gradient-to-l from-background via-background to-transparent group-hover:from-accent group-hover:via-accent pointer-events-none transition-colors duration-200" />
-                    </button>
-                  ))}
-                </div>
+
+              <ScrollArea className="flex-1 px-4 py-4">
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center px-4 -mt-8 animate-in fade-in-5 duration-500">
+                    <div className="bg-primary/10 p-4 rounded-full mb-4 shadow-inner">
+                      <Sparkles className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-base font-semibold text-foreground">How can I help you today?</p>
+                    <div className="mt-4 grid grid-cols-2 gap-2 w-full text-xs text-muted-foreground">
+                      <div className="p-3 rounded-lg bg-muted/50 text-left">Compare areas</div>
+                      <div className="p-3 rounded-lg bg-muted/50 text-left">Screen deals</div>
+                      <div className="p-3 rounded-lg bg-muted/50 text-left">Draft memos</div>
+                      <div className="p-3 rounded-lg bg-muted/50 text-left">Check prices</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {messages.map((m) => <MessageBubble key={m.id} message={m} />)}
+                    {isLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-muted/60 rounded-2xl rounded-tl-md px-4 py-2.5 shadow-sm">
+                          <div className="flex gap-1.5 items-center">
+                            <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                )}
               </ScrollArea>
-              <div className="px-3 py-2">
-                <button className="text-xs text-primary hover:underline">View history</button>
+
+              <div className="p-4 border-t border-border bg-card/20">
+                <form onSubmit={handleSubmit} className="relative">
+                  <Textarea
+                    value={input}
+                    onChange={handleInputChange}
+                    placeholder="Ask anything..."
+                    className="min-h-[88px] w-full resize-none rounded-xl border-border bg-background shadow-inner pr-12 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:ring-offset-background"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault()
+                        handleSubmit(e as any)
+                      }
+                    }}
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    disabled={isLoading || !input.trim()}
+                    className="absolute bottom-3 right-3 h-10 w-10 rounded-lg transition-transform hover:scale-105 active:scale-95"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
               </div>
             </div>
-          )}
-
-          {openPanel === "discover" && (
+          ) : (
+            /* Other Panels (History, Discover, etc.) */
             <div className="flex flex-col h-full animate-in fade-in duration-300">
-              <div className="flex items-center justify-between px-3 py-2.5">
-                <h2 className="text-sm font-semibold">Discover</h2>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                <h2 className="text-sm font-semibold capitalize">{openPanel}</h2>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`h-6 w-6 transition-colors ${pinnedPanel === "discover" ? "text-primary" : ""}`}
-                  onClick={() => handlePinToggle("discover")}
+                  className={`h-8 w-8 transition-colors ${pinnedPanel === openPanel ? "text-primary" : ""}`}
+                  onClick={() => handlePinToggle(openPanel!)}
                 >
-                  <Pin
-                    className={`h-3.5 w-3.5 transition-transform ${pinnedPanel === "discover" ? "rotate-45" : ""}`}
-                  />
+                  <Pin className={`h-4 w-4 transition-transform ${pinnedPanel === openPanel ? "rotate-45" : ""}`} />
                 </Button>
               </div>
-              <div className="p-1.5">
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Target className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">For You</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Star className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Top Searches</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {openPanel === "workspaces" && (
-            <div className="flex flex-col h-full animate-in fade-in duration-300">
-              <div className="flex items-center justify-between px-3 py-2.5">
-                <h2 className="text-sm font-semibold">Workspaces</h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-6 w-6 transition-colors ${pinnedPanel === "workspaces" ? "text-primary" : ""}`}
-                  onClick={() => handlePinToggle("workspaces")}
-                >
-                  <Pin
-                    className={`h-3.5 w-3.5 transition-transform ${pinnedPanel === "workspaces" ? "rotate-45" : ""}`}
-                  />
-                </Button>
-              </div>
-              <div className="p-1.5">
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <LayoutGrid className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Templates</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Plus className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Create workspace</span>
-                </button>
-              </div>
-              <div className="px-1.5 pb-1.5">
-                <div className="flex items-center justify-between px-2.5 py-1.5">
-                  <h3 className="text-[11px] font-medium text-muted-foreground">Private</h3>
-                  <Button variant="ghost" size="icon" className="h-5 w-5">
-                    <Plus className="h-3 w-3" />
-                  </Button>
+              
+              {openPanel === "history" && (
+                <div className="flex-1 flex flex-col min-h-0">
+                  {loadingHistory ? (
+                    <div className="flex items-center justify-center py-10">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    </div>
+                  ) : historyItems.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-muted-foreground">
+                      No recent sessions found.
+                    </div>
+                  ) : (
+                    <ScrollArea className="flex-1 p-2">
+                      <div className="space-y-1">
+                        {historyItems.map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => loadSession(item.id)}
+                            className={`group w-full text-left px-3 py-2.5 text-[13px] hover:bg-accent rounded-lg truncate transition-colors ${
+                              currentId === item.id ? 'bg-accent font-semibold text-foreground' : 'text-muted-foreground'
+                            }`}
+                          >
+                            <p className="truncate mb-1">{item.title || "Untitled Session"}</p>
+                            <p className="text-[10px] text-muted-foreground/70 group-hover:text-foreground/80">
+                              {new Date(item.updatedAt).toLocaleDateString()}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
                 </div>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <FolderClosed className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">My Workspace</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {openPanel === "markets" && (
-            <div className="flex flex-col h-full animate-in fade-in duration-300">
-              <div className="flex items-center justify-between px-3 py-2.5">
-                <h2 className="text-sm font-semibold">Markets</h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-6 w-6 transition-colors ${pinnedPanel === "markets" ? "text-primary" : ""}`}
-                  onClick={() => handlePinToggle("markets")}
-                >
-                  <Pin
-                    className={`h-3.5 w-3.5 transition-transform ${pinnedPanel === "markets" ? "rotate-45" : ""}`}
-                  />
-                </Button>
-              </div>
-              <div className="p-1.5">
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <TrendingUp className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">US Metros</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <BarChart3 className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Global Macro</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Search className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Rates</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Users className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Demand Signals</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Target className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Supply Pipeline</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Star className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Watchlist</span>
-                </button>
-              </div>
-              <div className="px-3 py-1.5">
-                <h3 className="text-[11px] font-medium text-muted-foreground">Quick starts</h3>
-              </div>
-              <div className="p-1.5">
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Search className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Market summary</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Search className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Comparable sales</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Search className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Rent roll analysis</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Search className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Debt sizing</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Search className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Zoning check</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Search className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Investment memo</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {openPanel === "more" && (
-            <div className="flex flex-col h-full animate-in fade-in duration-300">
-              <div className="p-1.5 pt-3">
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Star className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Saved</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Bell className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Alerts</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Plus className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Uploads</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Users className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Teams</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Grid3x3 className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">Integrations</span>
-                </button>
-                <button className="w-full flex items-center gap-2.5 px-2.5 py-2 text-[13px] hover:bg-accent rounded transition-colors">
-                  <Search className="h-4 w-4 shrink-0" />
-                  <span className="font-normal">API</span>
-                </button>
-              </div>
-              <div className="mt-auto px-1.5 pb-3 pt-2">
-                <button className="w-full flex items-center justify-between px-2.5 py-2 text-[13px] text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors group">
-                  <span className="font-normal">Edit shortcuts</span>
-                  <span className="text-base transition-transform group-hover:translate-x-0.5">→</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {openPanel === "notifications" && (
-            <div className="flex flex-col h-full animate-in fade-in duration-300">
-              <div className="flex items-center justify-between px-3 py-2.5">
-                <h2 className="text-sm font-semibold">Notifications</h2>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <MoreVertical className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <Calendar className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-              <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-                <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-muted/50 mb-4">
-                  <Mail className="h-7 w-7 text-muted-foreground" />
-                </div>
-                <p className="text-sm text-muted-foreground text-center">Your notifications will appear here</p>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -450,7 +333,15 @@ export function LlmSidebar() {
 
   return (
     <>
-      {sidebarContent}
+      <div className="hidden md:flex">
+        {sidebarContent}
+      </div>
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden animate-in fade-in duration-300" onClick={closeSidebar} />
+      )}
+      <div className={`fixed inset-y-0 left-0 z-50 h-full transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        {sidebarContent}
+      </div>
       <AccountMenu isOpen={showAccountMenu} onClose={() => setShowAccountMenu(false)} />
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </>

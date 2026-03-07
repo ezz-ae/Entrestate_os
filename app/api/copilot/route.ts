@@ -242,7 +242,7 @@ export async function POST(request: Request) {
       model,
       system: copilotSystemPrompt,
       messages: await convertToModelMessages(normalizedMessages, { tools: toolset }),
-      temperature: 0,
+      temperature: 0.3,
       stopWhen: stepCountIs(6),
       toolChoice: "required",
       tools: toolset,

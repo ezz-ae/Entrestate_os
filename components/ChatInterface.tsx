@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from "react"
 import { DefaultChatTransport } from "ai"
-import { useChat } from "@ai-sdk/react"
+import { useCopilot } from "@/components/copilot-provider"
 import {
   BarChart3,
   BookmarkPlus,
@@ -369,7 +369,13 @@ export function ChatInterface({
   initialDailyLimit = 3,
   initialRemaining = 3,
 }: ChatInterfaceProps) {
+  const [mounted, setMounted] = useState(false)
   const [input, setInput] = useState("")
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const [dailyLimit, setDailyLimit] = useState<number | null>(initialDailyLimit)
   const [remaining, setRemaining] = useState<number | null>(initialRemaining)
   const [limitMessage, setLimitMessage] = useState<string | null>(null)
@@ -384,15 +390,10 @@ export function ChatInterface({
   const [slashActiveIndex, setSlashActiveIndex] = useState(0)
   const [canvasOpen, setCanvasOpen] = useState(false)
 
-  const { messages, sendMessage, status, error } = useChat({
-    id,
-    transport: new DefaultChatTransport({
-      api: "/api/copilot",
-    }),
-    body: { id },
-  })
+  const { messages, sendMessage, status, error } = useCopilot()
 
   useEffect(() => {
+    if (!mounted) return;
     let cancelled = false
 
     const loadUsage = async () => {

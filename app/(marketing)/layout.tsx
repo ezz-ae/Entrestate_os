@@ -3,7 +3,6 @@ import type { Metadata } from "next"
 import { Space_Grotesk, Fraunces, JetBrains_Mono } from "next/font/google"
 import Link from "next/link"
 import { MarketingProviders } from "./marketing-providers"
-import { SmartChat } from "@/components/smart-chat"
 import "./seq.css"
 
 export const metadata: Metadata = {
@@ -62,7 +61,6 @@ export default function MarketingLayout({
         </div>
       </header>
       <MarketingProviders>{children}</MarketingProviders>
-      <SmartChat />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Space_Grotesk, Fraunces, JetBrains_Mono } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
+import { CopilotProvider } from "@/components/copilot-provider"
 import "./globals.css"
 
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space", weight: ["400", "500", "600", "700"] })
@@ -41,7 +42,9 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          {children}
+          <CopilotProvider>
+            {children}
+          </CopilotProvider>
         </ThemeProvider>
       </body>
     </html>
