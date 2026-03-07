@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, ReactNode, useState, useEffect } from "react"
+import { createContext, useContext, ReactNode, useState, useCallback } from "react"
 import { useChat, type UseChatHelpers } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 
@@ -28,9 +28,9 @@ export function CopilotProvider({ children, initialId }: { children: ReactNode; 
     },
   })
 
-  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev)
-  const openSidebar = () => setIsSidebarOpen(true)
-  const closeSidebar = () => setIsSidebarOpen(false)
+  const toggleSidebar = useCallback(() => setIsSidebarOpen((prev) => !prev), [])
+  const openSidebar = useCallback(() => setIsSidebarOpen(true), [])
+  const closeSidebar = useCallback(() => setIsSidebarOpen(false), [])
 
   return (
     <CopilotContext.Provider

@@ -4,11 +4,11 @@ import type React from "react"
 import { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Menu, X, ArrowRight } from "lucide-react"
+import { Menu, X } from "lucide-react"
 import { AccountMenu } from "@/components/account-menu"
-import { MarketPulsePopover } from "@/components/market-pulse-popover"
 import { LlmSidebar } from "@/components/llm-search/sidebar"
 import { useCopilot } from "@/components/copilot-provider"
+import { authClient } from "@/lib/auth/client"
 import { MessageSquare } from "lucide-react"
 
 const navLinks = [
@@ -21,9 +21,14 @@ const navLinks = [
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [hasOpenChatIntent, setHasOpenChatIntent] = useState(false)
   const pathname = usePathname()
+  const isChatPage = pathname.startsWith("/chat")
   const router = useRouter()
-  const { toggleSidebar, openSidebar } = useCopilot()
+  const { toggleSidebar, openSidebar, isSidebarOpen } = useCopilot()
+  const { data: session } = authClient.useSession()
+  const isAuthenticated = Boolean(session?.user)
+  const shouldRenderSidebar = !isChatPage && (isAuthenticated || isSidebarOpen || hasOpenChatIntent)
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -35,6 +40,11 @@ export function Navbar() {
       document.body.style.overflow = ""
     }
   }, [isMobileMenuOpen])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setHasOpenChatIntent(params.get("openChat") === "true")
+  }, [pathname])
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith("/#")) {
@@ -55,12 +65,28 @@ export function Navbar() {
     setIsMobileMenuOpen(false)
   }
 
+  const handleCopilotClick = () => {
+    if (isAuthenticated) {
+      toggleSidebar()
+      return
+    }
+
+    const isMobileViewport = window.matchMedia("(max-width: 1023px)").matches
+    if (isMobileViewport) {
+      openSidebar()
+      setIsMobileMenuOpen(false)
+      return
+    }
+
+    router.push("/chat")
+  }
+
   return (
     <>
       <header
         className="app-header fixed top-0 left-0 right-0 z-50 animate-navbar-slide backdrop-blur-md bg-background/90 border-b border-border/50"
       >
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <nav className="flex items-center justify-between" aria-label="Main navigation">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="flex gap-0.5" aria-hidden="true">
@@ -68,10 +94,10 @@ export function Navbar() {
                 <div className="w-3 h-3 rounded-sm bg-foreground/60" />
                 <div className="w-3 h-3 rounded-sm bg-accent" />
               </div>
-              <span className="text-lg font-medium tracking-tight text-foreground">entrestate</span>
+              <span className="text-base sm:text-lg font-medium tracking-tight text-foreground">entrestate</span>
             </Link>
 
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden lg:flex items-center gap-5 xl:gap-8">
               {navLinks.map((link) => {
                 const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
                 return (
@@ -91,27 +117,21 @@ export function Navbar() {
               })}
             </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                onClick={toggleSidebar}
-                className="hidden md:flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/80 transition-colors"
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                Copilot
-              </button>
-              <Link
-                href="/contact"
-                className="hidden sm:flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                Talk to us
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-              <MarketPulsePopover />
+            <div className="flex items-center gap-2 sm:gap-3">
+              {!isChatPage && !isAuthenticated ? (
+                <button
+                  onClick={handleCopilotClick}
+                  className="hidden md:flex items-center rounded-full border border-border bg-secondary p-2 text-foreground hover:bg-secondary/80 transition-colors"
+                  aria-label="Open assistant"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                </button>
+              ) : null}
               <AccountMenu />
 
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden relative z-50 p-2 text-foreground"
+                className="lg:hidden relative z-50 p-2 text-foreground"
                 aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               >
                 <div className="relative w-5 h-5">
@@ -134,7 +154,7 @@ export function Navbar() {
 
       {/* Mobile menu */}
       <div
-        className={`fixed inset-0 z-40 md:hidden transition-all duration-400 ease-out ${
+        className={`fixed inset-0 z-40 lg:hidden transition-all duration-400 ease-out ${
           isMobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"
         }`}
       >
@@ -145,15 +165,6 @@ export function Navbar() {
         />
         <div className="relative h-full flex flex-col justify-center items-center px-6">
           <nav className="flex flex-col items-center gap-1">
-            <button
-              onClick={() => {
-                openSidebar()
-                setIsMobileMenuOpen(false)
-              }}
-              className="text-3xl font-medium text-foreground hover:text-accent transition-all duration-500 py-2 opacity-100 translate-y-0"
-            >
-              Chat
-            </button>
             {navLinks.map((link, i) => (
               <Link
                 key={link.label}
@@ -175,14 +186,6 @@ export function Navbar() {
             style={{ transitionDelay: isMobileMenuOpen ? "400ms" : "0ms" }}
           >
             <Link
-              href="/contact"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-2 px-6 py-3 text-base font-medium bg-primary text-primary-foreground rounded-md"
-            >
-              Talk to us
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
               href="/account"
               onClick={() => setIsMobileMenuOpen(false)}
               className="text-base text-muted-foreground hover:text-foreground transition-colors"
@@ -192,9 +195,11 @@ export function Navbar() {
           </div>
         </div>
       </div>
-      <Suspense fallback={null}>
-        <LlmSidebar />
-      </Suspense>
+      {shouldRenderSidebar ? (
+        <Suspense fallback={null}>
+          <LlmSidebar authenticated={isAuthenticated} />
+        </Suspense>
+      ) : null}
     </>
   )
 }

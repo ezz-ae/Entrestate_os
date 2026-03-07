@@ -6,6 +6,7 @@
 :root {
   --app-header-height: 4rem;
   --chat-offset: 0px;
+  --copilot-left-offset: 0px;
   --font-space: "Inter", "Segoe UI", system-ui, sans-serif;
   --font-fraunces: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   --font-jetbrains-mono: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -110,18 +111,33 @@
   max-width: 58rem;
 }
 
+@media (min-width: 768px) {
+  main#main-content {
+    padding-left: var(--copilot-left-offset);
+    transition: padding-left 0.3s ease;
+  }
+  .seq-scope {
+    padding-left: var(--copilot-left-offset);
+    transition: padding-left 0.3s ease;
+  }
+  .app-header {
+    padding-left: var(--copilot-left-offset);
+    transition: padding-left 0.3s ease;
+  }
+}
+
 @media (min-width: 1024px) {
   main#main-content {
     padding-right: var(--chat-offset);
-    transition: padding-right 0.3s ease;
+    transition: padding-left 0.3s ease, padding-right 0.3s ease;
   }
   .seq-scope {
     padding-right: var(--chat-offset);
-    transition: padding-right 0.3s ease;
+    transition: padding-left 0.3s ease, padding-right 0.3s ease;
   }
   .app-header {
     padding-right: var(--chat-offset);
-    transition: padding-right 0.3s ease;
+    transition: padding-left 0.3s ease, padding-right 0.3s ease;
   }
 }
 

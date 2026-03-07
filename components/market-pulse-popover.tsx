@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge"
 import type { MarketScoreSummary, SystemHealthcheckRow } from "@/lib/market-score/types"
 
-export function MarketPulsePopover({ className }: { className?: string }) {
+export function MarketPulsePopover({ className, compact = false }: { className?: string; compact?: boolean }) {
   const [mounted, setMounted] = useState(false)
   const [summary, setSummary] = useState<MarketScoreSummary | null>(null)
   const [healthcheck, setHealthcheck] = useState<SystemHealthcheckRow | null>(null)
@@ -49,15 +49,22 @@ export function MarketPulsePopover({ className }: { className?: string }) {
       .slice(0, 2)
   }, [summary])
 
+  const triggerClasses = compact
+    ? `inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors ${
+        className ?? ""
+      }`
+    : `hidden lg:inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/80 ${
+        className ?? ""
+      }`
+
   if (!mounted) {
     return (
       <button
-        className={`hidden lg:inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/80 ${
-          className ?? ""
-        }`}
+        className={triggerClasses}
+        aria-label="Market pulse"
       >
         <Activity className="h-3.5 w-3.5 text-accent" />
-        Market pulse
+        {!compact ? "Market pulse" : null}
       </button>
     )
   }
@@ -66,12 +73,11 @@ export function MarketPulsePopover({ className }: { className?: string }) {
     <Popover>
       <PopoverTrigger asChild>
         <button
-          className={`hidden lg:inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/80 ${
-            className ?? ""
-          }`}
+          className={triggerClasses}
+          aria-label="Market pulse"
         >
           <Activity className="h-3.5 w-3.5 text-accent" />
-          Market pulse
+          {!compact ? "Market pulse" : null}
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80">

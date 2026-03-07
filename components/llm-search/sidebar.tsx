@@ -1,17 +1,21 @@
 import { type FormEvent, type KeyboardEvent, useState, useEffect, useRef } from "react"
+import Link from "next/link"
 import { useCopilot } from "@/components/copilot-provider"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { useRouter, useSearchParams } from "next/navigation"
+import { MarketPulsePopover } from "@/components/market-pulse-popover"
 import {
   Clock,
   Compass,
+  FileText,
   TrendingUp,
   Pin,
+  MessageCircle,
   Send,
   Sparkles,
   MessageSquare,
+  Menu,
   X,
 } from "lucide-react"
 import Image from "next/image"
@@ -42,9 +46,11 @@ function MessageBubble({ message }: { message: any }) {
   )
 }
 
-export function LlmSidebar() {
+export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }) {
   const { messages, sendMessage, status, isSidebarOpen, closeSidebar, toggleSidebar, id: currentId, openSidebar } = useCopilot()
   const [input, setInput] = useState("")
+  const [isDesktopViewport, setIsDesktopViewport] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [openPanel, setOpenPanel] = useState<string | null>(null)
   const [pinnedPanel, setPinnedPanel] = useState<string | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -54,24 +60,31 @@ export function LlmSidebar() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const hasOpenChatQuery = searchParams.get("openChat") === "true"
+  const querySessionId = searchParams.get("id")
 
   // Handle auto-open and session loading from URL
   useEffect(() => {
-    if (searchParams.get("openChat") === "true") {
+    const shouldOpenFromQuery = hasOpenChatQuery || (querySessionId && querySessionId !== currentId)
+    if (!shouldOpenFromQuery) {
+      return
+    }
+
+    if (openPanel !== "chat") {
+      setOpenPanel("chat")
+    }
+
+    if (!isSidebarOpen) {
       openSidebar()
     }
-    const sessionId = searchParams.get("id")
-    if (sessionId && sessionId !== currentId) {
-      openSidebar()
-    }
-  }, [searchParams, currentId, openSidebar])
+  }, [hasOpenChatQuery, querySessionId, currentId, openPanel, isSidebarOpen, openSidebar])
 
   // Load history from API
   useEffect(() => {
-    if (openPanel === "history" || pinnedPanel === "history" || (isSidebarOpen && historyItems.length === 0)) {
+    if (openPanel === "history" || pinnedPanel === "history") {
       loadHistory()
     }
-  }, [openPanel, pinnedPanel, isSidebarOpen, historyItems.length])
+  }, [openPanel, pinnedPanel])
 
   const loadHistory = async () => {
     setLoadingHistory(true)
@@ -102,6 +115,18 @@ export function LlmSidebar() {
 
   const handlePanelChange = (panel: string) => {
     setOpenPanel(panel)
+    if (!isDesktopViewport) {
+      setIsMobileMenuOpen(false)
+      openSidebar()
+    }
+  }
+
+  const handleCloseSidebar = () => {
+    setIsMobileMenuOpen(false)
+    closeSidebar()
+    if (!isDesktopViewport) {
+      setOpenPanel("chat")
+    }
   }
 
   const handlePinToggle = (panel: string) => {
@@ -128,22 +153,60 @@ export function LlmSidebar() {
     setInput("")
   }
 
-  // If the global sidebar is open, force the panel open
-  const effectiveOpenPanel = isSidebarOpen ? "chat" : openPanel
+  // If the global sidebar is open, force the panel open.
+  const effectiveOpenPanel = authenticated
+    ? (isSidebarOpen ? (isDesktopViewport ? "chat" : openPanel ?? "chat") : openPanel)
+    : (isSidebarOpen ? openPanel ?? "chat" : null)
+  const sidebarWidthClass = authenticated
+    ? (effectiveOpenPanel ? "w-screen md:w-[420px]" : "w-[72px]")
+    : "w-screen md:w-[420px]"
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 768px)")
+
+    const syncDesktopState = () => {
+      setIsDesktopViewport(mediaQuery.matches)
+    }
+
+    syncDesktopState()
+    mediaQuery.addEventListener("change", syncDesktopState)
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncDesktopState)
+    }
+  }, [])
+
+  useEffect(() => {
+    const root = document.documentElement
+    const leftOffset = isDesktopViewport && authenticated ? (effectiveOpenPanel ? 420 : 72) : 0
+
+    root.style.setProperty("--copilot-left-offset", `${leftOffset}px`)
+
+    return () => {
+      root.style.setProperty("--copilot-left-offset", "0px")
+    }
+  }, [effectiveOpenPanel, isDesktopViewport])
+
+  useEffect(() => {
+    if (isDesktopViewport) {
+      setIsMobileMenuOpen(false)
+    }
+  }, [isDesktopViewport])
 
   const sidebarContent = (
     <div
-      className={`fixed inset-y-0 left-0 z-50 flex h-full border-r border-border bg-background transition-all duration-300 ease-in-out md:static ${
-        effectiveOpenPanel ? "w-[420px]" : "w-[72px]"
-      } ${!effectiveOpenPanel && "md:w-[72px]"}`}
+      className={`flex h-full bg-background transition-all duration-300 ease-in-out md:border-r md:border-border ${sidebarWidthClass}`}
       onMouseLeave={() => {
+        if (!isDesktopViewport) {
+          return
+        }
         if (!pinnedPanel && !isSidebarOpen) {
           setOpenPanel(null)
         }
       }}
     >
       {/* Navigation Rail */}
-      <div className="flex flex-col h-full w-[72px] shrink-0 items-center border-r border-border bg-card/50">
+      <div className={`${authenticated ? "hidden md:flex" : "hidden"} flex-col h-full w-[72px] shrink-0 items-center border-r border-border bg-card/50`}>
         <Button variant="ghost" size="icon" className="my-4 h-12 w-12 shrink-0">
           <div className="flex h-9 w-9 items-center justify-center">
             <Image src="/icon.svg" alt="Entrestate" width={32} height={32} className="object-contain" />
@@ -207,6 +270,26 @@ export function LlmSidebar() {
         </nav>
 
         <div className="flex flex-col gap-2 pb-4 items-center w-full px-2">
+          <div className="group relative flex justify-center">
+            <MarketPulsePopover compact />
+            <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
+              Market pulse
+            </span>
+          </div>
+
+          <div className="group relative flex justify-center">
+            <Link
+              href="/contact"
+              onClick={handleCloseSidebar}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            >
+              <MessageCircle className="h-5 w-5" />
+            </Link>
+            <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
+              Talk to us
+            </span>
+          </div>
+
           <Button
             variant="ghost"
             onClick={() => setShowAccountMenu(!showAccountMenu)}
@@ -222,19 +305,82 @@ export function LlmSidebar() {
         <div className="flex flex-1 flex-col h-full bg-background min-w-0">
           
           {/* Chat Panel (Copilot) */}
-          {isSidebarOpen ? (
+          {effectiveOpenPanel === "chat" ? (
             <div className="flex flex-col h-full animate-in slide-in-from-left-5 duration-300">
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <div className="flex items-center gap-2">
+                  {!isDesktopViewport && authenticated ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+                      aria-label="Toggle chat menu"
+                    >
+                      <Menu className="h-4 w-4" />
+                    </Button>
+                  ) : null}
                   <Sparkles className="h-4 w-4 text-primary" />
                   <h2 className="text-sm font-semibold">Copilot</h2>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={closeSidebar}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCloseSidebar}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
 
-              <ScrollArea className="flex-1 px-4 py-4">
+              {!isDesktopViewport && authenticated ? (
+                <div
+                  className={`overflow-hidden transition-all duration-300 ${
+                    isMobileMenuOpen ? "max-h-64 border-b border-border" : "max-h-0"
+                  }`}
+                >
+                  <div className="space-y-2 bg-card/30 p-3">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Quick actions</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={effectiveOpenPanel === "chat" ? "default" : "secondary"}
+                        onClick={() => handlePanelChange("chat")}
+                        className="justify-start"
+                      >
+                        <MessageSquare className="mr-1.5 h-4 w-4" />
+                        Chat
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={effectiveOpenPanel === "history" ? "default" : "secondary"}
+                        onClick={() => handlePanelChange("history")}
+                        className="justify-start"
+                      >
+                        <Clock className="mr-1.5 h-4 w-4" />
+                        History
+                      </Button>
+                      <Link
+                        href="/account/reports"
+                        onClick={handleCloseSidebar}
+                        className="inline-flex h-9 items-center justify-start rounded-md bg-secondary px-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+                      >
+                        <FileText className="mr-1.5 h-4 w-4" />
+                        Reports
+                      </Link>
+                      <Link
+                        href="/contact"
+                        onClick={handleCloseSidebar}
+                        className="inline-flex h-9 items-center justify-start rounded-md bg-secondary px-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+                      >
+                        <MessageCircle className="mr-1.5 h-4 w-4" />
+                        Talk to us
+                      </Link>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-background/80 px-2 py-1.5">
+                      <span className="text-xs text-muted-foreground">Market pulse</span>
+                      <MarketPulsePopover compact />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="flex-1 overflow-y-auto px-4 py-4">
                 {messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center px-4 -mt-8 animate-in fade-in-5 duration-500">
                     <div className="bg-primary/10 p-4 rounded-full mb-4 shadow-inner">
@@ -265,7 +411,7 @@ export function LlmSidebar() {
                     <div ref={messagesEndRef} />
                   </div>
                 )}
-              </ScrollArea>
+              </div>
 
               <div className="p-4 border-t border-border bg-card/20">
                 <form
@@ -301,18 +447,18 @@ export function LlmSidebar() {
             /* Other Panels (History, Discover, etc.) */
             <div className="flex flex-col h-full animate-in fade-in duration-300">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <h2 className="text-sm font-semibold capitalize">{openPanel}</h2>
+                <h2 className="text-sm font-semibold capitalize">{effectiveOpenPanel}</h2>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`h-8 w-8 transition-colors ${pinnedPanel === openPanel ? "text-primary" : ""}`}
-                  onClick={() => handlePinToggle(openPanel!)}
+                  className={`h-8 w-8 transition-colors ${pinnedPanel === effectiveOpenPanel ? "text-primary" : ""}`}
+                  onClick={() => handlePinToggle(effectiveOpenPanel)}
                 >
-                  <Pin className={`h-4 w-4 transition-transform ${pinnedPanel === openPanel ? "rotate-45" : ""}`} />
+                  <Pin className={`h-4 w-4 transition-transform ${pinnedPanel === effectiveOpenPanel ? "rotate-45" : ""}`} />
                 </Button>
               </div>
               
-              {openPanel === "history" && (
+              {effectiveOpenPanel === "history" && (
                 <div className="flex-1 flex flex-col min-h-0">
                   {loadingHistory ? (
                     <div className="flex items-center justify-center py-10">
@@ -323,7 +469,7 @@ export function LlmSidebar() {
                       No recent sessions found.
                     </div>
                   ) : (
-                    <ScrollArea className="flex-1 p-2">
+                    <div className="flex-1 overflow-y-auto p-2">
                       <div className="space-y-1">
                         {historyItems.map((item) => (
                           <button
@@ -340,7 +486,7 @@ export function LlmSidebar() {
                           </button>
                         ))}
                       </div>
-                    </ScrollArea>
+                    </div>
                   )}
                 </div>
               )}
@@ -353,13 +499,15 @@ export function LlmSidebar() {
 
   return (
     <>
-      <div className="hidden md:flex">
-        {sidebarContent}
-      </div>
+      {authenticated ? (
+        <div className="fixed inset-y-0 left-0 z-50 hidden md:flex">
+          {sidebarContent}
+        </div>
+      ) : null}
       {isSidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden animate-in fade-in duration-300" onClick={closeSidebar} />
+        <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden animate-in fade-in duration-300" onClick={handleCloseSidebar} />
       )}
-      <div className={`fixed inset-y-0 left-0 z-50 h-full transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 z-50 h-full transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}>
         {sidebarContent}
       </div>
       <AccountMenu isOpen={showAccountMenu} onClose={() => setShowAccountMenu(false)} />
