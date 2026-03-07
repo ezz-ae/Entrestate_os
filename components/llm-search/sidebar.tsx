@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { type FormEvent, type KeyboardEvent, useState, useEffect, useRef } from "react"
 import { useCopilot } from "@/components/copilot-provider"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -43,7 +43,8 @@ function MessageBubble({ message }: { message: any }) {
 }
 
 export function LlmSidebar() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, isSidebarOpen, closeSidebar, toggleSidebar, id: currentId, openSidebar } = useCopilot()
+  const { messages, sendMessage, status, isSidebarOpen, closeSidebar, toggleSidebar, id: currentId, openSidebar } = useCopilot()
+  const [input, setInput] = useState("")
   const [openPanel, setOpenPanel] = useState<string | null>(null)
   const [pinnedPanel, setPinnedPanel] = useState<string | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -111,6 +112,20 @@ export function LlmSidebar() {
       setPinnedPanel(panel)
       setOpenPanel(panel)
     }
+  }
+
+  const isLoading = status !== "ready"
+
+  const submitMessage = async (event?: FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement>) => {
+    event?.preventDefault()
+
+    const trimmedInput = input.trim()
+    if (!trimmedInput || isLoading) {
+      return
+    }
+
+    await sendMessage({ text: trimmedInput })
+    setInput("")
   }
 
   // If the global sidebar is open, force the panel open
@@ -253,16 +268,21 @@ export function LlmSidebar() {
               </ScrollArea>
 
               <div className="p-4 border-t border-border bg-card/20">
-                <form onSubmit={handleSubmit} className="relative">
+                <form
+                  onSubmit={(event) => {
+                    void submitMessage(event)
+                  }}
+                  className="relative"
+                >
                   <Textarea
                     value={input}
-                    onChange={handleInputChange}
+                    onChange={(event) => setInput(event.target.value)}
                     placeholder="Ask anything..."
                     className="min-h-[88px] w-full resize-none rounded-xl border-border bg-background shadow-inner pr-12 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:ring-offset-background"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault()
-                        handleSubmit(e as any)
+                        void submitMessage(e)
                       }
                     }}
                   />
