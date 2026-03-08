@@ -795,6 +795,12 @@ export function TimeMachineRolodex() {
 
   const [position, setPosition] = useState(0)
   const [viewMode, setViewMode] = useState<"stack" | "list">("stack")
+
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 767px)").matches) {
+      setViewMode("list")
+    }
+  }, [])
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [selectedReport, setSelectedReport] = useState<ReportCard | null>(null)
@@ -1069,8 +1075,34 @@ export function TimeMachineRolodex() {
           </>
         ) : (
           <>
-            <div className="mx-auto max-w-5xl px-6 pb-12 pt-24">
-              <div className="divide-y divide-border/70">
+            <div className="mx-auto max-w-5xl px-4 md:px-6 pb-12 pt-20 md:pt-24">
+              {/* Mobile: card grid */}
+              <div className="flex flex-col gap-3 md:hidden">
+                {cards.map((card) => (
+                  <button
+                    key={card.id}
+                    className="group w-full rounded-2xl border border-border/60 bg-card/80 p-5 text-left transition-all active:scale-[0.99]"
+                    onClick={() => openReport(card)}
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      {card.category && (
+                        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">
+                          {card.category}
+                        </span>
+                      )}
+                      <span className="ml-auto text-[10px] text-muted-foreground/50">{card.date}</span>
+                    </div>
+                    <p className="font-serif text-lg font-medium leading-snug text-foreground">{card.title}</p>
+                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground line-clamp-2">{card.subtitle}</p>
+                    <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary">
+                      Open report <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Desktop: table rows */}
+              <div className="hidden md:block divide-y divide-border/70">
                 {cards.map((card, index) => (
                   <button
                     key={card.id}
@@ -1079,7 +1111,7 @@ export function TimeMachineRolodex() {
                     onMouseLeave={() => setHoveredIndex(null)}
                     onClick={() => openReport(card)}
                   >
-                    <span className="w-20 md:w-32 shrink-0 text-xs md:text-sm text-muted-foreground">
+                    <span className="w-32 shrink-0 text-sm text-muted-foreground">
                       {card.date.split(",")[0]}, {card.date.split(",")[1]?.trim().split(" ")[0]}
                     </span>
                     {card.category && (
@@ -1087,10 +1119,10 @@ export function TimeMachineRolodex() {
                         {card.category}
                       </span>
                     )}
-                    <span className="min-w-0 flex-1 font-medium text-foreground md:flex-none md:w-60 md:shrink-0">
+                    <span className="min-w-0 w-60 shrink-0 font-medium text-foreground">
                       {card.title}
                     </span>
-                    <span className="hidden md:block min-w-0 flex-1 text-muted-foreground">{card.subtitle}</span>
+                    <span className="min-w-0 flex-1 text-muted-foreground">{card.subtitle}</span>
                     <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-1 group-hover:text-foreground" />
                   </button>
                 ))}

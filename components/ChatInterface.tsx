@@ -1098,6 +1098,9 @@ export function ChatInterface({
         reportId,
         enabledExports,
       })
+
+      // Notify ReportNudge that a new report is available
+      window.dispatchEvent(new CustomEvent("entrestate:report-created"))
     } catch {
       setReportDraft({
         status: "error",

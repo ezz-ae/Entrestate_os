@@ -17,6 +17,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
+  const toFriendlyAuthError = (message?: string | null) => {
+    const normalized = (message ?? "").toLowerCase()
+    if (normalized.includes("invalid origin")) {
+      return "Auth domain is not trusted. Add this site URL to Neon Auth trusted origins, then retry."
+    }
+    return message || "Unable to sign in. Please try again."
+  }
+
   const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string) => {
     let timeoutHandle: ReturnType<typeof setTimeout> | null = null
     const timeoutPromise = new Promise<T>((_, reject) => {
@@ -53,13 +61,13 @@ export default function LoginPage() {
       )
 
       if (error) {
-        setFormError(error.message || "Unable to sign in. Please try again.")
+        setFormError(toFriendlyAuthError(error.message))
         return
       }
 
       router.push("/workspace")
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Unable to sign in. Please try again.")
+      setFormError(toFriendlyAuthError(err instanceof Error ? err.message : null))
     } finally {
       setIsLoading(false)
     }

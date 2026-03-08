@@ -162,10 +162,10 @@ export function Navbar() {
       >
         <div
           className={`absolute inset-0 bg-background transition-opacity duration-400 ${
-            isMobileMenuOpen ? "opacity-100" : "opacity-0"
+            isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
         />
-        <div className="relative h-full flex flex-col justify-center items-center px-6">
+        <div className={`relative h-full flex flex-col justify-center items-center px-6 ${isMobileMenuOpen ? "" : "pointer-events-none"}`}>
           <nav className="flex flex-col items-center gap-1">
             {navLinks.map((link, i) => (
               <Link

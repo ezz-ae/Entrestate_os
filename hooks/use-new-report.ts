@@ -32,7 +32,7 @@ export function useNewReport() {
   const [report, setReport] = useState<NewReport | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchLatest = useCallback(() => {
     fetch("/api/reports")
       .then((r) => (r.ok ? r.json() : { reports: [] }))
       .then((data) => {
@@ -44,6 +44,15 @@ export function useNewReport() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    fetchLatest()
+  }, [fetchLatest])
+
+  useEffect(() => {
+    window.addEventListener("entrestate:report-created", fetchLatest)
+    return () => window.removeEventListener("entrestate:report-created", fetchLatest)
+  }, [fetchLatest])
 
   const dismiss = useCallback((id: string) => {
     markReportSeen(id)

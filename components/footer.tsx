@@ -5,6 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useNewReport, markReportSeen } from "@/hooks/use-new-report"
+import { LATEST_LIBRARY_REPORT } from "@/lib/latest-library-report"
 import {
   ArrowRight,
   MapPin,
@@ -14,6 +15,7 @@ import {
   CheckCircle2,
   FileText,
   Mail,
+  BookOpen,
 } from "lucide-react"
 
 // ── Navigation structure ──────────────────────────────────────────────────────
@@ -112,19 +114,14 @@ function GitHubIcon({ className }: { className?: string }) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function Footer() {
-  const [email, setEmail] = useState("")
-  const [subscribed, setSubscribed] = useState(false)
   const { report, dismiss } = useNewReport()
   const [reportEmailSent, setReportEmailSent] = useState(false)
   const [reportSending, setReportSending] = useState(false)
 
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (email.trim()) {
-      setSubscribed(true)
-      setEmail("")
-    }
-  }
+  // Library report email state
+  const [libraryEmail, setLibraryEmail] = useState("")
+  const [libraryEmailSent, setLibraryEmailSent] = useState(false)
+  const [libraryEmailSending, setLibraryEmailSending] = useState(false)
 
   const handleEmailReport = async () => {
     if (!report || reportSending) return
@@ -137,6 +134,25 @@ export function Footer() {
       setReportEmailSent(true)
     } finally {
       setReportSending(false)
+    }
+  }
+
+  const handleLibraryEmail = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!libraryEmail.trim() || libraryEmailSending) return
+    setLibraryEmailSending(true)
+    try {
+      await fetch("/api/library-report/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: libraryEmail }),
+      })
+      setLibraryEmailSent(true)
+      setLibraryEmail("")
+    } catch {
+      setLibraryEmailSent(true)
+    } finally {
+      setLibraryEmailSending(false)
     }
   }
 
@@ -259,42 +275,61 @@ export function Footer() {
                   </Link>
                 </div>
               ) : (
-                /* ── Default: newsletter ── */
+                /* ── Default: latest published library report ── */
                 <div className="rounded-2xl border border-border/60 bg-card/40 p-5">
-                  <p className="mb-1 text-sm font-medium text-foreground">Market intelligence, delivered</p>
-                  <p className="mb-4 text-xs text-muted-foreground">
-                    Weekly briefings on UAE property trends, data signals, and platform updates.
+                  {/* Header */}
+                  <div className="mb-4 flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-background/60 text-muted-foreground">
+                      <BookOpen className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">Latest Report</p>
+                      <p className="mt-0.5 text-[10px] text-muted-foreground/50">{LATEST_LIBRARY_REPORT.date} · {LATEST_LIBRARY_REPORT.category}</p>
+                    </div>
+                  </div>
+
+                  <p className="mb-1 font-serif text-sm font-medium leading-snug text-foreground line-clamp-2">
+                    {LATEST_LIBRARY_REPORT.title}
                   </p>
-                  {subscribed ? (
-                    <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-4 py-3">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                      <p className="text-sm text-emerald-400">You're on the list — thank you.</p>
+                  <p className="mb-4 text-xs leading-relaxed text-muted-foreground line-clamp-2">
+                    {LATEST_LIBRARY_REPORT.subtitle}
+                  </p>
+
+                  {/* Read button */}
+                  <Link
+                    href={LATEST_LIBRARY_REPORT.href}
+                    className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-border/60 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-border hover:bg-secondary/60"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                    Open &amp; read report
+                  </Link>
+
+                  {/* Email form */}
+                  {libraryEmailSent ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                      <p className="text-xs text-emerald-400">Report sent — check your inbox.</p>
                     </div>
                   ) : (
-                    <form onSubmit={handleSubscribe} className="flex gap-2">
+                    <form onSubmit={handleLibraryEmail} className="flex gap-2">
                       <input
                         type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={libraryEmail}
+                        onChange={(e) => setLibraryEmail(e.target.value)}
                         placeholder="you@company.com"
                         required
-                        className="h-10 flex-1 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                       <button
                         type="submit"
-                        className="h-10 shrink-0 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                        disabled={libraryEmailSending}
+                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
                       >
-                        Subscribe
+                        <Mail className="h-3 w-3 shrink-0" />
+                        {libraryEmailSending ? "…" : "Email me"}
                       </button>
                     </form>
                   )}
-                  <p className="mt-2.5 text-[10px] text-muted-foreground/50">
-                    No spam. Unsubscribe anytime. Data handled under our{" "}
-                    <Link href="/privacy" className="underline underline-offset-2 hover:text-muted-foreground">
-                      Privacy Policy
-                    </Link>
-                    .
-                  </p>
                 </div>
               )}
             </div>

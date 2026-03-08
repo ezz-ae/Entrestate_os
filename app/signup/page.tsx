@@ -19,6 +19,14 @@ export default function SignUpPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
+  const toFriendlyAuthError = (message?: string | null) => {
+    const normalized = (message ?? "").toLowerCase()
+    if (normalized.includes("invalid origin")) {
+      return "Auth domain is not trusted. Add this site URL to Neon Auth trusted origins, then retry."
+    }
+    return message || "Unable to create account. Please try again."
+  }
+
   const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string) => {
     let timeoutHandle: ReturnType<typeof setTimeout> | null = null
     const timeoutPromise = new Promise<T>((_, reject) => {
@@ -56,7 +64,7 @@ export default function SignUpPage() {
       )
 
       if (error) {
-        setFormError(error.message || "Unable to create account. Please try again.")
+        setFormError(toFriendlyAuthError(error.message))
         return
       }
 
@@ -67,7 +75,7 @@ export default function SignUpPage() {
 
       setSuccessMessage("Check your email to verify your account, then sign in.")
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Unable to create account. Please try again.")
+      setFormError(toFriendlyAuthError(err instanceof Error ? err.message : null))
     } finally {
       setIsLoading(false)
     }

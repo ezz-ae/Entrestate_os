@@ -7,15 +7,14 @@ import {
   Map,
   Users2,
   ShieldCheck,
-  Zap,
-  BarChart3,
   TrendingUp,
   FileText,
 } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { HeroSection } from "@/components/homepage/hero-section"
+import { DecisionTunnelStepper } from "@/components/homepage/decision-tunnel-stepper"
 import { getMarketPulseSummary } from "@/lib/frontend-content"
-import { formatAed } from "@/components/decision/formatters"
 import { SEO, absoluteUrl } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
@@ -43,40 +42,6 @@ export const metadata: Metadata = {
   },
 }
 
-const DECISION_STEPS = [
-  {
-    step: "01",
-    label: "Intent",
-    detail: "Define your goal — yield, capital growth, stress resilience, or Golden Visa threshold.",
-    icon: Zap,
-    color: "text-blue-400",
-    border: "border-blue-500/20 bg-blue-500/5",
-  },
-  {
-    step: "02",
-    label: "Evidence",
-    detail: "Every project is scored across a 5-layer stack: L1 Canonical → L2 Derived → L3 Dynamic → L4 External → L5 Raw.",
-    icon: BarChart3,
-    color: "text-violet-400",
-    border: "border-violet-500/20 bg-violet-500/5",
-  },
-  {
-    step: "03",
-    label: "Judgment",
-    detail: "Timing signals (BUY/HOLD/WAIT), stress grades (A–F), and composite scores replace gut feel with structure.",
-    icon: ShieldCheck,
-    color: "text-emerald-400",
-    border: "border-emerald-500/20 bg-emerald-500/5",
-  },
-  {
-    step: "04",
-    label: "Action",
-    detail: "Generate an investor memo, export a shortlist, or share a scored report — with a full auditable evidence trail.",
-    icon: FileText,
-    color: "text-amber-400",
-    border: "border-amber-500/20 bg-amber-500/5",
-  },
-]
 
 const SURFACES = [
   {
@@ -182,7 +147,6 @@ export default async function HomePage() {
   const buySignals = pulse.summary.buy_signals || 2667
   const avgYield = pulse.summary.avg_yield
   const avgPrice = pulse.summary.avg_price
-  const buyPct = totalProjects > 0 ? ((buySignals / totalProjects) * 100).toFixed(0) : "—"
 
   return (
     <main id="main-content">
@@ -195,75 +159,12 @@ export default async function HomePage() {
       <div className="mx-auto max-w-[1100px] px-6 pb-28 pt-32 md:pt-44">
 
         {/* ── Hero ── */}
-        <section className="text-center">
-          <p className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-4 py-1.5 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.5)]" />
-            {totalProjects.toLocaleString()} projects scored · {buySignals.toLocaleString()} BUY signals live
-          </p>
-
-          <h1 className="mt-6 font-serif text-4xl font-medium leading-tight tracking-tight text-foreground md:text-6xl lg:text-7xl">
-            The decision layer<br />
-            <span className="text-primary">for UAE real estate.</span>
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-            Not a portal. Not a listing feed. A structured intelligence system — every project scored for timing, stress resilience, yield, and evidence quality. So you can decide with clarity, not noise.
-          </p>
-
-          {/* CTAs */}
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/overview"
-              className="hidden md:flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-lg"
-            >
-              Open Dashboard
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/chat"
-              className="flex items-center gap-2 rounded-full border border-border bg-card px-7 py-3 text-sm font-semibold text-foreground transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
-            >
-              <Sparkles className="h-4 w-4 text-primary" />
-              Ask the AI
-            </Link>
-          </div>
-        </section>
-
-        {/* ── Live market pulse ── */}
-        <section className="mt-16 grid grid-cols-2 gap-3 md:grid-cols-4">
-          {[
-            {
-              label: "Projects Scored",
-              value: totalProjects.toLocaleString(),
-              sub: "Active UAE inventory",
-              color: "text-foreground",
-            },
-            {
-              label: "BUY Signals",
-              value: buySignals.toLocaleString(),
-              sub: `${buyPct}% of total inventory`,
-              color: "text-emerald-400",
-            },
-            {
-              label: "Avg Asking Price",
-              value: formatAed(avgPrice),
-              sub: "L1 canonical",
-              color: "text-foreground",
-            },
-            {
-              label: "Avg Gross Yield",
-              value: typeof avgYield === "number" ? `${avgYield.toFixed(1)}%` : "—",
-              sub: "Across all inventory",
-              color: "text-foreground",
-            },
-          ].map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-border bg-card px-5 py-4 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{stat.label}</p>
-              <p className={`mt-2 text-2xl font-bold tabular-nums ${stat.color}`}>{stat.value}</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">{stat.sub}</p>
-            </div>
-          ))}
-        </section>
+        <HeroSection
+          totalProjects={totalProjects}
+          buySignals={buySignals}
+          avgPrice={avgPrice}
+          avgYield={avgYield}
+        />
 
         {/* ── Decision tunnel ── */}
         <section className="mt-20">
@@ -276,21 +177,7 @@ export default async function HomePage() {
               Every signal passes through a structured pipeline. No raw listing data goes directly to a decision.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {DECISION_STEPS.map((step) => {
-              const Icon = step.icon
-              return (
-                <div key={step.step} className={`rounded-2xl border p-5 ${step.border}`}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-[10px] font-bold tabular-nums text-muted-foreground/40">{step.step}</span>
-                    <Icon className={`h-4 w-4 ${step.color}`} />
-                    <p className={`text-sm font-semibold ${step.color}`}>{step.label}</p>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{step.detail}</p>
-                </div>
-              )
-            })}
-          </div>
+          <DecisionTunnelStepper />
         </section>
 
         {/* ── Intelligence surfaces ── */}
