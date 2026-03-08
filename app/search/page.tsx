@@ -1,62 +1,169 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useRef, useEffect } from "react"
+import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { Search, Layers, Filter, Clock, Loader2, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  Search,
+  SlidersHorizontal,
+  X,
+  Loader2,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  ShieldCheck,
+  Sparkles,
+  Building2,
+  MapPin,
+  ChevronDown,
+} from "lucide-react"
 
-type Template = {
-  label: string
-  filters: Record<string, string | number | boolean>
-  sort: string
-}
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-const templates: Template[] = [
+type Project = Record<string, unknown>
+
+// ── Preset shortcuts ──────────────────────────────────────────────────────────
+
+const PRESETS = [
   {
-    label: "Market inventory snapshot",
-    filters: {},
+    label: "All projects",
+    icon: Sparkles,
+    filters: { timing: "", stress: "", minPrice: "", maxPrice: "" },
     sort: "god_metric",
   },
   {
-    label: "BUY signal projects",
-    filters: { timing: "BUY" },
+    label: "BUY signals",
+    icon: TrendingUp,
+    filters: { timing: "BUY", stress: "", minPrice: "", maxPrice: "" },
     sort: "god_metric",
   },
   {
-    label: "Rental yield leaders",
-    filters: {},
+    label: "High yield",
+    icon: TrendingUp,
+    filters: { timing: "", stress: "", minPrice: "", maxPrice: "" },
     sort: "yield",
   },
   {
-    label: "High-safety grade assets",
-    filters: { stress: "B" },
+    label: "Grade A only",
+    icon: ShieldCheck,
+    filters: { timing: "", stress: "A", minPrice: "", maxPrice: "" },
     sort: "god_metric",
   },
   {
-    label: "Golden Visa eligible",
-    filters: { goldenVisa: true, minPrice: 2000000 },
+    label: "Golden Visa",
+    icon: Building2,
+    filters: { timing: "", stress: "", minPrice: "2000000", maxPrice: "" },
     sort: "price",
   },
 ]
 
-const timeDepthBands = [
-  { label: "30 days", tier: "Free" },
-  { label: "2 years", tier: "Pro" },
-  { label: "5 years", tier: "Business" },
-  { label: "Unlimited", tier: "Enterprise" },
+const TIMING_OPTIONS = [
+  { value: "", label: "Any signal" },
+  { value: "BUY", label: "BUY", color: "text-emerald-400" },
+  { value: "HOLD", label: "HOLD", color: "text-amber-400" },
+  { value: "WAIT", label: "WAIT", color: "text-red-400" },
 ]
 
-const sortOptions = [
+const GRADE_OPTIONS = [
+  { value: "", label: "Any grade" },
+  { value: "A", label: "Grade A" },
+  { value: "B", label: "Grade B" },
+  { value: "C", label: "Grade C" },
+]
+
+const SORT_OPTIONS = [
   { value: "god_metric", label: "Score" },
-  { value: "price", label: "Price" },
   { value: "yield", label: "Yield" },
+  { value: "price", label: "Price" },
   { value: "reliability", label: "Reliability" },
 ]
 
-type Project = Record<string, unknown>
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function signalStyle(signal: string) {
+  if (signal === "BUY") return { badge: "bg-emerald-500/12 text-emerald-400 border-emerald-500/25", bar: "bg-emerald-400" }
+  if (signal === "HOLD") return { badge: "bg-amber-500/12 text-amber-400 border-amber-500/25", bar: "bg-amber-400" }
+  return { badge: "bg-red-500/12 text-red-400 border-red-500/25", bar: "bg-red-400" }
+}
+
+function gradeStyle(grade: string) {
+  if (grade === "A") return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+  if (grade === "B") return "bg-blue-500/10 text-blue-400 border-blue-500/20"
+  return "bg-amber-500/10 text-amber-400 border-amber-500/20"
+}
+
+// ── Dropdown filter chip ──────────────────────────────────────────────────────
+
+function FilterChip({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: string
+  options: { value: string; label: string; color?: string }[]
+  onChange: (v: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const active = value !== ""
+  const displayLabel = value ? (options.find((o) => o.value === value)?.label ?? label) : label
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-medium transition-all duration-200 ${
+          active
+            ? "border-primary/50 bg-primary/10 text-primary shadow-sm shadow-primary/10"
+            : "border-border/50 bg-card/60 text-muted-foreground hover:border-border hover:text-foreground"
+        }`}
+      >
+        {displayLabel}
+        {active ? (
+          <X
+            className="h-3 w-3 opacity-60 hover:opacity-100"
+            onClick={(e) => { e.stopPropagation(); onChange(""); setOpen(false) }}
+          />
+        ) : (
+          <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 z-50 mt-1.5 min-w-[140px] rounded-xl border border-border/60 bg-card shadow-xl shadow-black/20 overflow-hidden">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { onChange(opt.value); setOpen(false) }}
+              className={`w-full px-4 py-2.5 text-left text-xs transition-colors hover:bg-muted/50 ${
+                opt.value === value ? "text-primary font-medium" : `text-foreground ${opt.color ?? ""}`
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function SearchPage() {
-  const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null)
+  const [query, setQuery] = useState("")
   const [area, setArea] = useState("")
   const [developer, setDeveloper] = useState("")
   const [timing, setTiming] = useState("")
@@ -64,30 +171,22 @@ export default function SearchPage() {
   const [minPrice, setMinPrice] = useState("")
   const [maxPrice, setMaxPrice] = useState("")
   const [sortBy, setSortBy] = useState("god_metric")
-  const [page, setPage] = useState(1)
+  const [activePreset, setActivePreset] = useState<number | null>(null)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const [results, setResults] = useState<Project[]>([])
   const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
-  const [hasQueried, setHasQueried] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
 
-  function applyTemplate(index: number) {
-    setSelectedTemplate(index)
-    const tpl = templates[index]
-    setArea("")
-    setDeveloper("")
-    setTiming(String(tpl.filters.timing ?? ""))
-    setStress(String(tpl.filters.stress ?? ""))
-    setMinPrice(tpl.filters.minPrice ? String(tpl.filters.minPrice) : "")
-    setMaxPrice(tpl.filters.maxPrice ? String(tpl.filters.maxPrice) : "")
-    setSortBy(tpl.sort)
-    setPage(1)
-  }
+  const totalPages = Math.ceil(total / 24)
 
   async function runQuery(queryPage = 1) {
     setLoading(true)
-    setHasQueried(true)
+    setHasSearched(true)
     const params = new URLSearchParams()
+    if (query) params.set("q", query)
     if (area) params.set("area", area)
     if (developer) params.set("developer", developer)
     if (timing) params.set("timing", timing)
@@ -96,12 +195,11 @@ export default function SearchPage() {
     if (maxPrice) params.set("maxPrice", maxPrice)
     params.set("sortBy", sortBy)
     params.set("page", String(queryPage))
-    params.set("pageSize", "25")
+    params.set("pageSize", "24")
 
     try {
       const res = await fetch(`/api/search?${params.toString()}`)
-      if (!res.ok) throw new Error("Query failed")
-      const data = await res.json()
+      const data = res.ok ? await res.json() : {}
       setResults(data.projects ?? [])
       setTotal(data.total ?? 0)
       setPage(queryPage)
@@ -113,308 +211,387 @@ export default function SearchPage() {
     }
   }
 
-  useEffect(() => {
-    if (selectedTemplate !== null) {
-      runQuery(1)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTemplate])
+  function applyPreset(i: number) {
+    const p = PRESETS[i]
+    setActivePreset(i)
+    setQuery("")
+    setArea("")
+    setDeveloper("")
+    setTiming(p.filters.timing)
+    setStress(p.filters.stress)
+    setMinPrice(p.filters.minPrice)
+    setMaxPrice(p.filters.maxPrice)
+    setSortBy(p.sort)
+    // run immediately
+    const params = new URLSearchParams()
+    if (p.filters.timing) params.set("timing", p.filters.timing)
+    if (p.filters.stress) params.set("stress", p.filters.stress)
+    if (p.filters.minPrice) params.set("minPrice", p.filters.minPrice)
+    params.set("sortBy", p.sort)
+    params.set("page", "1")
+    params.set("pageSize", "24")
+    setLoading(true)
+    setHasSearched(true)
+    setPage(1)
+    fetch(`/api/search?${params.toString()}`)
+      .then((r) => (r.ok ? r.json() : { projects: [], total: 0 }))
+      .then((data: { projects?: Project[]; total?: number }) => { setResults(data.projects ?? []); setTotal(data.total ?? 0) })
+      .catch(() => { setResults([]); setTotal(0) })
+      .finally(() => setLoading(false))
+  }
 
-  const totalPages = Math.ceil(total / 25)
+  const activeFilterCount = [timing, stress, area, developer, minPrice, maxPrice].filter(Boolean).length
 
   return (
     <main id="main-content">
       <Navbar />
-      <div className="pt-28 pb-20 md:pt-36 md:pb-28">
-        <div className="mx-auto w-full max-w-[1440px] px-6">
-          <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">Search</p>
-              <h1 className="mt-3 text-3xl md:text-5xl font-serif text-foreground">Time Table Builder</h1>
-              <p className="mt-3 text-sm text-muted-foreground max-w-2xl">
-                Build decision-ready tables with tier-gated depth and a strict column registry. Save once, reuse
-                everywhere.
-              </p>
+
+      <div className="mx-auto max-w-[1200px] px-6 pb-28 pt-28 md:pt-36">
+
+        {/* ── Page header ── */}
+        <div className="mb-10">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/40">
+            Market Intelligence
+          </p>
+          <h1 className="mt-2 font-serif text-4xl font-medium text-foreground md:text-5xl">
+            Project Search
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Filter across {(7015).toLocaleString()} scored projects. Click any result to go deeper.
+          </p>
+        </div>
+
+        {/* ── Search + filter controls ── */}
+        <div className="mb-8 space-y-4">
+
+          {/* Main search bar */}
+          <div className="relative flex gap-2">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); setActivePreset(null) }}
+                onKeyDown={(e) => e.key === "Enter" && runQuery(1)}
+                placeholder="Search by project name, developer, area…"
+                className="h-12 w-full rounded-xl border border-border/60 bg-card/60 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground/40 backdrop-blur-sm transition focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/10"
+              />
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-4 py-2 text-xs text-muted-foreground">
-              <Clock className="h-3.5 w-3.5 text-accent" />
-              Depth gated by tier
-            </div>
-          </header>
+            <button
+              onClick={() => runQuery(1)}
+              disabled={loading}
+              className="flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-60"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Search <ArrowRight className="h-4 w-4" /></>}
+            </button>
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-6">
-            {/* Builder controls */}
-            <section className="rounded-2xl border border-border/70 bg-card/70 p-6">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Filter className="h-4 w-4 text-accent" />
-                Builder controls
-              </div>
-              <div className="mt-4 space-y-6">
-                {/* Templates */}
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Template</p>
-                  <div className="mt-3 space-y-2">
-                    {templates.map((item, index) => (
-                      <button
-                        key={item.label}
-                        onClick={() => applyTemplate(index)}
-                        className={`w-full text-left rounded-xl border px-4 py-3 text-sm transition-colors ${
-                          selectedTemplate === index
-                            ? "border-primary/60 bg-primary/10 text-foreground"
-                            : "border-border/60 bg-background/50 text-foreground hover:border-primary/30"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+          {/* Preset pills */}
+          <div className="flex flex-wrap gap-2">
+            {PRESETS.map((p, i) => {
+              const Icon = p.icon
+              return (
+                <button
+                  key={p.label}
+                  onClick={() => applyPreset(i)}
+                  className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-medium transition-all duration-200 ${
+                    activePreset === i
+                      ? "border-primary/60 bg-primary/10 text-primary shadow-sm shadow-primary/10"
+                      : "border-border/40 bg-background/50 text-muted-foreground hover:border-border/70 hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-3 w-3" />
+                  {p.label}
+                </button>
+              )
+            })}
 
-                {/* Time depth */}
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Time depth</p>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    {timeDepthBands.map((band) => (
-                      <div
-                        key={band.label}
-                        className="rounded-xl border border-border/60 bg-background/50 px-4 py-3 text-sm text-foreground"
-                      >
-                        <div className="font-medium">{band.label}</div>
-                        <div className="text-xs text-muted-foreground">{band.tier} tier</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Filters */}
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Filters</p>
-                  <div className="mt-3 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        placeholder="Area"
-                        value={area}
-                        onChange={(e) => setArea(e.target.value)}
-                        className="rounded-xl border border-border/60 bg-background/50 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Developer"
-                        value={developer}
-                        onChange={(e) => setDeveloper(e.target.value)}
-                        className="rounded-xl border border-border/60 bg-background/50 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <select
-                        value={timing}
-                        onChange={(e) => setTiming(e.target.value)}
-                        className="rounded-xl border border-border/60 bg-background/50 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
-                      >
-                        <option value="">Timing signal</option>
-                        <option value="BUY">BUY</option>
-                        <option value="HOLD">HOLD</option>
-                        <option value="WAIT">WAIT</option>
-                      </select>
-                      <select
-                        value={stress}
-                        onChange={(e) => setStress(e.target.value)}
-                        className="rounded-xl border border-border/60 bg-background/50 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/50"
-                      >
-                        <option value="">Risk grade</option>
-                        <option value="A">Grade A</option>
-                        <option value="B">Grade B</option>
-                        <option value="C">Grade C</option>
-                      </select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="number"
-                        placeholder="Min price (AED)"
-                        value={minPrice}
-                        onChange={(e) => setMinPrice(e.target.value)}
-                        className="rounded-xl border border-border/60 bg-background/50 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Max price (AED)"
-                        value={maxPrice}
-                        onChange={(e) => setMaxPrice(e.target.value)}
-                        className="rounded-xl border border-border/60 bg-background/50 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sort + Run */}
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 flex-1">
-                    <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="flex-1 rounded-xl border border-border/60 bg-background/50 px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
-                    >
-                      {sortOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <button
-                    onClick={() => runQuery(1)}
-                    disabled={loading}
-                    className="rounded-xl bg-foreground text-background px-5 py-2 text-sm font-medium transition hover:bg-foreground/90 disabled:opacity-50"
-                  >
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Run query"}
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            {/* Results preview */}
-            <section className="rounded-2xl border border-border/70 bg-card/70 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <Layers className="h-4 w-4 text-accent" />
-                  Time Table preview
-                </div>
-                {hasQueried && (
-                  <span className="text-xs text-muted-foreground">
-                    {total.toLocaleString()} results
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={() => setShowAdvanced((v) => !v)}
+                className={`flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-medium transition-all ${
+                  showAdvanced || activeFilterCount > 0
+                    ? "border-border/60 bg-card text-foreground"
+                    : "border-border/40 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <SlidersHorizontal className="h-3 w-3" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                    {activeFilterCount}
                   </span>
                 )}
+              </button>
+            </div>
+          </div>
+
+          {/* Expanded filter row */}
+          {showAdvanced && (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/40 bg-card/40 px-4 py-3">
+
+              {/* Inline text filters */}
+              <div className="flex items-center gap-1.5 rounded-full border border-border/50 bg-background/60 px-3 py-1.5">
+                <MapPin className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+                <input
+                  type="text"
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
+                  placeholder="Area"
+                  className="w-24 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+                />
+                {area && <X className="h-3 w-3 cursor-pointer text-muted-foreground/40 hover:text-foreground" onClick={() => setArea("")} />}
               </div>
 
-              {!hasQueried ? (
-                <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-background/40 p-6">
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <Search className="h-4 w-4" />
-                    Select a template or set filters and run a query to preview results.
-                  </div>
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-muted-foreground">
-                    <div className="rounded-xl border border-border/60 bg-background/60 px-4 py-3">
-                      Column registry enforced server-side
-                    </div>
-                    <div className="rounded-xl border border-border/60 bg-background/60 px-4 py-3">
-                      Premium signals gated by tier
-                    </div>
-                    <div className="rounded-xl border border-border/60 bg-background/60 px-4 py-3">
-                      Save to /tables after approval
-                    </div>
-                    <div className="rounded-xl border border-border/60 bg-background/60 px-4 py-3">
-                      Export to /reports and /artifacts
-                    </div>
-                  </div>
-                </div>
-              ) : loading ? (
-                <div className="mt-4 flex items-center justify-center py-20">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : results.length === 0 ? (
-                <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-background/40 p-6 text-center">
-                  <p className="text-sm text-muted-foreground">No projects match these filters.</p>
-                </div>
-              ) : (
-                <div className="mt-4 space-y-3">
-                  <div className="overflow-x-auto -mx-6 px-6">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border/50 text-xs text-muted-foreground">
-                          <th className="text-left py-2 pr-4 font-medium">Project</th>
-                          <th className="text-left py-2 pr-4 font-medium">Area</th>
-                          <th className="text-right py-2 pr-4 font-medium">Price</th>
-                          <th className="text-right py-2 pr-4 font-medium">Yield</th>
-                          <th className="text-center py-2 pr-4 font-medium">Grade</th>
-                          <th className="text-center py-2 font-medium">Signal</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {results.map((project, i) => (
-                          <tr
-                            key={i}
-                            className="border-b border-border/30 hover:bg-muted/30 transition-colors"
-                          >
-                            <td className="py-2.5 pr-4">
-                              <div className="font-medium text-foreground truncate max-w-[180px]">
-                                {String(project.name ?? "—")}
-                              </div>
-                              <div className="text-xs text-muted-foreground truncate max-w-[180px]">
-                                {String(project.developer ?? "")}
-                              </div>
-                            </td>
-                            <td className="py-2.5 pr-4 text-muted-foreground truncate max-w-[120px]">
-                              {String(project.final_area ?? project.area ?? "—")}
-                            </td>
-                            <td className="py-2.5 pr-4 text-right tabular-nums text-foreground">
-                              {typeof project.l1_canonical_price === "number"
-                                ? `${(project.l1_canonical_price / 1_000_000).toFixed(2)}M`
-                                : "—"}
-                            </td>
-                            <td className="py-2.5 pr-4 text-right tabular-nums text-foreground">
-                              {typeof project.l1_canonical_yield === "number"
-                                ? `${Number(project.l1_canonical_yield).toFixed(1)}%`
-                                : "—"}
-                            </td>
-                            <td className="py-2.5 pr-4 text-center">
-                              {typeof project.l2_stress_test_grade === "string" ? (
-                                <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                                  project.l2_stress_test_grade === "A"
-                                    ? "bg-emerald-500/15 text-emerald-400"
-                                    : project.l2_stress_test_grade === "B"
-                                      ? "bg-blue-500/15 text-blue-400"
-                                      : "bg-amber-500/15 text-amber-400"
-                                }`}>
-                                  {String(project.l2_stress_test_grade)}
-                                </span>
-                              ) : "—"}
-                            </td>
-                            <td className="py-2.5 text-center">
-                              {typeof project.l3_timing_signal === "string" ? (
-                                <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                                  project.l3_timing_signal === "BUY"
-                                    ? "bg-emerald-500/15 text-emerald-400"
-                                    : project.l3_timing_signal === "HOLD"
-                                      ? "bg-amber-500/15 text-amber-400"
-                                      : "bg-red-500/15 text-red-400"
-                                }`}>
-                                  {String(project.l3_timing_signal)}
-                                </span>
-                              ) : "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+              <div className="flex items-center gap-1.5 rounded-full border border-border/50 bg-background/60 px-3 py-1.5">
+                <Building2 className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+                <input
+                  type="text"
+                  value={developer}
+                  onChange={(e) => setDeveloper(e.target.value)}
+                  placeholder="Developer"
+                  className="w-28 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+                />
+                {developer && <X className="h-3 w-3 cursor-pointer text-muted-foreground/40 hover:text-foreground" onClick={() => setDeveloper("")} />}
+              </div>
 
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between pt-2">
-                      <button
-                        onClick={() => runQuery(page - 1)}
-                        disabled={page <= 1}
-                        className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-3 py-1.5 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-30"
-                      >
-                        <ChevronLeft className="h-3.5 w-3.5" /> Previous
-                      </button>
-                      <span className="text-xs text-muted-foreground">
-                        Page {page} of {totalPages}
-                      </span>
-                      <button
-                        onClick={() => runQuery(page + 1)}
-                        disabled={page >= totalPages}
-                        className="inline-flex items-center gap-1 rounded-lg border border-border/60 px-3 py-1.5 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-30"
-                      >
-                        Next <ChevronRight className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
+              <FilterChip label="Timing" value={timing} options={TIMING_OPTIONS} onChange={setTiming} />
+              <FilterChip label="Grade" value={stress} options={GRADE_OPTIONS} onChange={setStress} />
+
+              {/* Price range */}
+              <div className="flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-3 py-1.5 text-xs text-muted-foreground">
+                <span className="text-muted-foreground/40">AED</span>
+                <input
+                  type="number"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  placeholder="Min"
+                  className="w-16 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/30 focus:outline-none"
+                />
+                <span className="text-muted-foreground/30">—</span>
+                <input
+                  type="number"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  placeholder="Max"
+                  className="w-16 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/30 focus:outline-none"
+                />
+              </div>
+
+              {/* Sort */}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">Sort</span>
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSortBy(opt.value)}
+                    className={`rounded-full border px-3 py-1 text-xs transition-all ${
+                      sortBy === opt.value
+                        ? "border-primary/40 bg-primary/10 text-primary"
+                        : "border-border/40 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Clear all */}
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={() => { setTiming(""); setStress(""); setArea(""); setDeveloper(""); setMinPrice(""); setMaxPrice(""); setActivePreset(null) }}
+                  className="ml-auto text-[11px] text-muted-foreground/40 underline underline-offset-2 hover:text-muted-foreground transition-colors"
+                >
+                  Clear all
+                </button>
               )}
-            </section>
-          </div>
+            </div>
+          )}
         </div>
+
+        {/* ── Results ── */}
+        {!hasSearched ? (
+          /* Empty state */
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div
+              className="mb-6 select-none font-black leading-none text-foreground opacity-[0.04]"
+              style={{ fontSize: "100px", WebkitTextStroke: "1.5px currentColor", color: "transparent" }}
+              aria-hidden
+            >
+              ∅
+            </div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/30 mb-3">
+              Entrestate · Market Intelligence
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Choose a preset above or enter a search to load results.
+            </p>
+          </div>
+        ) : loading ? (
+          /* Loading skeleton */
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="animate-pulse rounded-2xl border border-border/40 bg-card/40 p-5">
+                <div className="mb-3 flex items-start justify-between">
+                  <div className="space-y-2">
+                    <div className="h-3 w-32 rounded bg-muted/50" />
+                    <div className="h-2.5 w-24 rounded bg-muted/30" />
+                  </div>
+                  <div className="h-5 w-10 rounded-full bg-muted/40" />
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  <div className="h-8 rounded-lg bg-muted/30" />
+                  <div className="h-8 rounded-lg bg-muted/30" />
+                  <div className="h-8 rounded-lg bg-muted/30" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : results.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <p className="text-sm text-muted-foreground">No projects match these filters.</p>
+            <button
+              onClick={() => { setTiming(""); setStress(""); setArea(""); setDeveloper(""); setMinPrice(""); setMaxPrice(""); setActivePreset(0); applyPreset(0) }}
+              className="mt-4 text-xs text-primary underline underline-offset-2"
+            >
+              Reset filters
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Results count */}
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-xs text-muted-foreground/50">
+                <span className="font-semibold tabular-nums text-foreground">{total.toLocaleString()}</span> results
+                {sortBy !== "god_metric" && (
+                  <span className="ml-2">· sorted by {SORT_OPTIONS.find(s => s.value === sortBy)?.label.toLowerCase()}</span>
+                )}
+              </p>
+              <p className="text-[10px] text-muted-foreground/30 uppercase tracking-wider">Click a card to go deeper</p>
+            </div>
+
+            {/* Cards grid */}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {results.map((project, i) => {
+                const name = String(project.name ?? "Unnamed project")
+                const devName = String(project.developer ?? "")
+                const areaName = String(project.final_area ?? project.area ?? "")
+                const price = typeof project.l1_canonical_price === "number"
+                  ? `${(project.l1_canonical_price / 1_000_000).toFixed(2)}M`
+                  : null
+                const yieldVal = typeof project.l1_canonical_yield === "number"
+                  ? `${Number(project.l1_canonical_yield).toFixed(1)}%`
+                  : null
+                const score = typeof project.god_metric === "number"
+                  ? Math.round(Number(project.god_metric))
+                  : null
+                const signal = typeof project.l3_timing_signal === "string" ? project.l3_timing_signal : null
+                const grade = typeof project.l2_stress_test_grade === "string" ? project.l2_stress_test_grade : null
+                const slug = String(project.slug ?? "")
+                const styles = signal ? signalStyle(signal) : null
+
+                return (
+                  <Link
+                    key={i}
+                    href={slug ? `/properties/${slug}` : "/properties"}
+                    className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/60 transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-black/10"
+                  >
+                    {/* Signal accent bar */}
+                    {styles && (
+                      <div className={`h-0.5 w-full ${styles.bar} opacity-60 transition-opacity group-hover:opacity-100`} />
+                    )}
+
+                    <div className="flex flex-1 flex-col p-5">
+                      {/* Header */}
+                      <div className="mb-4 flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground group-hover:text-foreground">
+                            {name}
+                          </p>
+                          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
+                            {devName && <span className="truncate">{devName}</span>}
+                            {devName && areaName && <span className="text-muted-foreground/30">·</span>}
+                            {areaName && (
+                              <span className="flex items-center gap-0.5 truncate">
+                                <MapPin className="h-2.5 w-2.5 shrink-0" />
+                                {areaName}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          {signal && (
+                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${styles!.badge}`}>
+                              {signal}
+                            </span>
+                          )}
+                          {grade && (
+                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${gradeStyle(grade)}`}>
+                              {grade}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Metrics strip */}
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="rounded-lg border border-border/30 bg-background/40 px-3 py-2 text-center">
+                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">Price</p>
+                          <p className="mt-0.5 text-xs font-semibold tabular-nums text-foreground">
+                            {price ? `AED ${price}` : "—"}
+                          </p>
+                        </div>
+                        <div className="rounded-lg border border-border/30 bg-background/40 px-3 py-2 text-center">
+                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">Yield</p>
+                          <p className={`mt-0.5 text-xs font-semibold tabular-nums ${yieldVal ? "text-emerald-400" : "text-foreground"}`}>
+                            {yieldVal ?? "—"}
+                          </p>
+                        </div>
+                        <div className="rounded-lg border border-border/30 bg-background/40 px-3 py-2 text-center">
+                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">Score</p>
+                          <p className={`mt-0.5 text-xs font-semibold tabular-nums ${score && score >= 70 ? "text-primary" : "text-foreground"}`}>
+                            {score ?? "—"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* CTA */}
+                      <div className="mt-4 flex items-center justify-end gap-1 text-[11px] font-medium text-muted-foreground/40 transition-colors group-hover:text-primary">
+                        View project
+                        <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                      </div>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => runQuery(page - 1)}
+                  disabled={page <= 1}
+                  className="flex items-center gap-1.5 rounded-xl border border-border/60 px-4 py-2 text-xs text-muted-foreground transition hover:border-border hover:text-foreground disabled:opacity-30"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                </button>
+                <span className="text-xs text-muted-foreground/50">
+                  {page} <span className="text-muted-foreground/30">of</span> {totalPages}
+                </span>
+                <button
+                  onClick={() => runQuery(page + 1)}
+                  disabled={page >= totalPages}
+                  className="flex items-center gap-1.5 rounded-xl border border-border/60 px-4 py-2 text-xs text-muted-foreground transition hover:border-border hover:text-foreground disabled:opacity-30"
+                >
+                  Next <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
       </div>
       <Footer />
     </main>
