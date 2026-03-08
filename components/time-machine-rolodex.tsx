@@ -9,1182 +9,790 @@ import type { ReportCard } from "./report-reader"
 const cards: ReportCard[] = [
   {
     id: 1,
-    title: "Dubai Residential Market Q4 2024",
-    subtitle: "Record transaction volumes driven by off-plan demand and international buyer influx",
-    date: "December 10, 2024",
-    dateLabel: "Dec 10",
-    image: "/mountain-landscape-sunset-orange-sky.jpg",
+    title: "JVC: Dubai's Unrivaled Yield Capital",
+    subtitle:
+      "Jumeirah Village Circle remains one of Dubai's strongest income-producing districts, anchored by stable occupancy and high gross yield potential.",
+    date: "March 8, 2026",
+    dateLabel: "Mar 8",
+    image: "/futuristic-city-neon-lights-night.jpg",
     author: "Entrestate Research",
-    readTime: "6 min read",
-    category: "Market Report",
-    content: `Dubai's residential property market concluded 2024 with its strongest quarter on record, driven by sustained off-plan demand and a measurable increase in European and Asian buyer participation. [1]
+    readTime: "7 min read",
+    category: "Special Report",
+    content: `Jumeirah Village Circle (JVC) continues to rank among Dubai's strongest income-focused residential markets. With gross yields around 8% and sustained occupancy, JVC remains a core destination for investors targeting resilient mid-market rental income. [1]
 
-## Executive Overview
+## Executive Summary
 
-Total transaction volume reached AED 47.3 billion across 32,814 transactions in Q4 2024, representing a 23% year-on-year increase and the highest single-quarter figure since the market's post-pandemic recovery began. [2]
+JVC combines three structural strengths: relative entry affordability, high tenant demand depth, and strong rental absorption. Together, these conditions support gross yields that frequently outperform city-wide residential averages. [2]
 
-The off-plan segment continued to dominate with a 58% share of all transactions by volume, while the secondary market recovered strongly, posting a 17% increase over Q3 2024. [3]
+| Metric | Current View |
+|---|---|
+| Average Gross Yield | 8.1% |
+| Average Occupancy | 88% |
+| Price Efficiency Benchmark | AED 1,100 per sq ft |
+| Core Demand Driver | Mid-market affordability and lifestyle accessibility |
 
-## Price Performance
+## High-Yield Project Set in JVC
 
-Average villa prices in Palm Jumeirah reached AED 4,850 per sq ft, a 14% annual gain, while Dubai Creek Harbour emerged as the fastest-appreciating master community with a 19% year-on-year increase in apartment prices. [4]
-
-- Average apartment price: AED 1,520 per sq ft (city-wide)
-- Average villa price: AED 2,210 per sq ft (city-wide)
-- Luxury segment (AED 10M+): 2,341 transactions, up 31% YoY [5]
-- Ultra-prime (AED 30M+): 187 transactions, a new annual record
-
-## Supply Pipeline
-
-Developer launches in Q4 added 18,400 units to the pipeline, with Emaar, Aldar, and Sobha collectively accounting for 61% of new launches. Delivery timelines remain a key watch point with an estimated 24,000 units scheduled for handover in H1 2025.
-
-## International Buyer Profile
-
-| Nationality | Share of Transactions | YoY Change |
+| Project | Developer | Primary Investment Case |
 |---|---|---|
-| Indian | 22% | +2pp |
-| British | 11% | +1pp |
-| Russian | 9% | -3pp |
-| Chinese | 8% | +4pp |
-| Italian | 5% | +2pp |
+| Samana Lake Views 2 / Ivy Gardens 2 | Samana Developers | Yield-oriented profile with strong rental viability for units below AED 2M |
+| Oakley Square Residences | Ellington Properties | Premium quality product with durable tenant demand |
+| Pearl House II / III / IV | Imtiaz Developments | Flexible payment structures and strong occupancy corridor positioning |
+| Binghatti Circle / Binghatti Elite | Binghatti | High absorption profile and investor-first return orientation |
+| Luxor by Imtiaz | Imtiaz Developments | Compact layouts optimized for rental efficiency |
+| Hillmont Residences | Ellington Properties | Demand-backed appreciation and yield outlook |
 
-The shift toward Asian buyers, particularly Chinese nationals, is the most significant structural change in buyer composition observed since 2019. [6]
+## Developer Positioning in JVC
 
-## Outlook
+| Developer | Observed Gross Yield | Market Positioning |
+|---|---|---|
+| Ellington Properties | 6.3% | Premium quality strategy with stronger tenant profile stability |
+| Binghatti | 9.2% | High-absorption, return-focused product model |
+| Imtiaz Developments | High-yield profile | Flexible payment plans and capital-efficiency-led positioning |
+| Azizi Developments | 5.6% | Scale player influencing broader JVC mid-market pricing |
 
-Entrestate projects continued price growth of 8–12% in 2025 for the villa segment, moderating from 2024's 14%, as supply additions in established communities increase. The apartment segment is expected to see more varied performance, with master-planned communities outperforming older stock.`,
+## Data-Led Allocation Strategy
+
+### 1. Focus on micro-market imbalance
+JVC is broad and heterogeneous. Specific pockets of relative undersupply continue to support better rent capture and stronger yield durability. [3]
+
+### 2. Maintain entry discipline
+The most attractive opportunities tend to cluster near the AED 1,100 per sq ft benchmark when combined with strong demand and high absorption signals. [4]
+
+### 3. Prioritize capital efficiency
+Headline yield should be validated against entry price, projected rent, handover timing, and payment plan structure to maximize net cash flow quality. [5]
+
+### 4. Use occupancy as a risk filter
+At approximately 88% occupancy, JVC demonstrates stronger rental continuity than many peer submarkets, especially for practical unit formats aligned with young professionals and families. [6]
+
+## Conclusion
+
+JVC remains one of Dubai's most compelling yield-led residential markets. For income-oriented portfolios, disciplined selection within the district's strongest micro-locations can still deliver attractive risk-adjusted return potential.`,
     evidence: [
       {
-        id: "e1-1",
+        id: "jvc-1",
         refNum: 1,
-        type: "source",
-        label: "Dubai Land Department Transaction Registry",
-        source: "Dubai Land Department (DLD)",
-        url: "https://dubailand.gov.ae",
-        note: "Transaction data sourced directly from DLD monthly digest, cross-referenced with RERA."
-      },
-      {
-        id: "e1-2",
-        refNum: 2,
-        type: "calculation",
-        label: "Q4 2024 Total Transaction Volume",
-        value: "AED 47.3 billion | 32,814 transactions",
-        formula: "Sum of monthly DLD values: Oct (AED 14.1B) + Nov (AED 15.8B) + Dec (AED 17.4B)",
-        note: "YoY comparison: Q4 2023 recorded AED 38.5 billion across 26,680 transactions."
-      },
-      {
-        id: "e1-3",
-        refNum: 3,
         type: "data",
-        label: "Off-plan vs Secondary Market Split",
-        value: "Off-plan: 58% | Secondary: 42%",
-        source: "DLD + Entrestate proprietary aggregation",
-        note: "Off-plan share is 3pp higher than Q3 2024 and 8pp higher than Q4 2023."
+        label: "JVC Gross Yield Baseline",
+        value: "8.1% average gross yield",
+        source: "Entrestate market intelligence aggregation",
+        note: "Current district-level baseline used in this report.",
       },
       {
-        id: "e1-4",
+        id: "jvc-2",
+        refNum: 2,
+        type: "data",
+        label: "JVC Occupancy Baseline",
+        value: "88% average occupancy",
+        source: "Entrestate occupancy model",
+        note: "Reflects sustained tenant demand in mid-market stock.",
+      },
+      {
+        id: "jvc-3",
+        refNum: 3,
+        type: "calculation",
+        label: "Undersupplied Micro-Pocket Signal",
+        formula: "active listings / qualified rental demand by district",
+        note: "Lower listing-to-demand ratios indicate stronger rent pricing power.",
+      },
+      {
+        id: "jvc-4",
         refNum: 4,
         type: "data",
-        label: "Palm Jumeirah Average Price per sq ft",
-        value: "AED 4,850 per sq ft",
-        source: "Entrestate Valuation Index",
-        formula: "Median of 341 secondary market transactions in Palm Jumeirah, Q4 2024",
-        note: "Q4 2023 equivalent: AED 4,254/sq ft. Annual change: +14.0%."
+        label: "Price Efficiency Benchmark",
+        value: "AED 1,100 per sq ft",
+        source: "Entrestate transaction and listing benchmark index",
+        note: "Used as a comparative threshold for yield-led entry selection.",
       },
       {
-        id: "e1-5",
+        id: "jvc-5",
         refNum: 5,
         type: "calculation",
-        label: "Luxury Segment Transaction Count",
-        value: "2,341 transactions (AED 10M+)",
-        formula: "Filtered DLD registry: transaction_value >= 10,000,000 AND period = Q4 2024",
-        note: "Q4 2023 equivalent was 1,787, representing a 31.0% YoY increase."
+        label: "Capital Efficiency Score",
+        formula: "(projected annual rent - holding cost) / total deployed capital",
+        note: "Evaluates cash-flow efficiency beyond headline gross yield.",
       },
       {
-        id: "e1-6",
+        id: "jvc-6",
         refNum: 6,
-        type: "data",
-        label: "Chinese Buyer Share Trend",
-        value: "8% of Q4 2024 transactions",
-        source: "DLD nationality data, Entrestate analysis",
-        note: "2019 Chinese buyer share was 3%. The 5pp increase represents the largest single nationality growth in the period."
-      }
-    ]
+        type: "source",
+        label: "Demand Profile Validation",
+        source: "Entrestate rental demand segmentation",
+        note: "Confirms depth of young-professional and family demand cohorts in JVC.",
+      },
+    ],
   },
   {
     id: 2,
-    title: "Abu Dhabi Luxury Segment H2 2024",
-    subtitle: "Saadiyat Island emerges as the Gulf's most sought-after ultra-prime address",
-    date: "December 9, 2024",
-    dateLabel: "Dec 9",
-    image: "/futuristic-city-neon-lights-night.jpg",
+    title: "Emaar Properties Market Landscape (2027–2031)",
+    subtitle:
+      "Emaar's shift toward mega-ecosystems is redefining Dubai's expansion model and long-cycle capital allocation strategy.",
+    date: "March 8, 2026",
+    dateLabel: "Mar 8",
+    image: "/mountain-landscape-sunset-orange-sky.jpg",
     author: "Entrestate Research",
-    readTime: "8 min read",
-    category: "Market Report",
-    content: `Abu Dhabi's luxury residential market delivered a landmark second half in 2024, with Saadiyat Island recording its highest-ever transaction volumes and average price per square foot, cementing its status as a globally significant ultra-prime address. [1]
+    readTime: "10 min read",
+    category: "Developer Intelligence",
+    content: `Emaar Properties (established 1997) has moved beyond conventional development to become the primary benchmark of UAE real estate execution and sentiment. With 213 active online projects, Emaar's pipeline rhythm now materially influences liquidity behavior across Dubai and nearby growth corridors. [1]
 
-## Market Headline
+As infill opportunities in mature hubs become increasingly constrained, Emaar is scaling a new strategy centered on integrated mega-ecosystems: large, self-contained districts that combine residential inventory, lifestyle infrastructure, and long-horizon value capture. [2]
 
-H2 2024 luxury transactions (AED 5M+) totalled AED 12.8 billion, a 38% increase over H2 2023 and the first time Abu Dhabi's luxury half-year total has surpassed the AED 12 billion threshold. [2]
+## 1. Developer Profile and Portfolio Scope
 
-Saadiyat Island commanded an average price of AED 3,420 per sq ft for villa transactions, overtaking Palm Jumeirah Dubai's H1 average for the first time in history — a milestone that signals a fundamental repricing of Abu Dhabi's premium real estate. [3]
+| Metric | Data Point |
+|---|---|
+| Developer Name | Emaar Properties |
+| Establishment Date | January 3, 1997 |
+| Total Online Projects | 213 |
+| Primary Markets | Dubai, Ras Al Khaimah |
+| Developer ID | 79ca4333-9975-4672-b05f-bb7329de75e9 |
 
-## Demand Drivers
+Emaar's execution history and capitalization profile provide a clear brand-premium effect that compresses perceived risk in new districts and supports investor confidence in long-cycle supply. [3]
 
-The introduction of the Golden Visa property pathway at the AED 2 million threshold in 2022 has had a compounding effect, with 2024 seeing the highest number of visa-linked transactions since the programme's inception. [4]
+## 2. Geographic Footprint and District Concentration
 
-- Visa-linked transactions: 4,219 (up 62% from 2023)
-- Average transaction value for visa-linked purchases: AED 3.1M
-- Top feeder markets: India, UK, Egypt, France [5]
+| District | Key Projects | Strategic Investment Value |
+|---|---|---|
+| Dubai Creek Harbour | Creek Haven, Lyvia by Palace, Altan, Valo, Aeon, Creek Bay | High-density vertical cluster with long-term mixed-use integration potential |
+| Dubai Hills Estate | Vida Residences, Golf Hillside, Rosehill, Park Gate Phase 2 | Stabilized premium district serving upscale owner-occupier and rental demand |
+| Emaar South | Golf Meadow, Golf Verge, Golf Point, Expo Golf Villas 6 | Airport-led growth thesis aligned with logistics and workforce migration |
+| Mina Rashid and Beachfront | Pier Point 2, Ocean Cove, Seapoint, Baystar by Vida | Maritime luxury positioning with scarcity-backed waterfront drivers |
+| Grand Polo Club (DIP) | Selvara, Chevalia Fields, Montura | Low-density equestrian luxury targeting HNWI lifestyle demand |
+| Ras Al Khaimah | Address Residences Al Marjan Island | Cross-emirate diversification tied to hospitality and tourism expansion |
 
-## Yas Island Momentum
+## 3. Asset Class Segmentation
 
-Yas Island continues to capture demand from buyers seeking a premium lifestyle offering at a moderate entry point. Average apartment prices on Yas reached AED 1,650 per sq ft in H2 2024, up 11% from H1.
+| Asset Class | Representative Projects | Strategic Amenity Stack |
+|---|---|---|
+| Apartment | Creek Haven, Rosehill, Golf Hillside, Aeon | Integrated fitness, leisure, retail, and landscaped public realm |
+| Villa | Ovelle, Selvara, Mareva (The Oasis), Ostra | Privacy-forward layouts, leisure clubs, and destination-style community planning |
+| Townhouse | Golf Meadow, Equiterra 2, Palace Residences | Family-oriented infrastructure and community recreation zones |
+| Penthouse | Avarra by Palace, Seapoint, Bayview | Marina access, premium view corridors, and luxury hospitality adjacency |
 
-| Community | Avg Price/sq ft | H2 2024 Transactions | YoY Change |
+Recent demand signals indicate increasing velocity in wellness-oriented suburban clusters, suggesting a structural shift beyond legacy waterfront preference patterns. [4]
+
+## 4. Pricing Architecture and Capital Structure
+
+| Investment Tier | Representative Assets | Entry Value (AED) | Strategic Focus |
 |---|---|---|---|
-| Saadiyat Island | AED 3,420 | 891 | +44% |
-| Yas Island | AED 1,650 | 2,104 | +28% |
-| Al Reem Island | AED 1,220 | 3,810 | +19% |
-| Al Maryah Island | AED 2,100 | 312 | +35% |
+| Entry-Level | Golf Hills, Golf Verge | ~1.06M–1.20M | Yield-led portfolio entry and volume demand capture |
+| Mid-Market | Creek Haven, Sera | ~1.86M–2.10M | Core residential velocity and balanced accessibility |
+| Prime / Ultra-Luxury | Park Gate Phase 2, Mareva 2 | ~13.8M–14.1M+ | Capital preservation and ultra-high-net-worth demand |
 
-## Forward Outlook
+| Payment Structure | Applied Projects | Capital Logic |
+|---|---|---|
+| 10/70/20 | Altan, Golf Meadow | Balanced deployment across construction and handover stages |
+| 5/55/40 | Island Park II | Accelerated inventory absorption in late-stage delivery contexts |
+| 80/20 | Golf Point, Silva Tower | Front-loaded capital from high-liquidity buyers optimizing post-handover leverage |
 
-The Cultural District expansion on Saadiyat, anchored by the Louvre Abu Dhabi and the forthcoming Guggenheim, will add long-term demand fundamentals to a market already benefiting from limited supply. Entrestate projects Saadiyat villa prices to reach AED 3,800–4,200 per sq ft by end-2025. [6]`,
+## 5. Delivery Pipeline and Lifecycle (2027–2031)
+
+| Project Name | Phase | Progress | Target Delivery | Yield Strategy |
+|---|---|---|---|---|
+| Moor at Creek Beach | Under Construction | 100.00% | Nov 2026 | Immediate Yield |
+| Aeon | Under Construction | 50.21% | Apr 2028 | Mid-Term Volume |
+| Club Place | Under Construction | 42.67% | Dec 2028 | Mid-Term Volume |
+| Golf Hillside | Under Construction | 36.65% | Dec 2028 | Mid-Term Volume |
+| Valo | Under Construction | 33.40% | Sep 2028 | Mid-Term Volume |
+| Bayview | Under Construction | 22.08% | Jul 2028 | Mid-Term Volume |
+| Park Gate Phase 2 | Under Construction | 16.93% | Feb 2027 | Near-Term Capital |
+| Pier Point 2 | Under Construction | 6.25% | Oct 2028 | Mid-Term Volume |
+| Creek Haven | Not Started | 0.00% | Mar 2030 | Long-Term Appreciation |
+| Avarra by Palace | Not Started | 0.00% | Jun 2031 | Long-Term Appreciation |
+
+## 6. Strategic Synthesis
+
+Three structural conclusions define the current Emaar outlook:
+
+- Mega-community strategy is becoming the dominant value architecture for long-cycle appreciation.
+- Wellness and low-density leisure assets are transitioning from niche preference to core demand category.
+- Rapid absorption of premium inventory confirms sustained appetite for brand-backed lifestyle districts despite higher entry points.
+
+Emaar remains central to Dubai's 2030–2031 residential trajectory. For disciplined investors, the portfolio mix supports both near-term income plays and multi-year appreciation exposure across emerging ecosystem corridors.`,
     evidence: [
       {
-        id: "e2-1",
+        id: "emaar-1",
         refNum: 1,
-        type: "source",
-        label: "Abu Dhabi Department of Municipalities and Transport",
-        source: "DMT Abu Dhabi",
-        url: "https://dmt.abudhabi.ae",
-        note: "Official transaction registry. Data accessed via institutional API feed."
-      },
-      {
-        id: "e2-2",
-        refNum: 2,
-        type: "calculation",
-        label: "H2 2024 Luxury Segment Total",
-        value: "AED 12.8 billion",
-        formula: "Sum(DMT transactions where value >= 5,000,000 AND date BETWEEN 2024-07-01 AND 2024-12-31)",
-        note: "H2 2023 equivalent: AED 9.28 billion. Year-on-year growth: +37.9%."
-      },
-      {
-        id: "e2-3",
-        refNum: 3,
         type: "data",
-        label: "Saadiyat vs Palm Jumeirah Price Comparison",
-        value: "Saadiyat: AED 3,420/sqft | Palm: AED 3,380/sqft (H1 2024)",
-        source: "Entrestate Valuation Index, DLD and DMT data",
-        note: "First time Saadiyat has surpassed Palm Jumeirah on a half-year average. Based on villa category only."
+        label: "Active Emaar Online Project Count",
+        value: "213 projects",
+        source: "Entrestate developer inventory index",
+        note: "Used as the baseline for current scope and concentration analysis.",
       },
       {
-        id: "e2-4",
-        refNum: 4,
+        id: "emaar-2",
+        refNum: 2,
         type: "source",
-        label: "UAE Golden Visa Property Programme",
-        source: "ICP UAE",
-        url: "https://icp.gov.ae",
-        note: "Visa-linked data sourced from ICP and cross-matched with DMT transaction records."
+        label: "Mega-Ecosystem District Pivot",
+        source: "Entrestate district pipeline analysis",
+        note: "Captures shift from legacy core infill to integrated peripheral districts.",
       },
       {
-        id: "e2-5",
+        id: "emaar-3",
+        refNum: 3,
+        type: "calculation",
+        label: "Brand Premium Risk Compression",
+        formula: "entry valuation spread vs peer-launch districts adjusted for delivery confidence",
+        note: "Quantifies premium acceptance linked to developer execution reputation.",
+      },
+      {
+        id: "emaar-4",
+        refNum: 4,
+        type: "data",
+        label: "Wellness-Oriented Demand Momentum",
+        value: "High absorption in wellness-centric suburban clusters",
+        source: "Entrestate hotness and absorption signal model",
+        note: "Used to classify category shift in buyer preference.",
+      },
+      {
+        id: "emaar-5",
         refNum: 5,
         type: "data",
-        label: "Visa-Linked Transaction Feeder Markets",
-        value: "India 28% | UK 18% | Egypt 14% | France 9%",
-        source: "ICP nationality data, Entrestate analysis",
-        note: "France is a new entrant to the top 4, reflecting growth in French high-net-worth migration."
+        label: "Pipeline Delivery Distribution (2027–2031)",
+        value: "Mix of under-construction and long-horizon launch assets",
+        source: "Entrestate project lifecycle tracker",
+        note: "Supports strategy split between immediate yield and long-term appreciation.",
       },
       {
-        id: "e2-6",
+        id: "emaar-6",
         refNum: 6,
         type: "calculation",
-        label: "Saadiyat 2025 Price Forecast",
-        value: "AED 3,800–4,200 per sq ft",
-        formula: "H2 2024 base (3,420) × projected growth rate range (11%–23%) = 3,797–4,207",
-        note: "Growth range derived from pipeline supply analysis and Guggenheim opening timeline sensitivity."
-      }
-    ]
+        label: "Tiered Capital Allocation Logic",
+        formula: "yield profile x entry band x payment structure x delivery window",
+        note: "Framework used for institutional and private portfolio structuring.",
+      },
+    ],
   },
   {
     id: 3,
-    title: "UAE Rental Market Pressure Index",
-    subtitle: "Tenant affordability at a five-year low as rental yields diverge sharply by community",
-    date: "December 8, 2024",
-    dateLabel: "Dec 8",
-    image: "/ocean-waves-beach-aerial-view-blue.jpg",
+    title: "Executive Summary: Entrestate.com Market and Property Analysis",
+    subtitle:
+      "February 2026 market pulse and a focused ROI crunch on Golf Lane Villas in Emaar South.",
+    date: "March 9, 2026",
+    dateLabel: "Mar 9",
+    image: "/futuristic-city-neon-lights-night.jpg",
     author: "Entrestate Research",
-    readTime: "7 min read",
-    category: "Rental Intelligence",
-    content: `The UAE rental market is experiencing its most complex conditions since the 2014–16 correction cycle, with above-inflation rent increases concentrated in premium communities while older stock and peripheral areas exhibit rental softening. [1]
+    readTime: "8 min read",
+    category: "Market Pulse",
+    content: `Powered by the Decision Zipper Layer (DZL) and the Market ROI Engine, this report synthesizes February 2026 market conditions and a property-level investment crunch for one of Dubai's leading growth-corridor assets. [1]
 
-## Affordability Squeeze
+## 1. Market Analysis: February 2026 Pulse
 
-Dubai's Rental Affordability Index — measured as median annual rent as a percentage of median household income — reached 42% in Q4 2024, breaching the internationally accepted affordability threshold of 35% for the first time since 2008. [2]
+Current conditions indicate a market in a speculative phase, with speculative inventory representing a dominant share of active stock. Despite that backdrop, district-level fundamentals continue to support selective high-conviction allocations. [2]
 
-This divergence is creating measurable displacement effects, with Entrestate tracking a 14% increase in tenants relocating from Business Bay and DIFC to Discovery Gardens, Jumeirah Village Circle, and International City. [3]
+| Market Indicator | February 2026 Data | Strategic Implication |
+|---|---|---|
+| Market Efficiency | 11.3% median premium | Active listing prices are currently trading above recent DLD traded-value baselines |
+| Rental Dynamics | 6.7% median yield | With 63% of segments undersupplied, landlord pricing power remains elevated |
+| Yield Leaders | 9.1% net yield in premium core | Business Bay and Downtown continue to rank as dominant income archetypes |
+| Supply Warning | Post-2025 marina contraction | Pipeline focus is rotating toward Creek Harbour and Emaar South corridors |
 
-## Yield Landscape
+## 2. Property Crunch: Golf Lane Villas (Emaar South)
 
-Despite rent increases, gross rental yields have compressed in premium communities as capital value appreciation has outpaced rental growth.
+Golf Lane Villas currently ranks as a top ROI candidate in the growth-frontier cluster, supported by infrastructure-led pricing momentum and strong developer execution confidence. [3]
 
-| Community | Avg Annual Rent | Gross Yield | YoY Rent Change |
-|---|---|---|---|
-| Dubai Marina | AED 145,000 | 5.8% | +18% |
-| Jumeirah Village Circle | AED 72,000 | 7.2% | +12% |
-| Business Bay | AED 130,000 | 5.2% | +21% |
-| Discovery Gardens | AED 58,000 | 8.1% | +8% |
-| Palm Jumeirah (apt) | AED 295,000 | 4.9% | +14% |
+| Attribute | Detail |
+|---|---|
+| Developer | Emaar Properties (Tier 1, 97% honesty index) |
+| Location Archetype | Growth Frontier (Emaar South) |
+| Handover Timeline | Scheduled for 2028 |
+| Demand Signal | Strong-buy momentum classification |
 
-## RERA Rental Index Compliance
+## 3. Financial Crunch: Expected Scenario
 
-RERA's rental increase calculator continues to act as a ceiling for existing tenancies, but the gap between current market rates and permitted increases is widening, creating a two-tier market where new tenants pay significantly more than sitting tenants. [4]
+| Financial Metric | Projection / Status |
+|---|---|
+| Entry Pricing | ~AED 4,480,888 for 4-bedroom villas |
+| Annual ROI | 12.97% expected annual return |
+| Yield Tier | Growth tier with 6.0% gross-yield target profile |
+| Arbitrage Signal | High premium (>50%) vs handover cohort comparables |
+| Catalyst Pricing | Strong airport-expansion thesis already reflected in current valuation |
 
-- Average gap between market rate and RERA-permitted increase: 23% [5]
-- Renewal disputes filed with RERA: 4,812 in 2024, up 34% YoY
+## 4. Risk and Sensitivity
 
-## Policy Watch
+| Risk Factor | Assessment |
+|---|---|
+| Risk Class | Moderate due to >2-year construction horizon |
+| Primary Vulnerabilities | Interest-rate shocks and hyper-local supply surges |
+| Fragility Score | 0.35 (low to moderate) |
+| Structural Mitigant | Emaar institutional execution profile reduces delivery-risk uncertainty |
 
-A proposed amendment to the Rent Law, expected in Q1 2025, would link maximum rent increases to a new composite index incorporating construction costs, utility inflation, and community supply metrics rather than the current RERA index alone. [6]`,
+Stress testing indicates that a ±2% rate movement can materially impact affordability and near-term exit liquidity. Position sizing and hold-period discipline remain critical. [4]
+
+## 5. Strategic Verdict
+
+| Investor Profile | Recommended Strategy | Conviction Play |
+|---|---|---|
+| Growth investor / portfolio builder (1M-2M capital tier) | Prioritize undersupplied, high-yield inventory with 2027-2028 handover windows | Golf Lane Villas remains a high-conviction infrastructure-growth exposure in Emaar South |
+
+## 6. Conclusion
+
+The February 2026 signal set supports a selective, evidence-first posture: avoid broad speculative exposure, prioritize districts with measurable undersupply, and allocate to assets where infrastructure catalysts and developer execution quality reinforce return durability.`,
     evidence: [
       {
-        id: "e3-1",
+        id: "pulse-1",
         refNum: 1,
         type: "source",
-        label: "Entrestate Rental Transaction Database",
-        source: "Entrestate proprietary + Ejari (RERA)",
-        note: "Rental data based on 28,400 registered Ejari contracts in Q4 2024."
+        label: "Decision Zipper Layer and Market ROI Engine Framework",
+        source: "Entrestate analytics stack",
+        note: "Primary model framework used for market-pulse and asset-level synthesis.",
       },
       {
-        id: "e3-2",
+        id: "pulse-2",
         refNum: 2,
-        type: "calculation",
-        label: "Rental Affordability Index",
-        value: "42% (affordability threshold breached)",
-        formula: "Median annual rent (AED 108,000) ÷ Median household income (AED 257,000) = 42.0%",
-        note: "Median household income sourced from UAE Stats Centre 2024 survey data. Prior peak was 39% in 2008."
+        type: "data",
+        label: "February 2026 Market Pulse Snapshot",
+        value: "11.3% median premium, 6.7% median yield, 63% undersupply segments",
+        source: "Entrestate market-state dataset",
+        note: "Aggregated pulse metrics for city-level directional interpretation.",
       },
       {
-        id: "e3-3",
+        id: "pulse-3",
         refNum: 3,
         type: "data",
-        label: "Tenant Displacement Tracking",
-        value: "14% increase in outward migration from premium communities",
-        source: "Entrestate address-change dataset",
-        formula: "Ejari cancellations in Business Bay/DIFC where new registration is in JVC/Discovery Gardens/IC ÷ total renewals in those communities",
-        note: "Tracked via Ejari registration address pairs, Q4 2023 vs Q4 2024."
+        label: "Golf Lane Villas ROI Profile",
+        value: "12.97% expected annual ROI, 2028 delivery window",
+        source: "Entrestate project-level ROI model",
+        note: "Used for the focused asset crunch in this report.",
       },
       {
-        id: "e3-4",
+        id: "pulse-4",
         refNum: 4,
-        type: "source",
-        label: "RERA Rental Index and Increase Calculator",
-        source: "Real Estate Regulatory Agency (RERA)",
-        url: "https://dubailand.gov.ae/en/eservices/rental-index",
-        note: "RERA index updated quarterly. Q4 2024 update reflects community-level average asking rents."
-      },
-      {
-        id: "e3-5",
-        refNum: 5,
         type: "calculation",
-        label: "Market Rate vs RERA-Permitted Increase Gap",
-        value: "Average gap: 23%",
-        formula: "Mean(market_asking_rent − RERA_permitted_ceiling) ÷ Mean(RERA_permitted_ceiling) across 12 sample communities",
-        note: "Widest gap observed in Business Bay (31%) and Marina (27%). Narrowest in Discovery Gardens (6%)."
+        label: "Interest Rate Sensitivity",
+        formula: "affordability shift = f(base affordability, +/-200 bps financing shock)",
+        note: "Stress-test framework for scenario volatility and exit-liquidity pressure.",
       },
-      {
-        id: "e3-6",
-        refNum: 6,
-        type: "source",
-        label: "Proposed Rent Law Amendment",
-        source: "Dubai Government Media Office (reported)",
-        note: "Amendment details based on government consultation document circulated Q3 2024. Not yet enacted."
-      }
-    ]
+    ],
   },
   {
     id: 4,
-    title: "Gulf Cross-Border Investment Flows 2024",
-    subtitle: "GCC capital allocation to real estate hits a decade high, reshaping global prime markets",
-    date: "November 14, 2024",
-    dateLabel: "Nov 14",
-    image: "/forest-fog-morning-mist-green-trees.jpg",
+    title: "Entrestate Market Intelligence: Dubai Marina Post-2025",
+    subtitle:
+      "Supply extinction dynamics are converting Dubai Marina inventory into scarcity-led rarity assets.",
+    date: "March 10, 2026",
+    dateLabel: "Mar 10",
+    image: "/ocean-waves-beach-aerial-view-blue.jpg",
     author: "Entrestate Research",
-    readTime: "10 min read",
-    category: "Investment Intelligence",
-    content: `GCC sovereign and private capital deployed into international real estate reached USD 38.4 billion in 2024 — the highest annual figure in a decade — with London, New York, and Paris absorbing the largest single-market allocations. [1]
+    readTime: "9 min read",
+    category: "Market Intelligence",
+    content: `This report presents Entrestate's predictive view on Dubai Marina's structural transition after 2025. The core signal is a shift from growth-market inventory behavior to rarity-asset behavior, driven by pipeline exhaustion and physical district constraints. [1]
 
-## Macro Context
+## Executive Summary
 
-The post-hydrocarbon diversification agenda, most prominently expressed through Saudi Vision 2030 and UAE Net Zero 2050, is driving a structural shift in GCC capital deployment. Real estate remains the preferred asset class for family offices and sovereign wealth funds seeking inflation-hedged, long-duration returns. [2]
+Dubai Marina is entering a scarcity-led phase as new-residential completion visibility declines toward zero after 2025. In this regime, pricing behavior is increasingly tied to irreplaceability and quality differentials within existing stock rather than fresh supply momentum. [2]
 
-## Cross-Border Allocation Breakdown
+## 1. Zero-Completion Threshold Post-2025
 
-| Destination | 2024 Allocation (USD bn) | YoY Change |
-|---|---|---|
-| United Kingdom | 9.2 | +22% |
-| United States | 7.8 | +14% |
-| France | 4.1 | +31% |
-| Germany | 3.2 | -8% |
-| India | 3.0 | +67% |
-| Egypt | 2.4 | +18% |
-| Other | 8.7 | +19% |
+Entrestate pipeline tracking indicates no meaningful post-2025 completion wave for new residential inventory within the Marina corridor. With a mature base of approximately 90 existing projects, this condition creates finite supply characteristics and lowers future dilution risk for existing units. [3]
 
-India's 67% surge reflects the Abu Dhabi Investment Authority's expanded mandate in Mumbai and Bangalore commercial real estate, while Germany's decline is attributed to structurally higher financing costs and compressed yields. [3]
+| Signal | Current Intelligence View |
+|---|---|
+| Pipeline Continuity | Near-zero completion trajectory after 2025 |
+| Existing Project Base | Approximately 90 mature projects |
+| Market Effect | Transition from inventory growth to scarcity protection |
 
-## Domestic Reinvestment
+## 2. Tier-1 Institutional Retreat
 
-Alongside outbound flows, GCC-based developers and family offices reinvested USD 22.1 billion into domestic real estate in 2024, with Saudi Arabia's NEOM-adjacent developments capturing 31% of this capital. [4]
+Institutional concentration has shifted away from Marina expansion toward frontier masterplans. The strategic reallocation by top-tier developers, including Emaar, has redirected deployment intensity toward corridors such as Dubai Creek Harbour and Emaar South. [4]
 
-- UAE domestic real estate investment: USD 9.4 billion
-- Saudi Arabia domestic: USD 8.6 billion
-- Qatar domestic: USD 4.1 billion
+| Dimension | Observation |
+|---|---|
+| Institutional Focus Rotation | From Marina expansion toward growth-frontier ecosystems |
+| Key Beneficiary Corridors | Dubai Creek Harbour, Emaar South |
+| Marina Impact | Secondary-market dynamics now dominate price discovery |
 
-## Institutional Trends
+## 3. Maturation into a Capital Preservation Hub
 
-REIT formation in the UAE and Saudi Arabia accelerated in 2024, with three new REITs listed on the Dubai Financial Market and two on the Saudi Exchange. Total GCC REIT AUM reached USD 14.2 billion, a 28% increase from 2023. [5]
+Yield compression in Marina should be interpreted through maturity logic rather than speculative-cycle logic. Gross yields moving from earlier high-speculation levels toward lower stabilized ranges suggest a transition into preservation-oriented behavior. [5]
 
-## 2025 Forecast
+| Metric | Trend Signal |
+|---|---|
+| Historical Gross Yield Profile | Compression from speculative highs toward 4.0%-5.5% bands |
+| Classification Shift | From speculative growth market to mature capital-preservation district |
+| Comparative Archetype | Closer behavior to stabilized global prime districts |
 
-Entrestate projects GCC cross-border real estate investment to reach USD 42–46 billion in 2025, driven by accelerating family office growth in the UAE and the continued expansion of Saudi PIF's international real estate mandate. [6]`,
+## 4. Structural Constraint Regime
+
+Dubai Marina's urban-canal form factor limits practical expansion pathways. Similar to other hard-constrained luxury districts, territorial boundaries reinforce scarcity mechanics and increase the importance of micro-location and asset quality differentials for long-cycle appreciation. [6]
+
+## 5. Layout Extinction and Unit-Level Scarcity
+
+With no major new typologies entering the district, high-demand legacy layouts are becoming incrementally rare. Entrestate classifies this as layout extinction: a unit-level scarcity condition where specific plan archetypes command premium repricing due to non-replicability in future pipeline cycles.
+
+### Strategic Implications for Allocation
+
+- Prioritize layout-specific due diligence, not just building-level averages.
+- Underwrite scarcity premium durability against tenant depth and holding horizon.
+- Focus on assets with strong maintenance quality and operational governance.
+- Treat Marina as a preservation-plus district rather than a broad speculative beta.
+
+## Conclusion
+
+Post-2025, Dubai Marina is best modeled as a constrained, scarcity-led submarket where valuation performance increasingly depends on irreplaceable unit characteristics, execution quality, and long-horizon capital-preservation objectives.`,
     evidence: [
       {
-        id: "e4-1",
+        id: "marina-1",
         refNum: 1,
         type: "source",
-        label: "GCC Cross-Border Real Estate Capital Flows",
-        source: "CBRE Global Research + Entrestate synthesis",
-        note: "Based on disclosed transactions and institutional filing data. Undisclosed private transactions estimated via deal count extrapolation."
+        label: "Dubai Marina Post-2025 Structural Model",
+        source: "Entrestate predictive pipeline intelligence",
+        note: "Framework used to classify rarity transition and scarcity regime.",
       },
       {
-        id: "e4-2",
+        id: "marina-2",
         refNum: 2,
-        type: "source",
-        label: "Saudi Vision 2030 and UAE Net Zero 2050",
-        source: "Saudi Vision 2030 Secretariat / UAE Ministry of Climate Change",
-        url: "https://www.vision2030.gov.sa",
-        note: "Policy framework documents reviewed. Capital allocation inference is Entrestate's analysis."
+        type: "data",
+        label: "Supply Extinction Trigger",
+        value: "Post-2025 completion trajectory near zero",
+        source: "Entrestate completion visibility tracker",
+        note: "Primary catalyst for finite-inventory market behavior.",
       },
       {
-        id: "e4-3",
+        id: "marina-3",
         refNum: 3,
         type: "data",
-        label: "ADIA India Allocation Expansion",
-        value: "India allocation: USD 3.0 billion (+67% YoY)",
-        source: "ADIA Annual Review 2024 + Bloomberg data",
-        note: "Mumbai Bandra Kurla Complex and Bangalore tech corridor are primary target submarkets."
+        label: "Existing Marina Project Base",
+        value: "~90 established projects",
+        source: "Entrestate district inventory registry",
+        note: "Defines current stock universe under scarcity conditions.",
       },
       {
-        id: "e4-4",
+        id: "marina-4",
         refNum: 4,
-        type: "calculation",
-        label: "GCC Domestic Reinvestment Total",
-        value: "USD 22.1 billion",
-        formula: "UAE (9.4) + Saudi (8.6) + Qatar (4.1) = 22.1",
-        note: "Excludes Bahrain and Oman which collectively account for an additional ~USD 2.1 billion."
+        type: "source",
+        label: "Tier-1 Capital Reallocation",
+        source: "Entrestate developer concentration heatmaps",
+        note: "Tracks migration from Marina toward frontier masterplans.",
       },
       {
-        id: "e4-5",
+        id: "marina-5",
         refNum: 5,
         type: "data",
-        label: "GCC REIT AUM 2024",
-        value: "USD 14.2 billion total AUM (+28% YoY)",
-        source: "DFM, Saudi Exchange, Boursa Kuwait",
-        note: "Five new REITs listed in 2024 across UAE and Saudi Arabia."
+        label: "Yield Compression Maturity Signal",
+        value: "Gross yield compression toward 4.0%-5.5% stabilized bands",
+        source: "Entrestate yield regime classifier",
+        note: "Used to detect transition from growth beta to preservation profile.",
       },
       {
-        id: "e4-6",
+        id: "marina-6",
         refNum: 6,
         type: "calculation",
-        label: "2025 Cross-Border Investment Forecast",
-        value: "USD 42–46 billion",
-        formula: "2024 base (38.4) × growth rate range (9.4%–19.8%) = 42.0–46.0",
-        note: "Growth range reflects low scenario (rate plateau, moderate family office expansion) and high scenario (PIF acceleration, new asset class mandates)."
-      }
-    ]
+        label: "Scarcity-Led Appreciation Logic",
+        formula: "future value premium = f(supply constraint x layout rarity x demand depth)",
+        note: "Unit-level framework for rarity-asset repricing potential.",
+      },
+    ],
   },
   {
     id: 5,
-    title: "Affordable Housing Gap: UAE 2024",
-    subtitle: "Middle-income housing deficit reaches 95,000 units as developer focus skews ultra-prime",
-    date: "November 12, 2024",
-    dateLabel: "Nov 12",
-    image: "/misty-valley-green-moss-iceland-landscape-river.jpg",
+    title: "Strategic District Classifications and Predictive Trends",
+    subtitle:
+      "Entrestate intelligence framework for rarity-asset transitions versus high-velocity growth-frontier markets.",
+    date: "March 11, 2026",
+    dateLabel: "Mar 11",
+    image: "/mountain-landscape-sunset-orange-sky.jpg",
     author: "Entrestate Research",
-    readTime: "7 min read",
-    category: "Housing Policy",
-    content: `The UAE's middle-income housing market faces a structural deficit of 95,000 units in 2024, a gap that has widened by 18% since 2022 as developer pipelines continue to skew toward the premium and ultra-prime segments. [1]
+    readTime: "11 min read",
+    category: "Strategic Intelligence",
+    content: `This report outlines two structural district pathways identified by Entrestate's predictive analytics: the conversion of mature hubs into rarity assets and the rise of institutionally supported growth frontiers. [1]
 
-## Defining the Problem
+## Executive Summary
 
-For the purposes of this report, Entrestate defines middle-income housing as units priced between AED 600,000 and AED 1.4 million in the sale market, or AED 50,000 to AED 85,000 per annum in the rental market. [2]
+UAE district behavior is increasingly bifurcated. Mature zones with constrained future supply are transitioning into preservation-led scarcity markets, while emerging corridors with infrastructure anchors are exhibiting higher-velocity appreciation potential. Understanding this split is central to capital-allocation strategy. [2]
 
-This segment is primarily served by teachers, nurses, engineers, and mid-level corporate professionals — the workforce backbone of the UAE's non-oil economy.
+## Part I: Dubai Marina and the Rarity-Asset Transition
 
-## Supply Analysis
+Entrestate's district models classify Dubai Marina as entering a post-2025 rarity regime, triggered by supply extinction and reinforced by territorial constraints and changing institutional capital flows. [3]
 
-Of the 74,000 units launched in 2024, only 22% (approximately 16,280 units) fell within the middle-income price bracket — down from 31% in 2022. [3] The shift has been driven by developer margin optimization, with luxury units delivering 34–48% higher profit margins per square foot than middle-income product.
+### 1. Zero-Completion Threshold Post-2025
 
-| Year | Total Launches | Middle-Income Share | Units (Middle Income) |
-|---|---|---|---|
-| 2021 | 42,000 | 38% | 15,960 |
-| 2022 | 56,000 | 31% | 17,360 |
-| 2023 | 65,000 | 27% | 17,550 |
-| 2024 | 74,000 | 22% | 16,280 |
+Pipeline tracking indicates near-zero new residential completions after 2025 in Marina. With an established base of roughly 90 projects, existing units increasingly function as finite, non-replicable inventory.
 
-## Demand Side
+| Signal | Intelligence View |
+|---|---|
+| Future Residential Pipeline | Near-zero post-2025 completion profile |
+| Existing Market Stock | Approximately 90 established projects |
+| Primary Impact | Reduced dilution risk and higher scarcity premium potential |
 
-An estimated 111,000 households in the UAE are actively seeking middle-income housing in 2024. With only 16,280 new units entering this price band, the demand-supply gap is approximately 95,000 units. [4]
+### 2. Tier-1 Institutional Retreat
 
-- Expatriate population growth contribution: +28,000 households (2024)
-- Natural household formation (UAE nationals): +4,200 households (2024)
-- Middle-income households priced out of the market: 38,000 (estimated)
+Developer heatmaps show a strategic migration of Tier-1 expansion intensity toward frontier ecosystems, including Dubai Creek Harbour and Emaar South.
 
-## Policy Recommendations
+| Dimension | Observation |
+|---|---|
+| Capital Rotation | From Marina expansion to growth-frontier masterplans |
+| Principal Effect | Secondary-market pricing now dominates Marina dynamics |
 
-Entrestate recommends a developer incentive programme linking plot allocation rights in prime master communities to minimum affordable unit quotas of 20–25%, similar to the Section 106 model employed in the United Kingdom. [5] Without structural intervention, the middle-income deficit is projected to reach 135,000 units by 2027. [6]`,
+### 3. Maturation into a Capital Preservation Hub
+
+Yield compression from speculative highs toward 4.0%-5.5% is interpreted by the model as a maturity signal, not a distress signal. Marina behavior is converging toward preservation-style district characteristics.
+
+| Metric | Trend Signal |
+|---|---|
+| Gross Yield Regime | Compression from legacy ~8% to 4.0%-5.5% bands |
+| Market Classification Shift | From speculative growth to preservation-led profile |
+
+### 4. Structural Constraint Regime
+
+As a canal-form urban district nearing physical limits, Marina exhibits hard supply constraints similar to other exhausted luxury geographies. This supports scarcity-led repricing over volume-led momentum.
+
+### 5. Layout Extinction Dynamics
+
+Because new typologies are no longer entering at scale, specific high-demand layouts in existing stock are becoming rare. Entrestate classifies this as layout extinction: a unit-level scarcity condition tied to non-replicability.
+
+## Part II: Growth Frontier Classification
+
+Growth Frontiers are rapidly scaling districts where capital appreciation is structurally amplified by institutional infrastructure deployment and early-cycle pricing asymmetry. Entrestate models currently indicate median annual ROI of 12.3% in these zones versus 7.1% in established premium districts. [4]
+
+### 1. Appreciation-First Thesis
+
+Frontier markets are priced for value expansion rather than pure stability yield.
+
+| Signal | Intelligence View |
+|---|---|
+| Expected Scenario | Approximately 10% annual capital gain baseline |
+| Optimistic Scenario | Up to approximately 15% annual capital gain |
+| Momentum Pattern | Early-node repricing can materially exceed legacy model assumptions |
+
+### 2. Infrastructure Anchor Effect
+
+ROI durability is strongest where mega-project infrastructure intersects with low base-entry pricing.
+
+| Catalyst Type | Allocation Relevance |
+|---|---|
+| Airport, Resort, Transit, Marina Anchors | Accelerate district price discovery and demand depth |
+| Dubai South Archetype | Strong gross-yield profile and long-cycle infrastructure support |
+
+### 3. Risk-Adjusted Return Logic
+
+Frontiers are categorized as growth or aggressive due to off-plan concentration and evolving geographic maturity. Risk is mitigated by filtering for Tier-1 developers with high delivery-certainty profiles.
+
+### 4. Strategic Holding Timeline
+
+Entrestate's models indicate a 3-5 year horizon as optimal for frontier-cycle capture, allowing sufficient time for infrastructure progression and valuation normalization.
+
+### 2026 Growth Frontier Index
+
+- Dubai South and Emaar South
+- Mohammed Bin Rashid City
+- Dubai Creek Harbour
+- Dubai Islands
+
+## Conclusion
+
+The district-allocation framework is now dual-track: scarcity-preservation exposure in mature constrained hubs, and appreciation-led exposure in institutionally anchored frontiers. Portfolio efficiency improves when each district is underwritten according to its structural regime rather than a single citywide template.`,
     evidence: [
       {
-        id: "e5-1",
+        id: "class-1",
         refNum: 1,
-        type: "calculation",
-        label: "Middle-Income Housing Deficit 2024",
-        value: "95,000 units (deficit)",
-        formula: "Estimated demand (111,000 households) − middle-income supply additions (16,280 units) = 94,720 ≈ 95,000",
-        note: "2022 equivalent deficit was 80,300 units. Growth of 18.3% over the period."
+        type: "source",
+        label: "District Regime Classification Framework",
+        source: "Entrestate predictive district engine",
+        note: "Core framework for rarity-asset versus growth-frontier classification.",
       },
       {
-        id: "e5-2",
+        id: "class-2",
         refNum: 2,
         type: "data",
-        label: "Middle-Income Housing Price Band Definition",
-        value: "Sale: AED 600K–1.4M | Rent: AED 50K–85K p.a.",
-        source: "Entrestate Income Segmentation Model 2024",
-        note: "Band calibrated against UAE Stats Centre income quintile 3 (mid) and rent-to-income ratio of 30-35%."
+        label: "Structural Bifurcation Signal",
+        value: "Mature scarcity markets diverging from frontier appreciation markets",
+        source: "Entrestate market-structure telemetry",
+        note: "Used to segment district behavior into two allocation archetypes.",
       },
       {
-        id: "e5-3",
+        id: "class-3",
         refNum: 3,
         type: "data",
-        label: "Middle-Income Share of New Launches",
-        value: "22% in 2024 (down from 31% in 2022)",
-        source: "Entrestate Developer Launch Database",
-        note: "Classified by launch price per unit at initial release. Secondary-market pricing excluded."
+        label: "Dubai Marina Supply Extinction Model",
+        value: "Post-2025 pipeline exhaustion with approximately 90 established projects",
+        source: "Entrestate pipeline and inventory registry",
+        note: "Primary basis for rarity-asset transition classification.",
       },
       {
-        id: "e5-4",
+        id: "class-4",
         refNum: 4,
         type: "calculation",
-        label: "Demand-Supply Gap Calculation",
-        value: "Gap: ~95,000 units",
-        formula: "Active demand (111,000) − new middle-income supply (16,280) = 94,720",
-        note: "Active demand estimated from DLD search data, mortgage applications, and Ejari waitlist data."
+        label: "Frontier ROI Differential",
+        formula: "median frontier ROI (12.3%) minus established premium ROI (7.1%)",
+        note: "Quantifies appreciation advantage within frontier-classified districts.",
       },
-      {
-        id: "e5-5",
-        refNum: 5,
-        type: "source",
-        label: "UK Section 106 Affordable Housing Model",
-        source: "UK Planning Portal / Entrestate Policy Research",
-        url: "https://www.gov.uk/guidance/planning-obligations",
-        note: "Section 106 requires developers to contribute affordable units typically at 25–40% of development volume."
-      },
-      {
-        id: "e5-6",
-        refNum: 6,
-        type: "calculation",
-        label: "2027 Deficit Projection",
-        value: "135,000 units by 2027",
-        formula: "2024 deficit (95,000) + projected annual gap growth (2025: +14,000, 2026: +13,500, 2027: +12,500) = 135,000",
-        note: "Assumes no policy intervention. Scenarios with 20% affordable quota reduce 2027 deficit to ~62,000 units."
-      }
-    ]
+    ],
   },
   {
     id: 6,
-    title: "Riyadh Office Market: Mega-Project Effect",
-    subtitle: "NEOM and Vision 2030 projects drive unprecedented corporate relocation to the Saudi capital",
-    date: "November 11, 2024",
-    dateLabel: "Nov 11",
-    image: "/mountain-landscape-sunset-orange-sky.jpg",
-    author: "Entrestate Research",
-    readTime: "6 min read",
-    category: "Commercial Intelligence",
-    content: `Riyadh's Grade A office market is experiencing demand conditions not seen since the oil boom years, with occupancy rates at 96.3% in Q4 2024 and average rents surpassing AED 2,200 per sq m per annum in the King Abdullah Financial District. [1]
-
-## Demand Shock
-
-The requirement that multinational corporations establish their regional headquarters in the Kingdom — or forgo access to Saudi government contracts — has driven a 42% increase in Riyadh Grade A office take-up in 2024. [2]
-
-Major occupiers committing to Riyadh in 2024 included global consulting firms, financial institutions, and technology companies, with the King Abdullah Financial District (KAFD) absorbing 68% of premium demand.
-
-## Supply Constraints
-
-The Grade A office pipeline for 2025–2027 totals only 1.2 million sq m, against projected net absorption of 1.9 million sq m over the same period, implying a structural supply shortfall of 700,000 sq m. [3]
-
-| District | Occupancy Rate | Avg Rent SAR/sqm/yr | Grade A Stock |
-|---|---|---|---|
-| KAFD | 98.1% | SAR 2,800 | 420,000 sqm |
-| Olaya Corridor | 95.4% | SAR 2,100 | 680,000 sqm |
-| Diplomatic Quarter | 94.8% | SAR 1,900 | 280,000 sqm |
-| North Riyadh | 91.2% | SAR 1,400 | 520,000 sqm |
-
-## Workplace Strategy Implications
-
-The co-working and serviced office sector is absorbing overflow demand from corporates awaiting Grade A availability, with IWG, WeWork, and regional operator Nasma collectively expanding Riyadh portfolios by 34% in 2024. [4]
-
-## Investment Case
-
-Grade A Riyadh office assets are trading at initial yields of 6.2–7.1%, a 150–200 basis point premium over London and Paris prime office, despite Riyadh exhibiting stronger rental growth fundamentals. [5]
-
-For institutional investors with a tolerance for emerging market risk, Riyadh presents one of the most compelling core-plus office investment cases globally. [6]`,
-    evidence: [
-      {
-        id: "e6-1",
-        refNum: 1,
-        type: "data",
-        label: "Riyadh Grade A Office Occupancy Q4 2024",
-        value: "96.3% occupancy city-wide",
-        source: "CBRE Saudi Arabia + JLL Riyadh",
-        note: "Highest occupancy recorded since data collection began in 2011. KAFD stands at 98.1%."
-      },
-      {
-        id: "e6-2",
-        refNum: 2,
-        type: "calculation",
-        label: "Grade A Take-Up Growth 2024",
-        value: "+42% YoY",
-        formula: "2024 take-up (520,000 sqm) ÷ 2023 take-up (366,000 sqm) − 1 = 42.1%",
-        note: "Take-up data from CBRE, JLL, and Entrestate's own tracked transactions."
-      },
-      {
-        id: "e6-3",
-        refNum: 3,
-        type: "calculation",
-        label: "Supply-Demand Gap 2025–2027",
-        value: "Shortfall: 700,000 sqm",
-        formula: "Projected net absorption (1,900,000 sqm) − pipeline supply (1,200,000 sqm) = 700,000 sqm",
-        note: "Absorption projection based on linear extrapolation of 2024 demand × corporate relocation pipeline."
-      },
-      {
-        id: "e6-4",
-        refNum: 4,
-        type: "data",
-        label: "Co-working Sector Expansion Riyadh 2024",
-        value: "+34% portfolio expansion",
-        source: "IWG investor presentation Q3 2024, JLL Flex Office Tracker",
-        note: "IWG expanded by 8 centres, WeWork by 3, Nasma by 5 across Riyadh in calendar year 2024."
-      },
-      {
-        id: "e6-5",
-        refNum: 5,
-        type: "data",
-        label: "Riyadh vs London/Paris Office Yield Comparison",
-        value: "Riyadh: 6.2–7.1% | London prime: 4.2–4.8% | Paris prime: 4.0–4.5%",
-        source: "MSCI Real Assets + Entrestate analysis",
-        note: "150–200bps premium against European prime despite superior rental growth trajectory."
-      },
-      {
-        id: "e6-6",
-        refNum: 6,
-        type: "source",
-        label: "Saudi HQ Mandate Policy",
-        source: "Saudi Ministry of Investment (MISA)",
-        url: "https://misa.gov.sa",
-        note: "The Regional Headquarters Programme (RHQ) requires multinational firms to establish their Middle East HQ in Saudi Arabia by end-2024 to be eligible for government contracts."
-      }
-    ]
-  },
-  {
-    id: 7,
-    title: "PropTech Disruption in GCC Real Estate",
-    subtitle: "Digital platforms are reshaping the transaction, valuation, and management stack",
-    date: "September 18, 2024",
-    dateLabel: "Sep 18",
-    image: "/futuristic-city-neon-lights-night.jpg",
-    author: "Entrestate Research",
-    readTime: "9 min read",
-    category: "Technology Report",
-    content: `The GCC PropTech sector attracted USD 840 million in venture capital in 2024, a 55% increase over 2023, as investors bet on digital transformation in a market that has historically relied on broker networks and offline processes. [1]
-
-## Investment Landscape
-
-UAE-based PropTech companies captured 62% of GCC PropTech funding, with Saudi Arabia accounting for 29% and other GCC markets sharing the remainder. [2]
-
-The most heavily funded categories were:
-
-- Transaction platforms (listing aggregators, digital brokerages): USD 310M [3]
-- Property management SaaS: USD 195M
-- Valuation and analytics: USD 158M
-- Smart building / IoT: USD 112M
-- Mortgage technology: USD 65M
-
-## Valuations and AI Integration
-
-Automated Valuation Models (AVMs) are gaining institutional acceptance in the UAE, with Dubai's Mashreq Bank and Emirates NBD both adopting AI-based valuations for mortgage approvals under AED 3 million. [4] Entrestate's own AVM achieves 94.2% accuracy within a 5% price range on Dubai apartments — comparable to top-tier global AVM performance.
-
-## Transaction Platform Consolidation
-
-The competitive dynamics of the listing aggregator market are shifting from growth to monetisation, with PropertyFinder and Bayut both introducing performance-based listing products that charge per qualified lead rather than subscription. [5]
-
-| Platform | MAUs | YoY Growth | Primary Revenue Model |
-|---|---|---|---|
-| Bayut | 9.8M | +22% | Subscription + performance |
-| PropertyFinder | 8.1M | +18% | Subscription + performance |
-| Dubizzle | 6.4M | +8% | Subscription |
-| Houza | 1.2M | +94% | Performance-only |
-
-## Regulatory Tailwinds
-
-DLD's introduction of the Real Estate Tokenisation Pilot in Q3 2024 has positioned Dubai as a global pioneer in fractional real estate ownership. The pilot saw AED 52 million in tokenised property transactions in its first quarter of operation. [6]`,
-    evidence: [
-      {
-        id: "e7-1",
-        refNum: 1,
-        type: "data",
-        label: "GCC PropTech VC Funding 2024",
-        value: "USD 840 million (+55% YoY)",
-        source: "MAGNiTT PropTech Report 2024",
-        note: "2023 equivalent: USD 542 million. Data includes disclosed rounds only."
-      },
-      {
-        id: "e7-2",
-        refNum: 2,
-        type: "calculation",
-        label: "GCC PropTech Funding by Country",
-        value: "UAE: 62% | Saudi: 29% | Other: 9%",
-        formula: "UAE (521M) ÷ total (840M) = 62.0% | Saudi (244M) ÷ total = 29.0%",
-        source: "MAGNiTT 2024"
-      },
-      {
-        id: "e7-3",
-        refNum: 3,
-        type: "data",
-        label: "Transaction Platform Funding",
-        value: "USD 310 million in 2024",
-        source: "MAGNiTT + Entrestate deal tracking",
-        note: "Includes PropertyFinder Series E (USD 166M) and undisclosed Houza funding."
-      },
-      {
-        id: "e7-4",
-        refNum: 4,
-        type: "data",
-        label: "Bank AVM Adoption — UAE",
-        source: "Mashreq Bank Digital Banking Report Q3 2024",
-        note: "Emirates NBD confirmed AVM adoption in their Q3 2024 earnings call. Sub-AED 3M threshold is their current bracket."
-      },
-      {
-        id: "e7-5",
-        refNum: 5,
-        type: "source",
-        label: "Bayut Performance-Based Listing Product",
-        source: "Dubizzle Group Investor Presentation, September 2024",
-        note: "Pay-per-lead model launched June 2024. PropertyFinder equivalent launched August 2024."
-      },
-      {
-        id: "e7-6",
-        refNum: 6,
-        type: "data",
-        label: "DLD Tokenisation Pilot Q3 2024",
-        value: "AED 52 million in tokenised transactions",
-        source: "Dubai Land Department press release, October 2024",
-        url: "https://dubailand.gov.ae",
-        note: "Pilot covers residential properties only. Expansion to commercial expected H1 2025."
-      }
-    ]
-  },
-  {
-    id: 8,
-    title: "UAE Mortgage Market 2024 Review",
-    subtitle: "Rate expectations and policy changes redefine the home finance landscape",
-    date: "September 17, 2024",
-    dateLabel: "Sep 17",
-    image: "/ocean-waves-beach-aerial-view-blue.jpg",
-    author: "Entrestate Research",
-    readTime: "8 min read",
-    category: "Finance Report",
-    content: `The UAE mortgage market processed AED 58.6 billion in residential home finance in 2024, a 16% increase over 2023, as easing Fed rate expectations and competitive bank lending drove improved affordability in the sub-AED 3 million segment. [1]
-
-## Rate Environment
-
-Following the US Federal Reserve's 50bps cut in September 2024, UAE bank prime rates began declining from their 2023 peak, with the average variable-rate mortgage product reaching 4.85% in Q4 2024, down from the 5.6% peak in Q4 2023. [2]
-
-Fixed-rate products (typically 1–5 year fixed, then variable) gained significant share, accounting for 44% of new originations in 2024 as borrowers sought protection against volatility. [3]
-
-## Market Segmentation
-
-| Lender Category | Market Share | Avg LTV | Avg Rate |
-|---|---|---|---|
-| Local banks (ADCB, FAB, DIB) | 64% | 74% | 4.90% |
-| International banks | 22% | 71% | 4.75% |
-| Mortgage brokers (facilitated) | 14% | 73% | 4.82% |
-
-## First-Time Buyer Pressure
-
-The Central Bank of UAE's Loan-to-Value cap of 75% for expat first-time buyers on properties above AED 5 million creates a significant equity barrier — requiring a minimum deposit of AED 1.25 million. [4] Only 18% of expat mortgage applicants had deposits meeting this threshold.
-
-## Islamic Finance
-
-Sharia-compliant home finance (Ijara and Murabaha structures) accounted for 38% of total mortgage originations in 2024 — the highest share recorded. [5] The UAE's Islamic finance infrastructure continues to mature, with Amlak and Tamweel seeing the strongest origination growth.
-
-## 2025 Outlook
-
-With a further 100bps of Fed cuts projected in 2025, the average UAE mortgage rate is expected to decline to 4.2–4.5% by Q4 2025, which Entrestate models as unlocking an additional 12,000–16,000 qualifying borrowers in the sub-AED 2M segment. [6]`,
-    evidence: [
-      {
-        id: "e8-1",
-        refNum: 1,
-        type: "data",
-        label: "UAE Residential Mortgage Originations 2024",
-        value: "AED 58.6 billion (+16% YoY)",
-        source: "Central Bank of UAE Banking Sector Report 2024",
-        note: "2023 equivalent: AED 50.5 billion."
-      },
-      {
-        id: "e8-2",
-        refNum: 2,
-        type: "data",
-        label: "Average Variable Mortgage Rate Q4 2024",
-        value: "4.85% (down from 5.60% peak in Q4 2023)",
-        source: "Entrestate bank rate tracker + CBUAE",
-        note: "Survey of 8 leading UAE mortgage lenders."
-      },
-      {
-        id: "e8-3",
-        refNum: 3,
-        type: "data",
-        label: "Fixed-Rate Mortgage Product Share 2024",
-        value: "44% of new originations",
-        source: "CBUAE Mortgage Market Statistics Q4 2024",
-        note: "2022 share was 28%. Significant shift driven by rate volatility awareness."
-      },
-      {
-        id: "e8-4",
-        refNum: 4,
-        type: "source",
-        label: "CBUAE LTV Regulations for Expats",
-        source: "Central Bank of UAE — Mortgage Regulations",
-        url: "https://www.centralbank.ae",
-        note: "75% LTV cap applies to expat borrowers on properties above AED 5M. UAE nationals benefit from 80% LTV on first properties."
-      },
-      {
-        id: "e8-5",
-        refNum: 5,
-        type: "data",
-        label: "Islamic Finance Share of Mortgage Market",
-        value: "38% of total originations in 2024",
-        source: "CBUAE Islamic Banking Report 2024",
-        note: "Prior peak was 34% in 2021. Driven by Amlak and Tamweel origination growth of 28% YoY."
-      },
-      {
-        id: "e8-6",
-        refNum: 6,
-        type: "calculation",
-        label: "Rate Decline Impact on Qualifying Borrowers",
-        value: "+12,000–16,000 new qualifying borrowers",
-        formula: "Modelled at rate 4.2% vs 4.85% against Entrestate income distribution dataset. Median income AED 230K. Property price sub-AED 2M.",
-        note: "Lower bound assumes 100bps cut. Upper bound assumes 125bps cut over full year."
-      }
-    ]
-  },
-  {
-    id: 9,
-    title: "Sustainability Premium in UAE Real Estate",
-    subtitle: "Green-certified buildings command measurable price and rental premiums as ESG mandates intensify",
-    date: "September 16, 2024",
-    dateLabel: "Sep 16",
+    title: "Algorithmic Analysis of Emaar Properties’ Development Pipeline",
+    subtitle:
+      "District-level pipeline intelligence, absorption telemetry, and allocation strategy across 213 active Emaar listings.",
+    date: "March 12, 2026",
+    dateLabel: "Mar 12",
     image: "/forest-fog-morning-mist-green-trees.jpg",
     author: "Entrestate Research",
-    readTime: "7 min read",
-    category: "ESG Report",
-    content: `Buildings with LEED or Pearl (Estidama) green certifications command an average 8.4% sale price premium and a 6.2% rental premium over non-certified comparable stock in the UAE — premiums that have grown significantly since the announcement of COP28 in Dubai. [1]
+    readTime: "12 min read",
+    category: "Developer Intelligence",
+    content: `This report decodes Emaar Properties as the structural anchor of UAE residential market behavior. Entrestate's analytics stack tracks more than 213 active project listings and models Emaar's delivery certainty as a risk-mitigation premium for both institutional and private capital. [1]
 
-## Certification Landscape
+## Executive Summary
 
-As of Q3 2024, the UAE has 2,841 LEED-certified buildings, ranking it 5th globally by certified floor area. The Pearl Rating System (Abu Dhabi's Estidama equivalent) has been mandatory for new Abu Dhabi developments since 2010. [2]
+Emaar's multi-district pipeline functions as a market-stability layer across growth and mature corridors. For allocators, the key advantage is not just exposure breadth, but confidence-weighted entry timing based on project progress, absorption velocity, and district catalyst strength. [2]
 
-- LEED Platinum: 184 buildings
-- LEED Gold: 892 buildings
-- LEED Silver: 1,765 buildings
-- Pearl 3+ (Estidama): 412 buildings
+## 1. Pipeline Absorption and the Hotness Metric
 
-## Price Premium Analysis
+Entrestate uses a proprietary Hotness Level signal to quantify market urgency and absorption intensity.
 
-Entrestate's analysis of 14,200 transactions between Q1 2022 and Q3 2024 demonstrates a statistically significant and growing price premium for certified buildings. [3]
+| Signal | Current Read |
+|---|---|
+| Terra Woods | Hotness score 100 (max urgency) |
+| Virella at The Valley | Hotness score 99 (near-max urgency) |
+| Allocation Meaning | Compressed entry windows before secondary-market repricing |
 
-| Certification | Sale Premium | Rental Premium | 2022 Sale Premium |
-|---|---|---|---|
-| LEED Platinum | 14.2% | 10.8% | 9.1% |
-| LEED Gold | 8.7% | 6.5% | 5.4% |
-| LEED Silver | 4.1% | 2.8% | 2.2% |
-| Pearl 3+ | 9.3% | 7.1% | 6.0% |
+Maximum-score telemetry indicates rapid capital rotation into Expo-linked and frontier-aligned inventory where timing precision has outsized impact on realized returns.
 
-## Institutional Driver
+## 2. Geospatial Intelligence: District-Level Dynamics
 
-Institutional investors bound by ESG mandates — including sovereign wealth funds with Net Zero commitments and listed REITs — are increasingly restricting capital deployment to certified assets. [4] This is beginning to create a two-tier market, where non-certified institutional-grade assets face structural re-pricing risk.
+### Dubai Creek Harbour (The Lagoons)
 
-## Retrofit Economics
+Tracked assets include Aeon, Valo, Creek Haven, Lyvia by Palace, Altan, Montiva, Creek Bay, Moor at Creek Beach, Mangrove, Silva Tower, and Island Park II. Model outputs classify this cluster as a high-liquidity waterfront system with premium tenant segmentation and strong branded-residence support. [3]
 
-For existing non-certified commercial buildings, the average cost of achieving LEED Gold certification in the UAE is AED 85–140 per sq ft (all-in, including design fees). [5] At current rental premiums, the payback period for a Grade A office building in DIFC is estimated at 6.8 years.
+### Mina Rashid
 
-## Regulatory Trajectory
+Tracked assets include Ocean Cove, Pier Point 2, Aurea, Sera, Baystar by Vida, and Fior 2. The district is classified as a maritime lifestyle premium corridor. Ocean Cove progress visibility (9.57%) provides a lower uncertainty profile relative to zero-progress launches.
 
-Dubai's Green Building Regulations were updated in 2023 to require LEED Silver as a minimum for all new commercial developments above 10,000 sq m. Entrestate anticipates a further tightening to LEED Gold by 2027. [6]`,
+### Grand Polo Club and Resort
+
+Chevalia Fields, Chevalia Estate, Montura phases, Selvara phases, and Equiterra form an equestrian-luxury scarcity cluster. Rapid sell-out behavior in early phases signals constrained luxury demand depth.
+
+### The Heights Country Club and Wellness
+
+Salva and Serro are classified under inland wellness luxury. This category bridges mid-tier suburban demand and ultra-prime privacy-driven capital.
+
+### Dubai Hills Estate
+
+Club Place, Golf Hillside, Vida Residences Hillside, Rosehill, Palace Residences Hillside, and Socio represent a mature high-liquidity node. Club Place progress (42.67%) offers materially lower execution uncertainty than early-cycle assets.
+
+### Emaar South and Dubai South
+
+Golf Meadow, Golf Verge, Golf Point, Golf Hills, Golf Dale, Expo Golf Villas 6, and Greenspoint 2 align with airport- and logistics-led demand formation around the DWC expansion.
+
+### The Valley and The Oasis
+
+Palmiera Collective, Ovelle, Mareva, Avelia, and Farm Gardens 3 define suburban luxury retreat demand. With key phases sold out, upcoming launch windows become the main point of entry for large-format exposure.
+
+## 3. Asset Class Telemetry and Pricing Tiers
+
+Portfolio construction separates apartment cash-flow profiles from villa scarcity and appreciation profiles.
+
+| Capital Tier | Typical Entry Band | Representative Assets |
+|---|---|---|
+| Entry-Level | AED 1.0M-2.0M | Golf Hills, Golf Verge, Socio, Emaar Expo Living, Rosehill, Creek Haven |
+| Mid-Tier | AED 2.0M-6.0M | Aurea, Golf Meadow, Seapoint, Valo, Salva |
+| Ultra-Prime | AED 6.0M+ | Selvara, Chevalia Fields, Ovelle, Mareva, Palmiera Collective, Park Gate 2 |
+
+Branded assets (for example Palace and Vida) continue to exhibit pricing and rent resilience, with observed premium behavior versus unbranded peers in similar micro-locations. [4]
+
+## 4. Predictive Delivery Horizons
+
+### Ready Benchmark
+- Socio (Dubai Hills) is fully complete and used as a district-level yield benchmark.
+
+### Near-Term Window (2025)
+- Island Park II and Expo Golf Villas 6 represent late-stage pre-handover positioning opportunities.
+
+### Mid-Term Core (2026-2028)
+- Aeon (50.21%), Club Place (42.67%), and Valo (33.4%) provide progressively de-risked build-cycle exposure.
+
+### Long-Term Window (2029-2031)
+- Terra Gardens, Lyvia, Avarra, Salva, and Creek Haven anchor longer-duration appreciation positioning.
+
+## 5. Algorithmic Portfolio Strategies
+
+Emaar payment structures (10/70/20, 10/80/10, 5/55/40 variants) support differentiated allocator profiles when mapped against district catalysts and progress telemetry.
+
+| Strategy Archetype | Primary Objective | Example OS Allocations |
+|---|---|---|
+| Yield Hunter | Occupancy-led cash-flow stability | Socio, Golf Verge, Emaar Expo Living |
+| Appreciation Strategist | Build-cycle value expansion | Ocean Cove, Aurea, Terra Woods |
+| UHNW Hedger | Scarcity and defensiveness | Palmiera Collective, Chevalia, Park Gate 2 |
+
+## Strategic Conclusion
+
+Emaar remains a mathematically central component of UAE portfolio construction. Using Entrestate's district telemetry, allocators can shift from generalized exposure to precision-timed, risk-adjusted positioning across near-term yield and long-cycle appreciation tracks.`,
     evidence: [
       {
-        id: "e9-1",
+        id: "emaar-intel-1",
         refNum: 1,
-        type: "calculation",
-        label: "Green Building Price and Rental Premium",
-        value: "Sale: +8.4% | Rental: +6.2% (average across certification levels)",
-        formula: "Weighted average of LEED Platinum, Gold, Silver, and Pearl 3+ premiums by transaction count",
-        note: "Based on 14,200 matched-pair transactions Q1 2022–Q3 2024."
+        type: "data",
+        label: "Active Emaar Pipeline Universe",
+        value: "213+ tracked active listings",
+        source: "Entrestate developer pipeline index",
+        note: "Baseline dataset for this analysis.",
       },
       {
-        id: "e9-2",
+        id: "emaar-intel-2",
         refNum: 2,
-        type: "data",
-        label: "UAE LEED Certified Building Count",
-        value: "2,841 certified buildings (5th globally by floor area)",
-        source: "USGBC LEED Project Directory, Q3 2024",
-        url: "https://www.usgbc.org/projects",
-        note: "Floor area basis. Countries ahead: USA, China, India, Canada."
+        type: "calculation",
+        label: "Delivery-Certainty Safety Premium",
+        formula: "expected volatility discount = f(historical completion reliability x district maturity)",
+        note: "Used to express risk-mitigation advantage in emerging corridors.",
       },
       {
-        id: "e9-3",
+        id: "emaar-intel-3",
         refNum: 3,
-        type: "data",
-        label: "Transaction Dataset for Premium Analysis",
-        value: "14,200 matched-pair transactions, Q1 2022–Q3 2024",
-        source: "DLD + DMT transaction registry, Entrestate certification database",
-        note: "Matched-pair methodology: each certified unit matched to 3 comparable non-certified transactions within 500m, same build year ±5 years, same size ±15%."
-      },
-      {
-        id: "e9-4",
-        refNum: 4,
         type: "source",
-        label: "ESG Mandates and Institutional Real Estate",
-        source: "GRESB Real Estate Assessment 2024",
-        url: "https://gresb.com",
-        note: "GRESB data shows 78% of survey respondents have a formal green building acquisition policy."
+        label: "District Geospatial Telemetry",
+        source: "Entrestate micro-city analytics layer",
+        note: "Supports corridor-level classification and catalyst mapping.",
       },
       {
-        id: "e9-5",
+        id: "emaar-intel-4",
+        refNum: 4,
+        type: "data",
+        label: "Branded Residence Premium Range",
+        value: "15%-25% observed resale/rental premium behavior",
+        source: "Entrestate branded-vs-unbranded comparative index",
+        note: "Used for premium resilience assumptions.",
+      },
+      {
+        id: "emaar-intel-5",
         refNum: 5,
         type: "data",
-        label: "LEED Gold Retrofit Cost UAE",
-        value: "AED 85–140 per sq ft all-in",
-        source: "Entrestate Cost Consultancy Database (6 completed LEED Gold retrofits, 2022–2024)",
-        note: "Range reflects building complexity and MEP upgrade requirements. Simple office plates at lower bound; complex mixed-use at upper."
+        label: "Project Progress De-Risking Ladder",
+        value: "Aeon 50.21%, Club Place 42.67%, Valo 33.4%",
+        source: "Entrestate construction progress tracker",
+        note: "Input for timing and exit-ladder optimization.",
       },
-      {
-        id: "e9-6",
-        refNum: 6,
-        type: "source",
-        label: "Dubai Green Building Regulations",
-        source: "Dubai Electricity and Water Authority (DEWA)",
-        url: "https://www.dewa.gov.ae",
-        note: "2023 amendment mandates LEED Silver minimum for commercial builds >10,000 sqm. Estidama 2-Pearl is equivalent in Abu Dhabi."
-      }
-    ]
+    ],
   },
-  {
-    id: 10,
-    title: "Dubai Marina Micro-Market Analysis",
-    subtitle: "A granular view of the UAE's most traded apartment community",
-    date: "July 22, 2024",
-    dateLabel: "Jul 22",
-    image: "/misty-valley-green-moss-iceland-landscape-river.jpg",
-    author: "Entrestate Research",
-    readTime: "8 min read",
-    category: "Micro-Market Report",
-    content: `Dubai Marina remains the most liquid residential community in the UAE, accounting for 4.2% of all Dubai residential transactions in H1 2024, with a total traded value of AED 8.9 billion. [1]
-
-## Community Profile
-
-Dubai Marina spans approximately 4.97 km of waterfront and contains an estimated 115 residential towers comprising 43,800 units. [2] The community's walkability score, marina lifestyle, and transportation connectivity (Metro, Marina Walk) sustain demand across market cycles.
-
-## Transaction Breakdown H1 2024
-
-| Segment | Transactions | Total Value | Avg Price/sqft |
-|---|---|---|---|
-| Studio | 1,842 | AED 1.4B | AED 1,820 |
-| 1-Bedroom | 3,104 | AED 3.2B | AED 1,950 |
-| 2-Bedroom | 1,680 | AED 2.4B | AED 2,080 |
-| 3-Bedroom+ | 412 | AED 1.9B | AED 2,340 |
-
-## Sub-Community Price Variance
-
-Price per square foot varies significantly within Dubai Marina based on proximity to the waterfront, tower age, and developer brand:
-
-- Waterfront towers (Dubai Marina Walk frontage): AED 2,200–2,800/sqft [3]
-- Mid-community towers (2nd–3rd row): AED 1,700–2,100/sqft
-- Peripheral towers (JBR-adjacent, inland): AED 1,500–1,900/sqft
-
-## Rental Market
-
-Dubai Marina's rental market tightened significantly in H1 2024, with average 1-bedroom rents reaching AED 145,000 per annum — a 22% increase over H1 2023. [4] The community's gross rental yield of 5.8% remains attractive relative to its capital value, though compressed from the 7.2% recorded in 2020.
-
-## Investment Outlook
-
-With limited new supply (only 2 towers under construction for delivery 2025–2026), the supply constrained nature of Dubai Marina supports continued price appreciation. [5] Entrestate rates Dubai Marina as a BUY for income-seeking investors targeting 1-2 bedroom units, with a 12-month price target of AED 2,100–2,250 per sqft. [6]`,
-    evidence: [
-      {
-        id: "e10-1",
-        refNum: 1,
-        type: "calculation",
-        label: "Dubai Marina Transaction Share H1 2024",
-        value: "4.2% of all Dubai residential transactions | AED 8.9B",
-        formula: "Marina transactions (7,038) ÷ total Dubai transactions (167,571 H1 2024) = 4.2%",
-        source: "DLD H1 2024 Transaction Report"
-      },
-      {
-        id: "e10-2",
-        refNum: 2,
-        type: "data",
-        label: "Dubai Marina Community Statistics",
-        value: "115 residential towers | 43,800 units | 4.97km waterfront",
-        source: "Dubai Marina Master Community Association + Entrestate Building Registry",
-        note: "Unit count includes apartments only. Serviced apartments and hotel units excluded."
-      },
-      {
-        id: "e10-3",
-        refNum: 3,
-        type: "data",
-        label: "Waterfront Tower Price Premium",
-        value: "AED 2,200–2,800/sqft (vs AED 1,500–1,900 peripheral)",
-        source: "Entrestate Valuation Index, 890 transactions Q1–Q2 2024",
-        note: "Defined as direct Marina Walk or Marina waterfront promenade frontage."
-      },
-      {
-        id: "e10-4",
-        refNum: 4,
-        type: "data",
-        label: "Average 1BR Rent Dubai Marina H1 2024",
-        value: "AED 145,000 p.a. (+22% vs H1 2023)",
-        source: "Ejari rental registrations, Entrestate analysis",
-        note: "Median of 2,840 1BR Ejari registrations in Dubai Marina, H1 2024."
-      },
-      {
-        id: "e10-5",
-        refNum: 5,
-        type: "data",
-        label: "Dubai Marina Supply Pipeline",
-        value: "2 towers under construction | ~820 units total for 2025–2026 delivery",
-        source: "Entrestate Developer Pipeline Tracker",
-        note: "No major community-scale launches expected in the 2024–2026 window."
-      },
-      {
-        id: "e10-6",
-        refNum: 6,
-        type: "calculation",
-        label: "12-Month Price Target",
-        value: "AED 2,100–2,250 per sqft",
-        formula: "Current avg (2,000) × supply tightening premium (5%) + rental yield support (0.5%) = 2,100–2,250",
-        note: "BUY rating applies specifically to 1–2BR units, not studios or 3BR+ which have different demand dynamics."
-      }
-    ]
-  },
-  {
-    id: 11,
-    title: "Real Estate Tokenisation: GCC State of Play",
-    subtitle: "Fractional ownership is moving from concept to transaction — what it means for liquidity",
-    date: "July 20, 2024",
-    dateLabel: "Jul 20",
-    image: "/mountain-landscape-sunset-orange-sky.jpg",
-    author: "Entrestate Research",
-    readTime: "6 min read",
-    category: "Technology Report",
-    content: `Real estate tokenisation — the process of representing property ownership as digital tokens on a blockchain — is transitioning from proof-of-concept to regulated commercial activity in the GCC, with Dubai leading the regulatory framework development. [1]
-
-## Regulatory Milestones
-
-Dubai Land Department's tokenisation pilot, launched Q3 2024, provides the first government-backed framework for fractional ownership of residential real estate in the UAE. The pilot operates under RERA oversight and requires participating platforms to be licensed by DFSA or ADGM. [2]
-
-## Market Activity
-
-The pilot's first quarter recorded AED 52 million in tokenised transactions across 14 properties, with average token lot sizes of AED 25,000 — making sub-AED 100,000 real estate investment accessible for the first time. [3]
-
-- Total properties tokenised: 14
-- Average property value: AED 3.7 million
-- Average token size: AED 25,000
-- Unique investors: 2,104 (spanning 61 nationalities)
-
-## Liquidity Mechanics
-
-Tokenised real estate creates secondary market liquidity that is structurally impossible in traditional co-ownership structures. Holders can trade fractional positions 24/7 without requiring all co-owners' agreement — a transformative improvement in liquidity risk. [4]
-
-## Investor Profile
-
-Early token investors in the DLD pilot skewed toward millennials (25–40) with existing crypto familiarity, but institutional interest is growing, with two UAE family offices committing to dedicated tokenised real estate allocations in Q3 2024. [5]
-
-## Challenges
-
-- Regulatory clarity on cross-border token transfers remains incomplete
-- Secondary market liquidity is nascent — average time to find a buyer: 8.4 days [6]
-- Tax treatment uncertainty for non-UAE residents
-
-## Global Context
-
-Singapore (MAS framework), Switzerland (DLT Act), and the Cayman Islands lead globally in tokenised real estate regulatory maturity. Dubai's DLD pilot positions the UAE as the leading GCC jurisdiction and a strong global contender.`,
-    evidence: [
-      {
-        id: "e11-1",
-        refNum: 1,
-        type: "source",
-        label: "DLD Real Estate Tokenisation Framework",
-        source: "Dubai Land Department",
-        url: "https://dubailand.gov.ae",
-        note: "Framework announced July 2024. Pilot launched September 2024."
-      },
-      {
-        id: "e11-2",
-        refNum: 2,
-        type: "source",
-        label: "RERA Tokenisation Oversight and DFSA Licensing",
-        source: "RERA / DFSA",
-        url: "https://www.dfsa.ae",
-        note: "Platforms must hold a DFSA or ADGM licence to participate in the DLD tokenisation pilot."
-      },
-      {
-        id: "e11-3",
-        refNum: 3,
-        type: "data",
-        label: "DLD Pilot Q3 2024 Activity",
-        value: "AED 52M transactions | 14 properties | 2,104 investors",
-        source: "Dubai Land Department press release, October 2024"
-      },
-      {
-        id: "e11-4",
-        refNum: 4,
-        type: "source",
-        label: "Tokenised vs Traditional Co-ownership Liquidity",
-        source: "Entrestate Legal and Technology Research",
-        note: "Traditional co-ownership in UAE law requires unanimous consent for disposal under the Joint Ownership Law."
-      },
-      {
-        id: "e11-5",
-        refNum: 5,
-        type: "data",
-        label: "Family Office Tokenised RE Allocations",
-        value: "2 UAE family offices committed to dedicated allocations, Q3 2024",
-        source: "Entrestate private capital intelligence (names withheld)",
-        note: "Combined allocation size AED 45M. Disclosed to Entrestate under confidentiality."
-      },
-      {
-        id: "e11-6",
-        refNum: 6,
-        type: "data",
-        label: "Secondary Market Average Time to Trade",
-        value: "8.4 days average",
-        source: "DLD Pilot Platform Data (aggregated, Q3 2024)",
-        note: "Defined as listing to confirmed trade. Excludes cancelled listings."
-      }
-    ]
-  },
-  {
-    id: 12,
-    title: "GCC Hotel & Hospitality Real Estate 2024",
-    subtitle: "Record RevPAR and mega-event pipeline fuel institutional appetite for Gulf hospitality assets",
-    date: "July 19, 2024",
-    dateLabel: "Jul 19",
-    image: "/futuristic-city-neon-lights-night.jpg",
-    author: "Entrestate Research",
-    readTime: "7 min read",
-    category: "Hospitality Report",
-    content: `The GCC hospitality real estate sector delivered its strongest operational performance on record in 2024, with average Revenue Per Available Room (RevPAR) across Dubai, Abu Dhabi, and Riyadh reaching USD 198 — a 12% increase over 2023's previous record. [1]
-
-## Performance Highlights
-
-Dubai maintained its position as the MENA region's premium hospitality market, achieving an average occupancy of 79.4% and ADR of USD 248 — making it one of the top 5 most expensive hotel markets globally. [2]
-
-| City | Occupancy | ADR (USD) | RevPAR (USD) | YoY RevPAR Change |
-|---|---|---|---|---|
-| Dubai | 79.4% | 248 | 197 | +11% |
-| Abu Dhabi | 74.1% | 189 | 140 | +16% |
-| Riyadh | 71.2% | 221 | 157 | +18% |
-| Doha | 68.8% | 175 | 120 | +8% |
-
-## Investment Activity
-
-Hotel transactions in the GCC totalled USD 3.8 billion in 2024, with Abu Dhabi accounting for a disproportionate share following the Yas Island hotel portfolio sale. [3]
-
-Institutional investors are increasingly targeting limited-service and extended-stay formats, which offer lower operating leverage and more resilient returns through demand cycles. [4]
-
-## Event Pipeline Value
-
-The GCC's event-driven demand calendar through 2030 is unprecedented:
-
-- Expo 2030 Riyadh: projected 40M visitors
-- FIFA World Cup 2034 (Saudi Arabia): 3.5M+ international visitors
-- Formula E, Grand Prix, and World Expo legacy venues driving year-round demand
-
-Entrestate estimates the event pipeline will add USD 12–18 billion in incremental hotel real estate value across the GCC by 2030. [5]
-
-## Development Pipeline
-
-An estimated 68,000 hotel keys are under development across the GCC, with Saudi Arabia representing 61% of the pipeline. [6] The luxury and ultra-luxury segments dominate new supply, with NEOM's concept hotels and Diriyah's historic district hospitality expected to command premium positioning.`,
-    evidence: [
-      {
-        id: "e12-1",
-        refNum: 1,
-        type: "data",
-        label: "GCC Average RevPAR 2024",
-        value: "USD 198 (+12% YoY)",
-        source: "STR Global + Entrestate Hospitality Analytics",
-        note: "Weighted average across Dubai, Abu Dhabi, Riyadh, Doha, and Muscat hotel stock."
-      },
-      {
-        id: "e12-2",
-        refNum: 2,
-        type: "data",
-        label: "Dubai Hotel Performance 2024",
-        value: "Occupancy: 79.4% | ADR: USD 248 | RevPAR: USD 197",
-        source: "DTCM (Dubai Tourism) + STR Global",
-        note: "Top 5 most expensive markets globally (ADR basis): Paris, NYC, London, Dubai, Singapore."
-      },
-      {
-        id: "e12-3",
-        refNum: 3,
-        type: "data",
-        label: "GCC Hotel Transaction Volume 2024",
-        value: "USD 3.8 billion total",
-        source: "JLL Hotels & Hospitality Group + CBRE",
-        note: "Yas Island portfolio sale (USD 980M) accounts for 26% of GCC total."
-      },
-      {
-        id: "e12-4",
-        refNum: 4,
-        type: "source",
-        label: "Limited-Service Hotel Institutional Demand",
-        source: "Savills World Research — GCC Hospitality 2024",
-        note: "Survey of 28 institutional hotel investors. 67% prefer limited-service or extended-stay for GCC allocations."
-      },
-      {
-        id: "e12-5",
-        refNum: 5,
-        type: "calculation",
-        label: "Event Pipeline Hotel Real Estate Value Impact",
-        value: "USD 12–18 billion additional value by 2030",
-        formula: "Incremental rooms demand (projected) × average hotel development cost × stabilised cap rate range = asset value range",
-        note: "Low scenario: Expo 2030 + FIFA demand only. High scenario: full calendar including recurring premium events."
-      },
-      {
-        id: "e12-6",
-        refNum: 6,
-        type: "data",
-        label: "GCC Hotel Development Pipeline",
-        value: "68,000 keys under development | Saudi: 61% share",
-        source: "STR Development Pipeline Report Q3 2024",
-        note: "NEOM alone accounts for an estimated 12,000–15,000 keys in the pipeline."
-      }
-    ]
-  }
 ]
 
+// ── Topic extraction ─────────────────────────────────────────────────────────
+
+const TOPIC_STOPWORDS = new Set([
+  "with", "from", "that", "this", "and", "the", "for", "are", "have",
+  "real", "estate", "market", "report", "analysis", "executive", "summary",
+  "overview", "review", "strategy", "strategic", "properties", "entrestate",
+  "intelligence", "post", "2025", "2026", "2027", "2028",
+])
+
+function deriveCardTopics(card: ReportCard): string[] {
+  if (card.tags && card.tags.length > 0) return card.tags.slice(0, 5)
+  const topics: string[] = []
+  if (card.category) topics.push(card.category)
+  const words = card.title
+    .split(/[\s:·—\-,()/]+/)
+    .map((w) => w.trim().replace(/['"]/g, ""))
+    .filter((w) => w.length > 3 && !TOPIC_STOPWORDS.has(w.toLowerCase()))
+  for (const w of words) {
+    if (topics.length >= 5) break
+    if (!topics.some((t) => t.toLowerCase().includes(w.toLowerCase()))) topics.push(w)
+  }
+  return topics.slice(0, 5)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function TimeMachineRolodex() {
+
   const [position, setPosition] = useState(0)
   const [viewMode, setViewMode] = useState<"stack" | "list">("stack")
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
@@ -1252,7 +860,15 @@ export function TimeMachineRolodex() {
         </div>
 
         {/* Entrestate wordmark */}
-        <div className="absolute left-6 top-6 z-50 flex items-center gap-2">
+        <div className="absolute left-6 top-6 z-50 flex items-center gap-3">
+          <a
+            href="/"
+            className="text-[10px] font-medium text-muted-foreground/50 transition-colors hover:text-muted-foreground flex items-center gap-1"
+          >
+            <ChevronRight className="h-3 w-3 rotate-180" />
+            Back
+          </a>
+          <span className="text-border/50">|</span>
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             entrestate
           </span>
@@ -1296,33 +912,96 @@ export function TimeMachineRolodex() {
                         }
                       }}
                     >
-                      <div className="h-full w-full overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl">
-                        <div className="relative h-[65%] overflow-hidden bg-muted">
-                          <img src={card.image || "/placeholder.svg"} alt={card.title} className="h-full w-full object-cover" />
-                          {distanceFromActive > 0 && (
-                            <div className="absolute inset-0 bg-black" style={{ opacity: Math.min(0.3, Math.abs(distanceFromActive) * 0.08) }} />
-                          )}
-                          {card.category && (
-                            <div className="absolute left-5 top-5">
-                              <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-                                {card.category}
-                              </span>
+                      {(() => {
+                        const topics = deriveCardTopics(card)
+                        const isActive = Math.abs(distanceFromActive) < 0.3
+                        return (
+                          <div className="h-full w-full overflow-hidden rounded-2xl border border-border/60 bg-card shadow-2xl flex">
+
+                            {/* ── Main content ── */}
+                            <div className="relative flex flex-1 flex-col overflow-hidden p-8 md:p-10">
+
+                              {/* Dim overlay for non-active cards */}
+                              {distanceFromActive > 0 && (
+                                <div className="absolute inset-0 bg-background/60 z-10 rounded-2xl" style={{ opacity: Math.min(0.5, distanceFromActive * 0.12) }} />
+                              )}
+
+                              {/* Background stroke decoration */}
+                              <div
+                                className="pointer-events-none absolute right-6 top-4 select-none font-serif font-black leading-none text-foreground"
+                                aria-hidden
+                                style={{ fontSize: "200px", WebkitTextStroke: "1px currentColor", color: "transparent", opacity: 0.04 }}
+                              >
+                                "
+                              </div>
+
+                              {/* Masthead row */}
+                              <div className="flex items-center justify-between">
+                                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/30">
+                                  Entrestate Research
+                                </p>
+                                {card.category && (
+                                  <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold text-primary">
+                                    {card.category}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Divider */}
+                              <div className="my-5 h-px w-full bg-gradient-to-r from-border/60 via-border/30 to-transparent" />
+
+                              {/* Title — typography hero */}
+                              <div className="flex-1 flex flex-col justify-center">
+                                <h2 className="font-serif text-4xl font-medium leading-tight tracking-tight text-foreground md:text-[42px]">
+                                  {card.title}
+                                </h2>
+                                <p className="mt-4 text-base leading-relaxed text-muted-foreground line-clamp-3">
+                                  {card.subtitle}
+                                </p>
+                                <p className="mt-5 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/30">
+                                  by Entrestate Decision Engine
+                                </p>
+                              </div>
+
+                              {/* Bottom bar */}
+                              <div className="mt-6 flex items-center justify-between border-t border-border/30 pt-5">
+                                <p className="text-sm text-muted-foreground/60">{card.date}</p>
+                                {isActive && (
+                                  <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
+                                    Open report <ChevronRight className="h-4 w-4" />
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        <div className="bg-card p-8">
-                          <h2 className="text-3xl font-semibold tracking-tight text-foreground">{card.title}</h2>
-                          <p className="mt-2 text-lg text-muted-foreground">{card.subtitle}</p>
-                          <div className="mt-3 flex items-center justify-between">
-                            <p className="text-sm text-muted-foreground">{card.date}</p>
-                            {Math.abs(distanceFromActive) < 0.3 && (
-                              <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
-                                Open report <ChevronRight className="h-4 w-4" />
-                              </span>
-                            )}
+
+                            {/* ── Right rail — topics ── */}
+                            <div className="hidden md:flex w-[148px] shrink-0 flex-col border-l border-border/30 bg-card/20 p-5 pt-8">
+                              <p className="mb-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/25">
+                                Topics
+                              </p>
+                              <div className="flex flex-col gap-2">
+                                {topics.map((topic) => (
+                                  <span
+                                    key={topic}
+                                    className="inline-block rounded-md border border-border/30 bg-background/20 px-2 py-1.5 text-[10px] leading-tight text-muted-foreground/45"
+                                  >
+                                    {topic}
+                                  </span>
+                                ))}
+                              </div>
+                              <div className="mt-auto space-y-1.5 border-t border-border/20 pt-4">
+                                {card.readTime && (
+                                  <p className="text-[9px] text-muted-foreground/30">{card.readTime}</p>
+                                )}
+                                {card.author && (
+                                  <p className="text-[9px] text-muted-foreground/25">{card.author}</p>
+                                )}
+                              </div>
+                            </div>
+
                           </div>
-                        </div>
-                      </div>
+                        )
+                      })()}
                     </div>
                   )
                 })}
@@ -1380,14 +1059,50 @@ export function TimeMachineRolodex() {
                 ))}
               </div>
             </div>
-            {hoveredIndex !== null && (
-              <div
-                className="pointer-events-none fixed z-50 overflow-hidden rounded-xl border border-border/70 shadow-2xl"
-                style={{ left: mousePos.x + 20, top: mousePos.y - 100, width: 280, height: 180 }}
-              >
-                <img src={cards[hoveredIndex].image || "/placeholder.svg"} alt={cards[hoveredIndex].title} className="h-full w-full object-cover" />
-              </div>
-            )}
+            {hoveredIndex !== null && (() => {
+              const hc = cards[hoveredIndex]
+              const htopics = deriveCardTopics(hc)
+              return (
+                <div
+                  className="pointer-events-none fixed z-50 overflow-hidden rounded-xl border border-border/60 bg-card shadow-2xl"
+                  style={{ left: mousePos.x + 20, top: mousePos.y - 90, width: 268, height: 168 }}
+                >
+                  <div className="relative flex h-full flex-col justify-between overflow-hidden p-4">
+                    {/* Stroke background */}
+                    <div
+                      className="pointer-events-none absolute right-2 top-0 select-none font-serif font-black leading-none text-foreground"
+                      aria-hidden
+                      style={{ fontSize: "100px", WebkitTextStroke: "1px currentColor", color: "transparent", opacity: 0.05 }}
+                    >
+                      "
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/30">
+                        Entrestate Research
+                      </p>
+                      {hc.category && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-medium text-primary">
+                          {hc.category}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-serif text-sm font-medium leading-snug text-foreground line-clamp-2">
+                        {hc.title}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {htopics.slice(0, 3).map((t) => (
+                          <span key={t} className="rounded border border-border/30 px-1.5 py-0.5 text-[9px] text-muted-foreground/40">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="mt-2 text-[10px] text-muted-foreground/30">{hc.date}</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
           </>
         )}
       </div>

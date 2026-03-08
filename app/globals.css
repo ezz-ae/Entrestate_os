@@ -413,15 +413,16 @@
 }
 
 .reader-theme-dark {
-  --reader-bg: oklch(0.14 0.01 255);
-  --reader-text: oklch(0.90 0.01 90);
-  --reader-muted: oklch(0.60 0.01 250);
-  --reader-border: oklch(0.25 0.02 255);
-  --reader-focus-bg: oklch(0.18 0.02 255);
-  --reader-highlight: oklch(0.28 0.06 252);
-  --reader-gold: oklch(0.75 0.13 255);
-  --reader-gold-light: oklch(0.22 0.04 255);
-  --reader-evidence-bg: oklch(0.19 0.025 255);
+  --reader-bg: oklch(0.12 0.005 240);
+  --reader-text: oklch(0.93 0.008 80);
+  --reader-muted: oklch(0.58 0.01 80);
+  --reader-border: oklch(0.22 0.01 240);
+  --reader-focus-bg: oklch(0.16 0.008 240);
+  --reader-highlight: oklch(0.22 0.03 240);
+  --reader-gold: oklch(0.82 0.10 88);
+  --reader-gold-light: oklch(0.20 0.01 240);
+  --reader-navy: oklch(0.88 0.01 240);
+  --reader-evidence-bg: oklch(0.17 0.012 240);
 }
 
 .reader-focus-mode .reader-para {

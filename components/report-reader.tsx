@@ -69,6 +69,7 @@ export interface ReportCard {
   author: string
   readTime: string
   category?: string
+  tags?: string[]
   content: string
   evidence?: EvidenceItem[]
 }
@@ -126,14 +127,18 @@ function parseContent(
 
     if (block.startsWith("## ")) {
       return (
-        <h2
-          key={idx}
-          ref={setRef as React.RefCallback<HTMLHeadingElement>}
-          className={`${paraClass} mb-4 mt-12 font-serif text-2xl font-bold tracking-tight`}
-          style={{ color: "var(--reader-text)" }}
-        >
-          {block.replace("## ", "")}
-        </h2>
+        <div key={idx} ref={setRef as React.RefCallback<HTMLDivElement>} className={`${paraClass} mb-5 mt-14`}>
+          <div className="mb-3 flex items-center gap-3">
+            <div className="h-px flex-1" style={{ background: "linear-gradient(to right, var(--reader-gold) 0%, transparent 70%)", opacity: 0.5 }} />
+            <span className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: "var(--reader-gold)", opacity: 0.6 }}>§</span>
+          </div>
+          <h2
+            className="font-serif text-2xl font-bold tracking-tight"
+            style={{ color: "var(--reader-text)" }}
+          >
+            {block.replace("## ", "")}
+          </h2>
+        </div>
       )
     }
     if (block.startsWith("### ")) {
@@ -141,8 +146,8 @@ function parseContent(
         <h3
           key={idx}
           ref={setRef as React.RefCallback<HTMLHeadingElement>}
-          className={`${paraClass} mb-3 mt-8 text-xl font-semibold`}
-          style={{ color: "var(--reader-text)" }}
+          className={`${paraClass} mb-3 mt-10 border-l-2 pl-4 text-lg font-semibold`}
+          style={{ color: "var(--reader-text)", borderColor: "var(--reader-gold)", opacity: 0.9 }}
         >
           {block.replace("### ", "")}
         </h3>
@@ -399,13 +404,96 @@ function ShareModal({
   onClose: () => void
 }) {
   const [copied, setCopied] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<"link" | "export" | "portal" | "media">("link")
+  const [activeTab, setActiveTab] = useState<"link" | "social" | "post" | "export" | "portal" | "media">("link")
+  const [postPlatform, setPostPlatform] = useState<"x" | "linkedin" | "whatsapp" | "instagram">("linkedin")
+
+  const reportUrl = `https://entrestate.com/reports/${report.id}`
 
   const copy = (text: string, key: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(key)
       setTimeout(() => setCopied(null), 2000)
     })
+  }
+
+  const firstPara = report.content.split("\n\n").find((p) => !p.startsWith("#") && !p.startsWith("-") && p.trim().length > 40) ?? report.subtitle
+
+  const socialPlatforms = [
+    {
+      id: "x",
+      label: "X / Twitter",
+      color: "#000000",
+      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`${report.title}\n\n${report.subtitle}\n\n`)}&url=${encodeURIComponent(reportUrl)}&via=entrestate`,
+    },
+    {
+      id: "linkedin",
+      label: "LinkedIn",
+      color: "#0A66C2",
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(reportUrl)}`,
+    },
+    {
+      id: "whatsapp",
+      label: "WhatsApp",
+      color: "#25D366",
+      href: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${report.title}\n${report.subtitle}\n\n${reportUrl}`)}`,
+    },
+    {
+      id: "telegram",
+      label: "Telegram",
+      color: "#26A5E4",
+      href: `https://t.me/share/url?url=${encodeURIComponent(reportUrl)}&text=${encodeURIComponent(`${report.title} — ${report.subtitle}`)}`,
+    },
+  ]
+
+  const generatedPosts: Record<string, string> = {
+    x: `📊 New intelligence report from @entrestate
+
+${report.title}
+
+${report.subtitle}
+
+Key findings from algorithmic analysis of Dubai's real estate data.
+
+Read the full report 👇
+${reportUrl}
+
+#DubaiRealEstate #PropTech #RealEstateIntelligence`,
+
+    linkedin: `🏙️ ${report.title}
+
+${report.subtitle}
+
+At Entrestate, our operating system continuously processes market-level data to surface institutional-grade intelligence. This report is the output of that process — no opinion, no bias, pure signal.
+
+Key highlights:
+${report.content.split("\n\n").filter((p) => p.startsWith("- ")).slice(0, 1).flatMap((b) => b.split("\n").filter((l) => l.startsWith("- ")).slice(0, 3)).map((l) => `• ${l.replace("- ", "")}`).join("\n") || `• ${firstPara.slice(0, 120)}...`}
+
+Full report available at the link below.
+
+#DubaiRealEstate #RealEstateIntelligence #PropTech #InstitutionalInvestment #UAE`,
+
+    whatsapp: `*${report.title}*
+
+${report.subtitle}
+
+${firstPara.slice(0, 200)}${firstPara.length > 200 ? "..." : ""}
+
+Full report: ${reportUrl}
+
+_Entrestate Decision Engine — Objective Market Intelligence_`,
+
+    instagram: `${report.title}
+
+${report.subtitle}
+
+${firstPara.slice(0, 150)}${firstPara.length > 150 ? "..." : ""}
+
+Link in bio → Full Report
+
+.
+.
+.
+#DubaiRealEstate #UAE #PropertyInvestment #RealEstate #DubaiProperty #PropTech #MarketIntelligence #InvestmentInsights #DubaiInvestment #RealEstateAnalysis`,
   }
 
   const portalEmbed = `<iframe src="https://entrestate.com/reports/embed/${report.id}" width="100%" height="600" frameborder="0" title="${report.title}" />`
@@ -418,9 +506,9 @@ ${report.subtitle}
 
 ${report.date} — Entrestate Research
 
-${report.content.split("\n\n").find((p) => !p.startsWith("#") && !p.startsWith("-") && p.trim().length > 40) ?? ""}
+${firstPara}
 
-For full report visit: https://entrestate.com/reports/${report.id}
+For full report visit: ${reportUrl}
 
 About Entrestate
 Entrestate is the leading real estate intelligence platform in the Gulf region.
@@ -429,14 +517,16 @@ Entrestate is the leading real estate intelligence platform in the Gulf region.
 Media contact: media@entrestate.com`
 
   const tabs = [
-    { id: "link" as const, label: "Share Link", icon: <Link2 className="h-4 w-4" /> },
+    { id: "link" as const, label: "Link", icon: <Link2 className="h-4 w-4" /> },
+    { id: "social" as const, label: "Social", icon: <Share2 className="h-4 w-4" /> },
+    { id: "post" as const, label: "Post", icon: <Presentation className="h-4 w-4" /> },
     { id: "export" as const, label: "Export", icon: <Download className="h-4 w-4" /> },
-    { id: "portal" as const, label: "Portal Embed", icon: <Globe className="h-4 w-4" /> },
-    { id: "media" as const, label: "Media Kit", icon: <Newspaper className="h-4 w-4" /> },
+    { id: "portal" as const, label: "Embed", icon: <Globe className="h-4 w-4" /> },
+    { id: "media" as const, label: "Press", icon: <Newspaper className="h-4 w-4" /> },
   ]
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
       <div
         className="relative w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
         style={{ background: "var(--reader-bg)", border: "1px solid var(--reader-border)" }}
@@ -454,12 +544,8 @@ Media contact: media@entrestate.com`
               <Share2 className="h-4 w-4" style={{ color: "var(--reader-gold)" }} />
             </div>
             <div>
-              <p className="font-semibold text-sm" style={{ color: "var(--reader-text)" }}>
-                Share Report
-              </p>
-              <p className="text-xs" style={{ color: "var(--reader-muted)" }}>
-                {report.title}
-              </p>
+              <p className="font-semibold text-sm" style={{ color: "var(--reader-text)" }}>Share Report</p>
+              <p className="max-w-[260px] truncate text-xs" style={{ color: "var(--reader-muted)" }}>{report.title}</p>
             </div>
           </div>
           <button onClick={onClose} className="rounded-lg p-1.5 hover:opacity-70" style={{ color: "var(--reader-muted)" }}>
@@ -468,12 +554,12 @@ Media contact: media@entrestate.com`
         </div>
 
         {/* Tabs */}
-        <div className="flex" style={{ borderBottom: "1px solid var(--reader-border)" }}>
+        <div className="flex overflow-x-auto" style={{ borderBottom: "1px solid var(--reader-border)" }}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="flex flex-1 items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors"
+              className="flex shrink-0 flex-1 items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors"
               style={{
                 color: activeTab === tab.id ? "var(--reader-gold)" : "var(--reader-muted)",
                 borderBottom: activeTab === tab.id ? "2px solid var(--reader-gold)" : "2px solid transparent",
@@ -487,12 +573,11 @@ Media contact: media@entrestate.com`
 
         {/* Content */}
         <div className="p-6 space-y-4">
+
           {activeTab === "link" && (
             <>
               <div>
-                <p className="mb-2 text-xs font-medium" style={{ color: "var(--reader-muted)" }}>
-                  Report URL
-                </p>
+                <p className="mb-2 text-xs font-medium" style={{ color: "var(--reader-muted)" }}>Report URL</p>
                 <div
                   className="flex items-center gap-2 rounded-xl px-4 py-3"
                   style={{ background: "var(--reader-evidence-bg)", border: "1px solid var(--reader-border)" }}
@@ -501,7 +586,7 @@ Media contact: media@entrestate.com`
                     entrestate.com/reports/{report.id}
                   </span>
                   <button
-                    onClick={() => copy(`https://entrestate.com/reports/${report.id}`, "url")}
+                    onClick={() => copy(reportUrl, "url")}
                     className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
                     style={{ background: "var(--reader-gold)", color: "white" }}
                   >
@@ -511,17 +596,100 @@ Media contact: media@entrestate.com`
                 </div>
               </div>
               <div>
-                <p className="mb-2 text-xs font-medium" style={{ color: "var(--reader-muted)" }}>
-                  Send via Email
-                </p>
+                <p className="mb-2 text-xs font-medium" style={{ color: "var(--reader-muted)" }}>Send via Email</p>
                 <a
-                  href={`mailto:?subject=${encodeURIComponent(report.title)}&body=${encodeURIComponent(`Read the full report: https://entrestate.com/reports/${report.id}`)}`}
+                  href={`mailto:?subject=${encodeURIComponent(report.title)}&body=${encodeURIComponent(`Read the full report: ${reportUrl}`)}`}
                   className="flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium transition-colors hover:opacity-80"
                   style={{ background: "var(--reader-evidence-bg)", border: "1px solid var(--reader-border)", color: "var(--reader-text)" }}
                 >
                   <Mail className="h-4 w-4" style={{ color: "var(--reader-gold)" }} />
                   Open in Mail
                 </a>
+              </div>
+            </>
+          )}
+
+          {activeTab === "social" && (
+            <div className="space-y-3">
+              <p className="text-xs" style={{ color: "var(--reader-muted)" }}>
+                Share directly to your social media accounts.
+              </p>
+              {socialPlatforms.map((platform) => (
+                <a
+                  key={platform.id}
+                  href={platform.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-opacity hover:opacity-80"
+                  style={{ background: "var(--reader-evidence-bg)", border: "1px solid var(--reader-border)", color: "var(--reader-text)" }}
+                >
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white text-xs font-black"
+                    style={{ background: platform.color }}
+                  >
+                    {platform.label.charAt(0)}
+                  </div>
+                  <span>{platform.label}</span>
+                  <ExternalLink className="ml-auto h-3.5 w-3.5" style={{ color: "var(--reader-muted)" }} />
+                </a>
+              ))}
+            </div>
+          )}
+
+          {activeTab === "post" && (
+            <>
+              {/* Platform selector */}
+              <div className="flex gap-2">
+                {(["linkedin", "x", "whatsapp", "instagram"] as const).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPostPlatform(p)}
+                    className="flex-1 rounded-lg py-1.5 text-[11px] font-semibold capitalize transition-colors"
+                    style={{
+                      background: postPlatform === p ? "var(--reader-gold)" : "var(--reader-evidence-bg)",
+                      color: postPlatform === p ? "white" : "var(--reader-muted)",
+                      border: "1px solid var(--reader-border)",
+                    }}
+                  >
+                    {p === "x" ? "X / Twitter" : p.charAt(0).toUpperCase() + p.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              {/* Generated post */}
+              <div
+                className="max-h-56 overflow-y-auto rounded-xl p-4"
+                style={{ background: "var(--reader-evidence-bg)", border: "1px solid var(--reader-border)" }}
+              >
+                <pre
+                  className="whitespace-pre-wrap text-xs leading-relaxed"
+                  style={{ color: "var(--reader-text)", fontFamily: "inherit" }}
+                >
+                  {generatedPosts[postPlatform]}
+                </pre>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => copy(generatedPosts[postPlatform], "post")}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-colors"
+                  style={{ background: "var(--reader-gold)", color: "white" }}
+                >
+                  {copied === "post" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied === "post" ? "Copied!" : "Copy Post"}
+                </button>
+                {postPlatform !== "instagram" && (
+                  <a
+                    href={socialPlatforms.find((p) => p.id === postPlatform)?.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-opacity hover:opacity-80"
+                    style={{ background: "var(--reader-evidence-bg)", border: "1px solid var(--reader-border)", color: "var(--reader-text)" }}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open
+                  </a>
+                )}
               </div>
             </>
           )}
@@ -545,12 +713,8 @@ Media contact: media@entrestate.com`
                     {item.icon}
                   </div>
                   <div>
-                    <p className="text-sm font-medium" style={{ color: "var(--reader-text)" }}>
-                      {item.label}
-                    </p>
-                    <p className="text-xs" style={{ color: "var(--reader-muted)" }}>
-                      {item.desc}
-                    </p>
+                    <p className="text-sm font-medium" style={{ color: "var(--reader-text)" }}>{item.label}</p>
+                    <p className="text-xs" style={{ color: "var(--reader-muted)" }}>{item.desc}</p>
                   </div>
                   <Download className="ml-auto h-4 w-4" style={{ color: "var(--reader-muted)" }} />
                 </button>
@@ -563,14 +727,8 @@ Media contact: media@entrestate.com`
               <p className="text-xs" style={{ color: "var(--reader-muted)" }}>
                 Embed this report in Bayut, Property Finder, or any portal that accepts iframe widgets.
               </p>
-              <div
-                className="rounded-xl p-3"
-                style={{ background: "var(--reader-evidence-bg)", border: "1px solid var(--reader-border)" }}
-              >
-                <pre
-                  className="overflow-x-auto whitespace-pre-wrap text-xs font-mono"
-                  style={{ color: "var(--reader-text)" }}
-                >
+              <div className="rounded-xl p-3" style={{ background: "var(--reader-evidence-bg)", border: "1px solid var(--reader-border)" }}>
+                <pre className="overflow-x-auto whitespace-pre-wrap text-xs font-mono" style={{ color: "var(--reader-text)" }}>
                   {portalEmbed}
                 </pre>
               </div>
@@ -590,14 +748,8 @@ Media contact: media@entrestate.com`
               <p className="text-xs" style={{ color: "var(--reader-muted)" }}>
                 Formatted press release for Gulf News, Khaleej Times, and regional media outlets.
               </p>
-              <div
-                className="max-h-48 overflow-y-auto rounded-xl p-3"
-                style={{ background: "var(--reader-evidence-bg)", border: "1px solid var(--reader-border)" }}
-              >
-                <pre
-                  className="whitespace-pre-wrap text-xs font-mono"
-                  style={{ color: "var(--reader-text)" }}
-                >
+              <div className="max-h-48 overflow-y-auto rounded-xl p-3" style={{ background: "var(--reader-evidence-bg)", border: "1px solid var(--reader-border)" }}>
+                <pre className="whitespace-pre-wrap text-xs font-mono" style={{ color: "var(--reader-text)" }}>
                   {pressRelease}
                 </pre>
               </div>
@@ -611,6 +763,7 @@ Media contact: media@entrestate.com`
               </button>
             </>
           )}
+
         </div>
       </div>
     </div>
@@ -687,7 +840,7 @@ function ReadingToolbar({
 
   return (
     <div
-      className="reader-no-print sticky top-0 z-50 flex items-center gap-2 overflow-x-auto px-5 py-2.5"
+      className="reader-no-print sticky top-0 z-[110] flex items-center gap-2 px-5 py-2.5"
       style={{
         background: "var(--reader-bg)",
         borderBottom: "1px solid var(--reader-border)",
@@ -709,7 +862,7 @@ function ReadingToolbar({
         </button>
         {showFontMenu && (
           <div
-            className="absolute left-0 top-full mt-1 w-36 rounded-xl p-2 shadow-xl z-50"
+            className="absolute left-0 top-full mt-1 w-36 rounded-xl p-2 shadow-xl z-[120]"
             style={{ background: "var(--reader-bg)", border: "1px solid var(--reader-border)" }}
           >
             {[14, 16, 18, 20, 24].map((s) => (
@@ -745,7 +898,7 @@ function ReadingToolbar({
         </button>
         {showScrollMenu && (
           <div
-            className="absolute left-0 top-full mt-1 w-44 rounded-xl p-2 shadow-xl z-50"
+            className="absolute left-0 top-full mt-1 w-44 rounded-xl p-2 shadow-xl z-[120]"
             style={{ background: "var(--reader-bg)", border: "1px solid var(--reader-border)" }}
           >
             {(["off", "teleprompter", "focus", "presentation"] as ScrollMode[]).map((m) => (
@@ -813,7 +966,7 @@ function ReadingToolbar({
         </button>
         {showViewMenu && (
           <div
-            className="absolute right-0 top-full mt-1 w-44 rounded-xl p-2 shadow-xl z-50"
+            className="absolute right-0 top-full mt-1 w-44 rounded-xl p-2 shadow-xl z-[120]"
             style={{ background: "var(--reader-bg)", border: "1px solid var(--reader-border)" }}
           >
             {(["portal", "media", "executive"] as ViewMode[]).map((v) => (
@@ -983,7 +1136,7 @@ export function ReportReader({
   onClose: () => void
   onNavigate: (report: ReportCard) => void
 }) {
-  const [theme, setTheme] = useState<ReadingTheme>("light")
+  const [theme, setTheme] = useState<ReadingTheme>("sepia")
   const [fontSize, setFontSize] = useState(18)
   const [columnWidth, setColumnWidth] = useState<ColumnWidth>("standard")
   const [scrollMode, setScrollMode] = useState<ScrollMode>("off")
@@ -1218,37 +1371,62 @@ export function ReportReader({
           className={`flex-1 overflow-y-auto ${scrollMode === "focus" ? "reader-focus-mode" : ""} ${scrollMode === "teleprompter" ? "reader-teleprompter" : ""}`}
           style={{ background: "var(--reader-bg)" }}
         >
-          {/* Hero image */}
-          <div className="relative w-full" style={{ height: "45vh", minHeight: 280 }}>
-            <img
-              src={report.image || "/placeholder.svg"}
-              alt={report.title}
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, var(--reader-bg) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)" }} />
-            <div className="absolute inset-x-0 bottom-0 px-8 pb-10">
-              <div className="mx-auto" style={{ maxWidth: colWidthMap[columnWidth] }}>
+          {/* Typographic hero — no image */}
+          <div className="relative overflow-hidden px-8 pb-10 pt-14">
+            {/* Stroke background decoration */}
+            <div
+              className="pointer-events-none absolute right-8 top-0 select-none font-serif font-black leading-none"
+              aria-hidden
+              style={{
+                fontSize: "240px",
+                WebkitTextStroke: "1px var(--reader-text)",
+                color: "transparent",
+                opacity: 0.035,
+              }}
+            >
+              "
+            </div>
+
+            <div className="mx-auto relative" style={{ maxWidth: colWidthMap[columnWidth] }}>
+              {/* Category + engine byline row */}
+              <div className="mb-5 flex flex-wrap items-center gap-3">
                 {report.category && (
                   <span
-                    className="mb-3 inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest"
+                    className="rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-widest"
                     style={{ background: "var(--reader-gold)", color: "white" }}
                   >
                     {report.category}
                   </span>
                 )}
-                <h1
-                  className="font-serif text-4xl font-bold tracking-tight text-balance md:text-5xl"
-                  style={{ color: theme === "dark" ? "var(--reader-text)" : "white" }}
+                <span
+                  className="text-[9px] font-semibold uppercase tracking-[0.2em]"
+                  style={{ color: "var(--reader-muted)", opacity: 0.5 }}
                 >
-                  {report.title}
-                </h1>
-                <p
-                  className="mt-3 text-xl leading-snug text-balance"
-                  style={{ color: theme === "dark" ? "var(--reader-muted)" : "rgba(255,255,255,0.80)" }}
-                >
-                  {report.subtitle}
-                </p>
+                  by Entrestate Decision Engine
+                </span>
               </div>
+
+              {/* Title */}
+              <h1
+                className="font-serif text-4xl font-bold leading-tight tracking-tight text-balance md:text-5xl"
+                style={{ color: theme === "dark" ? "#f5f5f5" : "var(--reader-text)" }}
+              >
+                {report.title}
+              </h1>
+
+              {/* Subtitle */}
+              <p
+                className="mt-4 text-xl leading-relaxed text-balance"
+                style={{ color: "var(--reader-muted)" }}
+              >
+                {report.subtitle}
+              </p>
+
+              {/* Divider */}
+              <div
+                className="mt-8 h-px w-full"
+                style={{ background: "linear-gradient(to right, var(--reader-border) 0%, transparent 70%)" }}
+              />
             </div>
           </div>
 
@@ -1307,6 +1485,33 @@ export function ReportReader({
               } as React.CSSProperties}
             >
               {contentNodes}
+            </div>
+          </div>
+
+          {/* Disclaimer */}
+          <div
+            className="mx-auto px-6 pb-10"
+            style={{ maxWidth: colWidthMap[columnWidth] }}
+          >
+            <div
+              className="rounded-xl px-6 py-5 text-[11px] leading-relaxed space-y-3"
+              style={{ background: "var(--reader-focus-bg)", border: "1px solid var(--reader-border)", color: "var(--reader-muted)" }}
+            >
+              <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: "var(--reader-border)" }}>
+                <span className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ opacity: 0.6 }}>
+                  Disclaimer &amp; Legal Notice
+                </span>
+                <div className="h-px flex-1" style={{ background: "var(--reader-border)" }} />
+                <span style={{ opacity: 0.5 }}>© {new Date().getFullYear()} Entrestate.com</span>
+              </div>
+              <p>
+                <span className="font-semibold" style={{ color: "var(--reader-text)", opacity: 0.7 }}>Data-Driven Objective Analysis: </span>
+                The information, metrics, and insights contained in this report are generated exclusively through algorithmic data analysis and market intelligence modeling by the Entrestate.com operating system. This report reflects objective, data-driven market conditions and does not constitute subjective opinions, personal estimations, or financial advisory services.
+              </p>
+              <p>
+                <span className="font-semibold" style={{ color: "var(--reader-text)", opacity: 0.7 }}>Statement of Independence: </span>
+                Entrestate.com maintains strict analytical independence. This intelligence report has not been commissioned, requested, sponsored, endorsed, or financially compensated by any real estate developer, project stakeholder, or third-party entity. The intelligence provided herein is executed solely for the purpose of objective market transparency and institutional-grade data dissemination.
+              </p>
             </div>
           </div>
 

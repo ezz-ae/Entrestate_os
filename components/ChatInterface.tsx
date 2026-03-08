@@ -86,6 +86,60 @@ type SlashCommand = {
   buildPrompt: (context: SlashCommandContext) => string
 }
 
+function ChatMarkdown({ text }: { text: string }) {
+  const lines = text.split("\n")
+  const nodes: React.ReactNode[] = []
+  let i = 0
+
+  const inlineFormat = (s: string): React.ReactNode => {
+    const parts = s.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)
+    return parts.map((part, idx) => {
+      if (part.startsWith("**") && part.endsWith("**"))
+        return <strong key={idx}>{part.slice(2, -2)}</strong>
+      if (part.startsWith("*") && part.endsWith("*"))
+        return <em key={idx}>{part.slice(1, -1)}</em>
+      if (part.startsWith("`") && part.endsWith("`"))
+        return <code key={idx} className="rounded bg-muted px-1 py-0.5 text-[11px] font-mono">{part.slice(1, -1)}</code>
+      return part
+    })
+  }
+
+  while (i < lines.length) {
+    const line = lines[i]
+
+    if (line.startsWith("### ")) {
+      nodes.push(<p key={i} className="mt-3 mb-1 text-xs font-semibold text-foreground/80 uppercase tracking-wide">{inlineFormat(line.slice(4))}</p>)
+    } else if (line.startsWith("## ")) {
+      nodes.push(<p key={i} className="mt-4 mb-1.5 text-sm font-bold text-foreground border-b border-border/40 pb-1">{inlineFormat(line.slice(3))}</p>)
+    } else if (line.startsWith("# ")) {
+      nodes.push(<p key={i} className="mt-4 mb-1.5 text-base font-bold text-foreground">{inlineFormat(line.slice(2))}</p>)
+    } else if (line.startsWith("- ") || line.startsWith("* ")) {
+      const items: React.ReactNode[] = []
+      while (i < lines.length && (lines[i].startsWith("- ") || lines[i].startsWith("* "))) {
+        items.push(<li key={i} className="leading-relaxed">{inlineFormat(lines[i].slice(2))}</li>)
+        i++
+      }
+      nodes.push(<ul key={`ul-${i}`} className="my-2 ml-4 list-disc space-y-0.5 text-sm">{items}</ul>)
+      continue
+    } else if (/^\d+\. /.test(line)) {
+      const items: React.ReactNode[] = []
+      while (i < lines.length && /^\d+\. /.test(lines[i])) {
+        items.push(<li key={i} className="leading-relaxed">{inlineFormat(lines[i].replace(/^\d+\. /, ""))}</li>)
+        i++
+      }
+      nodes.push(<ol key={`ol-${i}`} className="my-2 ml-4 list-decimal space-y-0.5 text-sm">{items}</ol>)
+      continue
+    } else if (line.trim() === "") {
+      nodes.push(<div key={i} className="h-2" />)
+    } else {
+      nodes.push(<p key={i} className="leading-relaxed text-sm">{inlineFormat(line)}</p>)
+    }
+    i++
+  }
+
+  return <div className="space-y-0.5">{nodes}</div>
+}
+
 function messageText(message: any): string {
   if (typeof message.content === "string") return message.content
   if (Array.isArray(message.parts)) {
@@ -1260,13 +1314,11 @@ export function ChatInterface({
                 </div>
               ) : (
                 <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-background/95 via-card/90 to-background/85 px-4 py-3.5 text-sm text-foreground shadow-[0_16px_28px_-18px_rgba(56,189,248,0.3)]">
-                  <p className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <p className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
                     <Sparkles className="h-2.5 w-2.5" />
                     AI
                   </p>
-                  <p className="whitespace-pre-wrap leading-relaxed">
-                    {messageText(message) || "Running analysis..."}
-                  </p>
+                  <ChatMarkdown text={messageText(message) || "Running analysis..."} />
                 </div>
               )}
             </div>

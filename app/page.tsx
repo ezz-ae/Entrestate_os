@@ -80,7 +80,7 @@ export default async function HomePage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/overview"
-              className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-lg"
+              className="hidden md:flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-lg"
             >
               Open Dashboard
               <ArrowRight className="h-4 w-4" />

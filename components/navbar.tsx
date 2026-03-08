@@ -10,6 +10,7 @@ import { LlmSidebar } from "@/components/llm-search/sidebar"
 import { useCopilot } from "@/components/copilot-provider"
 import { authClient } from "@/lib/auth/client"
 import { MessageSquare } from "lucide-react"
+import { ReportNudge } from "@/components/report-nudge"
 
 const navLinks = [
   { label: "Overview", href: "/overview" },
@@ -201,6 +202,7 @@ export function Navbar() {
           <LlmSidebar authenticated={isAuthenticated} />
         </Suspense>
       ) : null}
+      {isAuthenticated ? <ReportNudge /> : null}
     </>
   )
 }

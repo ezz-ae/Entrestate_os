@@ -1,9 +1,11 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { DecisionRecord } from "@/lib/decision-infrastructure"
-import { AreaMap } from "./area-map"
 import { AreaCard } from "./area-card"
+
+const AreaMap = dynamic(() => import("./area-map").then((m) => m.AreaMap), { ssr: false })
 
 type AreasViewProps = {
   areas: Array<DecisionRecord & { slug: string }>;
