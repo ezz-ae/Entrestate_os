@@ -297,6 +297,11 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
     closeSidebar()
     if (!isDesktopViewport) {
       setOpenPanel("chat")
+      // Clear ?openChat and ?id from URL so the re-open effect doesn't fire again
+      const url = new URL(window.location.href)
+      url.searchParams.delete("openChat")
+      url.searchParams.delete("id")
+      router.replace(url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : ""), { scroll: false })
     }
   }
 
@@ -494,8 +499,8 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                   <Sparkles className="h-4 w-4 text-primary" />
                   <h2 className="text-sm font-semibold">Chat</h2>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCloseSidebar}>
-                  <X className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8" onClick={handleCloseSidebar}>
+                  <X className="h-5 w-5 md:h-4 md:w-4" />
                 </Button>
               </div>
 
@@ -599,7 +604,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                 )}
               </div>
 
-              <div className="p-4 border-t border-border bg-card/20">
+              <div className="p-4 border-t border-border bg-card/20 pb-[calc(1rem+env(safe-area-inset-bottom))]">
                 {messages.length > 0 && messages[messages.length - 1].role !== "user" && !isBusy && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {["Tell me more", "What are the risks?", "Summarize", "Generate a report"].map((prompt) => (
@@ -709,9 +714,9 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
         </div>
       ) : null}
       {isSidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden animate-in fade-in duration-300" onClick={handleCloseSidebar} />
+        <div className="fixed inset-0 z-[55] bg-background/80 backdrop-blur-sm md:hidden animate-in fade-in duration-300" onClick={handleCloseSidebar} />
       )}
-      <div className={`fixed inset-y-0 left-0 z-50 h-full transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}>
+      <div className={`fixed inset-y-0 left-0 z-[60] h-full transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}>
         {sidebarContent}
       </div>
       <AccountMenu isOpen={showAccountMenu} onClose={() => setShowAccountMenu(false)} />
