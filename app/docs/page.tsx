@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import { motion } from "framer-motion"
 import {
@@ -83,7 +85,7 @@ export default function DocsPage() {
                   <Icon className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="text-xl font-serif font-bold text-foreground mb-3">{section.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{section.description}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{section.summary}</p>
                 <div className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-all">
                   Browse Section <ArrowRight className="w-3 h-3" />
                 </div>

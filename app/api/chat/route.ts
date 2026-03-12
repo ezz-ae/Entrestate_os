@@ -94,7 +94,7 @@ const defaultSuggestions = [
 const rawChatModelTimeoutMs = Number.parseInt(process.env.CHAT_MODEL_TIMEOUT_MS ?? "5000", 10)
 const chatModelTimeoutMs = Number.isFinite(rawChatModelTimeoutMs) && rawChatModelTimeoutMs >= 1000
   ? rawChatModelTimeoutMs
-  : 5000
+  : 60000
 
 type ChatCard = {
   type: "stat" | "area" | "project"

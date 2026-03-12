@@ -14,8 +14,8 @@ import { ReportNudge } from "@/components/report-nudge"
 
 const navLinks = [
   { label: "Chat", href: "/chat" },
-  { label: "AI Scientist", href: "/ai" },
-  { label: "Agent Builder", href: "/automations" },
+  { label: "AI Scientist", href: "/workspace/data-scientist" },
+  { label: "Agent Builder", href: "/apps/agent-builder" },
   { label: "Overview", href: "/overview" },
   { label: "Market Data", href: "/top-data" },
   { label: "Areas", href: "/areas" },

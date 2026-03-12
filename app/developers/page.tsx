@@ -3,7 +3,8 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { DeveloperCard } from "@/components/decision/developer-card"
 import { listDevelopers } from "@/lib/decision-infrastructure"
-import { TrendingUp, Building2, BarChart3, ShieldCheck } from "lucide-react"
+import { TrendingUp, Building2, BarChart3, ShieldCheck, Users2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export const dynamic = "force-dynamic"
 
@@ -41,6 +42,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
   const avgRel = withRel.length > 0
     ? withRel.reduce((sum, d) => sum + (d.reliability as number), 0) / withRel.length
     : null
+  const totalDevelopersCount = developers.length
   const totalProjects = developers.reduce((sum, d) => sum + (typeof d.projects === "number" ? d.projects : 0), 0)
   const avgPrice = (() => {
     const withPrice = developers.filter((d) => typeof d.avg_price === "number" && (d.avg_price as number) > 0)
@@ -109,7 +111,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
         {/* Metric cards */}
         <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
-            { label: "Tracked Developers", value: developers.length.toLocaleString(), sub: "Active in UAE market", icon: Building2, color: "text-primary" },
+            { label: "Tracked Developers", value: totalDevelopersCount.toLocaleString(), sub: "Active in UAE market", icon: Building2, color: "text-primary" },
             { label: "Total Projects", value: totalProjects.toLocaleString(), sub: "Across all portfolios", icon: BarChart3, color: "text-sky-500" },
             { label: "Avg Reliability", value: avgRel !== null ? `${avgRel.toFixed(0)} / 100` : "—", sub: avgRel !== null ? (avgRel >= 70 ? "Market is healthy" : "Mixed execution quality") : "Insufficient data", icon: ShieldCheck, color: avgRel !== null ? (avgRel >= 70 ? "text-emerald-500" : "text-amber-500") : "text-muted-foreground" },
             { label: "Avg Project Price", value: formatAed(avgPrice), sub: "Across tracked inventory", icon: TrendingUp, color: "text-violet-500" },

@@ -3,7 +3,8 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ProjectCard } from "@/components/decision/project-card"
 import { listProperties } from "@/lib/decision-infrastructure"
-import { BarChart3, TrendingUp, ShieldCheck, Zap } from "lucide-react"
+import { BarChart3, TrendingUp, ShieldCheck, Zap, Building2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export const dynamic = "force-dynamic"
 
@@ -55,9 +56,10 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
       bedsMin: params.bedsMin ? Number.parseFloat(params.bedsMin) : undefined,
       bedsMax: params.bedsMax ? Number.parseFloat(params.bedsMax) : undefined,
     },
-  })
+  }).catch(() => ({ projects: [], total: 0, data_as_of: null }))
 
-  const totalPages = Math.ceil(result.total / pageSize)
+  const totalProjectsCount = result.total || 0
+  const totalPages = Math.ceil(totalProjectsCount / pageSize)
   const hasFilters = !!(params.timing || params.stress || params.area || params.developer || params.minPrice || params.maxPrice)
 
   // Derive stats from current page
@@ -98,7 +100,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
               Project <span className="text-muted-foreground/40 italic">Intelligence</span>
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl font-medium leading-relaxed">
-              {result.total.toLocaleString()} active UAE projects — scored for market timing, stress resilience, and verified data confidence.
+              {totalProjectsCount.toLocaleString()} active UAE projects — scored for market timing, stress resilience, and verified data confidence.
             </p>
           </div>
           {freshnessLabel && (
@@ -114,7 +116,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
         {/* Metric cards */}
         <div className="mb-12 grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
-            { label: "Inventory Depth", value: result.total.toLocaleString(), sub: hasFilters ? "Filtered Results" : "Total UAE Active", icon: BarChart3, color: "text-primary", bg: "bg-primary/5" },
+            { label: "Inventory Depth", value: totalProjectsCount.toLocaleString(), sub: hasFilters ? "Filtered Results" : "Total UAE Active", icon: BarChart3, color: "text-primary", bg: "bg-primary/5" },
             { label: "Active BUY Signals", value: `${buyCount} / ${projects.length}`, sub: "Page Opportunity density", icon: Zap, color: "text-emerald-500", bg: "bg-emerald-500/5" },
             { label: "Market Price L1", value: formatAed(avgPrice), sub: "Derived mean benchmark", icon: TrendingUp, color: "text-sky-500", bg: "bg-sky-500/5" },
             { label: "Strategic Yield", value: avgYield !== null ? `${avgYield.toFixed(1)}%` : "—", sub: "Annualized gross mean", icon: ShieldCheck, color: "text-violet-500", bg: "bg-violet-500/5" },
@@ -224,7 +226,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
 
         {/* Showing count */}
         <p className="mb-4 text-xs text-muted-foreground/60">
-          Page {currentPage} of {totalPages} · showing {projects.length} of {result.total.toLocaleString()} projects
+          Page {currentPage} of {totalPages || 1} · showing {projects.length} of {totalProjectsCount.toLocaleString()} projects
         </p>
 
         {/* Grid */}

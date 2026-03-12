@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 
 export default function AiPage() {
-  redirect("/chat")
+  redirect("/workspace/data-scientist")
 }
 

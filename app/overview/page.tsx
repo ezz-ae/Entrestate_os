@@ -21,6 +21,7 @@ import { Footer } from "@/components/footer"
 import { TrustBar } from "@/components/decision/trust-bar"
 import { getHomepageContentSections, getMarketPulseSummary, getOutcomeIntentCounts } from "@/lib/frontend-content"
 import { formatAed } from "@/components/decision/formatters"
+import { Button } from "@/components/ui/button"
 
 export const dynamic = "force-dynamic"
 
@@ -44,8 +45,8 @@ const INTENT_META: Record<string, { label: string; description: string }> = {
 
 const NAV_MODULES = [
   { label: "AI Chat", description: "Get scored answers instantly", href: "/chat", icon: Sparkles, accent: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10", border: "border-blue-200/60 dark:border-blue-500/20", tag: "Decision engine" },
-  { label: "AI Scientist", description: "Advanced data modeling & EDA", href: "/ai", icon: Database, accent: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-50 dark:bg-cyan-500/10", border: "border-cyan-200/60 dark:border-cyan-500/20", tag: "Analysis" },
-  { label: "Agent Builder", description: "Design automated execution agents", href: "/automations", icon: Bot, accent: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-500/10", border: "border-rose-200/60 dark:border-rose-500/20", tag: "Automation" },
+  { label: "AI Scientist", description: "Advanced data modeling & EDA", href: "/workspace/data-scientist", icon: Database, accent: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-50 dark:bg-cyan-500/10", border: "border-cyan-200/60 dark:border-cyan-500/20", tag: "Analysis" },
+  { label: "Agent Builder", description: "Design automated execution agents", href: "/apps/agent-builder", icon: Bot, accent: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-500/10", border: "border-rose-200/60 dark:border-rose-500/20", tag: "Automation" },
   { label: "Properties", description: "Every project, fully scored", href: "/properties", icon: Building2, accent: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-500/10", border: "border-indigo-200/60 dark:border-indigo-500/20", tag: "Inventory" },
   { label: "Areas", description: "Yield & supply by location", href: "/areas", icon: MapIcon, accent: "text-teal-600 dark:text-teal-400", bg: "bg-teal-50 dark:bg-teal-500/10", border: "border-teal-200/60 dark:border-teal-500/20", tag: "Geography" },
   { label: "Developers", description: "Reliability index & track record", href: "/developers", icon: Users2, accent: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10", border: "border-violet-200/60 dark:border-violet-500/20", tag: "Counterparty" },
