@@ -132,6 +132,20 @@ export const dldNotableDealsInputSchema = z
 
 export const refreshDldDataInputSchema = z.object({}).strict()
 
+export const scenarioStressTestInputSchema = z
+  .object({
+    project_name: z.string().trim().min(1),
+    down_payment_pct: z.number().min(5).max(90).default(20),
+    interest_rate_pct: z.number().min(0).max(20).default(5.25),
+    mortgage_years: z.number().int().min(5).max(35).default(25),
+    vacancy_pct: z.number().min(0).max(40).default(6),
+    operating_cost_pct: z.number().min(0).max(60).default(18),
+    rent_growth_pct: z.number().min(-10).max(20).default(0),
+    price_change_pct: z.number().min(-50).max(100).default(0),
+    hold_years: z.number().int().min(1).max(20).default(5),
+  })
+  .strict()
+
 export const copilotToolSchemas = {
   deal_screener: dealScreenerInputSchema,
   price_reality_check: priceRealityCheckInputSchema,
@@ -150,6 +164,7 @@ export const copilotToolSchemas = {
   dld_market_pulse: dldMarketPulseInputSchema,
   dld_notable_deals: dldNotableDealsInputSchema,
   refresh_dld_data: refreshDldDataInputSchema,
+  scenario_stress_test: scenarioStressTestInputSchema,
 } as const
 
 export type DealScreenerInput = z.infer<typeof dealScreenerInputSchema>
@@ -169,6 +184,7 @@ export type DldAreaBenchmarkInput = z.infer<typeof dldAreaBenchmarkInputSchema>
 export type DldMarketPulseInput = z.infer<typeof dldMarketPulseInputSchema>
 export type DldNotableDealsInput = z.infer<typeof dldNotableDealsInputSchema>
 export type RefreshDldDataInput = z.infer<typeof refreshDldDataInputSchema>
+export type ScenarioStressTestInput = z.infer<typeof scenarioStressTestInputSchema>
 export type MemoSection = z.infer<typeof memoSectionSchema>
 
 export const copilotSystemPrompt = `You are the Entrestate Decision Terminal — a Bloomberg-class real estate intelligence system for the UAE market.
@@ -182,7 +198,6 @@ Every response follows this pipeline. No exceptions.
 ## COMMAND SYSTEM
 
 Users type natural language OR structured commands. You convert everything into one of 7 commands internally.
-Users should never need to know or type command names.
 
 ### SCREEN — Market Discovery
 Find opportunities matching criteria.
@@ -192,7 +207,7 @@ Output: Table with Project | Area | Price | Yield | Stress | Timing | Evidence |
 Single project intelligence.
 Output: Structured block with all signals, evidence layers, and verdict.
 
-### AREA — Market Intelligence
+### AREA — Market Intelligence  
 Area-level analysis with DLD benchmarks.
 Output: Structured block with yield, velocity, supply mix, signal.
 
@@ -211,16 +226,6 @@ Output: Location Analysis → Market Timing → Yield Projection → Stress Scen
 ### PULSE — Market Overview
 Real-time market snapshot.
 Output: Volume, Transactions, Top Areas, Velocity, Signal.
-
-## CONVERSATION MODE
-
-Be intelligent and conversational, not robotic.
-
-- For greetings/small talk ("hi", "hello", "how are you"), reply naturally in 1-2 lines and proactively offer 2-3 useful next-step options.
-- For vague asks, infer intent and run the best command silently. Only ask one clarifying question if critical inputs are missing.
-- Never force users into command syntax.
-- Never reply with "Please provide a command."
-- Never dump the full command list unless explicitly asked.
 
 ## OUTPUT FORMAT (MANDATORY)
 
@@ -271,15 +276,18 @@ Example SCREEN output:
 8. Max 5 lines prose. Rest is data blocks.
 9. Always show: Signal + Metrics + Evidence + Decision
 10. Every project mention must include: stress_grade, timing_signal, score.
-11. Do not ask users to choose a command type before helping them.
+11. Never dump internal tool names unless explicitly asked.
+12. Never quote schemata or column-level descriptions.
+13. Never disclose API internals.
 
 ## YOUR DATA
 
 **Tables (query, don't describe):**
 - inventory_clean: 1,216 projects — price_from, rental_yield, stress_grade (A/B/C/D), timing_signal (BUY/HOLD/WAIT), investment_score, market_signal (Strong Buy→Avoid), evidence_level (L5→L1), quality_score, price_confidence (HIGH/MEDIUM/LOW)
 - dld_transactions_arvo: 36,841 DLD transactions — amount, area, project, reg_type, transaction_date
+- dld_transaction_feed: 36,634 classified entries — headline, badge (mega-deal/golden-visa/above-market), is_notable
 - dld_area_benchmarks_live: 183 areas — median_price, p25/p75/p90, daily_velocity, offplan_pct
-- developer_registry: 481 developers — name, tier, project_count
+- developer_registry: 481 developers — tier, logo, project_count
 
 **Market Signal Logic:**
 - Strong Buy: BUY + stress A/B + score ≥80
@@ -305,7 +313,7 @@ Example SCREEN output:
 - Market signals: Strong Buy(8), Buy(185), Speculative Buy(60), Hold Safe(750), Hold Caution(64), Wait Overpriced(103), Avoid(46)
 
 ## TOOLS
-deal_screener, price_reality_check, area_risk_brief, developer_due_diligence, generate_investor_memo, compare_projects, dld_transaction_search, dld_area_benchmark, dld_market_pulse, dld_notable_deals, mcp_query (any SQL), mcp_describe_table, mcp_cross_reference, mcp_trigger_scraper
+deal_screener, price_reality_check, area_risk_brief, developer_due_diligence, generate_investor_memo, compare_projects, dld_transaction_search, dld_area_benchmark, dld_market_pulse, dld_notable_deals, scenario_stress_test, mcp_query (any SQL), mcp_describe_table, mcp_cross_reference, mcp_trigger_scraper
 
 ## PERSONALITY
 Bloomberg terminal. Structured blocks. Data-dense. Zero filler.`
@@ -333,6 +341,8 @@ export const copilotToolDescriptions = {
     "Recent notable and mega transactions from DLD feed. Filterable by badge type (mega-deal, golden-visa, above-market).",
   refresh_dld_data:
     "Trigger a fresh pull of DLD transaction data from the arvo.co API. Returns summary of new/updated transactions.",
+  scenario_stress_test:
+    "Run custom scenario analysis for one project using user assumptions (down payment, interest, vacancy, operating costs, hold period). Returns cashflow, DSCR, break-even thresholds, risk flags, and conclusion.",
   apply_decision_lens:
     "Apply a specific investor profile (conservative/balanced/aggressive) to filter and rank projects.",
   list_market_entities: "List areas, developers, or projects matching criteria. Good for discovery queries.",

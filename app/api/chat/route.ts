@@ -19,6 +19,7 @@ import {
   executeGenerateInvestorMemo,
   executePriceRealityCheck,
   executeRefreshDldData,
+  executeScenarioStressTest,
 } from "@/lib/copilot/executor"
 import { collectGuardrailWarnings } from "@/lib/copilot/guardrails"
 import {
@@ -30,6 +31,7 @@ import {
   type DldTransactionSearchInput,
   type GenerateInvestorMemoInput,
   type PriceRealityCheckInput,
+  type ScenarioStressTestInput,
   areaRiskBriefInputSchema,
   copilotSystemPrompt,
   copilotToolDescriptions,
@@ -42,6 +44,7 @@ import {
   generateInvestorMemoInputSchema,
   priceRealityCheckInputSchema,
   refreshDldDataInputSchema,
+  scenarioStressTestInputSchema,
 } from "@/lib/copilot/tools"
 import {
   mcpCrossReference,
@@ -542,6 +545,11 @@ export async function POST(request: Request) {
         description: copilotToolDescriptions.refresh_dld_data,
         inputSchema: refreshDldDataInputSchema,
         execute: async () => withGuardrails(await executeRefreshDldData()),
+      }),
+      scenario_stress_test: tool({
+        description: copilotToolDescriptions.scenario_stress_test,
+        inputSchema: scenarioStressTestInputSchema,
+        execute: async (input: ScenarioStressTestInput) => withGuardrails(await executeScenarioStressTest(input)),
       }),
       mcp_query: tool({
         description:

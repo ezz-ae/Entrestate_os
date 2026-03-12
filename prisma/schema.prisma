@@ -100,6 +100,7 @@ model User {
   decisionObjects DecisionObject[]
   apiKeys     ApiKey[]
   assistantReports AssistantReport[]
+  marketBooks     MarketBook[]
 }
 
 model AssistantReport {
@@ -418,4 +419,81 @@ model AuditEvent {
   @@index([actorId])
   @@index([entityId])
   @@map("audit_events")
+}
+
+// ─── Market Book ML ────────────────────────────────────────────────────────
+
+enum BookType {
+  client
+  area
+  project
+  portfolio
+}
+
+enum BookPageType {
+  overview
+  transactions
+  comparison
+  opportunity
+  risk
+  memo
+  content
+}
+
+enum BookPageStatus {
+  pending
+  generating
+  ready
+  error
+}
+
+model MarketBook {
+  id          String     @id @default(cuid())
+  ownerId     String
+  title       String
+  subject     String
+  type        BookType
+  metadata    Json?
+  lastFedAt   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  owner       User       @relation(fields: [ownerId], references: [id])
+  pages       BookPage[]
+  feeds       BookFeed[]
+
+  @@index([ownerId, createdAt])
+  @@map("market_books")
+}
+
+model BookPage {
+  id          String         @id @default(cuid())
+  bookId      String
+  type        BookPageType
+  title       String
+  content     Json
+  rawText     String?
+  status      BookPageStatus @default(pending)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  book        MarketBook     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([bookId, type])
+  @@map("book_pages")
+}
+
+model BookFeed {
+  id          String     @id @default(cuid())
+  bookId      String
+  category    String
+  headline    String
+  detail      Json
+  seenAt      DateTime?
+  createdAt   DateTime   @default(now())
+
+  book        MarketBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([bookId, createdAt])
+  @@map("book_feeds")
 }

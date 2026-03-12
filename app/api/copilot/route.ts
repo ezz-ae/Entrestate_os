@@ -34,51 +34,48 @@ import {
   executeGenerateInvestorMemo,
   executePriceRealityCheck,
   executeRefreshDldData,
+  executeScenarioStressTest,
 } from "@/lib/copilot/executor"
 import { collectGuardrailWarnings } from "@/lib/copilot/guardrails"
 import {
   type AreaRiskBriefInput,
+  type ApplyDecisionLensInput,
+  type CompareProjectsInput,
   type DealScreenerInput,
   type DeveloperDueDiligenceInput,
-  type GenerateInvestorMemoInput,
-  type PriceRealityCheckInput,
-  type CompareProjectsInput,
-  type ApplyDecisionLensInput,
-  type ListMarketEntitiesInput,
-  type GenerateDecisionObjectInput,
-  type GenerateStrategicReportInput,
-  type GenerateInvestmentRoadmapInput,
-  type MonitorMarketSegmentsInput,
   type DldAreaBenchmarkInput,
   type DldNotableDealsInput,
   type DldTransactionSearchInput,
+  type GenerateDecisionObjectInput,
+  type GenerateInvestorMemoInput,
+  type GenerateInvestmentRoadmapInput,
+  type GenerateStrategicReportInput,
+  type ListMarketEntitiesInput,
+  type MonitorMarketSegmentsInput,
+  type PriceRealityCheckInput,
+  type ScenarioStressTestInput,
   areaRiskBriefInputSchema,
+  applyDecisionLensInputSchema,
   compareProjectsInputSchema,
+  dealScreenerInputSchema,
+  developerDueDiligenceInputSchema,
   dldAreaBenchmarkInputSchema,
   dldMarketPulseInputSchema,
   dldNotableDealsInputSchema,
   dldTransactionSearchInputSchema,
-  applyDecisionLensInputSchema,
-  listMarketEntitiesInputSchema,
   generateDecisionObjectInputSchema,
-  generateStrategicReportInputSchema,
-  generateInvestmentRoadmapInputSchema,
-  monitorMarketSegmentsInputSchema,
-  copilotSystemPrompt,
-  copilotToolDescriptions,
-  dealScreenerInputSchema,
-  developerDueDiligenceInputSchema,
   generateInvestorMemoInputSchema,
+  generateInvestmentRoadmapInputSchema,
+  generateStrategicReportInputSchema,
+  listMarketEntitiesInputSchema,
+  monitorMarketSegmentsInputSchema,
   priceRealityCheckInputSchema,
   refreshDldDataInputSchema,
+  scenarioStressTestInputSchema,
+  copilotSystemPrompt,
+  copilotToolDescriptions,
 } from "@/lib/copilot/tools"
-import {
-  mcpCrossReference,
-  mcpDescribeTable,
-  mcpQuery,
-  mcpSampleData,
-  mcpTriggerScraper,
-} from "@/lib/mcp/server"
+import { mcpCrossReference, mcpDescribeTable, mcpQuery, mcpSampleData, mcpTriggerScraper } from "@/lib/mcp/server"
 import {
   mcpCrossReferenceInputSchema,
   mcpDescribeTableInputSchema,
@@ -92,10 +89,7 @@ import {
   type McpTriggerScraperInput,
 } from "@/lib/mcp/schemas"
 
-import {
-  loadChatSession,
-  saveChatMessage,
-} from "@/lib/copilot/persistence"
+import { loadChatSession, saveChatMessage } from "@/lib/copilot/persistence"
 import { getUserProfile } from "@/lib/profile/queries"
 
 export const runtime = "nodejs"
@@ -235,6 +229,11 @@ export async function POST(request: Request) {
         description: copilotToolDescriptions.refresh_dld_data,
         inputSchema: refreshDldDataInputSchema,
         execute: async () => withGuardrails(await executeRefreshDldData()),
+      }),
+      scenario_stress_test: tool({
+        description: copilotToolDescriptions.scenario_stress_test,
+        inputSchema: scenarioStressTestInputSchema,
+        execute: async (input: ScenarioStressTestInput) => withGuardrails(await executeScenarioStressTest(input)),
       }),
       mcp_query: tool({
         description:

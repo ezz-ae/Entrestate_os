@@ -19,6 +19,7 @@ import {
   GenerateInvestorMemoInput,
   MemoSection,
   PriceRealityCheckInput,
+  ScenarioStressTestInput,
 } from "@/lib/copilot/tools"
 import { getEnterpriseStrategicContext, getStrategicNarrative } from "@/lib/ai/enterprise/service"
 
@@ -148,6 +149,19 @@ function normalizeValue(value: unknown): unknown {
   }
 
   return value
+}
+
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "bigint") {
+    const cast = Number(value)
+    return Number.isFinite(cast) ? cast : fallback
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/,/g, ""))
+    return Number.isFinite(parsed) ? parsed : fallback
+  }
+  return fallback
 }
 
 function normalizeRows<T extends DbRow>(rows: T[]): T[] {
@@ -1049,6 +1063,154 @@ export async function executeDldNotableDeals(input: DldNotableDealsInput) {
   }
 }
 
+export async function executeScenarioStressTest(input: ScenarioStressTestInput) {
+  const rows = await runQuery(
+    Prisma.sql`
+      SELECT
+        name,
+        developer,
+        COALESCE(final_area, area) AS area,
+        l1_canonical_price,
+        l1_canonical_yield,
+        l2_stress_test_grade,
+        l3_timing_signal,
+        engine_stress_test,
+        engine_god_metric
+      FROM ${COPILOT_TABLE_SQL}
+      WHERE LOWER(name) LIKE LOWER('%' || ${input.project_name} || '%')
+        AND l1_canonical_price > 0
+      LIMIT 1
+    `,
+  )
+
+  if (!rows[0]) {
+    return {
+      source: "scenario_stress_test",
+      data_as_of: nowIso(),
+      no_results: true,
+      narrative: `Project '${input.project_name}' not found or lacks pricing data.`,
+    }
+  }
+
+  const project = rows[0]
+  const price = toFiniteNumber(project.l1_canonical_price, 0)
+  if (price === 0) {
+    return {
+      source: "scenario_stress_test",
+      data_as_of: nowIso(),
+      no_results: true,
+      narrative: `Project '${input.project_name}' has no valid list price.`,
+    }
+  }
+
+  const yieldPct = toFiniteNumber(project.l1_canonical_yield, 0)
+  const downPaymentPct = input.down_payment_pct / 100
+  const downPayment = price * downPaymentPct
+  const loanAmount = price - downPayment
+  const monthlyRate = input.interest_rate_pct / 100 / 12
+  const totalMonths = input.mortgage_years * 12
+  const amortizationMonths = Math.max(1, totalMonths)
+  const monthlyPayment =
+    monthlyRate === 0
+      ? loanAmount / amortizationMonths
+      : (loanAmount * monthlyRate * (1 + monthlyRate) ** amortizationMonths) /
+        ((1 + monthlyRate) ** amortizationMonths - 1)
+
+  const grossAnnualRent = price * (yieldPct / 100)
+  const vacancyLoss = grossAnnualRent * (input.vacancy_pct / 100)
+  const effectiveAnnualRent = Math.max(0, grossAnnualRent - vacancyLoss)
+  const operatingCost = effectiveAnnualRent * (input.operating_cost_pct / 100)
+  const annualDebtService = monthlyPayment * 12
+  const annualNetCashFlow = effectiveAnnualRent - operatingCost - annualDebtService
+  const dscr = annualDebtService > 0 ? (effectiveAnnualRent - operatingCost) / annualDebtService : null
+
+  const paidMonths = Math.min(input.hold_years * 12, amortizationMonths)
+  const remainingBalance =
+    monthlyRate === 0
+      ? loanAmount * Math.max(0, (amortizationMonths - paidMonths) / amortizationMonths)
+      : loanAmount *
+        (((1 + monthlyRate) ** amortizationMonths - (1 + monthlyRate) ** paidMonths) /
+          ((1 + monthlyRate) ** amortizationMonths - 1))
+
+  const priceChangeFactor = 1 + input.price_change_pct / 100
+  const exitPrice = price * priceChangeFactor
+  const saleProceeds = exitPrice - remainingBalance
+  const totalRentalCashFlow = annualNetCashFlow * input.hold_years
+  const totalReturn = totalRentalCashFlow + saleProceeds
+  const equityInvested = downPayment
+  const roiPct = equityInvested > 0 ? (totalReturn / equityInvested) * 100 : null
+  const breakEvenYears =
+    annualNetCashFlow > 0 ? Number((downPayment / annualNetCashFlow).toFixed(2)) : null
+
+  const stressPenaltyByGrade: Record<string, number> = {
+    A: 0.04,
+    B: 0.08,
+    C: 0.12,
+    D: 0.18,
+    "-": 0.1,
+  }
+  const stressGrade = String(project.l2_stress_test_grade ?? "-")
+  const stressAdjustedCashFlow = annualNetCashFlow * (1 - (stressPenaltyByGrade[stressGrade] ?? 0.1))
+
+  const riskFlags: string[] = []
+  if (dscr !== null && dscr < 1) riskFlags.push("DSCR below 1.0")
+  if (annualNetCashFlow < 0) riskFlags.push("Negative annual cash flow")
+  if (input.vacancy_pct >= 20) riskFlags.push("High vacancy assumption")
+  if (input.operating_cost_pct >= 25) riskFlags.push("Elevated operating cost assumption")
+
+  const signal =
+    dscr !== null && dscr >= 1.25 && ["A", "B"].includes(stressGrade) && annualNetCashFlow >= 0
+      ? "Strong Buy"
+      : dscr !== null && dscr >= 1 && annualNetCashFlow >= 0
+        ? "Buy"
+        : dscr !== null && dscr < 0.9
+          ? "Avoid"
+          : "Hold"
+
+  const metrics = {
+    price,
+    yield: yieldPct,
+    down_payment: downPayment,
+    loan_amount: loanAmount,
+    monthly_payment: monthlyPayment,
+    annual_debt_service: annualDebtService,
+    effective_annual_rent: effectiveAnnualRent,
+    operating_cost,
+    annual_net_cash_flow: annualNetCashFlow,
+    dscr: dscr !== null ? Number(dscr.toFixed(2)) : null,
+    stress_adjusted_cash_flow: stressAdjustedCashFlow,
+    total_return: totalReturn,
+    roi_pct: roiPct !== null ? Number(roiPct.toFixed(2)) : null,
+    break_even_years: breakEvenYears,
+    sale_proceeds: saleProceeds,
+  }
+
+  const decision = `Signal: ${signal}. DSCR ${dscr !== null ? dscr.toFixed(2) : "N/A"}. ${
+    riskFlags.length ? `Risks: ${riskFlags.join("; ")}.` : "No elevated risks detected."
+  }`
+
+  return {
+    source: "scenario_stress_test",
+    data_as_of: nowIso(),
+    project: normalizeValue(project),
+    assumptions: {
+      down_payment_pct: input.down_payment_pct,
+      interest_rate_pct: input.interest_rate_pct,
+      mortgage_years: input.mortgage_years,
+      vacancy_pct: input.vacancy_pct,
+      operating_cost_pct: input.operating_cost_pct,
+      rent_growth_pct: input.rent_growth_pct,
+      price_change_pct: input.price_change_pct,
+      hold_years: input.hold_years,
+    },
+    metrics,
+    risk_flags: riskFlags,
+    signal,
+    decision,
+    narrative: `Exit price AED ${exitPrice.toLocaleString()}, sale proceeds AED ${saleProceeds.toLocaleString()}.`,
+  }
+}
+
 export async function executeRefreshDldData() {
   try {
     const response = await fetch("https://transactions.arvo.co/api/transactions", {
@@ -1091,6 +1253,7 @@ export const copilotExecutors = {
   dld_market_pulse: executeDldMarketPulse,
   dld_notable_deals: executeDldNotableDeals,
   refresh_dld_data: executeRefreshDldData,
+  scenario_stress_test: executeScenarioStressTest,
 } as const
 
 export { buildDealScreenerQuery }
