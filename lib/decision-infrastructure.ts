@@ -24,10 +24,10 @@ const PROJECT_SORT_COLUMNS = {
 } as const
 
 const CURATED_PROJECT_SORT_COLUMNS = {
-  god_metric: "investment_score",
-  price: "price",
-  yield: "yield",
-  reliability: "developer_reliability",
+  god_metric: "investor_score_v1",
+  price: "price_from",
+  yield: "rental_yield",
+  reliability: "developer_reliability_score",
 } as const
 
 const UAE_CITIES = [
@@ -206,13 +206,13 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
   const clauses: Prisma.Sql[] = USE_CURATED_PROPERTIES_VIEW
     ? [
         Prisma.sql`name IS NOT NULL`,
-        Prisma.sql`COALESCE(price, 0) > 0`,
+        Prisma.sql`COALESCE(price_from, 0) > 0`,
         Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`,
         Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`,
         Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`,
         Prisma.sql`TRIM(COALESCE(area, '')) <> ''`,
         Prisma.sql`TRIM(COALESCE(developer, '')) <> ''`,
-        Prisma.sql`COALESCE(confidence, 'LOW') IN ('MEDIUM', 'HIGH')`,
+        Prisma.sql`COALESCE(price_confidence, 'LOW') IN ('MEDIUM', 'HIGH')`,
       ]
     : [
         Prisma.sql`name IS NOT NULL`,
@@ -254,14 +254,14 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
   if (typeof filters.budgetMaxAed === "number") {
     clauses.push(
       USE_CURATED_PROPERTIES_VIEW
-        ? Prisma.sql`price <= ${filters.budgetMaxAed}`
+        ? Prisma.sql`price_from <= ${filters.budgetMaxAed}`
         : Prisma.sql`l1_canonical_price <= ${filters.budgetMaxAed}`,
     )
   }
   if (typeof filters.budgetMinAed === "number") {
     clauses.push(
       USE_CURATED_PROPERTIES_VIEW
-        ? Prisma.sql`price >= ${filters.budgetMinAed}`
+        ? Prisma.sql`price_from >= ${filters.budgetMinAed}`
         : Prisma.sql`l1_canonical_price >= ${filters.budgetMinAed}`,
     )
   }
@@ -274,7 +274,7 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
   if (filters.timingSignal) {
     clauses.push(
       USE_CURATED_PROPERTIES_VIEW
-        ? Prisma.sql`timing_signal = ${filters.timingSignal}`
+        ? Prisma.sql`timing_label = ${filters.timingSignal}`
         : Prisma.sql`l3_timing_signal = ${filters.timingSignal}`,
     )
   }
@@ -283,7 +283,7 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
     const allowed = gradeOrder.slice(0, index + 1)
     clauses.push(
       USE_CURATED_PROPERTIES_VIEW
-        ? Prisma.sql`stress_grade IN (${toSqlList([...allowed])})`
+        ? Prisma.sql`stress_grade_v1 IN (${toSqlList([...allowed])})`
         : Prisma.sql`l2_stress_test_grade IN (${toSqlList([...allowed])})`,
     )
   }
@@ -299,7 +299,7 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
     clauses.push(
       USE_CURATED_PROPERTIES_VIEW
         ? Prisma.sql`(
-            COALESCE(price, 0) >= 2000000
+            COALESCE(price_from, 0) >= 2000000
             OR LOWER(COALESCE(golden_visa_eligible, 'false')) IN ('true', 'yes', '1')
           )`
         : Prisma.sql`(
@@ -340,18 +340,18 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
           bedrooms_min,
           bedrooms_max,
           COALESCE(bedrooms_min, bedrooms_max) AS beds,
-          price AS l1_canonical_price,
-          yield AS l1_canonical_yield,
-          status AS l1_canonical_status,
-          confidence AS l1_confidence,
-          source_coverage AS l1_source_coverage,
-          investment_score AS l2_investment_score,
-          developer_reliability AS l2_developer_reliability,
-          affordability_tier AS l2_affordability_tier,
-          stress_grade AS l2_stress_test_grade,
-          timing_signal AS l3_timing_signal,
+          price_from AS l1_canonical_price,
+          rental_yield AS l1_canonical_yield,
+          NULL AS l1_canonical_status,
+          price_confidence AS l1_confidence,
+          price_source AS l1_source_coverage,
+          investor_score_v1 AS l2_investment_score,
+          developer_reliability_score AS l2_developer_reliability,
+          NULL AS l2_affordability_tier,
+          stress_grade_v1 AS l2_stress_test_grade,
+          timing_label AS l3_timing_signal,
           NULL::jsonb AS engine_stress_test,
-          investment_score AS engine_god_metric
+          investor_score_v1 AS engine_god_metric
         FROM ${PROPERTIES_TABLE_SQL}
         ${whereClause}
         ORDER BY ${sortColumn} DESC NULLS LAST

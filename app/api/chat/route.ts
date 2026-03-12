@@ -432,7 +432,7 @@ async function buildDeterministicFallback(message: string, context?: { city?: st
 
   const result = await executeDealScreener({
     filters,
-    sort_by: "engine_god_metric",
+    sort_by: "investor_score_v1",
     limit: 8,
   })
 

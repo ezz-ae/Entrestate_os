@@ -381,11 +381,11 @@ function TopProjectsTableView({ data }: { data: unknown }) {
             const name = asText(valueFromKeys(row, ["name", "project"]), `Project ${index + 1}`)
             const area = asText(valueFromKeys(row, ["area", "final_area"]))
             const developer = asText(valueFromKeys(row, ["developer"]))
-            const price = asNumber(valueFromKeys(row, ["price", "l1_canonical_price", "avg_price"]))
-            const yieldValue = asNumber(valueFromKeys(row, ["yield", "l1_canonical_yield", "avg_yield"]))
-            const stressGrade = asText(valueFromKeys(row, ["stress_grade", "l2_stress_test_grade", "grade"]), "F")
-            const timing = asText(valueFromKeys(row, ["timing", "timing_signal", "l3_timing_signal"]), "WAIT")
-            const godMetric = asNumber(valueFromKeys(row, ["god_metric", "engine_god_metric", "score"]))
+            const price = asNumber(valueFromKeys(row, ["price_from", "price", "l1_canonical_price", "avg_price"]))
+            const yieldValue = asNumber(valueFromKeys(row, ["rental_yield", "yield", "l1_canonical_yield", "avg_yield"]))
+            const stressGrade = asText(valueFromKeys(row, ["stress_grade_v1", "stress_grade", "l2_stress_test_grade", "grade"]), "F")
+            const timing = asText(valueFromKeys(row, ["timing_label", "timing", "timing_signal", "l3_timing_signal"]), "WAIT")
+            const godMetric = asNumber(valueFromKeys(row, ["investor_score_v1", "god_metric", "engine_god_metric", "score"]))
 
             return (
               <tr key={`${name}-${index}`} className="border-t border-border/50 bg-card/30 transition hover:bg-primary/5">

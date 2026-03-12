@@ -1,7 +1,6 @@
 import "server-only"
 import { Prisma } from "@prisma/client"
 import { withStatementTimeout } from "@/lib/db-guardrails"
-import { getDetailTableSql } from "@/lib/inventory-table"
 import {
   AreaRiskBriefInput,
   CompareProjectsInput,
@@ -19,8 +18,13 @@ import {
   GenerateInvestorMemoInput,
   MemoSection,
   PriceRealityCheckInput,
+  ScenarioStressTestInput,
 } from "@/lib/copilot/tools"
 import { getEnterpriseStrategicContext, getStrategicNarrative } from "@/lib/ai/enterprise/service"
+
+// Copilot always queries inventory_clean (V1 columns: timing_label, stress_grade_v1, investor_score_v1)
+// DETAIL_TABLE env may point to inventory_full (old columns) — override for copilot tools
+const COPILOT_INVENTORY_TABLE = process.env.COPILOT_INVENTORY_TABLE ?? "inventory_clean"
 
 const STATEMENT_TIMEOUT_MS = 8000
 const STRESS_GRADE_ORDER = ["A", "B", "C", "D", "E"] as const
@@ -42,7 +46,7 @@ const UAE_CITIES = [
   "al ain",
 ] as const
 
-const COPILOT_TABLE_SQL = getDetailTableSql()
+const COPILOT_TABLE_SQL = Prisma.raw(COPILOT_INVENTORY_TABLE)
 
 type DbRow = Record<string, unknown>
 
@@ -57,6 +61,22 @@ type ToolEnvelope<T> = {
 
 function nowIso() {
   return new Date().toISOString()
+}
+
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  if (value && typeof value === "object" && "toNumber" in value) {
+    try {
+      return (value as { toNumber: () => number }).toNumber()
+    } catch {
+      // fall through
+    }
+  }
+  return fallback
 }
 
 function toSqlList(values: string[]) {
@@ -799,7 +819,7 @@ export async function executeGenerateInvestmentRoadmap(input: GenerateInvestment
   ]
 
   if (years > 5) {
-    milestones.push({ year: years, action: "Long-term exit strategy — liquidate mature assets, retain highest performers", recommended_projects: [], top_yield_areas: [] } as typeof milestones[number])
+    milestones.push({ year: years, action: "Long-term exit strategy — liquidate mature assets, retain highest performers", recommended_projects: [], top_yield_areas: [] } as unknown as typeof milestones[number])
   }
 
   return {
@@ -1085,15 +1105,14 @@ export async function executeScenarioStressTest(input: ScenarioStressTestInput) 
         name,
         developer,
         COALESCE(final_area, area) AS area,
-        l1_canonical_price,
-        l1_canonical_yield,
-        l2_stress_test_grade,
-        l3_timing_signal,
-        engine_stress_test,
-        engine_god_metric
+        price_from AS l1_canonical_price,
+        rental_yield AS l1_canonical_yield,
+        stress_grade_v1 AS l2_stress_test_grade,
+        timing_label AS l3_timing_signal,
+        investor_score_v1 AS engine_god_metric
       FROM ${COPILOT_TABLE_SQL}
       WHERE LOWER(name) LIKE LOWER('%' || ${input.project_name} || '%')
-        AND l1_canonical_price > 0
+        AND price_from > 0
       LIMIT 1
     `,
   )
@@ -1190,7 +1209,7 @@ export async function executeScenarioStressTest(input: ScenarioStressTestInput) 
     monthly_payment: monthlyPayment,
     annual_debt_service: annualDebtService,
     effective_annual_rent: effectiveAnnualRent,
-    operating_cost,
+    operating_cost: operatingCost,
     annual_net_cash_flow: annualNetCashFlow,
     dscr: dscr !== null ? Number(dscr.toFixed(2)) : null,
     stress_adjusted_cash_flow: stressAdjustedCashFlow,

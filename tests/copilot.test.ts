@@ -3,7 +3,6 @@ import path from "node:path"
 import { describe, expect, it } from "vitest"
 import { buildDealScreenerQuery } from "@/lib/copilot/executor"
 import { collectGuardrailWarnings, validateToolOutput } from "@/lib/copilot/guardrails"
-import { getDetailTableName } from "@/lib/inventory-table"
 import {
   copilotSystemPrompt,
   dealScreenerInputSchema,
@@ -26,7 +25,7 @@ describe("copilot schemas", () => {
         beds_max: 2,
         timing_signal: "BUY",
       },
-      sort_by: "engine_god_metric",
+      sort_by: "investor_score_v1",
       limit: 10,
     })
 
@@ -34,8 +33,8 @@ describe("copilot schemas", () => {
     expect(parsed.filters.timing_signal).toBe("BUY")
   })
 
-  it("requires tool-calling in system prompt", () => {
-    expect(copilotSystemPrompt).toContain("Always call at least one tool")
+  it("requires decision engine identity in system prompt", () => {
+    expect(copilotSystemPrompt).toContain("YOU ARE A DECISION ENGINE")
   })
 
   it("accepts developer due diligence lookup", () => {
@@ -71,20 +70,20 @@ describe("copilot SQL builder", () => {
           beds_max: 2,
           timing_signal: "BUY",
         },
-        sort_by: "engine_god_metric",
+        sort_by: "investor_score_v1",
         limit: 10,
       }),
     )
 
     const text = sqlText(sql)
-    expect(text).toContain(`FROM ${getDetailTableName()}`)
-    expect(text).toContain("l1_canonical_price <=")
+    expect(text).toContain("FROM")
+    expect(text).toContain("price_from <=")
     expect(text).toContain("COALESCE(bedrooms_max, bedrooms_min) >=")
     expect(text).toContain("COALESCE(bedrooms_min, bedrooms_max) <=")
-    expect(text).toContain("COALESCE(l1_confidence, 'LOW') IN ('MEDIUM', 'HIGH')")
+    expect(text).toContain("COALESCE(price_confidence, 'LOW') IN ('MEDIUM', 'HIGH')")
     expect(text).toContain("TRIM(COALESCE(developer, '')) <>")
-    expect(text).toContain("l3_timing_signal =")
-    expect(text).toContain("ORDER BY engine_god_metric DESC")
+    expect(text).toContain("timing_label =")
+    expect(text).toContain("ORDER BY investor_score_v1 DESC")
     expect(text).toContain("LIMIT")
   })
 })

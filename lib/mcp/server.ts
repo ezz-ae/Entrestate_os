@@ -8,9 +8,9 @@ type DbRow = Record<string, unknown>
 
 export const MCP_RESOURCES = {
   inventory_clean: {
-    description: "1,216 verified UAE projects with full evidence layers",
+    description: "1,216 verified UAE projects with full V1 decision scores",
     key_columns: [
-      "project_id",
+      "id",
       "name",
       "slug",
       "area",
@@ -18,10 +18,13 @@ export const MCP_RESOURCES = {
       "developer",
       "price_from",
       "price_to",
-      "timing_signal",
-      "stress_grade",
+      "timing_label",
+      "stress_grade_v1",
       "rental_yield",
-      "investment_score",
+      "investor_score_v1",
+      "decision_label_v1",
+      "evidence_label_v1",
+      "yield_label",
       "quality_score",
       "hero_image",
       "bedrooms",
@@ -46,8 +49,8 @@ export const MCP_RESOURCES = {
       "engine_god_metric",
       "engine_stress_test",
       "engine_affordability",
-      "timing_signal",
-      "stress_grade",
+      "timing_label",
+      "stress_grade_v1",
       "demand_velocity",
       "supply_pressure",
     ],
@@ -275,7 +278,7 @@ export async function mcpCrossReference(input: {
                WHEN ic.price_from > dab.p75_price THEN 'ABOVE MARKET'
                ELSE 'FAIR VALUE'
              END as price_verdict,
-             ic.timing_signal, ic.stress_grade, ic.rental_yield
+             ic.timing_label, ic.stress_grade_v1, ic.rental_yield
       FROM inventory_clean ic
       JOIN dld_area_benchmarks_live dab ON UPPER(dab.area) = UPPER(ic.area)
       WHERE ic.price_from > 0 ${filterClause}
@@ -283,29 +286,29 @@ export async function mcpCrossReference(input: {
       LIMIT ${limit}`,
     developer_portfolio: `
       SELECT dr.name as developer, dr.tier, dr.project_count as registry_projects,
-             COUNT(ic.project_id) as clean_projects,
+             COUNT(ic.id) as clean_projects,
              AVG(ic.price_from)::bigint as avg_price,
              AVG(ic.rental_yield)::numeric(4,2) as avg_yield,
-             AVG(ic.investment_score)::numeric(4,1) as avg_score,
+             AVG(ic.investor_score_v1)::numeric(4,1) as avg_score,
              STRING_AGG(DISTINCT ic.area, ', ' ORDER BY ic.area) as areas,
-             COUNT(*) FILTER (WHERE ic.timing_signal = 'BUY') as buy_signals,
-             COUNT(*) FILTER (WHERE ic.stress_grade IN ('A','B')) as safe_projects
+             COUNT(*) FILTER (WHERE ic.timing_label IN ('STRONG_BUY', 'BUY')) as buy_signals,
+             COUNT(*) FILTER (WHERE ic.stress_grade_v1 IN ('A','B')) as safe_projects
       FROM developer_registry dr
       LEFT JOIN inventory_clean ic ON LOWER(ic.developer) = LOWER(dr.name)
       GROUP BY dr.name, dr.tier, dr.project_count
-      HAVING COUNT(ic.project_id) > 0
-      ORDER BY COUNT(ic.project_id) DESC
+      HAVING COUNT(ic.id) > 0
+      ORDER BY COUNT(ic.id) DESC
       LIMIT ${limit}`,
     area_intelligence: `
       SELECT dab.area,
              dab.total_transactions, dab.total_volume_aed,
              dab.median_price, dab.avg_price_per_sqm, dab.daily_velocity,
              dab.offplan_pct, dab.ready_pct, dab.freehold_pct,
-             COUNT(ic.project_id) as inventory_projects,
+             COUNT(ic.id) as inventory_projects,
              AVG(ic.price_from)::bigint as inventory_avg_price,
              AVG(ic.rental_yield)::numeric(4,2) as avg_yield,
-             COUNT(*) FILTER (WHERE ic.timing_signal = 'BUY') as buy_signals,
-             COUNT(*) FILTER (WHERE ic.stress_grade = 'A') as grade_a_projects
+             COUNT(*) FILTER (WHERE ic.timing_label IN ('STRONG_BUY', 'BUY')) as buy_signals,
+             COUNT(*) FILTER (WHERE ic.stress_grade_v1 = 'A') as grade_a_projects
       FROM dld_area_benchmarks_live dab
       LEFT JOIN inventory_clean ic ON UPPER(ic.area) = UPPER(dab.area)
       GROUP BY dab.area, dab.total_transactions, dab.total_volume_aed,
@@ -315,27 +318,27 @@ export async function mcpCrossReference(input: {
       LIMIT ${limit}`,
     golden_visa_opportunities: `
       SELECT ic.name, ic.area, ic.developer, ic.price_from,
-             ic.timing_signal, ic.stress_grade, ic.rental_yield, ic.investment_score,
+             ic.timing_label, ic.stress_grade_v1, ic.rental_yield, ic.investor_score_v1,
              dab.median_price as dld_area_median, dab.freehold_pct,
              CASE WHEN ic.price_from < dab.median_price THEN 'BELOW MEDIAN' ELSE 'AT/ABOVE MEDIAN' END as vs_market
       FROM inventory_clean ic
       LEFT JOIN dld_area_benchmarks_live dab ON UPPER(dab.area) = UPPER(ic.area)
       WHERE ic.price_from >= 2000000
-        AND ic.timing_signal IN ('BUY', 'HOLD')
-        AND ic.stress_grade IN ('A', 'B')
-      ORDER BY ic.investment_score DESC
+        AND ic.timing_label IN ('STRONG_BUY', 'BUY', 'HOLD')
+        AND ic.stress_grade_v1 IN ('A', 'B')
+      ORDER BY ic.investor_score_v1 DESC
       LIMIT ${limit}`,
     stress_test_report: `
-      SELECT ic.stress_grade, COUNT(*) as projects,
+      SELECT ic.stress_grade_v1 as stress_grade, COUNT(*) as projects,
              AVG(ic.price_from)::bigint as avg_price,
              AVG(ic.rental_yield)::numeric(4,2) as avg_yield,
-             AVG(ic.investment_score)::numeric(4,1) as avg_score,
-             COUNT(*) FILTER (WHERE ic.timing_signal = 'BUY') as buy_signals,
+             AVG(ic.investor_score_v1)::numeric(4,1) as avg_score,
+             COUNT(*) FILTER (WHERE ic.timing_label IN ('STRONG_BUY', 'BUY')) as buy_signals,
              STRING_AGG(DISTINCT ic.area, ', ' ORDER BY ic.area) as top_areas
       FROM inventory_clean ic
-      WHERE ic.stress_grade IS NOT NULL
-      GROUP BY ic.stress_grade
-      ORDER BY CASE ic.stress_grade WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 WHEN 'D' THEN 4 END`,
+      WHERE ic.stress_grade_v1 IS NOT NULL
+      GROUP BY ic.stress_grade_v1
+      ORDER BY CASE ic.stress_grade_v1 WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 WHEN 'D' THEN 4 WHEN 'E' THEN 5 END`,
   }
 
   const sql = queries[input.type]

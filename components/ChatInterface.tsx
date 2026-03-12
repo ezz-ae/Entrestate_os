@@ -405,13 +405,13 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[]): Workspace
   }
 
   const prices = rows
-    .map((row) => toFiniteNumber(row.l1_canonical_price))
+    .map((row) => toFiniteNumber(row.price_from ?? row.l1_canonical_price))
     .filter((value): value is number => value !== null && value > 0)
   const avgPrice = prices.length > 0 ? prices.reduce((sum, value) => sum + value, 0) / prices.length : null
 
   const timingCounts = new Map<string, number>()
   for (const row of rows) {
-    const timing = toText(row.l3_timing_signal, "")
+    const timing = toText(row.timing_label ?? row.l3_timing_signal, "")
     if (!timing) continue
     timingCounts.set(timing, (timingCounts.get(timing) ?? 0) + 1)
   }
@@ -419,14 +419,14 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[]): Workspace
 
   const confidenceCounts = new Map<string, number>()
   for (const row of rows) {
-    const confidence = toText(row.l1_confidence, "")
+    const confidence = toText(row.price_confidence ?? row.l1_confidence, "")
     if (!confidence) continue
     confidenceCounts.set(confidence, (confidenceCounts.get(confidence) ?? 0) + 1)
   }
   const topConfidence = [...confidenceCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? "-"
 
   const scoreValues = rows
-    .map((row) => toFiniteNumber(row.engine_god_metric))
+    .map((row) => toFiniteNumber(row.investor_score_v1 ?? row.engine_god_metric))
     .filter((value): value is number => value !== null)
   const avgScore = scoreValues.length > 0 ? scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length : null
 
@@ -452,12 +452,12 @@ function deriveComparisonRows(toolOutputs: Record<string, unknown>[]): Compariso
       label,
       area: toText(row.final_area === null ? row.area : row.final_area),
       developer: toText(row.developer),
-      confidence: toText(row.l1_confidence),
-      timingSignal: toText(row.l3_timing_signal),
-      stressGrade: toText(row.l2_stress_test_grade),
-      price: toFiniteNumber(row.l1_canonical_price),
-      yield: toFiniteNumber(row.l1_canonical_yield),
-      score: toFiniteNumber(row.engine_god_metric),
+      confidence: toText(row.price_confidence ?? row.l1_confidence),
+      timingSignal: toText(row.timing_label ?? row.l3_timing_signal),
+      stressGrade: toText(row.stress_grade_v1 ?? row.l2_stress_test_grade),
+      price: toFiniteNumber(row.price_from ?? row.l1_canonical_price),
+      yield: toFiniteNumber(row.rental_yield ?? row.l1_canonical_yield),
+      score: toFiniteNumber(row.investor_score_v1 ?? row.engine_god_metric),
     })
 
     if (unique.size >= 8) break

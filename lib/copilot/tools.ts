@@ -132,6 +132,20 @@ export const dldNotableDealsInputSchema = z
 
 export const refreshDldDataInputSchema = z.object({}).strict()
 
+export const scenarioStressTestInputSchema = z
+  .object({
+    project_name: z.string().trim().min(1),
+    down_payment_pct: z.number().min(0).max(100).default(20),
+    interest_rate_pct: z.number().min(0).max(30).default(5),
+    mortgage_years: z.number().int().min(1).max(30).default(25),
+    vacancy_pct: z.number().min(0).max(100).default(10),
+    operating_cost_pct: z.number().min(0).max(50).default(15),
+    rent_growth_pct: z.number().min(-50).max(50).default(3),
+    price_change_pct: z.number().min(-50).max(100).default(10),
+    hold_years: z.number().int().min(1).max(30).default(5),
+  })
+  .strict()
+
 export const copilotToolSchemas = {
   deal_screener: dealScreenerInputSchema,
   price_reality_check: priceRealityCheckInputSchema,
@@ -150,6 +164,7 @@ export const copilotToolSchemas = {
   dld_market_pulse: dldMarketPulseInputSchema,
   dld_notable_deals: dldNotableDealsInputSchema,
   refresh_dld_data: refreshDldDataInputSchema,
+  scenario_stress_test: scenarioStressTestInputSchema,
 } as const
 
 export type DealScreenerInput = z.infer<typeof dealScreenerInputSchema>
@@ -169,6 +184,7 @@ export type DldAreaBenchmarkInput = z.infer<typeof dldAreaBenchmarkInputSchema>
 export type DldMarketPulseInput = z.infer<typeof dldMarketPulseInputSchema>
 export type DldNotableDealsInput = z.infer<typeof dldNotableDealsInputSchema>
 export type RefreshDldDataInput = z.infer<typeof refreshDldDataInputSchema>
+export type ScenarioStressTestInput = z.infer<typeof scenarioStressTestInputSchema>
 export type MemoSection = z.infer<typeof memoSectionSchema>
 
 export const copilotSystemPrompt = `You are the Entrestate Decision Terminal — a Bloomberg-class real estate intelligence system for the UAE market.
@@ -331,4 +347,6 @@ export const copilotToolDescriptions = {
   generate_strategic_report: "Generate a full strategic market report for a specific area or segment.",
   generate_investment_roadmap: "Create a personalized investment roadmap based on budget, goals, and risk tolerance.",
   monitor_market_segments: "Track specific market segments: price movements, supply changes, velocity trends.",
+  scenario_stress_test:
+    "Financial stress test for a specific project. Models DSCR, cash flow, ROI, and break-even based on user-provided assumptions (down payment, interest rate, vacancy, hold period).",
 } as const
