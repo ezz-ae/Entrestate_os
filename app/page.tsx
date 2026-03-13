@@ -151,8 +151,10 @@ export default async function HomePage({
   const isMobile = /mobile|android|iphone|ipad|phone/i.test(userAgent)
   const params = (await searchParams) ?? {}
   const sessionId = Array.isArray(params.id) ? params.id[0] : params.id
+  const viewParam = Array.isArray(params.view) ? params.view[0] : params.view
+  const showMarketing = viewParam === "home"
 
-  if (!isMobile) {
+  if (!isMobile && !showMarketing) {
     const entitlement = await getCurrentEntitlement()
     const usage = entitlement.accountKey
       ? await getCopilotDailyUsage(entitlement.accountKey, entitlement.tier)
@@ -184,6 +186,7 @@ export default async function HomePage({
             initialCooldownSecondsRemaining={usage.cooldownSecondsRemaining}
           />
         </div>
+        <Footer />
       </main>
     )
   }

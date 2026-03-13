@@ -31,6 +31,7 @@ export function Navbar() {
   const { data: session } = authClient.useSession()
   const isAuthenticated = Boolean(session?.user)
   const shouldRenderSidebar = !isChatPage && (isAuthenticated || isSidebarOpen || hasOpenChatIntent)
+  const logoHref = isChatPage || pathname === "/" ? "/?view=home" : "/"
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -90,7 +91,7 @@ export function Navbar() {
       >
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <nav className="flex items-center justify-between" aria-label="Main navigation">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href={logoHref} className="flex items-center gap-2.5">
               <div className="flex gap-0.5" aria-hidden="true">
                 <div className="w-3 h-3 rounded-sm bg-foreground" />
                 <div className="w-3 h-3 rounded-sm bg-foreground/60" />
