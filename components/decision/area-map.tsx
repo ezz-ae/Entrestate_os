@@ -54,6 +54,13 @@ export function AreaMap({ areas }: AreaMapProps) {
         .leaflet-container {
           background: #0d1117;
           font-family: inherit;
+          position: relative;
+          z-index: 0;
+        }
+        .leaflet-pane,
+        .leaflet-top,
+        .leaflet-bottom {
+          z-index: 10;
         }
         .leaflet-control-attribution {
           background: rgba(13, 17, 23, 0.7) !important;
@@ -75,7 +82,13 @@ export function AreaMap({ areas }: AreaMapProps) {
       <MapContainer
         center={center}
         zoom={11}
-        style={{ height: "calc(100dvh - 64px)", width: "100%", marginTop: "64px" }}
+        style={{
+          height: "calc(100dvh - 64px)",
+          width: "100%",
+          marginTop: "64px",
+          position: "relative",
+          zIndex: 0,
+        }}
         zoomControl={true}
       >
         <TileLayer
