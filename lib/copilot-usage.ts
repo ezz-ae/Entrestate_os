@@ -204,17 +204,91 @@ async function ensureUsageTables() {
 
 export async function getCopilotDailyUsage(accountKey: string, tier: CopilotTier) {
   const normalizedKey = accountKey.trim()
-  void tier
-  return buildUnlimitedUsage(normalizedKey)
+  if (tier !== "free") {
+    return buildUnlimitedUsage(normalizedKey)
+  }
+
+  await ensureUsageTables()
+  const now = new Date()
+  const rows = await prisma.$queryRaw<FreeUsageWindowRow[]>(Prisma.sql`
+    SELECT window_started_at, messages_count, cooldown_until
+    FROM copilot_usage_windows
+    WHERE account_key = ${normalizedKey}
+    LIMIT 1
+  `)
+
+  return resolveFreeUsageFromRow(normalizedKey, rows[0] ?? null, now)
 }
 
 export async function consumeCopilotUsage(accountKey: string, tier: CopilotTier): Promise<{ allowed: boolean; usage: CopilotDailyUsage }> {
   const normalizedKey = accountKey.trim()
-  void tier
-  return {
-    allowed: true,
-    usage: buildUnlimitedUsage(normalizedKey),
+  if (tier !== "free") {
+    return {
+      allowed: true,
+      usage: buildUnlimitedUsage(normalizedKey),
+    }
   }
+
+  await ensureUsageTables()
+  const now = new Date()
+  const windowDurationMs = getWindowDurationMs()
+
+  return prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<FreeUsageWindowRow[]>(Prisma.sql`
+      SELECT window_started_at, messages_count, cooldown_until
+      FROM copilot_usage_windows
+      WHERE account_key = ${normalizedKey}
+      LIMIT 1
+    `)
+    const row = rows[0] ?? null
+    const currentUsage = resolveFreeUsageFromRow(normalizedKey, row, now)
+
+    if (currentUsage.blocked) {
+      return { allowed: false, usage: currentUsage }
+    }
+
+    let windowStartedAt = toDate(row?.window_started_at) ?? now
+    let messagesCount = row?.messages_count ?? 0
+    const cooldownUntil = toDate(row?.cooldown_until)
+    const windowEndsAt = new Date(windowStartedAt.getTime() + windowDurationMs)
+    const shouldReset = !row || Boolean(cooldownUntil) || windowEndsAt.getTime() <= now.getTime()
+
+    if (shouldReset) {
+      windowStartedAt = now
+      messagesCount = 0
+    }
+
+    const nextCount = messagesCount + 1
+    const hitLimit = nextCount >= FREE_COPILOT_WINDOW_LIMIT
+    const nextCooldownUntil = hitLimit ? new Date(now.getTime() + windowDurationMs) : null
+
+    await tx.$executeRawUnsafe(
+      `
+        INSERT INTO copilot_usage_windows (account_key, window_started_at, messages_count, cooldown_until, updated_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (account_key)
+        DO UPDATE SET
+          window_started_at = EXCLUDED.window_started_at,
+          messages_count = EXCLUDED.messages_count,
+          cooldown_until = EXCLUDED.cooldown_until,
+          updated_at = NOW()
+      `,
+      normalizedKey,
+      windowStartedAt,
+      nextCount,
+      nextCooldownUntil,
+    )
+
+    return {
+      allowed: true,
+      usage: buildFreeUsage(normalizedKey, now, {
+        used: nextCount,
+        blocked: hitLimit,
+        resetAt: nextCooldownUntil,
+        cooldownUntil: nextCooldownUntil,
+      }),
+    }
+  })
 }
 
 export async function safeConsumeCopilotUsage(

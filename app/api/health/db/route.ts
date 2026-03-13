@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const QUERY_TIMEOUT_MS = 3000
+const QUERY_TIMEOUT_MS = parseInt(process.env.DB_HEALTHCHECK_TIMEOUT_MS ?? "8000", 10)
 
 export async function GET() {
   const startedAt = Date.now()

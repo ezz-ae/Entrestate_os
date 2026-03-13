@@ -16,6 +16,10 @@ import { HeroSection } from "@/components/homepage/hero-section"
 import { DecisionTunnelStepper } from "@/components/homepage/decision-tunnel-stepper"
 import { getMarketPulseSummary } from "@/lib/frontend-content"
 import { SEO, absoluteUrl } from "@/lib/seo"
+import { ChatInterface } from "@/components/ChatInterface"
+import { getCurrentEntitlement } from "@/lib/account-entitlement"
+import { getCopilotDailyLimit, getCopilotDailyUsage } from "@/lib/copilot-usage"
+import { headers } from "next/headers"
 
 export const dynamic = "force-dynamic"
 
@@ -137,7 +141,53 @@ const structuredDataObj = {
   ],
 }
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const headersList = await headers()
+  const userAgent = headersList.get("user-agent") || ""
+  const isMobile = /mobile|android|iphone|ipad|phone/i.test(userAgent)
+  const params = (await searchParams) ?? {}
+  const sessionId = Array.isArray(params.id) ? params.id[0] : params.id
+
+  if (!isMobile) {
+    const entitlement = await getCurrentEntitlement()
+    const usage = entitlement.accountKey
+      ? await getCopilotDailyUsage(entitlement.accountKey, entitlement.tier)
+      : {
+          accountKey: "",
+          date: new Date().toISOString().slice(0, 10),
+          used: 0,
+          limit: getCopilotDailyLimit(entitlement.tier),
+          remaining: getCopilotDailyLimit(entitlement.tier),
+          blocked: false,
+          resetAt: null,
+          cooldownUntil: null,
+          cooldownSecondsRemaining: null,
+        }
+
+    return (
+      <main id="main-content">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredDataObj) }}
+        />
+        <Navbar />
+        <div className="mx-auto max-w-[1600px] px-6 pb-14 pt-28 md:pt-32">
+          <ChatInterface
+            id={sessionId || undefined}
+            initialLimit={usage.limit}
+            initialRemaining={usage.remaining}
+            initialBlocked={usage.blocked}
+            initialCooldownSecondsRemaining={usage.cooldownSecondsRemaining}
+          />
+        </div>
+      </main>
+    )
+  }
+
   const pulse = await getMarketPulseSummary().catch(() => ({
     data_as_of: new Date().toISOString(),
     summary: { total: 7015, avg_price: null, avg_yield: null, buy_signals: 2667, high_confidence: 593 },

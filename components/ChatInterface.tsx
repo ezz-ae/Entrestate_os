@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
 import { useCopilot } from "@/components/copilot-provider"
 import { motion, AnimatePresence } from "framer-motion"
@@ -231,16 +232,6 @@ function formatMetric(value: number | null, decimals = 1) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
-}
-
-function formatCooldownDuration(totalSeconds: number) {
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-
-  if (hours > 0) return `${hours}h ${minutes}m`
-  if (minutes > 0) return `${minutes}m ${seconds}s`
-  return `${seconds}s`
 }
 
 function inferReportAudience(
@@ -624,6 +615,7 @@ export function ChatInterface({
   initialBlocked = false,
   initialCooldownSecondsRemaining = null,
 }: ChatInterfaceProps) {
+  const searchParams = useSearchParams()
   const [mounted, setMounted] = useState(false)
   const [input, setInput] = useState("")
 
@@ -656,6 +648,7 @@ export function ChatInterface({
   const prevComparisonCount = useRef(0)
   const prevDldCount = useRef(0)
   const prevSelectedProject = useRef("")
+  const initialPromptRef = useRef<string | null>(null)
 
   const { messages, sendMessage, status, error, stop } = useCopilot()
 
@@ -759,13 +752,10 @@ export function ChatInterface({
   const usageStatusLabel = useMemo(() => {
     if (limit === null) return "Unlimited · ⌘↵ to send"
     if (chatBlocked) {
-      if (cooldownSecondsRemaining && cooldownSecondsRemaining > 0) {
-        return `Cooldown ${formatCooldownDuration(cooldownSecondsRemaining)} · ⌘↵ to send`
-      }
-      return "Cooldown active · ⌘↵ to send"
+      return "Usage cooling down · ⌘↵ to send"
     }
-    return `${Math.max(remaining ?? 0, 0)}/${limit} messages left · ⌘↵ to send`
-  }, [chatBlocked, cooldownSecondsRemaining, limit, remaining])
+    return "Free access · ⌘↵ to send"
+  }, [chatBlocked, limit])
 
   const toolOutputs = useMemo(() => extractToolOutputs(messages as any[]), [messages])
   const workspaceCards = useMemo(() => deriveWorkspaceCards(toolOutputs), [toolOutputs])
@@ -976,13 +966,7 @@ export function ChatInterface({
     }
 
     if (chatBlocked) {
-      if (cooldownSecondsRemaining && cooldownSecondsRemaining > 0) {
-        setLimitMessage(
-          `Free usage is cooling down. You can send again in ${formatCooldownDuration(cooldownSecondsRemaining)}.`,
-        )
-      } else {
-        setLimitMessage("Free usage is cooling down. Please try again soon.")
-      }
+      setLimitMessage("Free usage is cooling down. Please try again soon.")
       return false
     }
 
@@ -1002,6 +986,20 @@ export function ChatInterface({
 
     return true
   }
+
+  useEffect(() => {
+    const promptParam = searchParams?.get("prompt") ?? searchParams?.get("q")
+    if (!promptParam) return
+    if (initialPromptRef.current === promptParam) return
+    initialPromptRef.current = promptParam
+    setInput(promptParam)
+
+    if (!hasConversation) {
+      void sendPrompt(promptParam).then((sent) => {
+        if (sent) setInput("")
+      })
+    }
+  }, [hasConversation, searchParams, sendPrompt])
 
   const activateSlashCommand = async (command: SlashCommand) => {
     const prompt = command.buildPrompt({ selectedRow, assumptions: simulationAssumptions })
@@ -1265,7 +1263,7 @@ export function ChatInterface({
 
           {/* ── Marquee ── */}
           <div className="w-full mb-16 select-none">
-            <MarqueePrompts />
+            <MarqueePrompts onPromptSelect={(prompt) => { void sendPrompt(prompt) }} />
           </div>
 
           {/* ── Example Chips ── */}
@@ -1541,13 +1539,13 @@ export function ChatInterface({
 
         {limitMessage ? (
           <p className="mt-3 text-sm text-amber-600">
-            {limitMessage} <Link href="/pricing" className="underline">Upgrade</Link>
+            {limitMessage}
           </p>
         ) : null}
 
-        {isLimitError ? (
+        {!limitMessage && isLimitError ? (
           <p className="mt-3 text-sm text-amber-600">
-            Free window is cooling down. <Link href="/pricing" className="underline">Upgrade for uninterrupted access</Link>
+            Free usage is cooling down. Please try again soon.
           </p>
         ) : null}
 

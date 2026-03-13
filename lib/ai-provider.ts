@@ -19,8 +19,9 @@ export function ensureGeminiApiKeyEnv() {
 export function normalizeGeminiModel(modelId: string | undefined, fallback: string) {
   const normalized = modelId?.trim()
   if (!normalized) return fallback
-  if (normalized.startsWith("google/")) return normalized.slice("google/".length)
-  if (normalized.startsWith("gemini-")) return normalized
+  const lower = normalized.toLowerCase()
+  if (lower.startsWith("google/")) return lower.slice("google/".length)
+  if (lower.startsWith("gemini-")) return lower
   return fallback
 }
 
@@ -52,18 +53,39 @@ export function resolveGatewayOrGeminiModel(options: { gatewayModel: string; gem
 }
 
 export function resolveCopilotModel() {
+  const provider = (process.env.COPILOT_PROVIDER ?? "").trim().toLowerCase()
+  const gatewayApiKey = getTrimmedEnv("AI_GATEWAY_API_KEY")
   const geminiKey = ensureGeminiApiKeyEnv()
-  if (geminiKey) {
-    return google(normalizeGeminiModel(process.env.COPILOT_GEMINI_MODEL ?? process.env.COPILOT_MODEL, "gemini-1.5-flash"))
+  const openAiApiKey = getTrimmedEnv("OPENAI_API_KEY")
+
+  if (provider === "gateway") {
+    if (!gatewayApiKey) return null
+    const gateway = createGateway({ apiKey: gatewayApiKey })
+    return gateway(process.env.COPILOT_MODEL || "google/gemini-1.5-flash")
   }
 
-  const gatewayApiKey = getTrimmedEnv("AI_GATEWAY_API_KEY")
+  if (provider === "gemini") {
+    if (!geminiKey) return null
+    const model = process.env.COPILOT_GEMINI_MODEL ?? process.env.GEMINI_MODEL ?? process.env.COPILOT_MODEL
+    return google(normalizeGeminiModel(model, "gemini-1.5-flash"))
+  }
+
+  if (provider === "openai") {
+    if (!openAiApiKey) return null
+    const openAi = createOpenAI({ apiKey: openAiApiKey })
+    return openAi(process.env.COPILOT_OPENAI_MODEL || "gpt-4o-mini")
+  }
+
+  if (geminiKey) {
+    const model = process.env.COPILOT_GEMINI_MODEL ?? process.env.GEMINI_MODEL ?? process.env.COPILOT_MODEL
+    return google(normalizeGeminiModel(model, "gemini-1.5-flash"))
+  }
+
   if (gatewayApiKey) {
     const gateway = createGateway({ apiKey: gatewayApiKey })
     return gateway(process.env.COPILOT_MODEL || "google/gemini-1.5-flash")
   }
 
-  const openAiApiKey = getTrimmedEnv("OPENAI_API_KEY")
   if (openAiApiKey) {
     const openAi = createOpenAI({ apiKey: openAiApiKey })
     return openAi(process.env.COPILOT_OPENAI_MODEL || "gpt-4o-mini")

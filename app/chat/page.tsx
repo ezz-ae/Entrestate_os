@@ -16,6 +16,8 @@ export default async function ChatPage({
   const isMobile = /mobile|android|iphone|ipad|phone/i.test(userAgent)
   const params = (await searchParams) ?? {}
   const sessionId = Array.isArray(params.id) ? params.id[0] : params.id
+  const promptParam = Array.isArray(params.prompt) ? params.prompt[0] : params.prompt
+  const queryParam = Array.isArray(params.q) ? params.q[0] : params.q
 
   if (isMobile) {
     // On mobile, always use the sidebar chat experience instead of the desktop /chat layout.

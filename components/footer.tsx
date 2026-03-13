@@ -37,7 +37,7 @@ const columns = [
     links: [
       { label: "Documentation", href: "/docs" },
       { label: "Partners & APIs", href: "/docs/partners-apis" },
-      { label: "AI Scientist", href: "/workspace/data-scientist" },
+      { label: "Data Science Dashboard", href: "/workspace/data-scientist" },
       { label: "Agent Builder", href: "/apps/agent-builder" },
       { label: "Pricing", href: "/plans" },
       { label: "Changelog", href: "/changelog" },

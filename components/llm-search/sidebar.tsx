@@ -4,14 +4,14 @@ import { useCopilot } from "@/components/copilot-provider"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter, useSearchParams } from "next/navigation"
-import { MarketPulsePopover } from "@/components/market-pulse-popover"
 import {
   Clock,
-  Compass,
-  FileText,
-  TrendingUp,
   Pin,
-  MessageCircle,
+  BookOpen,
+  LayoutGrid,
+  Database,
+  Bot,
+  BarChart3,
   Send,
   Sparkles,
   MessageSquare,
@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { UpgradeModal } from "./upgrade-modal"
-import { AccountMenu } from "./account-menu"
+import { authClient } from "@/lib/auth/client"
 
 function getMessageText(message: any): string {
   if (typeof message?.content === "string") {
@@ -241,15 +241,30 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const [openPanel, setOpenPanel] = useState<string | null>(null)
   const [pinnedPanel, setPinnedPanel] = useState<string | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [showAccountMenu, setShowAccountMenu] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
   const [historyItems, setHistoryItems] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const initialPromptRef = useRef<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const hasOpenChatQuery = searchParams?.get("openChat") === "true"
   const querySessionId = searchParams?.get("id")
+  const promptParam = searchParams?.get("prompt") ?? searchParams?.get("q")
+  const { data: session } = authClient.useSession()
+
+  const user = session?.user
+  const displayName = user?.name || user?.email || "Entrestate Member"
+  const displayEmail = user?.email || "account@entrestate.com"
+  const avatar = user?.image || "/avatars/avatar-01.svg"
+
+  const workspaceLinks = [
+    { label: "Notebook", href: "/notebook", icon: BookOpen, description: "Decision notebooks" },
+    { label: "Data Dashboard", href: "/dashboard", icon: LayoutGrid, description: "KPIs and activity" },
+    { label: "Data Science Dashboard", href: "/workspace/data-scientist", icon: Database, description: "EDA + modeling" },
+    { label: "Market Data", href: "/top-data", icon: BarChart3, description: "Signals + timing" },
+    { label: "Agent Builder", href: "/apps/agent-builder", icon: Bot, description: "Automation builder" },
+  ]
 
   // Handle auto-open and session loading from URL
   useEffect(() => {
@@ -318,6 +333,8 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
       const url = new URL(window.location.href)
       url.searchParams.delete("openChat")
       url.searchParams.delete("id")
+      url.searchParams.delete("prompt")
+      url.searchParams.delete("q")
       router.replace(url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : ""), { scroll: false })
     }
   }
@@ -357,6 +374,31 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
     }
   }
 
+  useEffect(() => {
+    if (!promptParam || !isDesktopViewport) {
+      return
+    }
+    if (initialPromptRef.current === promptParam) {
+      return
+    }
+    initialPromptRef.current = promptParam
+
+    if (openPanel !== "chat") {
+      setOpenPanel("chat")
+    }
+
+    if (!isSidebarOpen) {
+      openSidebar()
+    }
+
+    setInput(promptParam)
+    void sendPrompt(promptParam).then((sent) => {
+      if (sent) {
+        setInput("")
+      }
+    })
+  }, [promptParam, isDesktopViewport, openPanel, isSidebarOpen, openSidebar, sendPrompt])
+
   const submitMessage = async (event?: FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement>) => {
     event?.preventDefault()
 
@@ -368,7 +410,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
 
   // If the global sidebar is open, force the panel open.
   const effectiveOpenPanel = authenticated
-    ? (isSidebarOpen ? (isDesktopViewport ? "chat" : openPanel ?? "chat") : openPanel)
+    ? (isSidebarOpen ? (openPanel ?? "chat") : openPanel)
     : (isSidebarOpen ? openPanel ?? "chat" : null)
   const sidebarWidthClass = authenticated
     ? (effectiveOpenPanel ? "w-screen md:w-[420px]" : "w-[72px]")
@@ -458,58 +500,33 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
           <div className="group relative flex justify-center">
             <Button
               variant="ghost"
-              onMouseEnter={() => !isSidebarOpen && handlePanelChange("discover")}
-              className="h-12 w-12 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground"
+              onClick={() => handlePanelChange("workspace")}
+              onMouseEnter={() => !isSidebarOpen && handlePanelChange("workspace")}
+              className={`h-12 w-12 shrink-0 transition-colors ${
+                effectiveOpenPanel === "workspace" ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              }`}
             >
-              <Compass className="h-5 w-5" />
+              <LayoutGrid className="h-5 w-5" />
             </Button>
             <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
-              Discover
-            </span>
-          </div>
-
-          <div className="group relative flex justify-center">
-            <Button
-              variant="ghost"
-              onMouseEnter={() => !isSidebarOpen && handlePanelChange("markets")}
-              className="h-12 w-12 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground"
-            >
-              <TrendingUp className="h-5 w-5" />
-            </Button>
-            <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
-              Markets
+              Workspace
             </span>
           </div>
         </nav>
 
         <div className="flex flex-col gap-2 pb-4 items-center w-full px-2">
           <div className="group relative flex justify-center">
-            <MarketPulsePopover compact />
-            <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
-              Market pulse
-            </span>
-          </div>
-
-          <div className="group relative flex justify-center">
             <Link
-              href="/contact"
+              href="/account/profile"
               onClick={handleCloseSidebar}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full overflow-hidden border border-border/60 bg-background"
             >
-              <MessageCircle className="h-5 w-5" />
+              <Image src={avatar} alt={displayName} width={36} height={36} className="object-cover" />
             </Link>
             <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
-              Talk to us
+              Profile
             </span>
           </div>
-
-          <Button
-            variant="ghost"
-            onClick={() => setShowAccountMenu(!showAccountMenu)}
-            className="h-12 w-12 shrink-0 p-0 rounded-full overflow-hidden"
-          >
-            <Image src="/avatars/avatar-01.svg" alt="Profile" width={36} height={36} className="object-cover" />
-          </Button>
         </div>
       </div>
 
@@ -548,7 +565,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                   }`}
                 >
                   <div className="space-y-2 bg-card/30 p-3">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Quick actions</p>
+                    <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Workspace</p>
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         type="button"
@@ -568,26 +585,31 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                         <Clock className="mr-1.5 h-4 w-4" />
                         History
                       </Button>
-                      <Link
-                        href="/account/reports"
-                        onClick={handleCloseSidebar}
-                        className="inline-flex h-9 items-center justify-start rounded-md bg-secondary px-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+                      <Button
+                        type="button"
+                        variant={effectiveOpenPanel === "workspace" ? "default" : "secondary"}
+                        onClick={() => handlePanelChange("workspace")}
+                        className="justify-start"
                       >
-                        <FileText className="mr-1.5 h-4 w-4" />
-                        Reports
-                      </Link>
-                      <Link
-                        href="/contact"
-                        onClick={handleCloseSidebar}
-                        className="inline-flex h-9 items-center justify-start rounded-md bg-secondary px-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
-                      >
-                        <MessageCircle className="mr-1.5 h-4 w-4" />
-                        Talk to us
-                      </Link>
+                        <LayoutGrid className="mr-1.5 h-4 w-4" />
+                        Workspace
+                      </Button>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-border bg-background/80 px-2 py-1.5">
-                      <span className="text-xs text-muted-foreground">Market pulse</span>
-                      <MarketPulsePopover compact />
+                    <div className="space-y-1">
+                      {workspaceLinks.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={handleCloseSidebar}
+                          className="flex items-center justify-between rounded-md border border-border/60 bg-background/80 px-3 py-2 text-xs text-foreground hover:bg-accent/50"
+                        >
+                          <span className="flex items-center gap-2">
+                            <link.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                            {link.label}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">{link.description}</span>
+                        </Link>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -690,7 +712,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
               </div>
             </div>
           ) : (
-            /* Other Panels (History, Discover, etc.) */
+            /* Other Panels (History, Workspace) */
             <div className="flex flex-col h-full animate-in fade-in duration-300">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <h2 className="text-sm font-semibold capitalize">{effectiveOpenPanel}</h2>
@@ -704,6 +726,47 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                 </Button>
               </div>
               
+              {effectiveOpenPanel === "workspace" && (
+                <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                  <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/60 p-3">
+                    <Image src={avatar} alt={displayName} width={40} height={40} className="rounded-full object-cover" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>
+                      <p className="truncate text-xs text-muted-foreground">{displayEmail}</p>
+                    </div>
+                    <Link
+                      href="/account/profile"
+                      onClick={handleCloseSidebar}
+                      className="ml-auto inline-flex items-center rounded-lg border border-border/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                    >
+                      View
+                    </Link>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Workspace</p>
+                    <div className="space-y-1">
+                      {workspaceLinks.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={handleCloseSidebar}
+                          className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/80 px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-accent/50"
+                        >
+                          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
+                            <link.icon className="h-4 w-4" />
+                          </span>
+                          <span className="flex flex-col">
+                            <span className="text-sm font-medium">{link.label}</span>
+                            <span className="text-xs text-muted-foreground">{link.description}</span>
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {effectiveOpenPanel === "history" && (
                 <div className="flex-1 flex flex-col min-h-0">
                   {loadingHistory ? (
@@ -756,7 +819,6 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
       <div className={`fixed inset-y-0 left-0 z-[60] h-full transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}>
         {sidebarContent}
       </div>
-      <AccountMenu isOpen={showAccountMenu} onClose={() => setShowAccountMenu(false)} />
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </>
   )

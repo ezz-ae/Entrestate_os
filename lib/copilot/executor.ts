@@ -25,6 +25,8 @@ import { getEnterpriseStrategicContext, getStrategicNarrative } from "@/lib/ai/e
 // Copilot always queries inventory_clean (V1 columns: timing_label, stress_grade_v1, investor_score_v1)
 // DETAIL_TABLE env may point to inventory_full (old columns) — override for copilot tools
 const COPILOT_INVENTORY_TABLE = process.env.COPILOT_INVENTORY_TABLE ?? "inventory_clean"
+const COPILOT_AREA_COLUMN = (process.env.COPILOT_AREA_COLUMN ?? "").trim()
+  || (COPILOT_INVENTORY_TABLE === "inventory_clean" ? "area" : "final_area")
 
 const STATEMENT_TIMEOUT_MS = 8000
 const STRESS_GRADE_ORDER = ["A", "B", "C", "D", "E"] as const
@@ -47,6 +49,9 @@ const UAE_CITIES = [
 ] as const
 
 const COPILOT_TABLE_SQL = Prisma.raw(COPILOT_INVENTORY_TABLE)
+const COPILOT_AREA_EXPR = COPILOT_AREA_COLUMN === "area"
+  ? Prisma.sql`area`
+  : Prisma.sql`COALESCE(final_area, area)`
 
 type DbRow = Record<string, unknown>
 
@@ -92,6 +97,7 @@ type QualityOptions = {
   onlyUae?: boolean
   excludeGarbageDeveloper?: boolean
   requireBedroomSanity?: boolean
+  includeBedroomColumns?: boolean
 }
 
 function buildQualityClauses(options: QualityOptions = {}): Prisma.Sql[] {
@@ -106,7 +112,7 @@ function buildQualityClauses(options: QualityOptions = {}): Prisma.Sql[] {
   }
 
   if (options.requireArea) {
-    clauses.push(Prisma.sql`TRIM(COALESCE(final_area, area, '')) <> ''`)
+    clauses.push(Prisma.sql`TRIM(COALESCE(${COPILOT_AREA_EXPR}, '')) <> ''`)
   }
 
   if (options.requireDeveloper) {
@@ -130,7 +136,9 @@ function buildQualityClauses(options: QualityOptions = {}): Prisma.Sql[] {
     clauses.push(Prisma.sql`LENGTH(COALESCE(developer, '')) <= 80`)
   }
 
-  if (options.requireBedroomSanity) {
+  const includeBedroomColumns = options.includeBedroomColumns !== false
+
+  if (options.requireBedroomSanity && includeBedroomColumns) {
     clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`)
     clauses.push(Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`)
     clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`)
@@ -179,32 +187,45 @@ async function runQuery<T extends DbRow>(query: Prisma.Sql): Promise<T[]> {
   return normalizeRows(rows)
 }
 
-function buildDealScreenerFilters(filters: DealScreenerInput["filters"]): Prisma.Sql[] {
+function isMissingColumnError(error: unknown, column: string) {
+  if (!error || typeof error !== "object") return false
+  const prismaError = error as { code?: string; meta?: { message?: string } }
+  if (prismaError.code !== "P2010") return false
+  const message = prismaError.meta?.message ?? ""
+  return message.includes(`column \"${column}\" does not exist`)
+}
+
+function buildDealScreenerFilters(
+  filters: DealScreenerInput["filters"],
+  includeBedroomColumns: boolean,
+): Prisma.Sql[] {
   if (!filters) return []
 
   const clauses: Prisma.Sql[] = []
 
   if (filters.area) {
-    clauses.push(Prisma.sql`LOWER(COALESCE(final_area, area)) LIKE LOWER(${`%${filters.area}%`})`)
+    clauses.push(Prisma.sql`LOWER(${COPILOT_AREA_EXPR}) LIKE LOWER(${`%${filters.area}%`})`)
   }
 
   if (typeof filters.budget_max_aed === "number") {
     clauses.push(Prisma.sql`price_from <= ${filters.budget_max_aed}`)
   }
 
-  if (typeof filters.beds_min === "number") {
-    clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) >= ${filters.beds_min}`)
-  }
+  if (includeBedroomColumns) {
+    if (typeof filters.beds_min === "number") {
+      clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) >= ${filters.beds_min}`)
+    }
 
-  if (typeof filters.beds_max === "number") {
-    clauses.push(Prisma.sql`COALESCE(bedrooms_min, bedrooms_max) <= ${filters.beds_max}`)
-  }
+    if (typeof filters.beds_max === "number") {
+      clauses.push(Prisma.sql`COALESCE(bedrooms_min, bedrooms_max) <= ${filters.beds_max}`)
+    }
 
-  if (typeof filters.beds_min === "number" || typeof filters.beds_max === "number") {
-    clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) BETWEEN 0 AND 10`)
-    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`)
-    clauses.push(Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`)
-    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`)
+    if (typeof filters.beds_min === "number" || typeof filters.beds_max === "number") {
+      clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) BETWEEN 0 AND 10`)
+      clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`)
+      clauses.push(Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`)
+      clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`)
+    }
   }
 
   if (typeof filters.golden_visa_required === "boolean" && filters.golden_visa_required) {
@@ -233,7 +254,7 @@ function buildDealScreenerFilters(filters: DealScreenerInput["filters"]): Prisma
   return clauses
 }
 
-function buildDealScreenerQuery(input: DealScreenerInput): Prisma.Sql {
+function buildDealScreenerQuery(input: DealScreenerInput, includeBedroomColumns = true): Prisma.Sql {
   const clauses = [
     ...buildQualityClauses({
       requirePrice: true,
@@ -244,21 +265,24 @@ function buildDealScreenerQuery(input: DealScreenerInput): Prisma.Sql {
       onlyUae: true,
       excludeGarbageDeveloper: true,
       requireBedroomSanity: true,
+      includeBedroomColumns,
     }),
-    ...buildDealScreenerFilters(input.filters),
+    ...buildDealScreenerFilters(input.filters, includeBedroomColumns),
   ]
   const whereClause = clauses.length > 0 ? Prisma.sql`WHERE ${Prisma.join(clauses, " AND ")}` : Prisma.empty
   const sortColumn = Prisma.raw(DEAL_SORT_COLUMNS[input.sort_by])
+  const bedroomsMinSql = includeBedroomColumns ? Prisma.sql`bedrooms_min` : Prisma.sql`NULL::double precision`
+  const bedroomsMaxSql = includeBedroomColumns ? Prisma.sql`bedrooms_max` : Prisma.sql`NULL::double precision`
 
   return Prisma.sql`
     SELECT
       name,
       developer,
       area,
-      final_area,
-      bedrooms_min,
-      bedrooms_max,
-      COALESCE(bedrooms_min, bedrooms_max) AS beds,
+      ${COPILOT_AREA_EXPR} AS final_area,
+      ${bedroomsMinSql} AS bedrooms_min,
+      ${bedroomsMaxSql} AS bedrooms_max,
+      COALESCE(${bedroomsMinSql}, ${bedroomsMaxSql}) AS beds,
       price_from,
       rental_yield,
       price_source,
@@ -284,15 +308,30 @@ function buildDealScreenerQuery(input: DealScreenerInput): Prisma.Sql {
 }
 
 export async function executeDealScreener(input: DealScreenerInput): Promise<ToolEnvelope<DbRow>> {
-  const query = buildDealScreenerQuery(input)
-  const rows = await runQuery(query)
+  try {
+    const query = buildDealScreenerQuery(input)
+    const rows = await runQuery(query)
 
-  return {
-    source: "deal_screener",
-    data_as_of: nowIso(),
-    count: rows.length,
-    no_results: rows.length === 0,
-    rows,
+    return {
+      source: "deal_screener",
+      data_as_of: nowIso(),
+      count: rows.length,
+      no_results: rows.length === 0,
+      rows,
+    }
+  } catch (error) {
+    if (isMissingColumnError(error, "bedrooms_min") || isMissingColumnError(error, "bedrooms_max")) {
+      const query = buildDealScreenerQuery(input, false)
+      const rows = await runQuery(query)
+      return {
+        source: "deal_screener",
+        data_as_of: nowIso(),
+        count: rows.length,
+        no_results: rows.length === 0,
+        rows,
+      }
+    }
+    throw error
   }
 }
 
@@ -346,7 +385,7 @@ export async function executeAreaRiskBrief(input: AreaRiskBriefInput): Promise<T
 
   const query = Prisma.sql`
     SELECT
-      COALESCE(final_area, area) AS area,
+      ${COPILOT_AREA_EXPR} AS area,
       COUNT(*)::int AS projects,
       ROUND(AVG(price_from) FILTER (WHERE price_from > 0)) AS avg_price,
       ROUND(AVG(rental_yield::numeric), 1) AS avg_yield,
@@ -354,7 +393,7 @@ export async function executeAreaRiskBrief(input: AreaRiskBriefInput): Promise<T
       COUNT(CASE WHEN timing_label IN ('STRONG_BUY', 'BUY') THEN 1 END)::int AS buy_signals,
       COUNT(CASE WHEN stress_grade_v1 IN ('A', 'B') THEN 1 END)::int AS safe_projects
     FROM ${COPILOT_TABLE_SQL}
-    WHERE LOWER(COALESCE(final_area, area)) LIKE LOWER('%' || ${input.area_name} || '%')
+    WHERE LOWER(${COPILOT_AREA_EXPR}) LIKE LOWER('%' || ${input.area_name} || '%')
       AND ${Prisma.join(qualityClauses, " AND ")}
     GROUP BY 1
   `
@@ -411,7 +450,7 @@ export async function executeDeveloperDueDiligence(
         ROUND(AVG(investor_score_v1::numeric), 1) AS avg_score,
         COUNT(CASE WHEN stress_grade_v1 IN ('A', 'B') THEN 1 END)::int AS safe_projects,
         ROUND(AVG(price_from) FILTER (WHERE price_from > 0)) AS avg_price,
-        array_agg(DISTINCT COALESCE(final_area, area)) AS areas
+        array_agg(DISTINCT ${COPILOT_AREA_EXPR}) AS areas
       FROM ${COPILOT_TABLE_SQL}
       WHERE LOWER(developer) LIKE LOWER('%' || ${developerName} || '%')
         AND ${Prisma.join(qualityClauses, " AND ")}
@@ -449,7 +488,7 @@ async function loadProjectContext(projectName: string): Promise<DbRow | null> {
     SELECT
       name,
       developer,
-      COALESCE(final_area, area) AS area,
+      ${COPILOT_AREA_EXPR} AS area,
       stress_score,
       stress_grade_v1,
       timing_label,
@@ -590,7 +629,7 @@ export async function executeCompareProjects(input: CompareProjectsInput): Promi
     SELECT
       name,
       developer,
-      COALESCE(final_area, area) AS area,
+      ${COPILOT_AREA_EXPR} AS area,
       price_from,
       rental_yield,
       price_confidence,
@@ -630,7 +669,7 @@ export async function executeApplyDecisionLens(input: ApplyDecisionLensInput): P
 }
 
 export async function executeListMarketEntities(input: ListMarketEntitiesInput): Promise<ToolEnvelope<DbRow>> {
-  const column = input.type === "AREA" ? Prisma.sql`COALESCE(final_area, area)` : Prisma.sql`developer`
+  const column = input.type === "AREA" ? COPILOT_AREA_EXPR : Prisma.sql`developer`
   const where = input.query
     ? Prisma.sql`WHERE LOWER(${column}) LIKE LOWER(${`%%${input.query}%%`})`
     : Prisma.empty
@@ -713,7 +752,7 @@ export async function executeGenerateStrategicReport(input: GenerateStrategicRep
   const narrative = context ? getStrategicNarrative(context) : "General market analysis."
 
   const focusFilter = input.focus_areas && input.focus_areas.length > 0
-    ? Prisma.sql`AND LOWER(COALESCE(final_area, area)) IN (${Prisma.join(input.focus_areas.map(a => Prisma.sql`LOWER(${a})`), ", ")})`
+    ? Prisma.sql`AND LOWER(${COPILOT_AREA_EXPR}) IN (${Prisma.join(input.focus_areas.map(a => Prisma.sql`LOWER(${a})`), ", ")})`
     : Prisma.empty
 
   const [marketOverview, topAreas, riskDistribution] = await Promise.all([
@@ -731,7 +770,7 @@ export async function executeGenerateStrategicReport(input: GenerateStrategicRep
     `),
     runQuery(Prisma.sql`
       SELECT
-        COALESCE(final_area, area) AS area,
+        ${COPILOT_AREA_EXPR} AS area,
         COUNT(*)::int AS projects,
         ROUND(AVG(rental_yield::numeric), 1) AS avg_yield,
         ROUND(AVG(investor_score_v1::numeric), 1) AS avg_score
@@ -780,7 +819,7 @@ export async function executeGenerateInvestmentRoadmap(input: GenerateInvestment
   // Query real market data for budget-appropriate projects
   const [readyAssets, pipelineAssets, topYieldAreas] = await Promise.all([
     runQuery(Prisma.sql`
-      SELECT name, COALESCE(final_area, area) AS area, price_from, rental_yield,
+      SELECT name, ${COPILOT_AREA_EXPR} AS area, price_from, rental_yield,
              stress_grade_v1, investor_score_v1
       FROM ${COPILOT_TABLE_SQL}
       WHERE price_from > 0 AND price_from <= ${capital * 0.5}
@@ -790,7 +829,7 @@ export async function executeGenerateInvestmentRoadmap(input: GenerateInvestment
       LIMIT 5
     `),
     runQuery(Prisma.sql`
-      SELECT name, COALESCE(final_area, area) AS area, price_from, rental_yield,
+      SELECT name, ${COPILOT_AREA_EXPR} AS area, price_from, rental_yield,
              stress_grade_v1, investor_score_v1
       FROM ${COPILOT_TABLE_SQL}
       WHERE price_from > 0 AND price_from <= ${capital * 0.4}
@@ -800,7 +839,7 @@ export async function executeGenerateInvestmentRoadmap(input: GenerateInvestment
       LIMIT 5
     `),
     runQuery(Prisma.sql`
-      SELECT COALESCE(final_area, area) AS area,
+      SELECT ${COPILOT_AREA_EXPR} AS area,
              ROUND(AVG(rental_yield::numeric), 1) AS avg_yield,
              COUNT(*)::int AS projects
       FROM ${COPILOT_TABLE_SQL}
@@ -838,14 +877,14 @@ export async function executeGenerateInvestmentRoadmap(input: GenerateInvestment
 export async function executeMonitorMarketSegments(input: MonitorMarketSegmentsInput): Promise<ToolEnvelope<DbRow>> {
   const areaMetrics = await runQuery(Prisma.sql`
     SELECT
-      COALESCE(final_area, area) AS area,
+      ${COPILOT_AREA_EXPR} AS area,
       ROUND(AVG(rental_yield::numeric), 2) AS current_avg_yield,
       COUNT(*)::int AS projects,
       COUNT(CASE WHEN timing_label IN ('STRONG_BUY', 'BUY') THEN 1 END)::int AS buy_signals,
       COUNT(CASE WHEN stress_grade_v1 IN ('A', 'B') THEN 1 END)::int AS safe_count,
       ROUND(AVG(investor_score_v1::numeric), 1) AS avg_score
     FROM ${COPILOT_TABLE_SQL}
-    WHERE LOWER(COALESCE(final_area, area)) IN (${Prisma.join(input.areas.map(a => Prisma.sql`LOWER(${a})`), ", ")})
+    WHERE LOWER(${COPILOT_AREA_EXPR}) IN (${Prisma.join(input.areas.map(a => Prisma.sql`LOWER(${a})`), ", ")})
       AND price_from > 0
       AND price_confidence IN ('MEDIUM', 'HIGH')
     GROUP BY 1
@@ -1104,7 +1143,7 @@ export async function executeScenarioStressTest(input: ScenarioStressTestInput) 
       SELECT
         name,
         developer,
-        COALESCE(final_area, area) AS area,
+        ${COPILOT_AREA_EXPR} AS area,
         price_from AS l1_canonical_price,
         rental_yield AS l1_canonical_yield,
         stress_grade_v1 AS l2_stress_test_grade,

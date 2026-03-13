@@ -88,49 +88,28 @@ function getActivityDescription(event: BillingActivityEvent) {
 }
 
 function UsageMeter({
-  used,
   limit,
   blocked,
-  cooldownSecondsRemaining,
 }: {
-  used: number
   limit: number | null
   blocked: boolean
-  cooldownSecondsRemaining: number | null
 }) {
-  const cooldownLabel =
-    cooldownSecondsRemaining && cooldownSecondsRemaining > 0
-      ? `Cooldown active · ${Math.ceil(cooldownSecondsRemaining / 60)} min left`
-      : "Cooldown active"
-
   if (limit === null) {
     return (
       <div className="flex items-center gap-1.5">
         <Zap className="h-3.5 w-3.5 text-emerald-500" />
-        <span className="text-sm font-semibold text-foreground">Unlimited</span>
-        <span className="text-xs text-muted-foreground">messages</span>
+        <span className="text-sm font-semibold text-foreground">Unlimited access</span>
       </div>
     )
   }
-  const pct = Math.min((used / limit) * 100, 100)
-  const remaining = Math.max(limit - used, 0)
-  const barColor = pct >= 100 ? "bg-red-500" : pct >= 66 ? "bg-amber-500" : "bg-emerald-500"
   return (
     <div>
-      <div className="mb-2 flex items-baseline justify-between gap-2">
-        <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-bold tabular-nums text-foreground">{remaining}</span>
-          <span className="text-xs text-muted-foreground">of {limit} free messages left</span>
-        </div>
-        <span className="text-xs text-muted-foreground tabular-nums">{used}/{limit} used</span>
-      </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
-        <div className={`h-full rounded-full transition-all duration-700 ${barColor}`} style={{ width: `${pct}%` }} />
+      <div className="flex items-center gap-2">
+        <Zap className="h-3.5 w-3.5 text-emerald-500" />
+        <span className="text-sm font-semibold text-foreground">Free access</span>
       </div>
       {blocked ? (
-        <p className="mt-1.5 text-[11px] text-red-400">{cooldownLabel}</p>
-      ) : remaining === 0 ? (
-        <p className="mt-1.5 text-[11px] text-red-400">Usage window is full. Cooldown starts automatically.</p>
+        <p className="mt-1.5 text-[11px] text-red-400">Usage is cooling down. Please try again soon.</p>
       ) : null}
     </div>
   )
@@ -228,10 +207,8 @@ export default async function AccountPage({
               <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
                 <p className="mb-3 text-[10px] uppercase tracking-wider text-muted-foreground">AI Chat · Free usage window</p>
                 <UsageMeter
-                  used={usage.used}
                   limit={usage.limit}
                   blocked={usage.blocked}
-                  cooldownSecondsRemaining={usage.cooldownSecondsRemaining}
                 />
               </div>
 
