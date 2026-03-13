@@ -1,11 +1,27 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import { Navbar } from "@/components/navbar"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { BookOpen, Plus, Trash2, Clock, Map, Building2, User } from "lucide-react"
+import { BookOpen, Plus, Trash2, Clock, Map, Building2, User, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+
+type BookSummary = {
+  id: string
+  title: string
+  subject: string
+  type: "client" | "area" | "project" | "portfolio"
+  updatedAt: string
+  pageCount: number
+}
+
+const TYPE_COLORS: Record<BookSummary["type"], string> = {
+  client: "border-amber-500/30 text-amber-500",
+  area: "border-emerald-500/30 text-emerald-500",
+  project: "border-sky-500/30 text-sky-500",
+  portfolio: "border-violet-500/30 text-violet-500",
+}
 
 export default function NotebookPage() {
   const [books, setBooks] = useState<BookSummary[]>([])
@@ -20,6 +36,38 @@ export default function NotebookPage() {
       .then((d) => setBooks(d.books ?? []))
       .finally(() => setLoading(false))
   }, [])
+
+  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (creating) return
+    if (!form.title.trim() || !form.subject.trim()) return
+    setCreating(true)
+    try {
+      const res = await fetch("/api/notebook/books", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title.trim(),
+          subject: form.subject.trim(),
+          type: form.type,
+        }),
+      })
+      const data = await res.json()
+      if (data?.book) {
+        setBooks((prev) => [data.book as BookSummary, ...prev])
+        setShowForm(false)
+        setForm({ title: "", subject: "", type: "project" })
+      }
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  async function handleDelete(bookId: string) {
+    const res = await fetch(`/api/notebook/books/${bookId}`, { method: "DELETE" })
+    if (!res.ok) return
+    setBooks((prev) => prev.filter((book) => book.id !== bookId))
+  }
 
   const TYPE_ICONS: Record<string, any> = {
     client: User,
