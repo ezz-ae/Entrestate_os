@@ -737,7 +737,7 @@ export async function listDevelopers(): Promise<{
     requireBedroomSanity: true,
   })
 
-  const rows = USE_CURATED_DEVELOPERS_VIEW
+  const curatedRows = USE_CURATED_DEVELOPERS_VIEW
     ? await runQuery(Prisma.sql`
         SELECT
           COALESCE(
@@ -783,6 +783,10 @@ export async function listDevelopers(): Promise<{
           AND COALESCE((to_jsonb(t) ->> 'total_projects')::int, 0) >= 2
         ORDER BY reliability DESC NULLS LAST
       `)
+    : []
+
+  const rows = curatedRows.length > 0
+    ? curatedRows
     : await runQuery(Prisma.sql`
         SELECT
           developer,
