@@ -208,9 +208,6 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
     ? [
         Prisma.sql`name IS NOT NULL`,
         Prisma.sql`COALESCE(price_from, 0) > 0`,
-        Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`,
-        Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`,
-        Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`,
         Prisma.sql`TRIM(COALESCE(area, '')) <> ''`,
         Prisma.sql`TRIM(COALESCE(developer, '')) <> ''`,
       ]
@@ -232,10 +229,12 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
   if (!filters) return clauses
 
   if (typeof filters.bedsMin === "number" || typeof filters.bedsMax === "number") {
-    clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) BETWEEN 0 AND 10`)
-    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`)
-    clauses.push(Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`)
-    clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`)
+    if (!USE_CURATED_PROPERTIES_VIEW) {
+      clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) BETWEEN 0 AND 10`)
+      clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`)
+      clauses.push(Prisma.sql`(bedrooms_max IS NULL OR bedrooms_max BETWEEN 0 AND 10)`)
+      clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_max IS NULL OR bedrooms_min <= bedrooms_max)`)
+    }
   }
 
   if (filters.area) {
@@ -266,10 +265,14 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
     )
   }
   if (typeof filters.bedsMin === "number") {
-    clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) >= ${filters.bedsMin}`)
+    if (!USE_CURATED_PROPERTIES_VIEW) {
+      clauses.push(Prisma.sql`COALESCE(bedrooms_max, bedrooms_min) >= ${filters.bedsMin}`)
+    }
   }
   if (typeof filters.bedsMax === "number") {
-    clauses.push(Prisma.sql`COALESCE(bedrooms_min, bedrooms_max) <= ${filters.bedsMax}`)
+    if (!USE_CURATED_PROPERTIES_VIEW) {
+      clauses.push(Prisma.sql`COALESCE(bedrooms_min, bedrooms_max) <= ${filters.bedsMax}`)
+    }
   }
   if (filters.timingSignal) {
     clauses.push(
@@ -337,9 +340,9 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
           developer,
           area,
           area AS final_area,
-          bedrooms_min,
-          bedrooms_max,
-          COALESCE(bedrooms_min, bedrooms_max) AS beds,
+          NULL::numeric AS bedrooms_min,
+          NULL::numeric AS bedrooms_max,
+          NULL::numeric AS beds,
           price_from AS l1_canonical_price,
           rental_yield AS l1_canonical_yield,
           NULL AS l1_canonical_status,
