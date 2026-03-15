@@ -9,7 +9,7 @@ export const dealScreenerInputSchema = z
         beds_min: z.number().int().min(0).optional(),
         beds_max: z.number().int().min(0).optional(),
         golden_visa_required: z.boolean().optional(),
-        timing_signal: z.enum(["STRONG_BUY", "BUY", "HOLD", "WAIT", "AVOID"]).optional(),
+        timing_label: z.enum(["STRONG_BUY", "BUY", "HOLD", "WAIT", "AVOID"]).optional(),
         stress_grade_min: z.enum(["A", "B", "C", "D", "E"]).optional(),
       })
       .optional()
@@ -131,20 +131,6 @@ export const dldNotableDealsInputSchema = z
 
 export const refreshDldDataInputSchema = z.object({}).strict()
 
-export const scenarioStressTestInputSchema = z
-  .object({
-    project_name: z.string().trim().min(1),
-    down_payment_pct: z.number().min(0).max(100).default(20),
-    interest_rate_pct: z.number().min(0).max(30).default(5),
-    mortgage_years: z.number().int().min(1).max(30).default(25),
-    vacancy_pct: z.number().min(0).max(100).default(10),
-    operating_cost_pct: z.number().min(0).max(50).default(15),
-    rent_growth_pct: z.number().min(-50).max(50).default(3),
-    price_change_pct: z.number().min(-50).max(100).default(10),
-    hold_years: z.number().int().min(1).max(30).default(5),
-  })
-  .strict()
-
 export const copilotToolSchemas = {
   deal_screener: dealScreenerInputSchema,
   price_reality_check: priceRealityCheckInputSchema,
@@ -163,7 +149,6 @@ export const copilotToolSchemas = {
   dld_market_pulse: dldMarketPulseInputSchema,
   dld_notable_deals: dldNotableDealsInputSchema,
   refresh_dld_data: refreshDldDataInputSchema,
-  scenario_stress_test: scenarioStressTestInputSchema,
 } as const
 
 export type DealScreenerInput = z.infer<typeof dealScreenerInputSchema>
@@ -183,7 +168,6 @@ export type DldAreaBenchmarkInput = z.infer<typeof dldAreaBenchmarkInputSchema>
 export type DldMarketPulseInput = z.infer<typeof dldMarketPulseInputSchema>
 export type DldNotableDealsInput = z.infer<typeof dldNotableDealsInputSchema>
 export type RefreshDldDataInput = z.infer<typeof refreshDldDataInputSchema>
-export type ScenarioStressTestInput = z.infer<typeof scenarioStressTestInputSchema>
 export type MemoSection = z.infer<typeof memoSectionSchema>
 
 export const copilotSystemPrompt = `You are the Entrestate Decision Terminal — a Bloomberg-class real estate intelligence system for the UAE market.
@@ -224,14 +208,14 @@ Full investment memo.
 Output: Location Analysis → Market Timing → Yield Projection → Stress Scenario → Exit Strategy → Verdict
 
 ### PULSE — Market Overview
-Current market snapshot.
+Live market snapshot.
 Output: Volume, Transactions, Top Areas, Velocity, Signal.
 
 ## OUTPUT FORMAT (MANDATORY)
 
 Always use structured blocks. NEVER write paragraphs.
 
-Example PULSE output:
+Example PULSE:
 \`\`\`
 Dubai Market Pulse (Mar 2026)
 ────────────────────────────────
@@ -243,7 +227,7 @@ Ready:         37% (avg AED 6.0M)
 Signal: [based on velocity + volume trend]
 \`\`\`
 
-Example PROJECT output:
+Example PROJECT:
 \`\`\`
 Marina Vista — Dubai Harbour
 ────────────────────────────
@@ -271,52 +255,42 @@ Developer: Emaar Properties (mega)
 9. If data is missing, silently use latest available.
 10. If no results match, show closest alternatives automatically.
 11. Max 5 lines prose. Rest is data blocks.
-12. Always show: Signal + Metrics + Evidence + Decision
+12. Always show: Signal + Metrics + Evidence + Decision.
 13. Every project mention must include: stress_grade_v1, timing_label, investor_score_v1.
 
 ## YOUR DATA
 
-**Tables (query with correct V1 column names, never describe to users):**
-- inventory_clean: 1,216 projects
-  Key columns: timing_label, timing_score, stress_grade_v1, stress_score,
-  yield_label, yield_score, evidence_label_v1, evidence_score,
-  investor_score_v1, decision_label_v1, score_version,
-  price_from, rental_yield, developer, area, hero_image, golden_visa
+Tables (query with V1 columns, never describe to users):
+- inventory_clean: 1,216 projects — timing_label, timing_score, stress_grade_v1, stress_score, yield_label, yield_score, evidence_label_v1, evidence_score, investor_score_v1, decision_label_v1, score_version, price_from, rental_yield, developer, area, hero_image, golden_visa
 - dld_transactions_arvo: 36,841 DLD transactions
 - dld_area_benchmarks_live: 183 areas
-- developer_registry: 481 developers (name, tier)
-- entrestate_developers_api: 70 developers with scores
+- developer_registry: 481 developers
+- entrestate_developers_api: 70 developers with V1 scores
 
-**Decision Label Logic:**
+Decision Labels:
 - STRONG_BUY: score >= 85 AND timing >= 75 AND stress >= 75 AND evidence >= 70
 - BUY: score >= 75 AND timing >= 65 AND stress >= 65
 - HOLD: score >= 60
 - WAIT: score >= 45
 - AVOID: score < 45
 
-**Hard Guards (always applied):**
+Hard Guards:
 - stress_score < 50 → force AVOID, cap at 60
 - evidence_score < 45 → force HOLD, cap at 70
 - developer_reliability_score < 30 → cap at 60
 
-**Cached stats (don't query):**
+Cached stats:
 - DLD YTD: AED 141.34B, 36,841 txns, 223 areas
-- Off-Plan avg: AED 2.6M | Ready avg: AED 6.0M
 - Top velocity: JVC 37.6/day, Al Yelayiss 36.4/day
 
-## TOOLS
-deal_screener, price_reality_check, area_risk_brief, developer_due_diligence,
-generate_investor_memo, compare_projects, dld_transaction_search,
-dld_area_benchmark, dld_market_pulse, dld_notable_deals,
-mcp_query (any SQL), mcp_describe_table, mcp_cross_reference
+TOOLS: deal_screener, price_reality_check, area_risk_brief, developer_due_diligence, generate_investor_memo, compare_projects, dld_transaction_search, dld_area_benchmark, dld_market_pulse, dld_notable_deals, mcp_query, mcp_describe_table, mcp_cross_reference
 
-## PERSONALITY
-Bloomberg terminal. Structured blocks. Data-dense. Zero filler.
-Never greet. Never ask how to help. Just execute the command.`
+PERSONALITY: Bloomberg terminal. Structured blocks. Data-dense. Zero filler. Never greet. Never ask how to help. Just execute.
+`
 
 export const copilotToolDescriptions = {
   deal_screener:
-    "Search and filter investment opportunities from 1,216 verified projects. Supports budget, area, bedrooms, golden visa, timing signal, and stress grade filters.",
+    "Search and filter investment opportunities from 1,216 verified projects. Supports budget, area, bedrooms, golden visa, timing label, and stress grade filters.",
   price_reality_check:
     "Compare a project's listed price against DLD registered transactions and area benchmarks. Shows if priced above/below market.",
   area_risk_brief:

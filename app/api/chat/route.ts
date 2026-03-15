@@ -356,7 +356,7 @@ function buildCompilerOutput(message: string) {
   const unitSignalRegex = /(high floor|seaview|sea view|\b1br\b|\b2br\b|\b3br\b|bedroom|bedrooms|floor)/i
   const signals = [
     {
-      signal: unitSignalRegex.test(message) ? "unit_distribution_signal" : "market_signal",
+      signal: unitSignalRegex.test(message) ? "unit_distribution_signal" : "decision_label_v1",
       confidence: "medium",
     },
   ]
@@ -408,7 +408,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
 async function buildDeterministicFallback(message: string, context?: { city?: string; area?: string }) {
   const budgetMax = parseBudgetAed(message)
   const beds = parseBedsFromMessage(message)
-  const timingSignal = parseTimingSignal(message)
+  const timingLabel = parseTimingSignal(message)
 
   const filters: DealScreenerInput["filters"] = {}
   if (context?.area) filters.area = context.area
@@ -417,7 +417,7 @@ async function buildDeterministicFallback(message: string, context?: { city?: st
     filters.beds_min = beds
     filters.beds_max = beds
   }
-  if (timingSignal) filters.timing_signal = timingSignal
+  if (timingLabel) filters.timing_label = timingLabel
 
   const result = await executeDealScreener({
     filters,
@@ -437,7 +437,7 @@ async function buildDeterministicFallback(message: string, context?: { city?: st
     content,
     dataCards: cards,
     evidence: {
-      sources_used: ["deal_screener", "inventory_full"],
+      sources_used: ["deal_screener"],
     },
     data_as_of: result.data_as_of,
   }

@@ -12,7 +12,7 @@ const promptRows = [
     "Screen 2BR projects under AED 2M with BUY signal",
     "Compare Dubai Marina vs JBR on yield and price",
     "Generate an investor memo for Marina Vista",
-    "Stress-test a 3BR mortgage at 5.5% interest",
+    "Show the V1 stress profile for a Dubai Harbour project",
     "Show Golden Visa eligible projects with high yield",
     "Explain what BUY/HOLD/WAIT signals mean",
   ],
@@ -21,7 +21,7 @@ const promptRows = [
     "Find top-performing areas by yield this quarter",
     "Price reality check for Downtown units",
     "Show latest DLD transactions in Business Bay",
-    "Model cash flow for a 2BR rental investment",
+    "Review real V1 resilience sub-scores for Marina Vista",
     "Compare off-plan vs ready assets for ROI",
   ],
   [

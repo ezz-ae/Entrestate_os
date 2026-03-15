@@ -306,7 +306,7 @@ export default function DocumentationDocsPage() {
           <ul className="mt-2 space-y-1 text-xs text-muted-foreground font-mono">
             <li>1 Price: L1 canonical (PF verified, last scraped 2026-03-01)</li>
             <li>2 Yield: L1 canonical (calculated from L4 DLD rental data)</li>
-            <li>3 Score: L2 derived (investment_score algorithm v2.1)</li>
+            <li>3 Score: L2 derived (investor_score_v1 algorithm v1.0)</li>
           </ul>
         </div>
       </section>

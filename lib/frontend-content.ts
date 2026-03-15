@@ -15,8 +15,8 @@ export type TopDataRow = {
   subtitle: string | null
   data_json: unknown
   display_order: number | null
-  confidence: string | null
-  last_updated: string | null
+  confidence?: string | null
+  last_updated?: string | null
 }
 
 export type MarketPulseSummary = {
@@ -52,7 +52,7 @@ export async function getHomepageContentSections() {
 
 export async function getTopDataRows() {
   const rows = await dbQuery<TopDataRow>(Prisma.sql`
-    SELECT id, section, title, subtitle, data_json, display_order, confidence, last_updated
+    SELECT id, section, title, subtitle, data_json, display_order
     FROM entrestate_top_data
     WHERE is_live = true
     ORDER BY display_order

@@ -319,7 +319,7 @@ export default async function OverviewPage() {
           <Link href="/chat" className="group flex items-center justify-between rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 transition-all hover:bg-primary/10 hover:-translate-y-0.5">
             <div>
               <p className="text-sm font-semibold text-foreground">AI Decision Chat</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">Shortlist projects · Compare areas · Stress-test assumptions</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Shortlist projects · Compare areas · Review V1 stress signals</p>
             </div>
             <div className="ml-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md transition group-hover:scale-105">
               <Sparkles className="h-4 w-4" />

@@ -17,7 +17,7 @@ const flatInputSchema = z.object({
   handover_months: z.number().int().min(0).optional(),
   golden_visa: z.boolean().optional(),
   golden_visa_required: z.boolean().optional(),
-  timing_signal: z.enum(["STRONG_BUY", "BUY", "HOLD", "WAIT", "AVOID"]).optional(),
+  timing_label: z.enum(["STRONG_BUY", "BUY", "HOLD", "WAIT", "AVOID"]).optional(),
   stress_grade_min: z.enum(["A", "B", "C", "D", "E"]).optional(),
   sort_by: z
     .enum(["investor_score_v1", "price_from", "rental_yield", "developer_reliability_score"])
@@ -44,7 +44,7 @@ function normalizeInput(payload: unknown) {
         beds_min: filters.beds_min ?? filters.beds,
         beds_max: filters.beds_max ?? filters.beds,
         golden_visa_required: filters.golden_visa_required ?? filters.golden_visa,
-        timing_signal: filters.timing_signal,
+        timing_label: filters.timing_label,
         stress_grade_min: filters.stress_grade_min,
       },
       sort_by: nested.data.sort_by,
@@ -62,7 +62,7 @@ function normalizeInput(payload: unknown) {
       beds_min: flat.data.beds_min ?? flat.data.beds,
       beds_max: flat.data.beds_max ?? flat.data.beds,
       golden_visa_required: flat.data.golden_visa_required ?? flat.data.golden_visa,
-      timing_signal: flat.data.timing_signal,
+      timing_label: flat.data.timing_label,
       stress_grade_min: flat.data.stress_grade_min,
     },
     sort_by: flat.data.sort_by,

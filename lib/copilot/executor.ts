@@ -18,7 +18,6 @@ import {
   GenerateInvestorMemoInput,
   MemoSection,
   PriceRealityCheckInput,
-  ScenarioStressTestInput,
 } from "@/lib/copilot/tools"
 import { getEnterpriseStrategicContext, getStrategicNarrative } from "@/lib/ai/enterprise/service"
 
@@ -237,8 +236,8 @@ function buildDealScreenerFilters(
     )
   }
 
-  if (filters.timing_signal) {
-    clauses.push(Prisma.sql`timing_label = ${filters.timing_signal}`)
+  if (filters.timing_label) {
+    clauses.push(Prisma.sql`timing_label = ${filters.timing_label}`)
   }
 
   if (filters.stress_grade_min) {
@@ -272,23 +271,33 @@ function buildDealScreenerQuery(input: DealScreenerInput, includeBedroomColumns 
 
   return Prisma.sql`
     SELECT
+      id,
+      name AS project_name,
       name,
+      ${COPILOT_AREA_EXPR} AS area,
       developer,
-      area,
-      ${COPILOT_AREA_EXPR} AS final_area,
+      price_from,
+      rental_yield,
+      timing_score,
+      timing_label,
+      stress_score,
+      stress_grade_v1 AS stress_grade,
+      yield_label,
+      evidence_score,
+      evidence_label_v1 AS evidence_label,
+      investor_score_v1 AS investor_score,
+      decision_label_v1 AS decision_label,
+      hero_image,
+      golden_visa,
+      price_source,
+      price_confidence,
+      stress_grade_v1,
+      evidence_label_v1,
+      investor_score_v1,
+      decision_label_v1,
       ${bedroomsMinSql} AS bedrooms_min,
       ${bedroomsMaxSql} AS bedrooms_max,
       COALESCE(${bedroomsMinSql}, ${bedroomsMaxSql}) AS beds,
-      price_from,
-      rental_yield,
-      price_source,
-      price_confidence,
-      investor_score_v1,
-      decision_label_v1,
-      timing_label,
-      stress_grade_v1,
-      yield_label,
-      evidence_label_v1,
       developer_reliability_score,
       supply_resilience_score,
       liquidity_resilience_score,
@@ -410,7 +419,7 @@ export async function executeDeveloperDueDiligence(
       SELECT name, tier, project_count
       FROM developer_registry
       WHERE name ILIKE '%' || ${input.developer_name} || '%'
-      ORDER BY CASE WHEN name ILIKE ${input.developer_name} THEN 0 ELSE 1 END
+      ORDER BY CASE WHEN LOWER(name) = LOWER(${input.developer_name}) THEN 0 ELSE 1 END
       LIMIT 1
     `,
   )
@@ -1132,50 +1141,6 @@ export async function executeDldNotableDeals(input: DldNotableDealsInput) {
   }
 }
 
-export async function executeScenarioStressTest(input: ScenarioStressTestInput) {
-  const rows = await runQuery(
-    Prisma.sql`
-      SELECT
-        name,
-        developer,
-        ${COPILOT_AREA_EXPR} AS area,
-        price_from,
-        rental_yield,
-        timing_label,
-        decision_label_v1,
-        investor_score_v1,
-        stress_score,
-        stress_grade_v1,
-        developer_reliability_score,
-        supply_resilience_score,
-        liquidity_resilience_score,
-        pricing_discipline_score,
-        handover_reliability_score,
-        area_stability_score,
-        payment_plan_score
-      FROM ${COPILOT_TABLE_SQL}
-      WHERE LOWER(name) LIKE LOWER('%' || ${input.project_name} || '%')
-      LIMIT 1
-    `,
-  )
-
-  if (!rows[0]) {
-    return {
-      source: "scenario_stress_test",
-      data_as_of: nowIso(),
-      no_results: true,
-      narrative: `Project '${input.project_name}' not found.`,
-    }
-  }
-
-  return {
-    source: "scenario_stress_test",
-    data_as_of: nowIso(),
-    project: normalizeValue(rows[0]),
-    narrative: "Returned real V1 stress data (no simulated scenarios).",
-  }
-}
-
 export async function executeRefreshDldData() {
   try {
     const response = await fetch("https://transactions.arvo.co/api/transactions", {
@@ -1218,7 +1183,6 @@ export const copilotExecutors = {
   dld_market_pulse: executeDldMarketPulse,
   dld_notable_deals: executeDldNotableDeals,
   refresh_dld_data: executeRefreshDldData,
-  scenario_stress_test: executeScenarioStressTest,
 } as const
 
 export { buildDealScreenerQuery }

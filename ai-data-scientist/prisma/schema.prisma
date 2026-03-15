@@ -19,7 +19,7 @@ model EntrestateMaster {
   derived_risk_class  String?  @map("derived_risk_class")
   data_confidence     String?  @map("data_confidence")
   final_status        String?  @map("final_status")
-  investment_score    Float?   @map("investment_score")
+  investor_score_v1    Float?   @map("investor_score_v1")
 
   @@map("entrestate_master")
 }

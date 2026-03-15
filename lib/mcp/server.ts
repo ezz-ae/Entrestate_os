@@ -36,7 +36,7 @@ export const MCP_RESOURCES = {
     updated: "live",
   },
   inventory_full: {
-    description: "7,015 projects with 180+ columns including L1-L5 evidence layers",
+    description: "1,216 scored projects with 180+ columns including evidence layers",
     key_columns: [
       "name",
       "area",
@@ -54,7 +54,7 @@ export const MCP_RESOURCES = {
       "demand_velocity",
       "supply_pressure",
     ],
-    row_count: 7015,
+    row_count: 1216,
     updated: "live",
   },
   dld_transactions_arvo: {
@@ -329,7 +329,7 @@ export async function mcpCrossReference(input: {
       ORDER BY ic.investor_score_v1 DESC
       LIMIT ${limit}`,
     stress_test_report: `
-      SELECT ic.stress_grade_v1 as stress_grade, COUNT(*) as projects,
+      SELECT ic.stress_grade_v1, COUNT(*) as projects,
              AVG(ic.price_from)::bigint as avg_price,
              AVG(ic.rental_yield)::numeric(4,2) as avg_yield,
              AVG(ic.investor_score_v1)::numeric(4,1) as avg_score,

@@ -24,7 +24,7 @@ API ENDPOINTS: 5/6 LIVE
 
 DATABASE: 183 tables, 16 views, Neon PostgreSQL
   inventory_clean:         1,216 projects (89% priced, 81% hero, 100% evidence)
-  inventory_full:          7,015 projects (180+ columns, L1-L5)
+  inventory_full:          1,216 projects (180+ columns, L1-L5)
   developer_registry:        481 developers (mega/major/mid/boutique)
   dld_transactions_arvo:  36,841 transactions (AED 141.34B, 2026 YTD)
   dld_transaction_feed:   36,634 notification entries
@@ -85,18 +85,18 @@ export const MCP_RESOURCES = {
   "inventory_clean": {
     description: "1,216 verified UAE projects with full evidence layers",
     key_columns: ["project_id", "name", "slug", "area", "city", "developer", "price_from", "price_to", 
-                   "timing_signal", "stress_grade", "rental_yield", "investment_score", "quality_score",
+                   "timing_label", "stress_grade_v1", "rental_yield", "investor_score_v1", "quality_score",
                    "hero_image", "bedrooms", "completion_date", "price_confidence", "price_source"],
     row_count: 1216,
     updated: "live"
   },
   "inventory_full": {
-    description: "7,015 projects with 180+ columns including L1-L5 evidence layers",
+    description: "1,216 projects with 180+ columns including L1-L5 evidence layers",
     key_columns: ["name", "area", "developer", "l1_canonical_price", "l1_canonical_yield",
                    "l2_developer_reliability", "l3_area_risk_score", "l4_dld_avg_txn_price",
                    "engine_god_metric", "engine_stress_test", "engine_affordability",
-                   "timing_signal", "stress_grade", "demand_velocity", "supply_pressure"],
-    row_count: 7015,
+                   "timing_label", "stress_grade_v1", "demand_velocity", "supply_pressure"],
+    row_count: 1216,
     updated: "live"
   },
 
@@ -273,7 +273,7 @@ export async function mcpCrossReference(input: {
                WHEN ic.price_from > dab.p75_price THEN 'ABOVE MARKET'
                ELSE 'FAIR VALUE'
              END as price_verdict,
-             ic.timing_signal, ic.stress_grade, ic.rental_yield
+             ic.timing_label, ic.stress_grade_v1, ic.rental_yield
       FROM inventory_clean ic
       JOIN dld_area_benchmarks_live dab ON UPPER(dab.area) = UPPER(ic.area)
       WHERE ic.price_from > 0 ${filterClause}
@@ -285,10 +285,10 @@ export async function mcpCrossReference(input: {
              COUNT(ic.project_id) as clean_projects,
              AVG(ic.price_from)::bigint as avg_price,
              AVG(ic.rental_yield)::numeric(4,2) as avg_yield,
-             AVG(ic.investment_score)::numeric(4,1) as avg_score,
+             AVG(ic.investor_score_v1)::numeric(4,1) as avg_score,
              STRING_AGG(DISTINCT ic.area, ', ' ORDER BY ic.area) as areas,
-             COUNT(*) FILTER (WHERE ic.timing_signal = 'BUY') as buy_signals,
-             COUNT(*) FILTER (WHERE ic.stress_grade IN ('A','B')) as safe_projects
+             COUNT(*) FILTER (WHERE ic.timing_label = 'BUY') as buy_signals,
+             COUNT(*) FILTER (WHERE ic.stress_grade_v1 IN ('A','B')) as safe_projects
       FROM developer_registry dr
       LEFT JOIN inventory_clean ic ON LOWER(ic.developer) = LOWER(dr.name)
       GROUP BY dr.name, dr.tier, dr.project_count
@@ -304,8 +304,8 @@ export async function mcpCrossReference(input: {
              COUNT(ic.project_id) as inventory_projects,
              AVG(ic.price_from)::bigint as inventory_avg_price,
              AVG(ic.rental_yield)::numeric(4,2) as avg_yield,
-             COUNT(*) FILTER (WHERE ic.timing_signal = 'BUY') as buy_signals,
-             COUNT(*) FILTER (WHERE ic.stress_grade = 'A') as grade_a_projects
+             COUNT(*) FILTER (WHERE ic.timing_label = 'BUY') as buy_signals,
+             COUNT(*) FILTER (WHERE ic.stress_grade_v1 = 'A') as grade_a_projects
       FROM dld_area_benchmarks_live dab
       LEFT JOIN inventory_clean ic ON UPPER(ic.area) = UPPER(dab.area)
       GROUP BY dab.area, dab.total_transactions, dab.total_volume_aed,
@@ -316,28 +316,28 @@ export async function mcpCrossReference(input: {
 
     golden_visa_opportunities: `
       SELECT ic.name, ic.area, ic.developer, ic.price_from,
-             ic.timing_signal, ic.stress_grade, ic.rental_yield, ic.investment_score,
+             ic.timing_label, ic.stress_grade_v1, ic.rental_yield, ic.investor_score_v1,
              dab.median_price as dld_area_median, dab.freehold_pct,
              CASE WHEN ic.price_from < dab.median_price THEN 'BELOW MEDIAN' ELSE 'AT/ABOVE MEDIAN' END as vs_market
       FROM inventory_clean ic
       LEFT JOIN dld_area_benchmarks_live dab ON UPPER(dab.area) = UPPER(ic.area)
       WHERE ic.price_from >= 2000000
-        AND ic.timing_signal IN ('BUY', 'HOLD')
-        AND ic.stress_grade IN ('A', 'B')
-      ORDER BY ic.investment_score DESC
+        AND ic.timing_label IN ('BUY', 'HOLD')
+        AND ic.stress_grade_v1 IN ('A', 'B')
+      ORDER BY ic.investor_score_v1 DESC
       LIMIT ${limit}`,
 
     stress_test_report: `
-      SELECT ic.stress_grade, COUNT(*) as projects,
+      SELECT ic.stress_grade_v1, COUNT(*) as projects,
              AVG(ic.price_from)::bigint as avg_price,
              AVG(ic.rental_yield)::numeric(4,2) as avg_yield,
-             AVG(ic.investment_score)::numeric(4,1) as avg_score,
-             COUNT(*) FILTER (WHERE ic.timing_signal = 'BUY') as buy_signals,
+             AVG(ic.investor_score_v1)::numeric(4,1) as avg_score,
+             COUNT(*) FILTER (WHERE ic.timing_label = 'BUY') as buy_signals,
              STRING_AGG(DISTINCT ic.area, ', ' ORDER BY ic.area) as top_areas
       FROM inventory_clean ic
-      WHERE ic.stress_grade IS NOT NULL
-      GROUP BY ic.stress_grade
-      ORDER BY CASE ic.stress_grade WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 WHEN 'D' THEN 4 END`
+      WHERE ic.stress_grade_v1 IS NOT NULL
+      GROUP BY ic.stress_grade_v1
+      ORDER BY CASE ic.stress_grade_v1 WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 WHEN 'D' THEN 4 END`
   }
 
   const sql = queries[input.type]
@@ -436,7 +436,7 @@ You can run ANY read-only SQL query against the full database. Use this for cust
 
 Available tables:
 - **inventory_clean** (1,216 rows) — Verified projects with evidence layers
-- **inventory_full** (7,015 rows) — Complete project universe with 180+ columns
+- **inventory_full** (1,216 rows) — Complete project universe with 180+ columns
 - **dld_transactions_arvo** (36,841 rows) — Real DLD registered transactions (2026 YTD)
 - **dld_transaction_feed** (36,634 rows) — Classified notification entries
 - **dld_area_benchmarks_live** (182 rows) — Per-area price/velocity benchmarks
@@ -489,7 +489,7 @@ Trigger fresh data pulls:
 1. **Always use data**: Never speculate. Query the database.
 2. **Cross-reference**: Compare inventory prices vs DLD medians. Flag discrepancies.
 3. **Cite sources**: "According to DLD data..." / "Based on 36,841 registered transactions..."
-4. **Risk-first**: Always mention stress_grade C/D, timing WAIT signals, low velocity areas.
+4. **Risk-first**: Always mention stress_grade_v1 C/D, timing WAIT signals, low velocity areas.
 5. **Golden Visa**: AED 2M+ freehold = eligible. Always mention when relevant.
 6. **Stress grades are A/B/C/D** — never "Safe A" or "Safe B"
 7. **Timing signals are BUY/HOLD/WAIT** — based on composite evidence
@@ -1141,8 +1141,8 @@ export function TransactionNotification({ txn }: { txn: DldFeedEntry }) {
 -- inventory_clean (1,216 rows — THE LIVE TABLE)
 -- Key columns: project_id, name, slug, area, city, developer, 
 -- price_from, price_to, hero_image, bedrooms, completion_date,
--- timing_signal (BUY/HOLD/WAIT), stress_grade (A/B/C/D),
--- rental_yield, investment_score, quality_score, price_confidence
+-- timing_label (BUY/HOLD/WAIT), stress_grade_v1 (A/B/C/D),
+-- rental_yield, investor_score_v1, quality_score, price_confidence
 
 -- dld_transactions_arvo (36,841 rows)
 -- Key columns: transaction_id, area, project, amount, reg_type (Off-Plan/Ready),

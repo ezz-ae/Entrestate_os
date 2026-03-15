@@ -68,9 +68,17 @@ type ComparisonRow = {
   confidence: string
   timingSignal: string
   stressGrade: string
+  stressScore: number | null
   price: number | null
   yield: number | null
   score: number | null
+  developerReliabilityScore: number | null
+  supplyResilienceScore: number | null
+  liquidityResilienceScore: number | null
+  pricingDisciplineScore: number | null
+  handoverReliabilityScore: number | null
+  areaStabilityScore: number | null
+  paymentPlanScore: number | null
 }
 
 type DldNotificationRow = {
@@ -97,7 +105,6 @@ type ShortlistResult = {
 
 type SlashCommandContext = {
   selectedRow: ComparisonRow | null
-  assumptions: string
 }
 
 type SlashCommand = {
@@ -402,7 +409,7 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[]): Workspace
     return [
       { title: "Matched projects", value: "0", subtitle: "Ask a question to screen inventory" },
       { title: "Avg asking price", value: "-", subtitle: "Appears after a search query" },
-      { title: "Market signal", value: "-", subtitle: "BUY · HOLD · WAIT timing signal" },
+      { title: "Decision label", value: "-", subtitle: "STRONG_BUY · BUY · HOLD · WAIT · AVOID" },
       { title: "Data confidence", value: "-", subtitle: "HIGH · MEDIUM · LOW quality tier" },
     ]
   }
@@ -420,6 +427,14 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[]): Workspace
   }
   const topTiming = [...timingCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? "-"
 
+  const decisionCounts = new Map<string, number>()
+  for (const row of rows) {
+    const decisionLabel = toText(row.decision_label_v1, "")
+    if (!decisionLabel) continue
+    decisionCounts.set(decisionLabel, (decisionCounts.get(decisionLabel) ?? 0) + 1)
+  }
+  const topDecision = [...decisionCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? topTiming
+
   const confidenceCounts = new Map<string, number>()
   for (const row of rows) {
     const confidence = toText(row.price_confidence ?? row.l1_confidence, "")
@@ -436,7 +451,7 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[]): Workspace
   return [
     { title: "Matched projects", value: rows.length.toLocaleString(), subtitle: "From live inventory scan" },
     { title: "Avg asking price", value: formatAed(avgPrice), subtitle: "Across matched results" },
-    { title: "Market signal", value: topTiming, subtitle: "Dominant timing signal in results" },
+    { title: "Decision label", value: topDecision, subtitle: `Timing label lead: ${topTiming}` },
     { title: "Data confidence", value: topConfidence, subtitle: `Avg investor score: ${formatMetric(avgScore)}` },
   ]
 }
@@ -444,11 +459,11 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[]): Workspace
 function deriveComparisonRows(toolOutputs: Record<string, unknown>[]): ComparisonRow[] {
   const rows = toolOutputs
     .flatMap((output) => toRows(output.rows))
-    .filter((row) => typeof row.name === "string")
+    .filter((row) => typeof row.name === "string" || typeof row.project_name === "string")
 
   const unique = new Map<string, ComparisonRow>()
   for (const row of rows) {
-    const label = toText(row.name)
+    const label = toText(row.name ?? row.project_name)
     if (!label || unique.has(label)) continue
 
     unique.set(label, {
@@ -458,9 +473,17 @@ function deriveComparisonRows(toolOutputs: Record<string, unknown>[]): Compariso
       confidence: toText(row.price_confidence ?? row.l1_confidence),
       timingSignal: toText(row.timing_label ?? row.l3_timing_signal),
       stressGrade: toText(row.stress_grade_v1 ?? row.l2_stress_test_grade),
+      stressScore: toFiniteNumber(row.stress_score ?? row.engine_stress_test),
       price: toFiniteNumber(row.price_from ?? row.l1_canonical_price),
       yield: toFiniteNumber(row.rental_yield ?? row.l1_canonical_yield),
       score: toFiniteNumber(row.investor_score_v1 ?? row.engine_god_metric),
+      developerReliabilityScore: toFiniteNumber(row.developer_reliability_score ?? row.l2_developer_reliability),
+      supplyResilienceScore: toFiniteNumber(row.supply_resilience_score),
+      liquidityResilienceScore: toFiniteNumber(row.liquidity_resilience_score),
+      pricingDisciplineScore: toFiniteNumber(row.pricing_discipline_score),
+      handoverReliabilityScore: toFiniteNumber(row.handover_reliability_score),
+      areaStabilityScore: toFiniteNumber(row.area_stability_score),
+      paymentPlanScore: toFiniteNumber(row.payment_plan_score),
     })
 
     if (unique.size >= 8) break
@@ -520,28 +543,28 @@ const capabilityCards = [
     label: "Screen Properties",
     description: "Find ranked projects by budget, area, and return profile using live scoring data.",
     example: "2BR under AED 2M, BUY signal, Grade A risk",
-    prompt: "Find 2BR projects under AED 2M with BUY timing signal and stress grade A or B. Rank by investor score and show yield for each.",
+    prompt: "Find 2BR projects under AED 2M with BUY timing label and stress grade A or B. Rank by investor_score_v1 and show yield for each.",
     icon: Search,
   },
   {
     label: "Compare Markets",
     description: "Side-by-side analysis of areas or projects across price, yield, and risk metrics.",
     example: "Dubai Marina vs JBR: yield, risk, and timing",
-    prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing signal. Which is the better entry point right now and why?",
+    prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing label. Which is the better entry point right now and why?",
     icon: Scale,
   },
   {
     label: "Stress Test",
-    description: "Model cash flows, DSCR, and investment risk under different market scenarios.",
-    example: "7% vacancy, 5.5% mortgage, 30% down payment",
-    prompt: "Stress-test a 2BR investment under AED 2M in Dubai. Assumptions: 30% down payment, 5.25% interest rate, 6% vacancy, 18% operating costs. Show net cash flow, DSCR, and stress-adjusted returns.",
+    description: "Review real V1 stress grades, scores, and resilience sub-scores for live projects.",
+    example: "Show Marina Vista V1 stress grade and sub-scores",
+    prompt: "Show the real V1 stress profile for Marina Vista. Return stress_score, stress_grade_v1, developer_reliability_score, supply_resilience_score, liquidity_resilience_score, pricing_discipline_score, handover_reliability_score, area_stability_score, and payment_plan_score.",
     icon: SlidersHorizontal,
   },
   {
     label: "Investor Memo",
     description: "Generate a structured due diligence brief with price reality, developer track record, and risk verdict.",
     example: "Full memo: Marina Vista — pricing, risk, verdict",
-    prompt: "Generate a full investor memo for Marina Vista. Include: price reality check versus area average, developer reliability score, stress grade assessment, timing signal context, and final investment verdict.",
+    prompt: "Generate a full investor memo for Marina Vista. Include: price reality check versus area average, developer reliability score, stress grade assessment, timing label context, and final investment verdict.",
     icon: FileText,
   },
 ]
@@ -549,17 +572,17 @@ const capabilityCards = [
 const commandPrompts = [
   {
     label: "Screen",
-    prompt: "Find 2BR projects under AED 2M with BUY timing signal and stress grade A or B. Rank by investor score.",
+    prompt: "Find 2BR projects under AED 2M with BUY timing label and stress grade A or B. Rank by investor_score_v1.",
     icon: Search,
   },
   {
     label: "Compare",
-    prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing signal. Which is the better entry point?",
+    prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing label. Which is the better entry point?",
     icon: Scale,
   },
   {
     label: "Stress test",
-    prompt: "Stress-test a 2BR under AED 2M in Dubai: 30% down, 5.25% interest, 6% vacancy. Show DSCR and net cash flow.",
+    prompt: "Show Marina Vista stress_score, stress_grade_v1, timing_label, investor_score_v1, and all real V1 resilience sub-scores.",
     icon: Radar,
   },
   {
@@ -577,8 +600,8 @@ const slashCommands: SlashCommand[] = [
     icon: Scale,
     buildPrompt: ({ selectedRow }) =>
       selectedRow
-        ? `Compare ${selectedRow.label} with top alternatives in ${selectedRow.area} using price, yield, stress grade, and timing signal.`
-        : "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing signal.",
+        ? `Compare ${selectedRow.label} with top alternatives in ${selectedRow.area} using price, yield, stress grade, and timing label.`
+        : "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing label.",
   },
   {
     id: "screen",
@@ -586,7 +609,7 @@ const slashCommands: SlashCommand[] = [
     description: "Find ranked projects with constraints.",
     icon: Search,
     buildPrompt: () =>
-      "Find 2BR projects under AED 2M with BUY timing signal and stress grade A or B. Rank by engine_god_metric.",
+      "Find 2BR projects under AED 2M with BUY timing label and stress grade A or B. Rank by investor_score_v1.",
   },
   {
     id: "memo",
@@ -597,12 +620,12 @@ const slashCommands: SlashCommand[] = [
       `Generate an investor memo for ${selectedRow?.label ?? "Marina Vista"} with price reality, area risk, developer due diligence, and stress test.`,
   },
   {
-    id: "simulate",
-    title: "/simulate",
-    description: "Run scenario stress simulation.",
+    id: "risk",
+    title: "/risk",
+    description: "Show real V1 stress metrics.",
     icon: SlidersHorizontal,
-    buildPrompt: ({ selectedRow, assumptions }) =>
-      `Run a scenario analysis for ${selectedRow?.label ?? "a target project"}. Assumptions: ${assumptions}. Return stress narrative, confidence, and what changes the conclusion.`,
+    buildPrompt: ({ selectedRow }) =>
+      `Show the real V1 stress profile for ${selectedRow?.label ?? "Marina Vista"}. Return stress_score, stress_grade_v1, timing_label, investor_score_v1, decision_label_v1, and all V1 resilience sub-scores.`,
   },
   {
     id: "price",
@@ -644,10 +667,6 @@ export function ChatInterface({
   const [selectedAudienceOverride, setSelectedAudienceOverride] = useState<"" | ComprehensiveProfileReportAudience>("")
 
   const [selectedProject, setSelectedProject] = useState<string>("")
-  const [downPaymentPct, setDownPaymentPct] = useState(30)
-  const [interestRatePct, setInterestRatePct] = useState(5.25)
-  const [vacancyPct, setVacancyPct] = useState(6)
-  const [opexPct, setOpexPct] = useState(18)
   const [slashActiveIndex, setSlashActiveIndex] = useState(0)
   const [canvasOpen, setCanvasOpen] = useState(false)
   const [activeCanvasTab, setActiveCanvasTab] = useState<"overview" | "projects" | "simulator" | "transactions" | "export">("overview")
@@ -839,11 +858,6 @@ export function ChatInterface({
     () => comparisonRows.find((row) => row.label === selectedProject) ?? null,
     [comparisonRows, selectedProject],
   )
-  const simulationAssumptions = useMemo(
-    () =>
-      `down payment ${downPaymentPct}%, interest ${interestRatePct.toFixed(2)}%, vacancy ${vacancyPct}%, operating cost ${opexPct}%`,
-    [downPaymentPct, interestRatePct, vacancyPct, opexPct],
-  )
 
   const selectedMemoryEntry = useMemo(
     () =>
@@ -861,48 +875,23 @@ export function ChatInterface({
     [comprehensiveProfile.reportTemplates, selectedTemplateId],
   )
 
-  const simulationMetrics = useMemo(() => {
-    if (!selectedRow || selectedRow.price === null || selectedRow.price <= 0) return null
+  const riskMetrics = useMemo(() => {
+    if (!selectedRow) return null
 
-    const price = selectedRow.price
-    const yieldPct = selectedRow.yield ?? 0
-    const loanAmount = price * (1 - downPaymentPct / 100)
-    const monthlyRate = interestRatePct / 100 / 12
-    const amortizationMonths = 25 * 12
-    const monthlyPayment =
-      monthlyRate === 0
-        ? loanAmount / amortizationMonths
-        : (loanAmount * monthlyRate * (1 + monthlyRate) ** amortizationMonths) /
-          ((1 + monthlyRate) ** amortizationMonths - 1)
-
-    const grossAnnualRent = price * (yieldPct / 100)
-    const vacancyLoss = grossAnnualRent * (vacancyPct / 100)
-    const effectiveAnnualRent = grossAnnualRent - vacancyLoss
-    const operatingCost = effectiveAnnualRent * (opexPct / 100)
-    const annualDebtService = monthlyPayment * 12
-    const annualNetCashFlow = effectiveAnnualRent - operatingCost - annualDebtService
-    const dscr = annualDebtService > 0 ? (effectiveAnnualRent - operatingCost) / annualDebtService : null
-
-    const stressPenaltyByGrade: Record<string, number> = {
-      A: 0.04,
-      B: 0.08,
-      C: 0.12,
-      D: 0.18,
-      "-": 0.1,
-    }
-    const stressPenalty = stressPenaltyByGrade[selectedRow.stressGrade] ?? 0.1
-    const stressAdjustedCashFlow = annualNetCashFlow * (1 - stressPenalty)
-
-    return {
-      loanAmount,
-      monthlyPayment,
-      grossAnnualRent,
-      effectiveAnnualRent,
-      annualNetCashFlow,
-      stressAdjustedCashFlow,
-      dscr,
-    }
-  }, [selectedRow, downPaymentPct, interestRatePct, vacancyPct, opexPct])
+    return [
+      { label: "Stress score", value: formatMetric(selectedRow.stressScore) },
+      { label: "Stress grade", value: selectedRow.stressGrade || "-" },
+      { label: "Timing label", value: selectedRow.timingSignal || "-" },
+      { label: "Investor score", value: formatMetric(selectedRow.score) },
+      { label: "Developer reliability", value: formatMetric(selectedRow.developerReliabilityScore) },
+      { label: "Supply resilience", value: formatMetric(selectedRow.supplyResilienceScore) },
+      { label: "Liquidity resilience", value: formatMetric(selectedRow.liquidityResilienceScore) },
+      { label: "Pricing discipline", value: formatMetric(selectedRow.pricingDisciplineScore) },
+      { label: "Handover reliability", value: formatMetric(selectedRow.handoverReliabilityScore) },
+      { label: "Area stability", value: formatMetric(selectedRow.areaStabilityScore) },
+      { label: "Payment plan", value: formatMetric(selectedRow.paymentPlanScore) },
+    ]
+  }, [selectedRow])
 
   const chartCaps = useMemo(() => {
     const maxPrice = Math.max(...comparisonRows.map((row) => row.price ?? 0), 0)
@@ -925,7 +914,7 @@ export function ChatInterface({
   const dynamicSuggestions = useMemo(() => {
     if (!selectedRow) {
       return [
-        "Find BUY signal projects under AED 2M in Dubai Marina with stress grade A or B.",
+        "Find BUY timing label projects under AED 2M in Dubai Marina with stress grade A or B.",
         "Which Dubai area offers the best yield-to-price ratio right now?",
         "Compare Emaar vs Damac reliability — which developer carries lower delivery risk?",
         "What does a BUY signal mean and how is it calculated in this platform?",
@@ -935,7 +924,7 @@ export function ChatInterface({
     return [
       `Generate a full investor memo for ${selectedRow.label} — pricing, risk, developer track record, and verdict.`,
       `How does ${selectedRow.label} compare to top alternatives in ${selectedRow.area} on yield and risk grade?`,
-      `Stress test ${selectedRow.label}: model 8% vacancy, 5.5% interest rate, and conservative rent assumptions.`,
+      `Show the real V1 stress profile for ${selectedRow.label}, including all resilience sub-scores.`,
       `What are the key investment risks for ${selectedRow.label} and what would change the outlook?`,
     ]
   }, [selectedRow])
@@ -1008,7 +997,7 @@ export function ChatInterface({
   }, [hasConversation, searchParams, sendPrompt])
 
   const activateSlashCommand = async (command: SlashCommand) => {
-    const prompt = command.buildPrompt({ selectedRow, assumptions: simulationAssumptions })
+    const prompt = command.buildPrompt({ selectedRow })
     setInput("")
     await sendPrompt(prompt)
   }
@@ -1076,14 +1065,10 @@ export function ChatInterface({
     }
   }
 
-  const runSimulationInChat = async () => {
+  const runRiskBriefInChat = async () => {
     if (!selectedRow) return
 
-    const prompt = [
-      `Run a scenario analysis for ${selectedRow.label}.`,
-      `Assumptions: ${simulationAssumptions}.`,
-      "Return stress narrative, what would change conclusion, and risk flags.",
-    ].join(" ")
+    const prompt = `Show the real V1 stress profile for ${selectedRow.label}. Return stress_score, stress_grade_v1, timing_label, investor_score_v1, decision_label_v1, developer_reliability_score, supply_resilience_score, liquidity_resilience_score, pricing_discipline_score, handover_reliability_score, area_stability_score, and payment_plan_score.`
 
     await sendPrompt(prompt)
   }
@@ -1172,7 +1157,7 @@ export function ChatInterface({
             transcript: reportContent,
             cards: workspaceCards,
             comparison: comparisonRows,
-            scenario: simulationMetrics,
+            risk: riskMetrics,
             generatedAt: new Date().toISOString(),
           },
         }),
@@ -1236,7 +1221,7 @@ export function ChatInterface({
       "Find 2BR projects under AED 2M in Dubai Marina...",
       "Compare Emaar vs Damac reliability scores...",
       "What is the rental yield in Business Bay today?",
-      "Stress test a 3BR villa with 5.5% interest...",
+      "Show the V1 stress profile for Marina Vista...",
     ]
 
     return (
@@ -1264,7 +1249,7 @@ export function ChatInterface({
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground/80 max-w-2xl mb-12 font-medium leading-relaxed">
-            Screen properties, compare markets, and stress-test cash flows with institutional-grade intelligence.
+            Screen properties, compare markets, and review real V1 stress signals with institutional-grade intelligence.
           </p>
 
           {/* ── Marquee ── */}
@@ -1457,26 +1442,32 @@ export function ChatInterface({
             </div>
           ) : null}
 
-          {(messages as any[]).map((message) => (
-            <div
-              key={message.id}
-              className={`animate-msg-in ${message.role === "user" ? "ml-auto max-w-[85%]" : "mr-auto max-w-[95%]"}`}
-            >
-              {message.role === "user" ? (
-                <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/85 px-4 py-3 text-sm text-primary-foreground shadow-[0_12px_24px_-14px_rgba(37,99,235,0.5)]">
-                  {displayMessageText(message) || "..."}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-background/95 via-card/90 to-background/85 px-4 py-3.5 text-sm text-foreground shadow-[0_16px_28px_-18px_rgba(56,189,248,0.3)]">
-                  <p className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    <Sparkles className="h-2.5 w-2.5" />
-                    AI
-                  </p>
-                  <ChatMarkdown text={displayMessageText(message) || "Running analysis..."} />
-                </div>
-              )}
-            </div>
-          ))}
+          {(messages as any[]).map((message) => {
+            const cleanMessage = message.role === "assistant"
+              ? stripThinkTags(messageText(message))
+              : displayMessageText(message)
+
+            return (
+              <div
+                key={message.id}
+                className={`animate-msg-in ${message.role === "user" ? "ml-auto max-w-[85%]" : "mr-auto max-w-[95%]"}`}
+              >
+                {message.role === "user" ? (
+                  <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/85 px-4 py-3 text-sm text-primary-foreground shadow-[0_12px_24px_-14px_rgba(37,99,235,0.5)]">
+                    {cleanMessage || "..."}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-background/95 via-card/90 to-background/85 px-4 py-3.5 text-sm text-foreground shadow-[0_16px_28px_-18px_rgba(56,189,248,0.3)]">
+                    <p className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <Sparkles className="h-2.5 w-2.5" />
+                      AI
+                    </p>
+                    <ChatMarkdown text={cleanMessage || "Running analysis..."} />
+                  </div>
+                )}
+              </div>
+            )
+          })}
 
           {status === "streaming" ? (
             <div className="mr-auto max-w-[92%]">
@@ -1684,11 +1675,11 @@ export function ChatInterface({
         <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
           <div className="mb-2 flex items-center gap-2">
             <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
-            <p className="text-xs font-semibold text-foreground">Investment Simulator</p>
+            <p className="text-xs font-semibold text-foreground">V1 Risk Breakdown</p>
           </div>
 
           {!selectedRow ? (
-            <p className="text-xs text-muted-foreground">Select a project from the comparison table to model its cash flows and risk.</p>
+            <p className="text-xs text-muted-foreground">Select a project from the comparison table to review its real V1 stress metrics.</p>
           ) : (
             <>
               <p className="text-xs font-medium text-foreground">{selectedRow.label}</p>
@@ -1696,81 +1687,20 @@ export function ChatInterface({
                 {selectedRow.area} • {selectedRow.developer}
               </p>
 
-              <div className="mt-3 space-y-2.5">
-                <label className="block text-[11px] text-muted-foreground">
-                  Down payment ({downPaymentPct.toFixed(0)}%)
-                  <input
-                    type="range"
-                    min={10}
-                    max={60}
-                    step={1}
-                    value={downPaymentPct}
-                    onChange={(event) => setDownPaymentPct(Number(event.target.value))}
-                    className="mt-1 w-full"
-                  />
-                </label>
-
-                <label className="block text-[11px] text-muted-foreground">
-                  Interest ({interestRatePct.toFixed(2)}%)
-                  <input
-                    type="range"
-                    min={2}
-                    max={9}
-                    step={0.05}
-                    value={interestRatePct}
-                    onChange={(event) => setInterestRatePct(Number(event.target.value))}
-                    className="mt-1 w-full"
-                  />
-                </label>
-
-                <label className="block text-[11px] text-muted-foreground">
-                  Vacancy ({vacancyPct.toFixed(0)}%)
-                  <input
-                    type="range"
-                    min={0}
-                    max={15}
-                    step={1}
-                    value={vacancyPct}
-                    onChange={(event) => setVacancyPct(Number(event.target.value))}
-                    className="mt-1 w-full"
-                  />
-                </label>
-
-                <label className="block text-[11px] text-muted-foreground">
-                  Operating costs ({opexPct.toFixed(0)}%)
-                  <input
-                    type="range"
-                    min={8}
-                    max={35}
-                    step={1}
-                    value={opexPct}
-                    onChange={(event) => setOpexPct(Number(event.target.value))}
-                    className="mt-1 w-full"
-                  />
-                </label>
-              </div>
-
-              {simulationMetrics ? (
+              {riskMetrics ? (
                 <div className="mt-3 grid grid-cols-2 gap-1.5">
-                  {[
-                    { label: "Loan amount", value: formatAed(simulationMetrics.loanAmount) },
-                    { label: "Monthly mortgage", value: formatAed(simulationMetrics.monthlyPayment) },
-                    { label: "Net annual rent", value: formatAed(simulationMetrics.effectiveAnnualRent) },
-                    { label: "Annual cash flow", value: formatAed(simulationMetrics.annualNetCashFlow), highlight: (simulationMetrics.annualNetCashFlow ?? 0) >= 0 },
-                    { label: "Stress cash flow", value: formatAed(simulationMetrics.stressAdjustedCashFlow) },
-                    { label: "DSCR ratio", value: formatMetric(simulationMetrics.dscr, 2) },
-                  ].map((item) => (
+                  {riskMetrics.map((item) => (
                     <div key={item.label} className="rounded-lg border border-border/50 bg-background/40 px-2.5 py-2">
                       <p className="text-[9px] uppercase tracking-wider text-muted-foreground">{item.label}</p>
-                      <p className={`mt-0.5 text-xs font-semibold tabular-nums ${item.highlight ? "text-emerald-400" : "text-foreground"}`}>{item.value}</p>
+                      <p className="mt-0.5 text-xs font-semibold tabular-nums text-foreground">{item.value}</p>
                     </div>
                   ))}
                 </div>
               ) : null}
 
-              <Button type="button" className="mt-3 w-full gap-1.5" variant="secondary" onClick={() => void runSimulationInChat()}>
+              <Button type="button" className="mt-3 w-full gap-1.5" variant="secondary" onClick={() => void runRiskBriefInChat()}>
                 <TrendingUp className="h-3.5 w-3.5" />
-                Run in AI chat
+                Open V1 risk brief in AI chat
               </Button>
 
               <Button type="button" className="mt-2 w-full gap-1.5" variant="outline" onClick={() => void saveToShortlist()}>

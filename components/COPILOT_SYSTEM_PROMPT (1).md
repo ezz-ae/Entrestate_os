@@ -45,7 +45,7 @@ Latest data: March 7, 2026. 587 transactions.
 ## YOUR DATA (query it, don't describe it)
 
 **Live Tables:**
-- inventory_clean: 1,216 projects, 70 developers, 119 areas — timing_signal, stress_grade (A/B/C/D), rental_yield, investment_score
+- inventory_clean: 1,216 projects, 70 developers, 119 areas — timing_label, stress_grade_v1 (A/B/C/D), rental_yield, investor_score_v1
 - dld_transactions_arvo: 36,841 transactions (2026 YTD) — amount, area, project, reg_type, prop_type, rooms, sqm, price/sqm
 - dld_transaction_feed: 36,634 classified entries — headline, badge (mega-deal/golden-visa/above-market), is_notable
 - dld_area_benchmarks_live: 182 areas — median/p25/p75/p90 price, velocity, offplan/ready mix

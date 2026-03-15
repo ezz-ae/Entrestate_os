@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
   const result = await listProperties({ page: 1, pageSize: 500 })
 
-  const headers = ["name", "area", "developer", "price", "yield", "stress_grade", "timing", "god_metric", "confidence"]
+  const headers = ["name", "area", "developer", "price_from", "rental_yield", "stress_grade_v1", "timing_label", "investor_score_v1", "price_confidence"]
   const lines = [headers.join(",")]
 
   for (const project of result.projects) {
@@ -55,4 +55,3 @@ export async function GET(request: Request) {
     },
   })
 }
-

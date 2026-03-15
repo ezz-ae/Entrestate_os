@@ -12,7 +12,7 @@ const placeholders = [
   "Find 2BR projects under AED 2M in Dubai Marina...",
   "Compare Emaar vs Damac reliability scores...",
   "What is the rental yield in Business Bay today?",
-  "Stress test a 3BR villa with 5.5% interest...",
+  "Show the V1 stress profile for Marina Vista...",
 ]
 
 export function MarketingLLMInput() {

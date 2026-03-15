@@ -13,7 +13,7 @@ const commands = [
   { id: "screen", title: "/screen", desc: "Find ranked projects with constraints", icon: Search },
   { id: "compare", title: "/compare", desc: "Direct area or project comparison", icon: Scale },
   { id: "memo", title: "/memo", desc: "Generate full investor memo", icon: FileText },
-  { id: "simulate", title: "/simulate", desc: "Scenario stress simulation", icon: SlidersHorizontal },
+  { id: "risk", title: "/risk", desc: "Real V1 stress breakdown", icon: SlidersHorizontal },
   { id: "price", title: "/price", desc: "Price reality check", icon: Gauge },
   { id: "risk", title: "/risk", desc: "Area-level risk brief", icon: ShieldAlert },
   { id: "pulse", title: "/pulse", desc: "Live DLD market pulse", icon: BarChart3 },
@@ -22,10 +22,10 @@ const commands = [
 ]
 
 const examples = [
-  "Find 2BR projects under AED 2M with BUY timing signal",
+  "Find 2BR projects under AED 2M with BUY timing label",
   "Compare Dubai Marina vs JBR on price and yield",
   "What are the top 5 emerging areas for investment?",
-  "Stress-test a villa purchase with 5.5% interest",
+  "Show the V1 stress profile for a Dubai Marina project",
 ]
 
 const containerVariants = {

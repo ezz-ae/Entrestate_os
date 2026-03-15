@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getRequestId } from "@/lib/api-errors"
+import { Prisma, dbQuery } from "@/lib/db"
 import { listAreas, getMarketPulse } from "@/lib/decision-infrastructure"
 
 export const runtime = "nodejs"
@@ -58,12 +59,28 @@ export async function GET(request: Request) {
     }
 
     if (type === "listings") {
-      // Return top-tier inventory for external display
-      const rows = await prisma.entrestateMaster.findMany({
-        take: 50,
-        orderBy: { investment_score: "desc" },
-        where: { data_confidence: "HIGH" }
-      })
+      const rows = await dbQuery(Prisma.sql`
+        SELECT
+          id,
+          name,
+          area,
+          developer,
+          price_from,
+          rental_yield,
+          timing_label,
+          stress_grade_v1,
+          investor_score_v1,
+          decision_label_v1,
+          evidence_label_v1,
+          hero_image,
+          golden_visa,
+          price_confidence,
+          price_source
+        FROM inventory_clean
+        WHERE price_confidence = 'HIGH'
+        ORDER BY investor_score_v1 DESC
+        LIMIT 50
+      `)
 
       return NextResponse.json({
         data_as_of: new Date().toISOString(),

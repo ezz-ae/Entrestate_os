@@ -80,7 +80,6 @@ export type PropertyFilters = {
   bedsMax?: number
   timingSignal?: "BUY" | "HOLD" | "WAIT"
   stressGradeMin?: "A" | "B" | "C" | "D"
-  affordabilityTier?: string
   goldenVisaRequired?: boolean
 }
 
@@ -290,14 +289,6 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
         : Prisma.sql`l2_stress_test_grade IN (${toSqlList([...allowed])})`,
     )
   }
-  if (filters.affordabilityTier) {
-    clauses.push(
-      USE_CURATED_PROPERTIES_VIEW
-        ? Prisma.sql`LOWER(COALESCE(affordability_tier, '')) = LOWER(${filters.affordabilityTier})`
-        : Prisma.sql`LOWER(COALESCE(l2_affordability_tier, '')) = LOWER(${filters.affordabilityTier})`,
-    )
-  }
-
   if (filters.goldenVisaRequired) {
     clauses.push(
       USE_CURATED_PROPERTIES_VIEW
@@ -350,7 +341,6 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
           price_source AS l1_source_coverage,
           investor_score_v1 AS l2_investment_score,
           developer_reliability_score AS l2_developer_reliability,
-          NULL AS l2_affordability_tier,
           stress_grade_v1 AS l2_stress_test_grade,
           timing_label AS l3_timing_signal,
           NULL::jsonb AS engine_stress_test,
@@ -374,7 +364,6 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
           l1_canonical_yield,
           l2_stress_test_grade,
           l2_developer_reliability,
-          l2_affordability_tier,
           l3_timing_signal,
           engine_stress_test,
           engine_god_metric,
@@ -437,7 +426,6 @@ export async function getProjectBySlug(slug: string): Promise<{
       l1_source_coverage,
       l2_stress_test_grade,
       l2_developer_reliability,
-      l2_affordability_tier,
       l3_timing_signal,
       l3_supply_pressure,
       l3_demand_velocity,
@@ -744,34 +732,39 @@ export async function listDevelopers(): Promise<{
     ? await runQuery(Prisma.sql`
         SELECT
           id,
-          name AS developer,
+          name,
           slug,
           tier,
-          logo AS logo_url,
-          project_count::int AS projects,
-          avg_score::numeric AS reliability,
-          avg_score::numeric AS efficiency,
-          avg_price::numeric AS avg_price,
-          avg_yield::numeric AS avg_yield,
-          buy_signals::int AS buy_signals,
-          safe_projects::int AS safe_projects,
-          CASE
-            WHEN jsonb_typeof(to_jsonb(areas)) = 'array' THEN
-              ARRAY(SELECT value FROM jsonb_array_elements_text(to_jsonb(areas)))
-            WHEN jsonb_typeof(to_jsonb(areas)) = 'string' THEN
-              regexp_split_to_array(areas::text, E' *, *')
-            ELSE ARRAY[]::text[]
-          END AS top_areas,
+          logo,
+          project_count,
+          avg_score,
+          avg_yield,
+          avg_price,
+          buy_signals,
+          safe_projects,
+          areas,
           top_project,
           payload
         FROM ${DEVELOPERS_TABLE_SQL}
-        WHERE name IS NOT NULL
         ORDER BY project_count DESC
       `)
     : []
 
   const rows = curatedRows.length > 0
-    ? curatedRows
+    ? curatedRows.map((row) => ({
+        ...row,
+        developer: row.name,
+        logo_url: row.logo,
+        projects: row.project_count,
+        reliability: row.avg_score,
+        efficiency: row.avg_score,
+        top_areas:
+          Array.isArray((row as DecisionRecord).areas)
+            ? ((row as DecisionRecord).areas as string[])
+            : typeof (row as DecisionRecord).areas === "string"
+              ? String((row as DecisionRecord).areas).split(/\s*,\s*/).filter(Boolean)
+              : [],
+      }))
     : await runQuery(Prisma.sql`
         SELECT
           developer,

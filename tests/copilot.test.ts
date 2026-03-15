@@ -23,14 +23,14 @@ describe("copilot schemas", () => {
         budget_max_aed: 2_000_000,
         beds_min: 2,
         beds_max: 2,
-        timing_signal: "BUY",
+        timing_label: "BUY",
       },
       sort_by: "investor_score_v1",
       limit: 10,
     })
 
     expect(parsed.filters.budget_max_aed).toBe(2_000_000)
-    expect(parsed.filters.timing_signal).toBe("BUY")
+    expect(parsed.filters.timing_label).toBe("BUY")
   })
 
   it("requires decision engine identity in system prompt", () => {
@@ -68,7 +68,7 @@ describe("copilot SQL builder", () => {
           budget_max_aed: 2_000_000,
           beds_min: 2,
           beds_max: 2,
-          timing_signal: "BUY",
+          timing_label: "BUY",
         },
         sort_by: "investor_score_v1",
         limit: 10,

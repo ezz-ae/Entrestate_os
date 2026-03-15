@@ -181,7 +181,7 @@ const FAQ_GROUPS = [
       },
       {
         q: "How is this different from Property Finder or Bayut?",
-        a: "Property Finder and Bayut are listing portals — they show you what's available. Entrestate scores every project against timing signals, stress resilience, yield benchmarks, and data confidence, then matches them to your specific investor profile. External portals are treated as 'sensors' in our architecture — data inputs we validate, not sources we trust blindly.",
+        a: "Property Finder and Bayut are listing portals — they show you what's available. Entrestate scores every project against timing labels, stress resilience, yield benchmarks, and data confidence, then matches them to your specific investor profile. External portals are treated as 'sensors' in our architecture — data inputs we validate, not sources we trust blindly.",
       },
       {
         q: "What is the Decision Tunnel?",
@@ -206,7 +206,7 @@ const FAQ_GROUPS = [
       },
       {
         q: "What is the Stress Resilience grade and how is it determined?",
-        a: "The Stress Resilience grade measures a project's ability to withstand market volatility, delivery risk, and execution pressure. It is primarily driven by developer reliability (historical on-time delivery, specification adherence), the project's current lifecycle state (from Market Context through Delivery Risk to Exit Reality), and scenario modeling via the Scenario Reasoning Engine. A poor developer track record directly lowers a project's stress grade even if its yield is attractive.",
+        a: "The Stress Resilience grade measures a project's ability to withstand market volatility, delivery risk, and execution pressure. It is driven by developer reliability, supply resilience, liquidity resilience, pricing discipline, handover reliability, area stability, and payment plan strength. A poor developer track record directly lowers a project's stress grade even if its yield is attractive.",
       },
       {
         q: "How does my investor profile change what I see?",
@@ -223,15 +223,15 @@ const FAQ_GROUPS = [
     items: [
       {
         q: "What can the AI Copilot actually do?",
-        a: "The AI Copilot can screen properties by budget, area, and risk profile using live scored data; compare markets side-by-side on price, yield, and stress grade; stress-test investments with custom vacancy, interest rate, and operating cost assumptions; generate full investor memos with price reality checks, developer due diligence, and final verdicts; and save structured reports to your account. It answers from live UAE market data, not generic knowledge.",
+        a: "The AI Copilot screens properties by budget, area, and risk profile using live scored data; compares markets side-by-side on price, yield, stress grade, and timing label; returns real V1 stress metrics and resilience sub-scores; generates full investor memos with price reality checks, developer due diligence, and final verdicts; and saves structured reports to your account. It answers from live UAE market data, not generic knowledge.",
       },
       {
         q: "What are slash commands?",
-        a: "Slash commands are quick shortcuts inside the AI chat. Type /screen to run a deal screener, /compare for a market comparison, /memo for an investor memo, /simulate to model a cash flow scenario, or /price for a price reality check. They auto-complete as you type and execute pre-built intelligence workflows instantly.",
+        a: "Slash commands are quick shortcuts inside the AI chat. Type /screen to run a deal screener, /compare for a market comparison, /memo for an investor memo, /risk to return real V1 stress metrics, or /price for a price reality check. They auto-complete as you type and execute pre-built intelligence workflows instantly.",
       },
       {
         q: "What is a Decision Canvas?",
-        a: "The Decision Canvas is a live workspace panel alongside the AI chat. It surfaces workspace cards (matched projects, avg price, timing signal, data confidence), performance sparkline charts (investor score and gross yield curves across results), a project comparison table with bar charts, and an Investment Simulator with sliders for down payment, interest rate, vacancy, and operating costs — with live DSCR and cash flow calculations.",
+        a: "The Decision Canvas is a live workspace panel alongside the AI chat. It surfaces workspace cards (matched projects, avg price, decision label, data confidence), performance sparkline charts (investor score and gross yield curves across results), a project comparison table with bar charts, and a V1 risk breakdown panel with live stress grade, stress score, and resilience sub-scores.",
       },
       {
         q: "Can I export reports?",
@@ -269,7 +269,7 @@ const FAQ_GROUPS = [
       },
       {
         q: "What does Pro add over Starter?",
-        a: "Pro ($299/mo) unlocks unlimited AI messages, the full deal screener, price reality checks, area risk briefs, developer due diligence, investor memo generation, timing signals (BUY/HOLD/WAIT), CSV exports, PDF investor memos, up to 10 saved watchlists, and 1 user seat.",
+        a: "Pro ($299/mo) unlocks unlimited AI messages, the full deal screener, price reality checks, area risk briefs, developer due diligence, investor memo generation, timing labels (BUY/HOLD/WAIT), CSV exports, PDF investor memos, up to 10 saved watchlists, and 1 user seat.",
       },
       {
         q: "When does Team tier make sense?",
