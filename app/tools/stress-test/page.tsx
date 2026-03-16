@@ -4,6 +4,7 @@ import { formatScore } from "@/components/decision/formatters"
 import { listProperties } from "@/lib/decision-infrastructure"
 import { getRequestLocale } from "@/i18n/request"
 import { getNumberLocale } from "@/lib/format/locale"
+import { pickLocalizedText } from "@/lib/format/entities"
 
 export const dynamic = "force-dynamic"
 
@@ -44,7 +45,7 @@ export default async function StressTestPage() {
                 className="grid grid-cols-[1.2fr_0.8fr_0.6fr_0.6fr] gap-3 rounded-lg border border-border/40 px-3 py-2 text-sm"
               >
                 <span className="text-foreground">{String(project.name ?? (isArabic ? "مشروع" : "Project"))}</span>
-                <span className="text-muted-foreground">{String(project.final_area ?? project.area ?? "—")}</span>
+                <span className="text-muted-foreground">{pickLocalizedText(locale, project.area_ar, project.final_area ?? project.area, "—")}</span>
                 <span className="text-foreground">{String(project.l2_stress_test_grade ?? "—")}</span>
                 <span className="text-foreground">{typeof project.engine_stress_test === "number" ? Number(project.engine_stress_test).toLocaleString(numberLocale) : formatScore(project.engine_stress_test)}</span>
               </div>

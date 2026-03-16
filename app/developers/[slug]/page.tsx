@@ -137,7 +137,7 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
                     href={prefixLocalePath(`/areas/${slugify(String(area.area ?? "area"))}`, locale)}
                     className="truncate pr-3 text-foreground transition hover:text-primary"
                   >
-                    {pickLocalizedText(locale, null, area.area, copy.areaFallback)}
+                    {pickLocalizedText(locale, area.area_ar, area.area, copy.areaFallback)}
                   </a>
                   <span className="text-xs text-muted-foreground">{formatInteger(area.projects, locale)}</span>
                 </li>

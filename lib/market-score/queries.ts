@@ -45,8 +45,7 @@ export function buildFilterSql(filters: MarketScoreFilters, options?: { includeP
   return Prisma.sql`${Prisma.join(clauses, " AND ")}`
 }
 
-function buildOverrideUnion(
-  selectSql: Prisma.Sql,
+function buildOverrideSourceSql(
   overrideFlags: OverrideFlags,
   contract?: InventoryContract,
 ): Prisma.Sql | null {
@@ -68,7 +67,11 @@ function buildOverrideUnion(
   const resolved = resolveContract(contract)
   const viewName = Prisma.raw(resolved.viewName)
 
-  return Prisma.sql`SELECT ${selectSql} FROM ${viewName} WHERE ${whereSql}`
+  return Prisma.sql`SELECT * FROM ${viewName} WHERE ${whereSql}`
+}
+
+function projectSource(columns: Prisma.Sql, sourceSql: Prisma.Sql) {
+  return Prisma.sql`SELECT ${columns} FROM (${sourceSql}) AS inventory_source`
 }
 
 export function buildInventorySourceSql(
@@ -84,17 +87,20 @@ export function buildInventorySourceSql(
 
   if (routing.riskProfile && routing.horizon) {
     if (routing.ranked) {
-      return Prisma.sql`SELECT ${columns} FROM ${rankedFn}(${routing.riskProfile}, ${routing.horizon}, ${routing.budgetAed}, ${routing.preferredArea}, ${routing.bedsPref}, ${routing.intent})`
+      return projectSource(
+        columns,
+        Prisma.sql`SELECT * FROM ${rankedFn}(${routing.riskProfile}, ${routing.horizon}, ${routing.budgetAed}, ${routing.preferredArea}, ${routing.bedsPref}, ${routing.intent})`,
+      )
     }
-    const baseSql = Prisma.sql`SELECT ${columns} FROM ${unrankedFn}(${routing.riskProfile}, ${routing.horizon})`
-    const overrideSql = buildOverrideUnion(columns, overrideFlags, resolved)
-    if (overrideSql) {
-      return Prisma.sql`${baseSql} UNION ${overrideSql}`
+    const baseSql = projectSource(columns, Prisma.sql`SELECT * FROM ${unrankedFn}(${routing.riskProfile}, ${routing.horizon})`)
+    const overrideSource = buildOverrideSourceSql(overrideFlags, resolved)
+    if (overrideSource) {
+      return Prisma.sql`${baseSql} UNION ${projectSource(columns, overrideSource)}`
     }
     return baseSql
   }
 
-  return Prisma.sql`SELECT ${columns} FROM ${viewName}`
+  return projectSource(columns, Prisma.sql`SELECT * FROM ${viewName}`)
 }
 
 export function buildSummaryBaseSql(
@@ -107,8 +113,10 @@ export function buildSummaryBaseSql(
     [
       Prisma.sql`name`,
       Prisma.sql`developer`,
+      Prisma.sql`COALESCE(NULLIF(TRIM(to_jsonb(inventory_source) ->> 'developer_ar'), ''), NULLIF(TRIM(to_jsonb(inventory_source) ->> 'name_ar'), '')) AS developer_ar`,
       Prisma.sql`city`,
       Prisma.sql`area`,
+      Prisma.sql`COALESCE(NULLIF(TRIM(to_jsonb(inventory_source) ->> 'area_ar'), ''), NULLIF(TRIM(to_jsonb(inventory_source) ->> 'name_ar'), '')) AS area_ar`,
       Prisma.sql`status_band`,
       ...(includePriceTier ? [Prisma.sql`price_tier`] : []),
       Prisma.sql`safety_band`,
@@ -127,8 +135,10 @@ export function buildInventoryColumns(options?: { includeRank?: boolean }): Pris
       Prisma.sql`asset_id::text AS asset_id`,
       Prisma.sql`name`,
       Prisma.sql`developer`,
+      Prisma.sql`COALESCE(NULLIF(TRIM(to_jsonb(inventory_source) ->> 'developer_ar'), ''), NULLIF(TRIM(to_jsonb(inventory_source) ->> 'name_ar'), '')) AS developer_ar`,
       Prisma.sql`city`,
       Prisma.sql`area`,
+      Prisma.sql`COALESCE(NULLIF(TRIM(to_jsonb(inventory_source) ->> 'area_ar'), ''), NULLIF(TRIM(to_jsonb(inventory_source) ->> 'name_ar'), '')) AS area_ar`,
       Prisma.sql`status_band`,
       Prisma.sql`price_aed`,
       Prisma.sql`beds`,

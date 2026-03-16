@@ -1090,10 +1090,15 @@ export async function getDeveloperBySlug(slug: string): Promise<{
     `),
     runQuery(Prisma.sql`
       SELECT
-        COALESCE(final_area, area) AS area,
+        d.area,
+        MAX(gp.area_ar) AS area_ar,
         COUNT(*)::int AS projects
-      FROM ${DETAIL_TABLE_SQL}
-      WHERE ${developerWhere}
+      FROM (
+        SELECT COALESCE(final_area, area) AS area
+        FROM ${DETAIL_TABLE_SQL}
+        WHERE ${developerWhere}
+      ) d
+      LEFT JOIN gc_area_profiles gp ON LOWER(gp.area_name) = LOWER(d.area)
       GROUP BY 1
       ORDER BY projects DESC
       LIMIT 15

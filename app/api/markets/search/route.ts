@@ -140,20 +140,28 @@ export async function GET(request: Request) {
     const rows = await withStatementTimeout((tx) =>
       tx.$queryRaw<any[]>(Prisma.sql`
         SELECT
-          asset_id::text AS asset_id,
-          name,
-          developer,
-          city,
-          area,
-          status_band,
-          price_aed,
-          beds,
-          score_0_100,
-          safety_band,
-          classification
-        FROM agent_inventory_view_v1
+          v.asset_id::text AS asset_id,
+          v.name,
+          v.developer,
+          COALESCE(
+            NULLIF(TRIM(to_jsonb(v) ->> 'developer_ar'), ''),
+            NULLIF(TRIM(to_jsonb(v) ->> 'name_ar'), '')
+          ) AS developer_ar,
+          v.city,
+          v.area,
+          COALESCE(
+            NULLIF(TRIM(to_jsonb(v) ->> 'area_ar'), ''),
+            NULLIF(TRIM(to_jsonb(v) ->> 'name_ar'), '')
+          ) AS area_ar,
+          v.status_band,
+          v.price_aed,
+          v.beds,
+          v.score_0_100,
+          v.safety_band,
+          v.classification
+        FROM agent_inventory_view_v1 v
         ${whereClause}
-        ORDER BY score_0_100 DESC NULLS LAST
+        ORDER BY v.score_0_100 DESC NULLS LAST
         LIMIT 20
       `),
     )

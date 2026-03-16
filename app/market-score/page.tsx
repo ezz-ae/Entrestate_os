@@ -741,7 +741,7 @@ export default function MarketScorePage() {
   }
 
   const buildWhatsAppSummary = (row: MarketScoreInventoryResponse["rows"][number]) => {
-    const localizedArea = pickLocalizedText(locale, null, row.area)
+    const localizedArea = pickLocalizedText(locale, row.area_ar, row.area)
     const localizedCity = localizeCityName(row.city, locale)
     const location = [localizedArea, localizedCity].filter((value) => value && value !== "—").join("، ")
 
@@ -1573,9 +1573,9 @@ export default function MarketScorePage() {
                             >
                               <td className="py-3 px-3 text-foreground">{row.asset_id}</td>
                               <td className="py-3 px-3 text-foreground">{row.name}</td>
-                              <td className="py-3 px-3 text-muted-foreground">{pickLocalizedText(locale, null, row.developer)}</td>
+                              <td className="py-3 px-3 text-muted-foreground">{pickLocalizedText(locale, row.developer_ar, row.developer)}</td>
                               <td className="py-3 px-3 text-muted-foreground">{localizeCityName(row.city, locale)}</td>
-                              <td className="py-3 px-3 text-muted-foreground">{pickLocalizedText(locale, null, row.area)}</td>
+                              <td className="py-3 px-3 text-muted-foreground">{pickLocalizedText(locale, row.area_ar, row.area)}</td>
                               <td className="py-3 px-3 text-muted-foreground">
                                 {formatStatusBand(row.status_band, locale)}
                               </td>

@@ -23,6 +23,7 @@ import {
   Info,
 } from "lucide-react"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { pickLocalizedText } from "@/lib/format/entities"
 
 /* ================================================================
    SCRIPTS — short labels, full detail only on expand
@@ -748,7 +749,8 @@ function MarketsContent() {
     const inputsLine = inputSummary ? (isArabic ? `المدخلات: ${inputSummary}` : `Inputs: ${inputSummary}`) : null
     const topRows = resultRows.slice(0, 6).map((row, index) => {
       const price = row.price_aed ? `AED ${Number(row.price_aed).toLocaleString()}` : isArabic ? "السعر عند الطلب" : "Price on request"
-      const location = [row.area, row.city].filter(Boolean).join(", ") || "UAE"
+      const localizedArea = pickLocalizedText(locale, row.area_ar, row.area, "")
+      const location = [localizedArea, row.city].filter(Boolean).join(", ") || "UAE"
       const status = row.status_band ?? "—"
       return `${index + 1}. ${row.name || row.asset_id} — ${location} — ${price} — ${status}`
     })
@@ -1385,7 +1387,7 @@ function MarketsContent() {
                       >
                         <p className="text-sm font-semibold text-foreground">{row.name || row.asset_id}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {[row.area, row.city].filter(Boolean).join(", ")}
+                          {[pickLocalizedText(locale, row.area_ar, row.area, ""), row.city].filter(Boolean).join(", ")}
                         </p>
                         <div className="mt-3 text-xs text-muted-foreground space-y-1">
                           <p>{isArabic ? "التسليم" : "Delivery"}: {formatStatusBand(row.status_band)}</p>

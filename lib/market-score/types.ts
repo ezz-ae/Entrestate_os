@@ -92,8 +92,10 @@ export interface InventoryRow {
   asset_id: string | number
   name: string | null
   developer: string | null
+  developer_ar?: string | null
   city: string | null
   area: string | null
+  area_ar?: string | null
   status_band: string | null
   price_aed: number | null
   beds: number | null
