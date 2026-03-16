@@ -198,7 +198,7 @@ const FAQ_GROUPS = [
     items: [
       {
         q: "What does a BUY signal mean?",
-        a: "A BUY signal means a project has passed through the full Decision Tunnel and scored high enough on both the 65% Market Score (timing, stress resilience, yield, data confidence) and the 35% Personal Match (your risk profile and time horizon). Out of 1,216 active UAE projects, approximately 2,667 currently hold a BUY signal — roughly 38% of total inventory.",
+        a: "A BUY signal means a project has passed through the full Decision Tunnel and scored high enough on both the 65% Market Score (timing, stress resilience, yield, data confidence) and the 35% Personal Match (your risk profile and time horizon). Out of 2,813 active UAE projects, 136 currently hold a BUY or STRONG_BUY signal — roughly 5% of total inventory.",
       },
       {
         q: "How is the 65% Market Score calculated?",

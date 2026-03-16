@@ -35,7 +35,7 @@ export const platformDocsSections: PlatformDocsSection[] = [
       "Investment thesis, market opportunity, competitive moat, traction metrics, and diligence-ready documentation for strategic partners and institutional capital.",
     highlights: [
       "Decision infrastructure replacing $2B+ listing portal market",
-      "1,216 active projects, 481 canonical developers, 2,667 BUY signals",
+      "2,813 active projects, 481 canonical developers, 136 BUY signals",
       "Evidence-first architecture creates defensible trust moat",
       "Tier-based monetization: Free, Pro, Enterprise",
     ],

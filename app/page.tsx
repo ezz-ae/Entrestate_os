@@ -193,11 +193,11 @@ export default async function HomePage({
 
   const pulse = await getMarketPulseSummary().catch(() => ({
     data_as_of: new Date().toISOString(),
-    summary: { total: 1216, avg_price: null, avg_yield: null, buy_signals: 2667, high_confidence: 593 },
+    summary: { total: 2813, avg_price: null, avg_yield: null, buy_signals: 136, high_confidence: 0 },
   }))
 
-  const totalProjects = pulse.summary.total || 1216
-  const buySignals = pulse.summary.buy_signals || 2667
+  const totalProjects = pulse.summary.total || 2813
+  const buySignals = pulse.summary.buy_signals || 136
   const avgYield = pulse.summary.avg_yield
   const avgPrice = pulse.summary.avg_price
 

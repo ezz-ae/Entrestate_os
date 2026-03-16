@@ -329,13 +329,32 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
   const selectQuery = USE_CURATED_PROPERTIES_VIEW
     ? Prisma.sql`
         SELECT
+          id,
           name,
+          name AS project_name,
           developer,
           area,
           area AS final_area,
           NULL::numeric AS bedrooms_min,
           NULL::numeric AS bedrooms_max,
           NULL::numeric AS beds,
+          price_from,
+          rental_yield,
+          timing_score,
+          timing_label,
+          stress_score,
+          stress_grade_v1,
+          yield_score,
+          yield_label,
+          evidence_score,
+          evidence_label_v1 AS evidence_label,
+          investor_score_v1,
+          investor_score_v1 AS investor_score,
+          decision_label_v1,
+          decision_label_v1 AS decision_label,
+          hero_image,
+          golden_visa,
+          score_version,
           price_from AS l1_canonical_price,
           rental_yield AS l1_canonical_yield,
           NULL AS l1_canonical_status,
@@ -412,39 +431,102 @@ export async function getProjectBySlug(slug: string): Promise<{
   const normalizedSlug = slug.toLowerCase().trim()
   const candidateName = normalizedSlug.replace(/-/g, " ")
 
-  const candidates = await runQuery(Prisma.sql`
-    SELECT
-      name,
-      developer,
-      area,
-      final_area,
-      bedrooms_min,
-      bedrooms_max,
-      COALESCE(bedrooms_min, bedrooms_max) AS beds,
-      l1_canonical_price,
-      l1_canonical_yield,
-      l1_canonical_status,
-      l1_confidence,
-      l1_source_coverage,
-      l2_stress_test_grade,
-      l2_developer_reliability,
-      l3_timing_signal,
-      l3_supply_pressure,
-      l3_demand_velocity,
-      l3_price_drift_30d,
-      engine_god_metric,
-      engine_affordability,
-      engine_stress_test,
-      payment_plan_structured,
-      evidence_sources,
-      evidence_exclusions,
-      evidence_assumptions,
-      hotness_factors
-    FROM ${DETAIL_TABLE_SQL}
-    WHERE LOWER(name) LIKE LOWER('%' || ${candidateName} || '%')
-    ORDER BY engine_god_metric DESC NULLS LAST
-    LIMIT 30
-  `)
+  const candidates = USE_CURATED_PROPERTIES_VIEW
+    ? await runQuery(Prisma.sql`
+        SELECT
+          id,
+          name,
+          name AS project_name,
+          developer,
+          area,
+          area AS final_area,
+          NULL::numeric AS bedrooms_min,
+          NULL::numeric AS bedrooms_max,
+          NULL::numeric AS beds,
+          price_from,
+          rental_yield,
+          timing_score,
+          timing_label,
+          stress_score,
+          stress_grade_v1,
+          yield_score,
+          yield_label,
+          evidence_score,
+          evidence_label_v1 AS evidence_label,
+          investor_score_v1,
+          investor_score_v1 AS investor_score,
+          decision_label_v1,
+          decision_label_v1 AS decision_label,
+          hero_image,
+          golden_visa,
+          score_version,
+          price_from AS l1_canonical_price,
+          rental_yield AS l1_canonical_yield,
+          NULL AS l1_canonical_status,
+          price_confidence AS l1_confidence,
+          price_source AS l1_source_coverage,
+          investor_score_v1 AS l2_investment_score,
+          developer_reliability_score AS l2_developer_reliability,
+          stress_grade_v1 AS l2_stress_test_grade,
+          timing_label AS l3_timing_signal,
+          NULL::numeric AS l3_supply_pressure,
+          NULL::numeric AS l3_demand_velocity,
+          NULL::numeric AS l3_price_drift_30d,
+          investor_score_v1 AS engine_god_metric,
+          NULL::numeric AS engine_affordability,
+          stress_score AS engine_stress_test,
+          NULL::jsonb AS payment_plan_structured,
+          NULL::jsonb AS evidence_sources,
+          NULL::jsonb AS evidence_exclusions,
+          NULL::jsonb AS evidence_assumptions,
+          NULL::jsonb AS hotness_factors,
+          NULL::jsonb AS units,
+          developer_reliability_score,
+          supply_resilience_score,
+          liquidity_resilience_score,
+          pricing_discipline_score,
+          handover_reliability_score,
+          area_stability_score,
+          payment_plan_score
+        FROM ${PROPERTIES_TABLE_SQL}
+        WHERE LOWER(name) LIKE LOWER('%' || ${candidateName} || '%')
+        ORDER BY CASE WHEN LOWER(name) = LOWER(${candidateName}) THEN 0 ELSE 1 END,
+                 investor_score_v1 DESC NULLS LAST
+        LIMIT 30
+      `)
+    : await runQuery(Prisma.sql`
+        SELECT
+          name,
+          developer,
+          area,
+          final_area,
+          bedrooms_min,
+          bedrooms_max,
+          COALESCE(bedrooms_min, bedrooms_max) AS beds,
+          l1_canonical_price,
+          l1_canonical_yield,
+          l1_canonical_status,
+          l1_confidence,
+          l1_source_coverage,
+          l2_stress_test_grade,
+          l2_developer_reliability,
+          l3_timing_signal,
+          l3_supply_pressure,
+          l3_demand_velocity,
+          l3_price_drift_30d,
+          engine_god_metric,
+          engine_affordability,
+          engine_stress_test,
+          payment_plan_structured,
+          evidence_sources,
+          evidence_exclusions,
+          evidence_assumptions,
+          hotness_factors
+        FROM ${DETAIL_TABLE_SQL}
+        WHERE LOWER(name) LIKE LOWER('%' || ${candidateName} || '%')
+        ORDER BY engine_god_metric DESC NULLS LAST
+        LIMIT 30
+      `)
 
   const project =
     (candidates.find((row) => slugifyName(String(row.name ?? "")) === normalizedSlug) as DecisionRecord | undefined) ??
@@ -455,47 +537,99 @@ export async function getProjectBySlug(slug: string): Promise<{
   const areaName = String(project.final_area ?? project.area ?? "")
   const developerName = String(project.developer ?? "")
 
-  const [areaContextRows, developerRows, similarRows] = await Promise.all([
-    runQuery(Prisma.sql`
-      SELECT
-        COALESCE(final_area, area) AS area,
-        COUNT(*)::int AS projects,
-        ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price,
-        ROUND(AVG(l1_canonical_yield::numeric), 1) AS avg_yield,
-        ROUND(AVG(engine_god_metric::numeric), 1) AS avg_efficiency
-      FROM ${DETAIL_TABLE_SQL}
-      WHERE LOWER(COALESCE(final_area, area)) = LOWER(${areaName})
-      GROUP BY 1
-    `),
-    runQuery(Prisma.sql`
-      SELECT
-        developer,
-        COUNT(*)::int AS projects,
-        ROUND(AVG(l2_developer_reliability::numeric), 1) AS reliability,
-        ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
-        array_agg(DISTINCT COALESCE(final_area, area)) AS areas
-      FROM ${DETAIL_TABLE_SQL}
-      WHERE LOWER(developer) = LOWER(${developerName})
-      GROUP BY 1
-    `),
-    runQuery(Prisma.sql`
-      SELECT
-        name,
-        developer,
-        COALESCE(final_area, area) AS area,
-        l1_canonical_price,
-        l1_canonical_yield,
-        l2_stress_test_grade,
-        l3_timing_signal,
-        engine_god_metric,
-        l1_confidence
-      FROM ${DETAIL_TABLE_SQL}
-      WHERE LOWER(COALESCE(final_area, area)) = LOWER(${areaName})
-        AND LOWER(name) <> LOWER(${String(project.name)})
-      ORDER BY engine_god_metric DESC NULLS LAST
-      LIMIT 5
-    `),
-  ])
+  const [areaContextRows, developerRows, similarRows] = USE_CURATED_PROPERTIES_VIEW
+    ? await Promise.all([
+        runQuery(Prisma.sql`
+          SELECT
+            area,
+            COUNT(*)::int AS projects,
+            ROUND(AVG(price_from) FILTER (WHERE price_from > 0)) AS avg_price,
+            ROUND(AVG(rental_yield::numeric) FILTER (WHERE rental_yield > 0), 1) AS avg_yield,
+            ROUND(AVG(investor_score_v1::numeric), 1) AS avg_efficiency
+          FROM ${PROPERTIES_TABLE_SQL}
+          WHERE LOWER(area) = LOWER(${areaName})
+          GROUP BY 1
+        `),
+        runQuery(Prisma.sql`
+          SELECT
+            developer,
+            COUNT(*)::int AS projects,
+            ROUND(AVG(developer_reliability_score::numeric), 1) AS reliability,
+            ROUND(AVG(investor_score_v1::numeric), 1) AS efficiency,
+            array_agg(DISTINCT area) AS areas
+          FROM ${PROPERTIES_TABLE_SQL}
+          WHERE LOWER(developer) = LOWER(${developerName})
+          GROUP BY 1
+        `),
+        runQuery(Prisma.sql`
+          SELECT
+            id,
+            name,
+            name AS project_name,
+            developer,
+            area,
+            area AS final_area,
+            price_from,
+            rental_yield,
+            timing_label,
+            stress_grade_v1,
+            investor_score_v1,
+            decision_label_v1,
+            price_confidence,
+            price_from AS l1_canonical_price,
+            rental_yield AS l1_canonical_yield,
+            stress_grade_v1 AS l2_stress_test_grade,
+            timing_label AS l3_timing_signal,
+            investor_score_v1 AS engine_god_metric,
+            price_confidence AS l1_confidence
+          FROM ${PROPERTIES_TABLE_SQL}
+          WHERE LOWER(area) = LOWER(${areaName})
+            AND LOWER(name) <> LOWER(${String(project.name)})
+          ORDER BY investor_score_v1 DESC NULLS LAST
+          LIMIT 5
+        `),
+      ])
+    : await Promise.all([
+        runQuery(Prisma.sql`
+          SELECT
+            COALESCE(final_area, area) AS area,
+            COUNT(*)::int AS projects,
+            ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price,
+            ROUND(AVG(l1_canonical_yield::numeric), 1) AS avg_yield,
+            ROUND(AVG(engine_god_metric::numeric), 1) AS avg_efficiency
+          FROM ${DETAIL_TABLE_SQL}
+          WHERE LOWER(COALESCE(final_area, area)) = LOWER(${areaName})
+          GROUP BY 1
+        `),
+        runQuery(Prisma.sql`
+          SELECT
+            developer,
+            COUNT(*)::int AS projects,
+            ROUND(AVG(l2_developer_reliability::numeric), 1) AS reliability,
+            ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
+            array_agg(DISTINCT COALESCE(final_area, area)) AS areas
+          FROM ${DETAIL_TABLE_SQL}
+          WHERE LOWER(developer) = LOWER(${developerName})
+          GROUP BY 1
+        `),
+        runQuery(Prisma.sql`
+          SELECT
+            name,
+            developer,
+            COALESCE(final_area, area) AS area,
+            l1_canonical_price,
+            l1_canonical_yield,
+            l2_stress_test_grade,
+            l3_timing_signal,
+            engine_god_metric,
+            l1_confidence
+          FROM ${DETAIL_TABLE_SQL}
+          WHERE LOWER(COALESCE(final_area, area)) = LOWER(${areaName})
+            AND LOWER(name) <> LOWER(${String(project.name)})
+          ORDER BY engine_god_metric DESC NULLS LAST
+          LIMIT 5
+        `),
+      ])
 
   return {
     data_as_of: new Date().toISOString(),
@@ -746,7 +880,12 @@ export async function listDevelopers(): Promise<{
           safe_projects,
           areas,
           top_project,
-          payload
+          payload,
+          description,
+          hq,
+          developer_type,
+          total_projects,
+          priced_projects
         FROM ${DEVELOPERS_TABLE_SQL}
         ORDER BY project_count DESC
       `)

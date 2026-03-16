@@ -2,7 +2,7 @@ import Link from "next/link"
 import { ArrowRight, Building2, TrendingUp, Shield, BarChart3, AlertTriangle, Zap, Eye } from "lucide-react"
 
 const marketMetrics = [
-  { value: "1,216", label: "Active Projects", detail: "Tracked across UAE" },
+  { value: "2,813", label: "Active Projects", detail: "Tracked across UAE" },
   { value: "71%", label: "Speculative", detail: "Of total inventory" },
   { value: "99", label: "Conservative Plays", detail: "Nationwide" },
   { value: "38%", label: "BUY Signals", detail: "Of tracked projects" },
@@ -70,7 +70,7 @@ export default function IndustryDocsPage() {
           <p>
             The UAE market is currently characterized by a{" "}
             <strong className="text-foreground">severe scarcity of safety</strong>. Of{" "}
-            <strong className="text-foreground">1,216 active projects</strong> tracked across the UAE,{" "}
+            <strong className="text-foreground">2,813 active projects</strong> tracked across the UAE,{" "}
             <strong className="text-foreground">71% are classified as Speculative</strong>. Only{" "}
             <strong className="text-foreground">99 projects nationwide</strong> meet the criteria for a
             &quot;Conservative&quot; play — where low-risk profiles overlap with high capital preservation.

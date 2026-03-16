@@ -134,7 +134,7 @@ export default function DocumentationDocsPage() {
         </div>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
           The foundational Data Layer that transforms chaotic market signals into a structured inventory of{" "}
-          <strong className="text-foreground">1,216 active projects</strong>. Each phase refines data from
+          <strong className="text-foreground">2,813 active projects</strong>. Each phase refines data from
           &quot;Raw Sensors&quot; toward &quot;Actionable Belief.&quot;
         </p>
         <div className="mt-5 overflow-x-auto">

@@ -34,12 +34,12 @@ export async function GET(request: Request) {
         project.name,
         project.final_area ?? project.area,
         project.developer,
-        project.l1_canonical_price,
-        project.l1_canonical_yield,
-        project.l2_stress_test_grade,
-        project.l3_timing_signal,
-        project.engine_god_metric,
-        project.l1_confidence,
+        project.price_from ?? project.l1_canonical_price,
+        project.rental_yield ?? project.l1_canonical_yield,
+        project.stress_grade_v1 ?? project.l2_stress_test_grade,
+        project.timing_label ?? project.l3_timing_signal,
+        project.investor_score_v1 ?? project.investor_score ?? project.engine_god_metric,
+        project.price_confidence ?? project.l1_confidence,
       ]
         .map(asCsvValue)
         .join(","),

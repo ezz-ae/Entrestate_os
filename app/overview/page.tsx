@@ -103,9 +103,9 @@ export default async function OverviewPage() {
     getOutcomeIntentCounts().catch(() => ({ data_as_of: new Date().toISOString(), rows: [] })),
   ])
 
-  const totalProjects = pulse.summary.total || 1216
-  const highConfidence = pulse.summary.high_confidence || 593
-  const buySignals = pulse.summary.buy_signals || 2667
+  const totalProjects = pulse.summary.total || 2813
+  const highConfidence = pulse.summary.high_confidence || 0
+  const buySignals = pulse.summary.buy_signals || 136
   const avgPrice = pulse.summary.avg_price
   const avgYield = pulse.summary.avg_yield
   const highConfidencePct = totalProjects > 0 ? (highConfidence / totalProjects) * 100 : 0

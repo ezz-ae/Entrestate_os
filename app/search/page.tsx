@@ -257,7 +257,7 @@ export default function SearchPage() {
             Project Search
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Filter across {(1216).toLocaleString()} scored projects. Click any result to go deeper.
+            Filter across {(2813).toLocaleString()} scored projects. Click any result to go deeper.
           </p>
         </div>
 
@@ -476,17 +476,44 @@ export default function SearchPage() {
                 const name = String(project.name ?? "Unnamed project")
                 const devName = String(project.developer ?? "")
                 const areaName = String(project.final_area ?? project.area ?? "")
-                const price = typeof project.l1_canonical_price === "number"
-                  ? `${(project.l1_canonical_price / 1_000_000).toFixed(2)}M`
+                const priceValue = typeof project.price_from === "number"
+                  ? project.price_from
+                  : typeof project.l1_canonical_price === "number"
+                    ? project.l1_canonical_price
+                    : null
+                const price = typeof priceValue === "number"
+                  ? `${(priceValue / 1_000_000).toFixed(2)}M`
                   : null
-                const yieldVal = typeof project.l1_canonical_yield === "number"
-                  ? `${Number(project.l1_canonical_yield).toFixed(1)}%`
+                const yieldValue = typeof project.rental_yield === "number"
+                  ? project.rental_yield
+                  : typeof project.l1_canonical_yield === "number"
+                    ? project.l1_canonical_yield
+                    : null
+                const yieldVal = typeof yieldValue === "number"
+                  ? `${Number(yieldValue).toFixed(1)}%`
                   : null
-                const score = typeof project.god_metric === "number"
-                  ? Math.round(Number(project.god_metric))
+                const scoreValue = typeof project.investor_score_v1 === "number"
+                  ? project.investor_score_v1
+                  : typeof project.investor_score === "number"
+                    ? project.investor_score
+                    : typeof project.engine_god_metric === "number"
+                      ? project.engine_god_metric
+                      : typeof project.god_metric === "number"
+                        ? project.god_metric
+                        : null
+                const score = typeof scoreValue === "number"
+                  ? Math.round(Number(scoreValue))
                   : null
-                const signal = typeof project.l3_timing_signal === "string" ? project.l3_timing_signal : null
-                const grade = typeof project.l2_stress_test_grade === "string" ? project.l2_stress_test_grade : null
+                const signal = typeof project.timing_label === "string"
+                  ? project.timing_label
+                  : typeof project.l3_timing_signal === "string"
+                    ? project.l3_timing_signal
+                    : null
+                const grade = typeof project.stress_grade_v1 === "string"
+                  ? project.stress_grade_v1
+                  : typeof project.l2_stress_test_grade === "string"
+                    ? project.l2_stress_test_grade
+                    : null
                 const slug = String(project.slug ?? "")
                 const styles = signal ? signalStyle(signal) : null
 

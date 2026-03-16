@@ -8,7 +8,7 @@ type DbRow = Record<string, unknown>
 
 export const MCP_RESOURCES = {
   inventory_clean: {
-    description: "1,216 verified UAE projects with full V1 decision scores",
+    description: "2,813 verified UAE projects with full V1 decision scores",
     key_columns: [
       "id",
       "name",
@@ -32,11 +32,11 @@ export const MCP_RESOURCES = {
       "price_confidence",
       "price_source",
     ],
-    row_count: 1216,
+    row_count: 2813,
     updated: "live",
   },
   inventory_full: {
-    description: "1,216 scored projects with 180+ columns including evidence layers",
+    description: "2,813 scored projects with 180+ columns including evidence layers",
     key_columns: [
       "name",
       "area",
@@ -54,7 +54,7 @@ export const MCP_RESOURCES = {
       "demand_velocity",
       "supply_pressure",
     ],
-    row_count: 1216,
+    row_count: 2813,
     updated: "live",
   },
   dld_transactions_arvo: {
@@ -101,7 +101,7 @@ export const MCP_RESOURCES = {
     updated: "daily",
   },
   dld_area_benchmarks_live: {
-    description: "182 area benchmarks with price stats, velocity, and supply mix",
+    description: "183 area benchmarks with price stats, velocity, and supply mix",
     key_columns: [
       "area",
       "total_transactions",
@@ -132,21 +132,21 @@ export const MCP_RESOURCES = {
     updated: "live",
   },
   entrestate_projects_api: {
-    description: "1,176 quality-filtered projects (score >= 50) for API consumption",
+    description: "2,813 quality-scored projects for API consumption",
     key_columns: "same as inventory_clean",
-    row_count: 1176,
+    row_count: 2813,
     updated: "live view",
   },
   entrestate_developers_api: {
-    description: "107 developers with active quality projects",
+    description: "75 developers with active quality projects",
     key_columns: ["name", "slug", "tier", "logo_url", "project_count", "avg_price", "areas"],
-    row_count: 107,
+    row_count: 75,
     updated: "live view",
   },
   entrestate_areas_api: {
-    description: "88 areas with full analytics",
+    description: "246 areas with full analytics",
     key_columns: ["name", "slug", "city", "project_count", "avg_price", "avg_yield", "area_score"],
-    row_count: 88,
+    row_count: 246,
     updated: "live view",
   },
   source_of_truth_registry: {
@@ -158,7 +158,7 @@ export const MCP_RESOURCES = {
   entrestate_top_data: {
     description: "Homepage intelligence sections (market pulse, stress test, etc)",
     key_columns: ["section_id", "title", "subtitle", "data"],
-    row_count: 10,
+    row_count: 14,
     updated: "live",
   },
 } as const

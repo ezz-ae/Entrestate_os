@@ -7,6 +7,11 @@ type ProjectCardProps = {
   name: string
   area?: string | null
   developer?: string | null
+  price_from?: number | null
+  rental_yield?: number | null
+  stress_grade_v1?: string | null
+  timing_label?: string | null
+  investor_score_v1?: number | null
   l1_canonical_price?: number | null
   l1_canonical_yield?: number | null
   l2_stress_test_grade?: string | null
@@ -33,9 +38,15 @@ function gradeColor(grade: string | null | undefined) {
 }
 
 export function ProjectCard(project: ProjectCardProps) {
-  const accent = timingAccent(project.l3_timing_signal)
-  const signal = (project.l3_timing_signal ?? "—").toUpperCase()
-  const grade = project.l2_stress_test_grade?.toUpperCase() ?? null
+  const price = project.price_from ?? project.l1_canonical_price ?? null
+  const yieldValue = project.rental_yield ?? project.l1_canonical_yield ?? null
+  const score = project.investor_score_v1 ?? project.engine_god_metric ?? null
+  const timing = project.timing_label ?? project.l3_timing_signal ?? null
+  const stressGrade = project.stress_grade_v1 ?? project.l2_stress_test_grade ?? null
+
+  const accent = timingAccent(timing)
+  const signal = (timing ?? "—").toUpperCase()
+  const grade = stressGrade?.toUpperCase() ?? null
 
   return (
     <Link
@@ -66,7 +77,7 @@ export function ProjectCard(project: ProjectCardProps) {
 
         {/* Price — always visible */}
         <p className="mt-4 text-xl font-bold tabular-nums text-foreground">
-          {formatAed(project.l1_canonical_price)}
+          {formatAed(price)}
         </p>
       </div>
 
@@ -78,7 +89,7 @@ export function ProjectCard(project: ProjectCardProps) {
         <div className="grid grid-cols-3 gap-px bg-border/40 border-t-0">
           <div className="bg-card px-4 py-3">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Yield</p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatYield(project.l1_canonical_yield)}</p>
+            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatYield(yieldValue)}</p>
           </div>
           <div className="bg-card px-4 py-3">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Grade</p>
@@ -86,7 +97,7 @@ export function ProjectCard(project: ProjectCardProps) {
           </div>
           <div className="bg-card px-4 py-3">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Score</p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatScore(project.engine_god_metric)}</p>
+            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatScore(score)}</p>
           </div>
         </div>
       </div>

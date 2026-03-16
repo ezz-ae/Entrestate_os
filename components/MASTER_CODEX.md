@@ -23,15 +23,15 @@ API ENDPOINTS: 5/6 LIVE
   ❌ /api/chat            → Needs POST (GET returns error)
 
 DATABASE: 183 tables, 16 views, Neon PostgreSQL
-  inventory_clean:         1,216 projects (89% priced, 81% hero, 100% evidence)
-  inventory_full:          1,216 projects (180+ columns, L1-L5)
+  inventory_clean:         2,813 projects (89% priced, 81% hero, 100% evidence)
+  inventory_full:          2,813 projects (180+ columns, L1-L5)
   developer_registry:        481 developers (mega/major/mid/boutique)
   dld_transactions_arvo:  36,841 transactions (AED 141.34B, 2026 YTD)
   dld_transaction_feed:   36,634 notification entries
-  dld_area_benchmarks:       182 area benchmarks
-  entrestate_projects_api: 1,176 (quality >= 50 view)
-  entrestate_developers_api: 107
-  entrestate_areas_api:       88
+  dld_area_benchmarks:       183 area benchmarks
+  entrestate_projects_api: 2,813
+  entrestate_developers_api: 75
+  entrestate_areas_api:      246
 
 GOLD CENTURY: 🔒 LOCKED (3,656 projects, 16 areas, 74 devs, 100 blogs)
 
@@ -83,20 +83,20 @@ const MAX_ROWS = 100
 export const MCP_RESOURCES = {
   // Core Inventory
   "inventory_clean": {
-    description: "1,216 verified UAE projects with full evidence layers",
+    description: "2,813 verified UAE projects with full evidence layers",
     key_columns: ["project_id", "name", "slug", "area", "city", "developer", "price_from", "price_to", 
                    "timing_label", "stress_grade_v1", "rental_yield", "investor_score_v1", "quality_score",
                    "hero_image", "bedrooms", "completion_date", "price_confidence", "price_source"],
-    row_count: 1216,
+    row_count: 2813,
     updated: "live"
   },
   "inventory_full": {
-    description: "1,216 projects with 180+ columns including L1-L5 evidence layers",
+    description: "2,813 projects with 180+ columns including L1-L5 evidence layers",
     key_columns: ["name", "area", "developer", "l1_canonical_price", "l1_canonical_yield",
                    "l2_developer_reliability", "l3_area_risk_score", "l4_dld_avg_txn_price",
                    "engine_god_metric", "engine_stress_test", "engine_affordability",
                    "timing_label", "stress_grade_v1", "demand_velocity", "supply_pressure"],
-    row_count: 1216,
+    row_count: 2813,
     updated: "live"
   },
 
@@ -117,7 +117,7 @@ export const MCP_RESOURCES = {
     updated: "daily"
   },
   "dld_area_benchmarks_live": {
-    description: "182 area benchmarks with price stats, velocity, and supply mix",
+    description: "183 area benchmarks with price stats, velocity, and supply mix",
     key_columns: ["area", "total_transactions", "total_volume_aed", "avg_price", "median_price",
                    "p25_price", "p75_price", "p90_price", "avg_price_per_sqm", "median_price_per_sqm",
                    "offplan_pct", "ready_pct", "freehold_pct", "avg_size_sqm", "daily_velocity",
@@ -137,19 +137,19 @@ export const MCP_RESOURCES = {
 
   // API Views (filtered for quality)
   "entrestate_projects_api": {
-    description: "1,176 quality-filtered projects (score >= 50) for API consumption",
+    description: "2,813 quality-scored projects for API consumption",
     key_columns: "same as inventory_clean",
     row_count: 1176,
     updated: "live view"
   },
   "entrestate_developers_api": {
-    description: "107 developers with active quality projects",
+    description: "75 developers with active quality projects",
     key_columns: ["name", "slug", "tier", "logo_url", "project_count", "avg_price", "areas"],
     row_count: 107,
     updated: "live view"
   },
   "entrestate_areas_api": {
-    description: "88 areas with full analytics",
+    description: "246 areas with full analytics",
     key_columns: ["name", "slug", "city", "project_count", "avg_price", "avg_yield", "area_score"],
     row_count: 88,
     updated: "live view"
@@ -435,15 +435,15 @@ export const copilotSystemPrompt = `You are the Entrestate Intelligence Copilot 
 You can run ANY read-only SQL query against the full database. Use this for custom analytics, cross-joins, aggregations, and answering complex questions that predefined tools can't handle.
 
 Available tables:
-- **inventory_clean** (1,216 rows) — Verified projects with evidence layers
-- **inventory_full** (1,216 rows) — Complete project universe with 180+ columns
+- **inventory_clean** (2,813 rows) — Verified projects with evidence layers
+- **inventory_full** (2,813 rows) — Complete project universe with 180+ columns
 - **dld_transactions_arvo** (36,841 rows) — Real DLD registered transactions (2026 YTD)
 - **dld_transaction_feed** (36,634 rows) — Classified notification entries
 - **dld_area_benchmarks_live** (182 rows) — Per-area price/velocity benchmarks
 - **developer_registry** (481 rows) — Developer master list with tiers
-- **entrestate_projects_api** (1,176 rows) — Quality-filtered API view
-- **entrestate_developers_api** (107 rows) — Active developer API view
-- **entrestate_areas_api** (88 rows) — Area analytics API view
+- **entrestate_projects_api** (2,813 rows) — Quality-scored API view
+- **entrestate_developers_api** (75 rows) — Active developer API view
+- **entrestate_areas_api** (246 rows) — Area analytics API view
 - **source_of_truth_registry** (31 rows) — Tracked metrics
 - **entrestate_top_data** (10 rows) — Homepage intelligence sections
 
@@ -509,7 +509,7 @@ You are the most data-armed real estate intelligence system in the UAE. Use ever
 // ── REPLACE the existing copilotToolDescriptions with this: ──
 
 export const copilotToolDescriptions = {
-  "deal_screener": "Search and filter investment opportunities from 1,216 verified projects. Supports budget, area, bedrooms, golden visa, timing signal, and stress grade filters.",
+  "deal_screener": "Search and filter investment opportunities from 2,813 verified projects. Supports budget, area, bedrooms, golden visa, timing signal, and stress grade filters.",
   "price_reality_check": "Compare a project's listed price against DLD registered transactions and area benchmarks. Shows if priced above/below market.",
   "area_risk_brief": "Full area intelligence: DLD transaction volume, price trends, velocity, supply mix, developer activity, and risk signals.",
   "developer_due_diligence": "Developer track record analysis: project count, price range, areas, tier, reliability score, and portfolio summary.",
@@ -1138,7 +1138,7 @@ export function TransactionNotification({ txn }: { txn: DldFeedEntry }) {
  SECTION 9: DATABASE SCHEMA REFERENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
--- inventory_clean (1,216 rows — THE LIVE TABLE)
+-- inventory_clean (2,813 rows — THE LIVE TABLE)
 -- Key columns: project_id, name, slug, area, city, developer, 
 -- price_from, price_to, hero_image, bedrooms, completion_date,
 -- timing_label (BUY/HOLD/WAIT), stress_grade_v1 (A/B/C/D),
@@ -1163,9 +1163,9 @@ export function TransactionNotification({ txn }: { txn: DldFeedEntry }) {
 -- Key columns: name, slug, tier (mega/major/mid/boutique), logo, project_count
 
 -- API Views:
--- entrestate_projects_api (1,176) = inventory_clean WHERE quality_score >= 50
--- entrestate_developers_api (107) = aggregated from inventory_clean
--- entrestate_areas_api (88) = aggregated from inventory_clean
+-- entrestate_projects_api (2,813) = scored inventory API view
+-- entrestate_developers_api (75) = aggregated from inventory_clean
+-- entrestate_areas_api (246) = aggregated from inventory_clean
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  SECTION 10: DAILY OPERATIONS
@@ -1213,7 +1213,7 @@ export function TransactionNotification({ txn }: { txn: DldFeedEntry }) {
 
 RESULT: 21-tool copilot with full MCP + DLD + scraping + notification styling
   - 36,841 DLD transactions queryable
-  - 182 area benchmarks accessible
+  - 183 area benchmarks accessible
   - Dynamic SQL for any question
   - Live scraper trigger
   - 5 pre-built cross-reference analytics

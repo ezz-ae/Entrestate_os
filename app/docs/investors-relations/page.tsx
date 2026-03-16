@@ -15,9 +15,9 @@ import {
 } from "lucide-react"
 
 const marketNumbers = [
-  { value: "1,216", label: "Active Projects", detail: "Tracked across UAE in real time" },
+  { value: "2,813", label: "Active Projects", detail: "Tracked across UAE in real time" },
   { value: "481", label: "Canonical Developers", detail: "Normalized & verified identities" },
-  { value: "2,667", label: "BUY Signals", detail: "Evidence-backed opportunities" },
+  { value: "136", label: "BUY Signals", detail: "Evidence-backed opportunities" },
   { value: "34.3%", label: "L1 Coverage", detail: "Static Truth recovery in progress" },
 ]
 
@@ -95,7 +95,7 @@ const diligenceItems = [
   {
     category: "Data & Integrity",
     items: [
-      "1,216 project inventory with L1-L5 provenance tags",
+      "2,813 project inventory with L1-L5 provenance tags",
       "481 canonical developer registry",
       "Exclusion policy: distressed sales, internal transfers, duplicates",
       "Static Truth Recovery roadmap and completion metrics",
@@ -317,7 +317,7 @@ export default function InvestorsRelationsDocsPage() {
           <div className="rounded-xl border border-border/60 bg-background/40 p-4">
             <h3 className="text-sm font-semibold text-foreground">Data Infrastructure</h3>
             <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
-              <li>1,216 active projects in canonical inventory</li>
+              <li>2,813 active projects in canonical inventory</li>
               <li>481 developer identities normalized and verified</li>
               <li>10-phase pipeline operational end-to-end</li>
               <li>5-layer evidence tagging on all data points</li>
