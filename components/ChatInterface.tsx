@@ -713,6 +713,12 @@ export function ChatInterface({
 
   useEffect(() => {
     if (!mounted) return
+
+    if (!session?.user) {
+      setComprehensiveProfile(DEFAULT_COMPREHENSIVE_PROFILE)
+      return
+    }
+
     let cancelled = false
 
     const loadProfileContext = async () => {
@@ -746,7 +752,7 @@ export function ChatInterface({
     return () => {
       cancelled = true
     }
-  }, [mounted])
+  }, [mounted, session?.user])
 
   useEffect(() => {
     if (!cooldownBlocked || !cooldownSecondsRemaining || cooldownSecondsRemaining <= 0) return
