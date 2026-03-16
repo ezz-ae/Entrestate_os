@@ -3,6 +3,15 @@
 import { useEffect, useMemo, useState } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import Link from "next/link"
 import {
   BarChart3,
@@ -19,6 +28,7 @@ import {
   Database,
   Layers,
   ShieldCheck,
+  Menu,
 } from "lucide-react"
 import type { MarketScoreCharts, MarketScoreSummary } from "@/lib/market-score/types"
 
@@ -79,6 +89,7 @@ const formatNumber = (value: number | null) => {
 
 export default function WorkspacePage() {
   const [activeTab, setActiveTab] = useState<"overview" | "activity">("overview")
+  const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false)
   const [scoreSummary, setScoreSummary] = useState<MarketScoreSummary | null>(null)
   const [scoreCharts, setScoreCharts] = useState<MarketScoreCharts | null>(null)
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
@@ -196,7 +207,73 @@ export default function WorkspacePage() {
                 Keep it simple: start with the core workflows, then open advanced work only when you need it.
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Sheet open={isWorkspaceMenuOpen} onOpenChange={setIsWorkspaceMenuOpen}>
+                <SheetTrigger asChild>
+                  <button className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary md:hidden">
+                    <Menu className="h-4 w-4" />
+                    Workspace menu
+                  </button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[88vw] max-w-sm border-r border-border bg-background p-0">
+                  <SheetHeader className="border-b border-border/70 px-5 py-4 text-left">
+                    <SheetTitle>Workspace menu</SheetTitle>
+                    <SheetDescription>
+                      Jump between core desks, tools, and utilities on mobile.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="flex h-full flex-col overflow-y-auto px-4 pb-6">
+                    <div className="pt-4">
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        Core workstations
+                      </p>
+                      <div className="space-y-2">
+                        {coreTools.map((tool) => (
+                          <SheetClose asChild key={tool.href}>
+                            <Link
+                              href={tool.href}
+                              className="flex items-start gap-3 rounded-xl border border-border/70 bg-card/70 px-3 py-3 transition-colors hover:bg-accent/40"
+                            >
+                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground">
+                                <tool.icon className="h-5 w-5" />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-sm font-medium text-foreground">{tool.label}</span>
+                                <span className="mt-1 block text-xs text-muted-foreground">{tool.description}</span>
+                              </span>
+                            </Link>
+                          </SheetClose>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-6">
+                      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        More tools
+                      </p>
+                      <div className="space-y-2">
+                        {supportTools.map((tool) => (
+                          <SheetClose asChild key={tool.href}>
+                            <Link
+                              href={tool.href}
+                              className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-2.5 transition-colors hover:bg-secondary"
+                            >
+                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                                <tool.icon className="h-4 w-4" />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-sm font-medium text-foreground">{tool.label}</span>
+                                <span className="block truncate text-xs text-muted-foreground">{tool.description}</span>
+                              </span>
+                            </Link>
+                          </SheetClose>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+
               <button
                 onClick={() => setActiveTab("overview")}
                 className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
