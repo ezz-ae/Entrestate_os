@@ -10,37 +10,44 @@ type SearchParams = {
   profile?: string
 }
 
-function profileFilters(profile: string | undefined) {
+function profileConfig(profile: string | undefined) {
   const normalized = (profile ?? "conservative").toLowerCase()
   if (normalized === "balanced") {
     return {
-      intent: "balanced",
       stressGradeMin: "C" as const,
+      sortBy: "god_metric" as const,
+      heading: "Balanced routing",
+      description: "Balanced inventory across resilience, price discipline, and investor score.",
     }
   }
   if (normalized === "aggressive") {
     return {
-      intent: "general",
       stressGradeMin: "D" as const,
+      sortBy: "yield" as const,
+      heading: "Aggressive routing",
+      description: "Higher-yield inventory with broader stress tolerance and upside focus.",
     }
   }
 
   return {
-    intent: "conservative",
     stressGradeMin: "B" as const,
+    sortBy: "reliability" as const,
+    heading: "Conservative routing",
+    description: "Higher-reliability inventory with stronger stress resilience and cleaner downside protection.",
   }
 }
 
 export default async function AgentRuntimePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams
   const activeProfile = params.profile ?? "conservative"
+  const config = profileConfig(activeProfile)
 
   const result = await listProperties({
     filters: {
-      ...profileFilters(activeProfile),
+      stressGradeMin: config.stressGradeMin,
       budgetMinAed: 1,
     },
-    sortBy: "god_metric",
+    sortBy: config.sortBy,
     page: 1,
     pageSize: 20,
   })
@@ -53,8 +60,11 @@ export default async function AgentRuntimePage({ searchParams }: { searchParams:
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Investor Routing</p>
           <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">Investor Match Desk</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Profile-based inventory routing across outcome intent, affordability, and stress metrics.
+            Profile-based inventory routing across resilience, affordability, and V1 signal quality.
           </p>
+          <div className="mt-4 rounded-2xl border border-border/60 bg-card/40 px-4 py-3 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">{config.heading}:</span> {config.description}
+          </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {[

@@ -247,7 +247,9 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
     clauses.push(Prisma.sql`LOWER(developer) LIKE LOWER(${`%${filters.developer}%`})`)
   }
   if (filters.intent) {
-    clauses.push(Prisma.sql`outcome_intent @> ARRAY[${filters.intent}]::text[]`)
+    if (!USE_CURATED_PROPERTIES_VIEW) {
+      clauses.push(Prisma.sql`outcome_intent @> ARRAY[${filters.intent}]::text[]`)
+    }
   }
   if (typeof filters.budgetMaxAed === "number") {
     clauses.push(
@@ -294,7 +296,7 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
       USE_CURATED_PROPERTIES_VIEW
         ? Prisma.sql`(
             COALESCE(price_from, 0) >= 2000000
-            OR LOWER(COALESCE(golden_visa_eligible, 'false')) IN ('true', 'yes', '1')
+            OR LOWER(COALESCE(golden_visa, 'false')) IN ('true', 'yes', '1')
           )`
         : Prisma.sql`(
             l1_canonical_price >= 2000000
