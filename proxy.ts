@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { defaultLocale, isLocale, localeCookieName, stripLocalePrefix } from "@/i18n/locale"
+import { defaultLocale, isLocale, localeCookieName, prefixLocalePath, stripLocalePrefix } from "@/i18n/locale"
 
 const AUTOMATION_BUILDER_PATHS = ["/apps/automation-builder", "/api/automation-builder"]
 const KILL_SWITCH_PATHS = ["/api/time-table", "/api/scoring", "/api/profile", "/api/distribution"]
+const LOCALE_SHORTCUT_REDIRECTS: Record<string, string> = {
+  "/apis": "/docs/partners-apis",
+}
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -30,6 +33,19 @@ export function proxy(request: NextRequest) {
 
   if (internalPathname === "/api" || internalPathname.startsWith("/api/")) {
     return NextResponse.next()
+  }
+
+  if (isLocale(pathLocale) && LOCALE_SHORTCUT_REDIRECTS[internalPathname]) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = prefixLocalePath(LOCALE_SHORTCUT_REDIRECTS[internalPathname], activeLocale)
+
+    const response = NextResponse.redirect(redirectUrl)
+    response.cookies.set(localeCookieName, activeLocale, {
+      path: "/",
+      sameSite: "lax",
+    })
+
+    return response
   }
 
   const requestHeaders = new Headers(request.headers)
