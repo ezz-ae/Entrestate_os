@@ -12,9 +12,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ ...data, requestId })
   } catch (error) {
     return NextResponse.json(
-      { error: getPublicErrorMessage(error, "Failed to load area intelligence."), requestId },
+      { error: getPublicErrorMessage(error, "Failed to load area profiles."), requestId },
       { status: 500 },
     )
   }
 }
-

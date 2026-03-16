@@ -6,7 +6,7 @@ import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import Link from "next/link"
-import { areaCoordinates } from "@/lib/area-coordinates"
+import { getAreaCoordinates } from "@/lib/area-geo"
 import { DecisionRecord } from "@/lib/decision-infrastructure"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
@@ -315,9 +315,7 @@ export function AreaMapDesktop({ areas }: { areas: Area[] }) {
   const markers = useMemo(() => {
     return areas
       .map((area) => {
-        const key = String(area.area ?? "").toLowerCase()
-        const coords = areaCoordinates[key]
-        if (!coords) return null
+        const coords = getAreaCoordinates(area.area, area.city)
         const hasYield = typeof area.avg_yield === "number"
         const yieldVal = hasYield ? (area.avg_yield as number) : 0
         const color = yieldColor(yieldVal)

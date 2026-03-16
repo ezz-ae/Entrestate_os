@@ -661,6 +661,10 @@ export async function listAreas(): Promise<{
     ? await runQuery(Prisma.sql`
         SELECT
           t.area,
+          COALESCE(
+            NULLIF(TRIM(to_jsonb(t) ->> 'area_ar'), ''),
+            NULLIF(TRIM(to_jsonb(t) ->> 'name_ar'), '')
+          ) AS area_ar,
           NULLIF(TRIM(COALESCE(t.city, '')), '') AS city,
           COALESCE((to_jsonb(t) ->> 'total_projects')::int, 0) AS projects,
           (to_jsonb(t) ->> 'avg_price')::numeric AS avg_price,
@@ -759,7 +763,7 @@ export async function listAreas(): Promise<{
       const topProjects = topProjectsMap.get(key) ?? []
       return {
         ...row,
-        area_ar: profile?.area_ar ?? null,
+        area_ar: (row as DecisionRecord).area_ar ?? profile?.area_ar ?? null,
         image_url: profile?.image_url ?? null,
         area_type: profile?.area_type ?? null,
         top_projects: topProjects,
@@ -804,24 +808,28 @@ export async function getAreaBySlug(slug: string): Promise<{
     `),
     runQuery(Prisma.sql`
       SELECT
-        name,
-        developer,
-        l1_canonical_price,
-        l1_canonical_yield,
-        l2_stress_test_grade,
-        l3_timing_signal,
-        engine_god_metric,
-        l1_confidence
-      FROM ${DETAIL_TABLE_SQL}
+        d.name,
+        d.developer,
+        gp.developer_ar,
+        d.l1_canonical_price,
+        d.l1_canonical_yield,
+        d.l2_stress_test_grade,
+        d.l3_timing_signal,
+        d.engine_god_metric,
+        d.l1_confidence
+      FROM ${DETAIL_TABLE_SQL} d
+      LEFT JOIN gc_developer_profiles gp ON LOWER(gp.name) = LOWER(d.developer)
       WHERE ${areaWhere}
-      ORDER BY engine_god_metric DESC NULLS LAST
+      ORDER BY d.engine_god_metric DESC NULLS LAST
       LIMIT 40
     `),
     runQuery(Prisma.sql`
       SELECT
-        developer,
+        d.developer,
+        MAX(gp.developer_ar) AS developer_ar,
         COUNT(*)::int AS projects
-      FROM ${DETAIL_TABLE_SQL}
+      FROM ${DETAIL_TABLE_SQL} d
+      LEFT JOIN gc_developer_profiles gp ON LOWER(gp.name) = LOWER(d.developer)
       WHERE ${developerAreaWhere}
       GROUP BY 1
       ORDER BY projects DESC
@@ -881,7 +889,10 @@ export async function listDevelopers(): Promise<{
           d.slug,
           d.tier,
           d.logo,
-          to_jsonb(d) ->> 'developer_ar' AS developer_ar,
+          COALESCE(
+            NULLIF(TRIM(to_jsonb(d) ->> 'developer_ar'), ''),
+            NULLIF(TRIM(to_jsonb(d) ->> 'name_ar'), '')
+          ) AS developer_ar,
           d.project_count,
           d.avg_score,
           d.avg_yield,
@@ -1110,7 +1121,10 @@ export async function getDeveloperBySlug(slug: string): Promise<{
       SELECT
         d.name AS developer,
         d.slug,
-        to_jsonb(d) ->> 'developer_ar' AS developer_ar,
+        COALESCE(
+          NULLIF(TRIM(to_jsonb(d) ->> 'developer_ar'), ''),
+          NULLIF(TRIM(to_jsonb(d) ->> 'name_ar'), '')
+        ) AS developer_ar,
         d.avg_score AS reliability,
         d.avg_score AS efficiency,
         d.avg_price,
