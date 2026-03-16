@@ -4,12 +4,89 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useLocale } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Eye, EyeOff } from "lucide-react"
 import { authClient } from "@/lib/auth/client"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+
+const COPY = {
+  en: {
+    heroTitle: "A clearer way to enter the market.",
+    heroBody: "Open your account, read the market with evidence, compare options, and move when the picture is ready.",
+    statOneTitle: "Free",
+    statOneLabel: "To explore",
+    statTwoTitle: "Verified",
+    statTwoLabel: "Advisors",
+    statThreeTitle: "Signed",
+    statThreeLabel: "Reports",
+    title: "Request access",
+    subtitle: "Create your Entrestate account",
+    google: "Continue with Google",
+    googleLoading: "Connecting to Google...",
+    divider: "or",
+    name: "Full name",
+    namePlaceholder: "Your full name",
+    email: "Work email",
+    emailPlaceholder: "you@company.com",
+    password: "Password",
+    passwordPlaceholder: "Min. 8 characters",
+    submit: "Create account",
+    submitting: "Creating account...",
+    pending: "Checking session status…",
+    success: "Check your email to verify your account, then sign in.",
+    termsLead: "By signing up, you agree to our",
+    terms: "Terms",
+    privacy: "Privacy Policy",
+    already: "Already have an account?",
+    signIn: "Sign in",
+    invalidOrigin: (origin: string) =>
+      `Auth domain is not trusted. Add ${origin} to Neon Auth trusted origins (with and without www), then retry.`,
+    genericError: "Unable to create account. Please try again.",
+    timeout: "Registration timed out. Check Neon Auth settings and try again.",
+    googleTimeout: "Google sign-in timed out. Check Neon Auth settings and try again.",
+  },
+  ar: {
+    heroTitle: "ابدأ من قراءة السوق، لا من التخمين.",
+    heroBody: "افتح حسابك، راقب الإشارة، قارن الخيارات، وتحرك عندما تصبح الصورة أوضح.",
+    statOneTitle: "مجاني",
+    statOneLabel: "للبداية",
+    statTwoTitle: "موثّقون",
+    statTwoLabel: "خبراء",
+    statThreeTitle: "جاهزة",
+    statThreeLabel: "تقارير",
+    title: "افتح حسابك",
+    subtitle: "ابدأ استخدام Entrestate خلال دقائق",
+    google: "المتابعة عبر Google",
+    googleLoading: "جارٍ فتح Google...",
+    divider: "أو",
+    name: "الاسم الكامل",
+    namePlaceholder: "اكتب اسمك الكامل",
+    email: "البريد المهني",
+    emailPlaceholder: "you@company.com",
+    password: "كلمة المرور",
+    passwordPlaceholder: "8 أحرف على الأقل",
+    submit: "إنشاء الحساب",
+    submitting: "جارٍ إنشاء الحساب...",
+    pending: "جارٍ التأكد من الجلسة...",
+    success: "راجع بريدك لتأكيد الحساب، ثم ادخل إلى المنصة.",
+    termsLead: "بإكمال التسجيل، فأنت توافق على",
+    terms: "الشروط",
+    privacy: "سياسة الخصوصية",
+    already: "لديك حساب بالفعل؟",
+    signIn: "تسجيل الدخول",
+    invalidOrigin: (origin: string) =>
+      `هذا الدومين غير مفعّل لإنشاء الحساب. أضف ${origin} إلى Trusted Origins في Neon Auth ثم أعد المحاولة.`,
+    genericError: "تعذر إنشاء الحساب الآن. حاول مرة أخرى.",
+    timeout: "انتهت مهلة إنشاء الحساب. راجع إعدادات Neon Auth ثم أعد المحاولة.",
+    googleTimeout: "انتهت مهلة الدخول عبر Google. راجع إعدادات Neon Auth ثم أعد المحاولة.",
+  },
+} as const
 
 export default function SignUpPage() {
   const router = useRouter()
+  const locale = useLocale() as AppLocale
+  const copy = COPY[locale] ?? COPY.en
   const { data: session, isPending } = authClient.useSession()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -20,13 +97,19 @@ export default function SignUpPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
+  const homeHref = prefixLocalePath("/", locale)
+  const workspaceHref = prefixLocalePath("/workspace", locale)
+  const loginHref = prefixLocalePath("/login", locale)
+  const termsHref = prefixLocalePath("/terms", locale)
+  const privacyHref = prefixLocalePath("/privacy", locale)
+
   const toFriendlyAuthError = (message?: string | null) => {
     const normalized = (message ?? "").toLowerCase()
     if (normalized.includes("invalid origin")) {
-      const currentOrigin = typeof window !== "undefined" ? window.location.origin : "this site origin"
-      return `Auth domain is not trusted. Add ${currentOrigin} to Neon Auth trusted origins (with and without www), then retry.`
+      const currentOrigin = typeof window !== "undefined" ? window.location.origin : locale === "ar" ? "هذا الدومين" : "this site origin"
+      return copy.invalidOrigin(currentOrigin)
     }
-    return message || "Unable to create account. Please try again."
+    return message || copy.genericError
   }
 
   const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string) => {
@@ -40,17 +123,15 @@ export default function SignUpPage() {
     try {
       return await Promise.race([promise, timeoutPromise])
     } finally {
-      if (timeoutHandle) {
-        clearTimeout(timeoutHandle)
-      }
+      if (timeoutHandle) clearTimeout(timeoutHandle)
     }
   }
 
   useEffect(() => {
     if (session?.user) {
-      router.replace("/workspace")
+      router.replace(workspaceHref)
     }
-  }, [session, router])
+  }, [session, router, workspaceHref])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,11 +140,7 @@ export default function SignUpPage() {
     setIsLoading(true)
 
     try {
-      const { data, error } = await withTimeout(
-        authClient.signUp.email({ email, password, name }),
-        15000,
-        "Registration timed out. Check Neon Auth settings and try again.",
-      )
+      const { data, error } = await withTimeout(authClient.signUp.email({ email, password, name }), 15000, copy.timeout)
 
       if (error) {
         setFormError(toFriendlyAuthError(error.message))
@@ -71,11 +148,11 @@ export default function SignUpPage() {
       }
 
       if (data?.token) {
-        router.push("/workspace")
+        router.push(workspaceHref)
         return
       }
 
-      setSuccessMessage("Check your email to verify your account, then sign in.")
+      setSuccessMessage(copy.success)
     } catch (err) {
       setFormError(toFriendlyAuthError(err instanceof Error ? err.message : null))
     } finally {
@@ -92,10 +169,10 @@ export default function SignUpPage() {
       const { error } = await withTimeout(
         authClient.signIn.social({
           provider: "google",
-          callbackURL: "/workspace",
+          callbackURL: workspaceHref,
         }),
         15000,
-        "Google sign-in timed out. Check Neon Auth settings and try again.",
+        copy.googleTimeout,
       )
 
       if (error) {
@@ -110,9 +187,8 @@ export default function SignUpPage() {
 
   return (
     <div className="relative min-h-screen flex bg-background">
-      {/* Left side */}
       <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 bg-primary">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href={homeHref} className="flex items-center gap-2">
           <div className="flex gap-0.5" aria-hidden="true">
             <div className="w-3 h-3 rounded-sm bg-primary-foreground" />
             <div className="w-3 h-3 rounded-sm bg-primary-foreground/60" />
@@ -122,35 +198,30 @@ export default function SignUpPage() {
         </Link>
 
         <div className="max-w-md">
-          <h2 className="text-3xl font-serif text-primary-foreground leading-tight mb-4">
-            A professional platform for studying markets and operating decisions.
-          </h2>
-          <p className="text-primary-foreground/60 leading-relaxed">
-            Explore market data, analyze price behavior, compare scenarios, and work with verified advisors when you are ready to act.
-          </p>
+          <h2 className="text-3xl font-serif text-primary-foreground leading-tight mb-4">{copy.heroTitle}</h2>
+          <p className="text-primary-foreground/60 leading-relaxed">{copy.heroBody}</p>
         </div>
 
         <div className="flex gap-12">
           <div>
-            <p className="text-3xl font-serif text-primary-foreground">Free</p>
-            <p className="text-sm text-primary-foreground/60 mt-1">To explore</p>
+            <p className="text-3xl font-serif text-primary-foreground">{copy.statOneTitle}</p>
+            <p className="text-sm text-primary-foreground/60 mt-1">{copy.statOneLabel}</p>
           </div>
           <div>
-            <p className="text-3xl font-serif text-primary-foreground">Verified</p>
-            <p className="text-sm text-primary-foreground/60 mt-1">Advisors</p>
+            <p className="text-3xl font-serif text-primary-foreground">{copy.statTwoTitle}</p>
+            <p className="text-sm text-primary-foreground/60 mt-1">{copy.statTwoLabel}</p>
           </div>
           <div>
-            <p className="text-3xl font-serif text-primary-foreground">Signed</p>
-            <p className="text-sm text-primary-foreground/60 mt-1">Reports</p>
+            <p className="text-3xl font-serif text-primary-foreground">{copy.statThreeTitle}</p>
+            <p className="text-sm text-primary-foreground/60 mt-1">{copy.statThreeLabel}</p>
           </div>
         </div>
       </div>
 
-      {/* Right side */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
           <div className="lg:hidden mb-8">
-            <Link href="/" className="flex items-center justify-center gap-2">
+            <Link href={homeHref} className="flex items-center justify-center gap-2">
               <div className="flex gap-0.5" aria-hidden="true">
                 <div className="w-3 h-3 rounded-sm bg-foreground" />
                 <div className="w-3 h-3 rounded-sm bg-foreground/60" />
@@ -162,8 +233,8 @@ export default function SignUpPage() {
 
           <div className="bg-card border border-border rounded-lg p-8">
             <div className="mb-8">
-              <h1 className="text-2xl font-serif text-foreground">Request access</h1>
-              <p className="text-muted-foreground mt-2 text-sm">Create your Entrestate account</p>
+              <h1 className="text-2xl font-serif text-foreground">{copy.title}</h1>
+              <p className="text-muted-foreground mt-2 text-sm">{copy.subtitle}</p>
             </div>
 
             <Button
@@ -173,7 +244,7 @@ export default function SignUpPage() {
               onClick={handleGoogleSignIn}
               disabled={isLoading || isGoogleLoading}
             >
-              {isGoogleLoading ? "Connecting to Google..." : "Continue with Google"}
+              {isGoogleLoading ? copy.googleLoading : copy.google}
             </Button>
 
             <div className="relative mb-4">
@@ -181,21 +252,21 @@ export default function SignUpPage() {
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">or</span>
+                <span className="bg-card px-2 text-muted-foreground">{copy.divider}</span>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-                  Full name
+                  {copy.name}
                 </label>
                 <input
                   id="name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Your full name"
+                  placeholder={copy.namePlaceholder}
                   required
                   className="w-full px-4 py-2.5 rounded-md bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
                 />
@@ -203,14 +274,14 @@ export default function SignUpPage() {
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                  Work email
+                  {copy.email}
                 </label>
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
+                  placeholder={copy.emailPlaceholder}
                   required
                   className="w-full px-4 py-2.5 rounded-md bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
                 />
@@ -218,7 +289,7 @@ export default function SignUpPage() {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                  Password
+                  {copy.password}
                 </label>
                 <div className="relative">
                   <input
@@ -226,7 +297,7 @@ export default function SignUpPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Min. 8 characters"
+                    placeholder={copy.passwordPlaceholder}
                     required
                     minLength={8}
                     className="w-full px-4 py-2.5 pr-11 rounded-md bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
@@ -246,24 +317,30 @@ export default function SignUpPage() {
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 mt-2"
                 disabled={isLoading || isGoogleLoading}
               >
-                {isLoading ? "Creating account..." : "Create account"}
+                {isLoading ? copy.submitting : copy.submit}
               </Button>
-              {isPending && !isLoading ? <p className="text-xs text-muted-foreground">Checking session status…</p> : null}
+              {isPending && !isLoading ? <p className="text-xs text-muted-foreground">{copy.pending}</p> : null}
               {formError && <p className="text-sm text-rose-300">{formError}</p>}
               {successMessage && <p className="text-sm text-emerald-300">{successMessage}</p>}
             </form>
 
             <p className="mt-6 text-xs text-muted-foreground text-center">
-              {"By signing up, you agree to our "}
-              <Link href="/terms" className="text-accent hover:underline">Terms</Link>
-              {" and "}
-              <Link href="/privacy" className="text-accent hover:underline">Privacy Policy</Link>
+              {copy.termsLead}{" "}
+              <Link href={termsHref} className="text-accent hover:underline">
+                {copy.terms}
+              </Link>
+              {locale === "ar" ? " و" : " and "}
+              <Link href={privacyHref} className="text-accent hover:underline">
+                {copy.privacy}
+              </Link>
             </p>
           </div>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            {"Already have an account? "}
-            <Link href="/login" className="text-accent hover:underline font-medium">Sign in</Link>
+            {copy.already}{" "}
+            <Link href={loginHref} className="text-accent hover:underline font-medium">
+              {copy.signIn}
+            </Link>
           </p>
         </div>
       </div>
