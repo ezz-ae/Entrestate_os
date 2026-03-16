@@ -354,7 +354,7 @@ export async function POST(request: Request) {
       messages: await convertToModelMessages(normalizedMessages, { tools: toolset }),
       temperature: 0.3,
       stopWhen: stepCountIs(6),
-      toolChoice: "required",
+      toolChoice: "auto",
       tools: toolset,
       onFinish: async ({ text, toolCalls }) => {
         if (userId && (text || (toolCalls && toolCalls.length > 0))) {

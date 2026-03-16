@@ -98,6 +98,8 @@ type ToolResultEnvelope = {
   count?: unknown
   data_as_of?: unknown
   guardrail_warnings?: unknown
+  overview?: unknown
+  top_areas_by_velocity?: unknown
 }
 
 type DldNotification = {
@@ -270,6 +272,43 @@ function resolveDataAsOf(toolResults: unknown[]): string {
     }
   }
   return new Date().toISOString()
+}
+
+function buildPulseContentFromToolResults(toolResults: unknown[]): string | null {
+  for (let index = toolResults.length - 1; index >= 0; index -= 1) {
+    const record = toRecord(toolResults[index]) as ToolResultEnvelope | null
+    if (!record) continue
+
+    const overview = toRecord(record.overview)
+    if (!overview) continue
+
+    const totalVolume = toFiniteNumber(overview.total_volume)
+    const totalTransactions = toFiniteNumber(overview.total_transactions)
+    const offplanCount = toFiniteNumber(overview.offplan_count)
+    const readyCount = toFiniteNumber(overview.ready_count)
+    const avgOffplan = toFiniteNumber(overview.avg_offplan)
+    const avgReady = toFiniteNumber(overview.avg_ready)
+    const velocityRows = toRows(record.top_areas_by_velocity).slice(0, 2)
+    const velocitySummary = velocityRows
+      .map((row) => {
+        const area = typeof row.area === "string" ? row.area : "Area"
+        const velocity = toFiniteNumber(row.daily_velocity)
+        return velocity === null ? area : `${area} ${velocity.toFixed(1)}`
+      })
+      .join(" | ")
+
+    return [
+      "Dubai Market Pulse",
+      "────────────────────────────────",
+      totalVolume === null ? null : `Volume:        AED ${(totalVolume / 1_000_000_000).toFixed(2)}B YTD`,
+      totalTransactions === null ? null : `Transactions:  ${Math.round(totalTransactions).toLocaleString()}`,
+      velocitySummary ? `Daily Velocity: ${velocitySummary}` : null,
+      offplanCount === null || avgOffplan === null ? null : `Off-Plan:      ${Math.round(offplanCount).toLocaleString()} (avg ${formatAed(avgOffplan)})`,
+      readyCount === null || avgReady === null ? null : `Ready:         ${Math.round(readyCount).toLocaleString()} (avg ${formatAed(avgReady)})`,
+    ].filter(Boolean).join("\n")
+  }
+
+  return null
 }
 
 function buildDataCardsFromRows(rows: Record<string, unknown>[]): ChatCard[] {
@@ -670,9 +709,12 @@ export async function POST(request: Request) {
       const dataCards = rows.length > 0 ? buildDataCardsFromRows(rows) : undefined
       const notifications = buildDldNotificationsFromToolResults(toolResults)
       const confidenceWarnings = collectToolWarnings(toolResults)
+      const pulseContent = buildPulseContentFromToolResults(toolResults)
       const toolSummary = toolResults.length > 0 ? JSON.stringify(toolResults[toolResults.length - 1]).slice(0, 1200) : ""
       const content = text.length > 0
         ? text
+        : pulseContent && message.trim().toUpperCase().includes("PULSE")
+          ? pulseContent
         : toolSummary.length > 0
           ? `The data shows: ${toolSummary}`
           : "No matching projects found."
