@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
-export default function CopilotPage() {
-  redirect("/chat")
+export default async function CopilotPage() {
+  const locale = await getRequestLocale()
+  redirect(prefixLocalePath("/chat", locale))
 }
