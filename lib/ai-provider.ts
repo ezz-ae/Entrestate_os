@@ -9,9 +9,15 @@ function getTrimmedEnv(name: string) {
 }
 
 export function ensureGeminiApiKeyEnv() {
-  const geminiKey = getTrimmedEnv("GEMINI_KEY") ?? getTrimmedEnv("GOOGLE_GENERATIVE_AI_API_KEY")
+  const geminiKey =
+    getTrimmedEnv("GEMINI_KEY")
+    ?? getTrimmedEnv("GEMINI_API_KEY")
+    ?? getTrimmedEnv("GOOGLE_GENERATIVE_AI_API_KEY")
   if (geminiKey && !getTrimmedEnv("GOOGLE_GENERATIVE_AI_API_KEY")) {
     process.env.GOOGLE_GENERATIVE_AI_API_KEY = geminiKey
+  }
+  if (geminiKey && !getTrimmedEnv("GEMINI_KEY")) {
+    process.env.GEMINI_KEY = geminiKey
   }
   return geminiKey
 }
@@ -42,7 +48,7 @@ export function resolveGatewayOrGeminiModel(options: { gatewayModel: string; gem
   const geminiKey = ensureGeminiApiKeyEnv()
   if (geminiKey) {
     // Prefer Pro models for Copilot if available, otherwise Flash
-    const preferredModel = normalizeGeminiModel(options.geminiModel, "gemini-1.5-pro")
+    const preferredModel = normalizeGeminiModel(options.geminiModel, "gemini-2.5-flash")
     return {
       model: google(preferredModel),
       provider: "gemini" as const,
@@ -61,13 +67,13 @@ export function resolveCopilotModel() {
   if (provider === "gateway") {
     if (!gatewayApiKey) return null
     const gateway = createGateway({ apiKey: gatewayApiKey })
-    return gateway(process.env.COPILOT_MODEL || "google/gemini-1.5-flash")
+    return gateway(process.env.COPILOT_MODEL || "google/gemini-2.5-flash")
   }
 
   if (provider === "gemini") {
     if (!geminiKey) return null
     const model = process.env.COPILOT_GEMINI_MODEL ?? process.env.GEMINI_MODEL ?? process.env.COPILOT_MODEL
-    return google(normalizeGeminiModel(model, "gemini-1.5-flash"))
+    return google(normalizeGeminiModel(model, "gemini-2.5-flash"))
   }
 
   if (provider === "openai") {
@@ -78,12 +84,12 @@ export function resolveCopilotModel() {
 
   if (geminiKey) {
     const model = process.env.COPILOT_GEMINI_MODEL ?? process.env.GEMINI_MODEL ?? process.env.COPILOT_MODEL
-    return google(normalizeGeminiModel(model, "gemini-1.5-flash"))
+    return google(normalizeGeminiModel(model, "gemini-2.5-flash"))
   }
 
   if (gatewayApiKey) {
     const gateway = createGateway({ apiKey: gatewayApiKey })
-    return gateway(process.env.COPILOT_MODEL || "google/gemini-1.5-flash")
+    return gateway(process.env.COPILOT_MODEL || "google/gemini-2.5-flash")
   }
 
   if (openAiApiKey) {
