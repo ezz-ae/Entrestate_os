@@ -1,5 +1,6 @@
 import React, { type FormEvent, type KeyboardEvent, useState, useEffect, useRef } from "react"
 import Link from "next/link"
+import { useLocale, useTranslations } from "next-intl"
 import { useCopilot } from "@/components/copilot-provider"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -29,6 +30,7 @@ import {
 import Image from "next/image"
 import { UpgradeModal } from "./upgrade-modal"
 import { authClient } from "@/lib/auth/client"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 function getMessageText(message: any): string {
   if (typeof message?.content === "string") {
@@ -242,6 +244,8 @@ function UserIcon(props: any) {
 }
 
 export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }) {
+  const locale = useLocale() as AppLocale
+  const t = useTranslations("sidebar")
   const { messages, sendMessage, clearError, status, error, stop, isSidebarOpen, closeSidebar, toggleSidebar, id: currentId, openSidebar } = useCopilot()
   const [input, setInput] = useState("")
   const [isDesktopViewport, setIsDesktopViewport] = useState(false)
@@ -260,6 +264,19 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const querySessionId = searchParams?.get("id")
   const promptParam = searchParams?.get("prompt") ?? searchParams?.get("q")
   const { data: session } = authClient.useSession()
+  const starterCards = locale === "ar"
+    ? [
+        { label: "قارن المناطق", prompt: "قارن أفضل المناطق أداءً في دبي من حيث العائد ونمو الأسعار. ما المناطق التي تقدم أفضل فرصة استثمارية الآن؟" },
+        { label: "افحص الصفقات", prompt: "افحص أفضل صفقات البيع على الخارطة المتاحة الآن. أبحث عن مشاريع بمطور قوي وعائد جيد وخطط سداد مناسبة." },
+        { label: "نظرة على السوق", prompt: "اعطني نظرة حالية على سوق عقارات دبي — الاتجاهات الرئيسية وزخم الأسعار وأين تتحرك السيولة الذكية." },
+        { label: "خارطة الاستثمار", prompt: "ساعدني في بناء خارطة استثمار لعقارات دبي. أريد فهم أفضل استراتيجية دخول والمناطق المستهدفة والعوائد المتوقعة." },
+      ]
+    : [
+        { label: "Compare areas", prompt: "Compare the top performing areas in Dubai by yield and price appreciation. Which areas offer the best investment potential right now?" },
+        { label: "Screen deals", prompt: "Screen the best off-plan deals available now. I'm looking for projects with strong developer track record, good yield potential, and favorable payment plans." },
+        { label: "Market overview", prompt: "Give me a current overview of the Dubai real estate market — key trends, pricing momentum, and where the smart money is moving." },
+        { label: "Investment roadmap", prompt: "Help me build an investment roadmap for Dubai real estate. I want to understand the best entry strategy, areas to target, and expected returns." },
+      ]
 
   const user = session?.user
   const displayName = user?.name || user?.email || "Entrestate Member"
@@ -644,15 +661,10 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                       </div>
                       <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl" />
                     </div>
-                    <p className="text-base font-semibold text-foreground tracking-tight">Decision Intelligence</p>
-                    <p className="text-xs text-muted-foreground mt-1.5 max-w-[200px]">Ask about any area, project, or developer in the UAE market.</p>
+                    <p className="text-base font-semibold text-foreground tracking-tight">{t("decisionIntelligence")}</p>
+                    <p className="text-xs text-muted-foreground mt-1.5 max-w-[200px]">{t("decisionSubtitle")}</p>
                     <div className="mt-5 grid grid-cols-2 gap-2 w-full">
-                      {[
-                        { label: "Compare areas", prompt: "Compare the top performing areas in Dubai by yield and price appreciation. Which areas offer the best investment potential right now?" },
-                        { label: "Screen deals", prompt: "Screen the best off-plan deals available now. I'm looking for projects with strong developer track record, good yield potential, and favorable payment plans." },
-                        { label: "Market overview", prompt: "Give me a current overview of the Dubai real estate market — key trends, pricing momentum, and where the smart money is moving." },
-                        { label: "Investment roadmap", prompt: "Help me build an investment roadmap for Dubai real estate. I want to understand the best entry strategy, areas to target, and expected returns." },
-                      ].map(({ label, prompt }) => (
+                      {starterCards.map(({ label, prompt }) => (
                         <button
                           key={label}
                           onClick={() => { void sendPrompt(prompt) }}
@@ -686,7 +698,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
               <div className="p-4 border-t border-border bg-card/20 pb-[calc(1rem+env(safe-area-inset-bottom))]">
                 {messages.length > 0 && messages[messages.length - 1].role !== "user" && !isBusy && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
-                    {["Tell me more", "What are the risks?", "Summarize", "Generate a report"].map((prompt) => (
+                    {[t("quickReplies.more"), t("quickReplies.risks"), t("quickReplies.summarize"), t("quickReplies.report")].map((prompt) => (
                       <button
                         key={prompt}
                         onClick={() => { void sendPrompt(prompt) }}
@@ -706,7 +718,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                   <Textarea
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
-                    placeholder="Ask anything..."
+                    placeholder={t("placeholder")}
                     className="min-h-[88px] w-full resize-none rounded-xl border-border bg-background shadow-inner pr-12 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0 focus-visible:ring-offset-background"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
@@ -755,11 +767,12 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                       <p className="truncate text-xs text-muted-foreground">{displayEmail}</p>
                     </div>
                     <Link
-                      href="/account/profile"
+                      href={prefixLocalePath("/account/profile", locale)}
+                      locale={false}
                       onClick={handleCloseSidebar}
                       className="ml-auto inline-flex items-center rounded-lg border border-border/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
                     >
-                      View
+                      {t("view")}
                     </Link>
                   </div>
 

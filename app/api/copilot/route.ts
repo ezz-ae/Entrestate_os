@@ -48,7 +48,7 @@ import {
   dldTransactionSearchInputSchema,
   generateInvestorMemoInputSchema,
   priceRealityCheckInputSchema,
-  copilotSystemPrompt,
+  getCopilotSystemPrompt,
   copilotToolDescriptions,
 } from "@/lib/copilot/tools"
 import { mcpCrossReference, mcpDescribeTable, mcpQuery } from "@/lib/mcp/server"
@@ -63,6 +63,7 @@ import {
 
 import { loadChatSession, saveChatMessage } from "@/lib/copilot/persistence"
 import { getUserProfile } from "@/lib/profile/queries"
+import { normalizeLocale } from "@/i18n/locale"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -149,12 +150,29 @@ function isNonActionableTerminalInput(message: string) {
   const normalized = normalizeTerminalInput(message)
   if (normalized.length === 0) return true
 
-  return /^(hi|hello|hey|hey there|yo|sup|help|start|menu|commands|what can you do|how are you|who are you|ok|okay|thanks|thank you|\?+)$/.test(
+  return /^(hi|hello|hey|hey there|yo|sup|help|start|menu|commands|what can you do|how are you|who are you|ok|okay|thanks|thank you|مرحبا|اهلا|أهلا|مساعدة|ابدأ|اوامر|أوامر|شكرا|شكراً|\?+)$/.test(
     normalized,
   )
 }
 
-function buildTerminalCommandGuide() {
+function buildTerminalCommandGuide(locale: string) {
+  if (locale === "ar") {
+    return [
+      "ENTRESTATE Decision Terminal",
+      "────────────────────────────────",
+      "الوضع: بانتظار أمر",
+      "الأوامر: SCREEN | PROJECT | AREA | COMPARE | RISK | MEMO | PULSE",
+      "",
+      "أمثلة:",
+      "- PULSE",
+      "- PROJECT Marina Vista",
+      "- SCREEN مشاريع تحت AED 2M",
+      "- AREA Jumeirah Village Circle",
+      "- COMPARE Dubai Marina vs JBR",
+      "- RISK Emaar Properties",
+    ].join("\n")
+  }
+
   return [
     "ENTRESTATE Decision Terminal",
     "────────────────────────────────",
@@ -173,6 +191,7 @@ function buildTerminalCommandGuide() {
 
 export async function POST(request: Request) {
   const requestId = getRequestId(request)
+  const locale = normalizeLocale(request.headers.get("x-entrestate-locale"))
 
   try {
     const body = (await request.json()) as { messages?: UIMessage[]; id?: string }
@@ -344,7 +363,7 @@ export async function POST(request: Request) {
           writer.write({
             type: "text-delta",
             id: "text-1",
-            delta: buildTerminalCommandGuide(),
+            delta: buildTerminalCommandGuide(locale),
           })
           writer.write({ type: "text-end", id: "text-1" })
           writer.write({ type: "finish-step" })
@@ -424,7 +443,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const systemPrompt = copilotSystemPrompt.replace("{USER_PROFILE_CONTEXT}", profileContext)
+    const systemPrompt = getCopilotSystemPrompt(locale).replace("{USER_PROFILE_CONTEXT}", profileContext)
 
     const result = streamText({
       model,

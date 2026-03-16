@@ -16,5 +16,29 @@
     "label": "Language",
     "en": "EN",
     "ar": "AR"
+  },
+  "chat": {
+    "heroPlaceholder": "Describe your investment goal, budget, or a specific project to analyse…",
+    "composerPlaceholder": "Ask for project screening, price checks, area risk briefs, and full investor memos.",
+    "liveAnalysis": "Analysing live market data",
+    "noMatchingCommands": "No matching commands.",
+    "compareTitle": "Project Comparison",
+    "compareEmpty": "Ask to compare projects or areas to populate this panel.",
+    "slashExamples": {
+      "screen": "Find BUY timing label projects under AED 2M in Dubai Marina with stress grade A or B.",
+      "yield": "Which Dubai area offers the best yield-to-price ratio right now?"
+    }
+  },
+  "sidebar": {
+    "decisionIntelligence": "Decision Intelligence",
+    "decisionSubtitle": "Ask about any area, project, or developer in the UAE market.",
+    "quickReplies": {
+      "more": "Tell me more",
+      "risks": "What are the risks?",
+      "summarize": "Summarize",
+      "report": "Generate a report"
+    },
+    "placeholder": "Ask anything...",
+    "view": "View"
   }
 }

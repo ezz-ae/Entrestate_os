@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { useCopilot } from "@/components/copilot-provider"
 import { motion, AnimatePresence } from "framer-motion"
 import { MarqueePrompts } from "@/components/marketing/marquee-prompts"
@@ -648,6 +648,7 @@ export function ChatInterface({
   initialCooldownSecondsRemaining = null,
 }: ChatInterfaceProps) {
   const locale = useLocale() as AppLocale
+  const t = useTranslations("chat")
   const { data: session } = authClient.useSession()
   const canUpload = Boolean(session?.user)
   const searchParams = useSearchParams()
@@ -926,8 +927,8 @@ export function ChatInterface({
   const dynamicSuggestions = useMemo(() => {
     if (!selectedRow) {
       return [
-        "Find BUY timing label projects under AED 2M in Dubai Marina with stress grade A or B.",
-        "Which Dubai area offers the best yield-to-price ratio right now?",
+        t("slashExamples.screen"),
+        t("slashExamples.yield"),
         "Compare Emaar vs Damac reliability — which developer carries lower delivery risk?",
         "What does a BUY signal mean and how is it calculated in this platform?",
       ]
@@ -1228,13 +1229,6 @@ export function ChatInterface({
   }, [reportDraft.reportId, reportDraft.enabledExports])
 
   if (!hasConversation) {
-    const placeholders = [
-      "Ask anything about the real estate market...",
-      "Find 2BR projects under AED 2M in Dubai Marina...",
-      "Compare Emaar vs Damac reliability scores...",
-      "What is the rental yield in Business Bay today?",
-      "Show the V1 stress profile for Marina Vista...",
-    ]
 
     return (
       <div className="mx-auto w-full max-w-6xl">
@@ -1295,7 +1289,7 @@ export function ChatInterface({
                       value={input}
                       onChange={(event) => setInput(event.target.value)}
                       onKeyDown={(event) => { void onInputKeyDown(event) }}
-                      placeholder="Describe your investment goal, budget, or a specific project to analyse…"
+                      placeholder={t("heroPlaceholder")}
                       className="min-h-[120px] w-full bg-transparent border-0 focus-visible:ring-0 resize-none py-4 px-4 text-base relative z-10 shadow-none placeholder:text-muted-foreground/30"
                       disabled={chatBlocked}
                     />
@@ -1303,7 +1297,7 @@ export function ChatInterface({
                     {isSlashPaletteOpen ? (
                       <div className="absolute bottom-[100%] left-4 right-4 mb-2 rounded-xl border border-border/70 bg-card/98 p-2 shadow-xl backdrop-blur">
                         {filteredSlashCommands.length === 0 ? (
-                          <p className="px-2 py-1 text-xs text-muted-foreground">No matching commands.</p>
+                          <p className="px-2 py-1 text-xs text-muted-foreground">{t("noMatchingCommands")}</p>
                         ) : (
                           filteredSlashCommands.map((command, index) => {
                             const Icon = command.icon
@@ -1489,7 +1483,7 @@ export function ChatInterface({
                   <span className="chat-dot-2 h-1.5 w-1.5 rounded-full bg-primary" />
                   <span className="chat-dot-3 h-1.5 w-1.5 rounded-full bg-primary" />
                 </span>
-                Analysing live market data
+                {t("liveAnalysis")}
               </div>
             </div>
           ) : null}
@@ -1503,14 +1497,14 @@ export function ChatInterface({
               onKeyDown={(event) => {
                 void onInputKeyDown(event)
               }}
-              placeholder="Ask for project screening, price checks, area risk briefs, and full investor memos."
+              placeholder={t("composerPlaceholder")}
               className="min-h-20 resize-y text-base"
             />
 
             {isSlashPaletteOpen ? (
               <div className="absolute bottom-[100%] left-0 right-0 mb-2 rounded-xl border border-border/70 bg-card/95 p-2 shadow-xl backdrop-blur">
                 {filteredSlashCommands.length === 0 ? (
-                  <p className="px-2 py-1 text-xs text-muted-foreground">No matching commands.</p>
+                  <p className="px-2 py-1 text-xs text-muted-foreground">{t("noMatchingCommands")}</p>
                 ) : (
                   filteredSlashCommands.map((command, index) => {
                     const Icon = command.icon
@@ -1633,11 +1627,11 @@ export function ChatInterface({
         <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
           <div className="mb-2 flex items-center gap-2">
             <BarChart3 className="h-3.5 w-3.5 text-primary" />
-            <p className="text-xs font-semibold text-foreground">Project Comparison</p>
+            <p className="text-xs font-semibold text-foreground">{t("compareTitle")}</p>
           </div>
 
           {comparisonRows.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Ask to compare projects or areas to populate this panel.</p>
+            <p className="text-xs text-muted-foreground">{t("compareEmpty")}</p>
           ) : (
             <div className="space-y-2">
               {comparisonRows.map((row) => (

@@ -30,7 +30,7 @@ import {
   type GenerateInvestorMemoInput,
   type PriceRealityCheckInput,
   areaRiskBriefInputSchema,
-  copilotSystemPrompt,
+  getCopilotSystemPrompt,
   copilotToolDescriptions,
   dealScreenerInputSchema,
   dldAreaBenchmarkInputSchema,
@@ -78,12 +78,21 @@ const chatRequestSchema = z
     message: "message or intent is required",
   })
 
-const defaultSuggestions = [
-  "Studios under AED 800K in Business Bay",
-  "Compare Dubai Marina vs JBR",
-  "Best areas for 1-2 year delivery",
-  "Projects in Abu Dhabi under AED 2M",
-]
+function getDefaultSuggestions(locale: string) {
+  return locale === "ar"
+    ? [
+        "استوديوهات تحت 800 ألف درهم في الخليج التجاري",
+        "قارن دبي مارينا مع جميرا بيتش ريزيدنس",
+        "أفضل المناطق للتسليم خلال 1-2 سنة",
+        "مشاريع في أبوظبي تحت 2 مليون درهم",
+      ]
+    : [
+        "Studios under AED 800K in Business Bay",
+        "Compare Dubai Marina vs JBR",
+        "Best areas for 1-2 year delivery",
+        "Projects in Abu Dhabi under AED 2M",
+      ]
+}
 
 const rawChatModelTimeoutMs = Number.parseInt(process.env.CHAT_MODEL_TIMEOUT_MS ?? "5000", 10)
 const chatModelTimeoutMs = Number.isFinite(rawChatModelTimeoutMs) && rawChatModelTimeoutMs >= 1000
@@ -186,12 +195,29 @@ function isNonActionableTerminalInput(message: string) {
   const normalized = normalizeTerminalInput(message)
   if (normalized.length === 0) return true
 
-  return /^(hi|hello|hey|hey there|yo|sup|help|start|menu|commands|what can you do|how are you|who are you|ok|okay|thanks|thank you|\?+)$/.test(
+  return /^(hi|hello|hey|hey there|yo|sup|help|start|menu|commands|what can you do|how are you|who are you|ok|okay|thanks|thank you|مرحبا|اهلا|أهلا|مساعدة|ابدأ|اوامر|أوامر|شكرا|شكراً|\?+)$/.test(
     normalized,
   )
 }
 
-function buildTerminalCommandGuide() {
+function buildTerminalCommandGuide(locale: string) {
+  if (locale === "ar") {
+    return [
+      "ENTRESTATE Decision Terminal",
+      "────────────────────────────────",
+      "الوضع: بانتظار أمر",
+      "الأوامر: SCREEN | PROJECT | AREA | COMPARE | RISK | MEMO | PULSE",
+      "",
+      "أمثلة:",
+      "- PULSE",
+      "- PROJECT Marina Vista",
+      "- SCREEN مشاريع تحت AED 2M",
+      "- AREA Jumeirah Village Circle",
+      "- COMPARE Dubai Marina vs JBR",
+      "- RISK Emaar Properties",
+    ].join("\n")
+  }
+
   return [
     "ENTRESTATE Decision Terminal",
     "────────────────────────────────",
@@ -825,11 +851,11 @@ export async function POST(request: Request) {
     if (isNonActionableTerminalInput(message)) {
       return NextResponse.json(
         {
-          content: buildTerminalCommandGuide(),
+          content: buildTerminalCommandGuide(locale),
           suggestions: [
-            "PULSE",
+            locale === "ar" ? "PULSE" : "PULSE",
             "PROJECT Marina Vista",
-            "SCREEN projects under AED 2M",
+            locale === "ar" ? "SCREEN مشاريع تحت AED 2M" : "SCREEN projects under AED 2M",
             "AREA Jumeirah Village Circle",
           ],
           compiler_output: buildCompilerOutput(message),
@@ -853,7 +879,7 @@ export async function POST(request: Request) {
         {
           ...fallback,
           warning: "Live model unavailable. Returned deterministic market response.",
-          suggestions: defaultSuggestions,
+          suggestions: getDefaultSuggestions(locale),
           compiler_output: buildCompilerOutput(message),
           requestId,
           request_id: requestId,
@@ -873,7 +899,7 @@ export async function POST(request: Request) {
       const response = await withTimeout(
         generateText({
           model,
-          system: copilotSystemPrompt,
+          system: getCopilotSystemPrompt(locale),
           prompt,
           temperature: 0,
           maxSteps: 6,
@@ -918,7 +944,7 @@ export async function POST(request: Request) {
           content,
           dataCards: dataCards ?? deterministic?.dataCards,
           notifications: notifications.length > 0 ? notifications : undefined,
-          suggestions: defaultSuggestions,
+          suggestions: getDefaultSuggestions(locale),
           evidence: {
             sources_used: deterministic?.evidence?.sources_used ?? collectSources(toolResults),
             warnings: confidenceWarnings,
@@ -944,7 +970,7 @@ export async function POST(request: Request) {
         {
           ...fallback,
           warning: "Live model unavailable. Returned deterministic market response.",
-          suggestions: defaultSuggestions,
+          suggestions: getDefaultSuggestions(locale),
           compiler_output: buildCompilerOutput(message),
           requestId,
           request_id: requestId,
