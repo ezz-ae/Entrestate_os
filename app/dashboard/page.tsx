@@ -4,11 +4,18 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { TrustBar } from "@/components/decision/trust-bar"
 import { getMarketPulse } from "@/lib/decision-infrastructure"
+import { formatAed } from "@/lib/format/currency"
+import { getNumberLocale } from "@/lib/format/locale"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 import { BarChart3, MessageSquare, FileText, TrendingUp, ShieldCheck, Clock } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
+  const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
+  const numberLocale = getNumberLocale(locale)
   const pulse = await getMarketPulse()
 
   const summary = pulse.summary as Record<string, unknown> | null
@@ -36,34 +43,30 @@ export default async function DashboardPage() {
 
   const stats = [
     {
-      title: "Total Projects",
-      value: projects.toLocaleString(),
-      subtitle: "Qualified inventory",
-      seed: "dashboard-projects",
+      title: isArabic ? "إجمالي المشاريع" : "Total Projects",
+      value: projects.toLocaleString(numberLocale),
+      subtitle: isArabic ? "المخزون المؤهل" : "Qualified inventory",
       icon: BarChart3,
       accent: "text-sky-400",
     },
     {
-      title: "Avg Price",
-      value: avgPrice === null ? "—" : `AED ${Math.round(avgPrice / 1_000_000 * 10) / 10}M`,
-      subtitle: "Across all inventory",
-      seed: "dashboard-price",
+      title: isArabic ? "متوسط السعر" : "Avg Price",
+      value: formatAed(avgPrice, locale, { compact: true, fallback: "AED —" }),
+      subtitle: isArabic ? "عبر كامل السوق" : "Across all inventory",
       icon: TrendingUp,
       accent: "text-violet-400",
     },
     {
-      title: "Avg Yield",
+      title: isArabic ? "متوسط العائد" : "Avg Yield",
       value: avgYield === null ? "—" : `${avgYield.toFixed(1)}%`,
-      subtitle: "Current gross yield",
-      seed: "dashboard-yield",
+      subtitle: isArabic ? "العائد الجاري" : "Current gross yield",
       icon: ShieldCheck,
       accent: "text-emerald-400",
     },
     {
-      title: "BUY Signals",
-      value: typeof buySignals?.count === "number" ? buySignals.count.toLocaleString() : "—",
-      subtitle: "Active opportunities",
-      seed: "dashboard-buy",
+      title: isArabic ? "فرص BUY" : "BUY Signals",
+      value: typeof buySignals?.count === "number" ? buySignals.count.toLocaleString(numberLocale) : "—",
+      subtitle: isArabic ? "الفرص المفتوحة الآن" : "Active opportunities",
       icon: Clock,
       accent: "text-emerald-400",
     },
@@ -74,16 +77,19 @@ export default async function DashboardPage() {
       <Navbar />
       <div className="mx-auto max-w-[1200px] px-6 pb-20 pt-28 md:pt-36">
         <header className="mb-6">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">Dashboard</p>
-          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">Investor Dashboard</h1>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "لوحة السوق" : "Dashboard"}</p>
+          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">
+            {isArabic ? "لقطة القرار في لحظتها" : "Investor Dashboard"}
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Live market pulse, timing signals, and confidence distribution across UAE real estate.
+            {isArabic
+              ? "نبض مباشر للسوق: السعر، العائد، إشارات التوقيت، وثقة البيانات في السوق السكني الإماراتي."
+              : "Live market pulse, timing signals, and confidence distribution across UAE real estate."}
           </p>
         </header>
 
         <TrustBar verifiedRows={projects} highConfidencePct={highConfidencePct} updatedAt={pulse.data_as_of} />
 
-        {/* Stat cards */}
         <section className="relative mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(950px_circle_at_50%_-15%,rgba(59,130,246,0.2),transparent_58%)]" />
           {stats.map((stat) => {
@@ -106,83 +112,87 @@ export default async function DashboardPage() {
           })}
         </section>
 
-        {/* Timing signals + Quick actions */}
         <section className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-          {/* Timing signals breakdown */}
           <article className="relative isolate col-span-1 overflow-hidden rounded-2xl border border-border/60 bg-card/75 p-5 md:col-span-2">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/[0.10] via-indigo-500/[0.06] to-transparent" />
             <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-sky-300/60 via-indigo-300/35 to-transparent" />
             <div className="relative z-10">
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Timing Signal Distribution</p>
-              <p className="mt-1 text-xs text-muted-foreground">{timingTotal.toLocaleString()} projects analysed</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                {isArabic ? "توزيع إشارات التوقيت" : "Timing Signal Distribution"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {isArabic
+                  ? `${timingTotal.toLocaleString(numberLocale)} مشروعًا داخل القراءة الحالية`
+                  : `${timingTotal.toLocaleString(numberLocale)} projects analysed`}
+              </p>
 
               <div className="mt-4 space-y-3">
                 {[
                   { label: "BUY", count: buySignals?.count, pct: buyPct, bar: "bg-emerald-500", text: "text-emerald-300", border: "border-emerald-500/40" },
                   { label: "HOLD", count: holdSignals?.count, pct: holdPct, bar: "bg-amber-500", text: "text-amber-300", border: "border-amber-500/40" },
                   { label: "WAIT", count: waitSignals?.count, pct: waitPct, bar: "bg-red-500", text: "text-red-300", border: "border-red-500/40" },
-                ].map((s) => (
-                  <div key={s.label}>
+                ].map((signal) => (
+                  <div key={signal.label}>
                     <div className="mb-1.5 flex items-center justify-between">
-                      <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${s.border} ${s.text} bg-background/20`}>{s.label}</span>
+                      <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${signal.border} ${signal.text} bg-background/20`}>
+                        {signal.label}
+                      </span>
                       <span className="text-sm font-semibold tabular-nums text-foreground">
-                        {typeof s.count === "number" ? s.count.toLocaleString() : "—"}
-                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">{s.pct > 0 ? `${s.pct.toFixed(1)}%` : ""}</span>
+                        {typeof signal.count === "number" ? signal.count.toLocaleString(numberLocale) : "—"}
+                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">{signal.pct > 0 ? `${signal.pct.toFixed(1)}%` : ""}</span>
                       </span>
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
-                      <div className={`h-full rounded-full ${s.bar} transition-all duration-700`} style={{ width: `${s.pct}%` }} />
+                      <div className={`h-full rounded-full ${signal.bar} transition-all duration-700`} style={{ width: `${signal.pct}%` }} />
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Confidence row */}
               <div className="mt-5 flex flex-wrap gap-3 border-t border-border/50 pt-4">
                 {[
-                  { label: "High confidence", count: highConfidence?.count, color: "text-emerald-300" },
-                  { label: "Medium confidence", count: mediumConfidence?.count, color: "text-amber-300" },
-                ].map((c) => (
-                  <div key={c.label} className="flex items-center gap-1.5">
-                    <span className={`text-sm font-semibold tabular-nums ${c.color}`}>
-                      {typeof c.count === "number" ? c.count.toLocaleString() : "—"}
+                  { label: isArabic ? "ثقة عالية" : "High confidence", count: highConfidence?.count, color: "text-emerald-300" },
+                  { label: isArabic ? "ثقة متوسطة" : "Medium confidence", count: mediumConfidence?.count, color: "text-amber-300" },
+                ].map((confidence) => (
+                  <div key={confidence.label} className="flex items-center gap-1.5">
+                    <span className={`text-sm font-semibold tabular-nums ${confidence.color}`}>
+                      {typeof confidence.count === "number" ? confidence.count.toLocaleString(numberLocale) : "—"}
                     </span>
-                    <span className="text-xs text-muted-foreground">{c.label}</span>
+                    <span className="text-xs text-muted-foreground">{confidence.label}</span>
                   </div>
                 ))}
               </div>
             </div>
           </article>
 
-          {/* Quick actions */}
           <article className="relative isolate overflow-hidden rounded-2xl border border-border/60 bg-card/75 p-5">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/[0.12] via-fuchsia-500/[0.07] to-transparent" />
             <div className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-violet-300/60 via-fuchsia-300/35 to-transparent" />
             <div className="relative z-10">
-              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Quick Actions</p>
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{isArabic ? "انطلق من هنا" : "Quick Actions"}</p>
               <div className="mt-4 flex flex-col gap-2">
                 <Button asChild className="w-full justify-start gap-2">
-                  <Link href="/chat">
+                  <Link href={prefixLocalePath("/chat", locale)}>
                     <MessageSquare className="h-4 w-4" />
-                    New AI chat
+                    {isArabic ? "ابدأ من المساعد" : "New AI chat"}
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="w-full justify-start gap-2">
-                  <Link href="/properties">
+                  <Link href={prefixLocalePath("/properties", locale)}>
                     <BarChart3 className="h-4 w-4" />
-                    Browse properties
+                    {isArabic ? "تصفح المشاريع" : "Browse properties"}
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="w-full justify-start gap-2">
-                  <Link href="/tools/memo">
+                  <Link href={prefixLocalePath("/tools/memo", locale)}>
                     <FileText className="h-4 w-4" />
-                    Generate report
+                    {isArabic ? "جهّز مذكرة" : "Generate report"}
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="w-full justify-start gap-2">
-                  <Link href="/top-data">
+                  <Link href={prefixLocalePath("/top-data", locale)}>
                     <TrendingUp className="h-4 w-4" />
-                    Market data
+                    {isArabic ? "افتح بيانات السوق" : "Market data"}
                   </Link>
                 </Button>
               </div>

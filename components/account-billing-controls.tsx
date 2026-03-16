@@ -3,7 +3,9 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useLocale } from "next-intl"
 import { Button } from "@/components/ui/button"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type Props = {
   tier: "free" | "pro" | "team" | "institutional"
@@ -11,13 +13,48 @@ type Props = {
   status: string | null
 }
 
-function statusLabel(value: string | null) {
-  if (!value) return "unknown"
-  return value.replaceAll("_", " ").toLowerCase()
+function tierLabel(value: Props["tier"], locale: AppLocale) {
+  if (locale !== "ar") return value
+  switch (value) {
+    case "free":
+      return "الأساسية"
+    case "pro":
+      return "Pro"
+    case "team":
+      return "Team"
+    case "institutional":
+      return "المؤسسية"
+    default:
+      return value
+  }
+}
+
+function statusLabel(value: string | null, locale: AppLocale) {
+  if (!value) return locale === "ar" ? "غير واضحة" : "unknown"
+  const normalized = value.replaceAll("_", " ").toLowerCase()
+  if (locale !== "ar") return normalized
+
+  switch (normalized) {
+    case "active":
+      return "نشطة"
+    case "approval pending":
+    case "approved":
+      return "قيد الاعتماد"
+    case "suspended":
+      return "معلّقة"
+    case "cancelled":
+      return "ملغاة"
+    case "expired":
+      return "منتهية"
+    default:
+      return normalized
+  }
 }
 
 export function AccountBillingControls({ tier, subscriptionId, status }: Props) {
   const router = useRouter()
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
   const [isPending, startTransition] = useTransition()
   const [feedback, setFeedback] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -39,14 +76,14 @@ export function AccountBillingControls({ tier, subscriptionId, status }: Props) 
 
         const payload = (await response.json().catch(() => ({}))) as { error?: string }
         if (!response.ok) {
-          setError(payload.error ?? "Billing action failed")
+          setError(payload.error ?? (isArabic ? "تعذر تنفيذ العملية الآن." : "Billing action failed"))
           return
         }
 
         setFeedback(successMessage)
         router.refresh()
       } catch {
-        setError("Billing action failed")
+        setError(isArabic ? "تعذر تنفيذ العملية الآن." : "Billing action failed")
       }
     })
   }
@@ -59,9 +96,15 @@ export function AccountBillingControls({ tier, subscriptionId, status }: Props) 
             variant="outline"
             size="sm"
             disabled={isPending}
-            onClick={() => runAction("/api/billing/paypal/subscription", "Subscription synced with PayPal.", "GET")}
+            onClick={() =>
+              runAction(
+                "/api/billing/paypal/subscription",
+                isArabic ? "تم تحديث حالة الاشتراك من PayPal." : "Subscription synced with PayPal.",
+                "GET",
+              )
+            }
           >
-            Sync status
+            {isArabic ? "مزامنة الحالة" : "Sync status"}
           </Button>
 
           {(statusUpper === "ACTIVE" || statusUpper === "APPROVAL_PENDING" || statusUpper === "APPROVED") && (
@@ -69,9 +112,14 @@ export function AccountBillingControls({ tier, subscriptionId, status }: Props) 
               variant="destructive"
               size="sm"
               disabled={isPending}
-              onClick={() => runAction("/api/billing/paypal/manage/cancel", "Subscription cancelled.")}
+              onClick={() =>
+                runAction(
+                  "/api/billing/paypal/manage/cancel",
+                  isArabic ? "تم إيقاف الاشتراك." : "Subscription cancelled.",
+                )
+              }
             >
-              Cancel subscription
+              {isArabic ? "إيقاف الاشتراك" : "Cancel subscription"}
             </Button>
           )}
 
@@ -79,26 +127,33 @@ export function AccountBillingControls({ tier, subscriptionId, status }: Props) 
             <Button
               size="sm"
               disabled={isPending}
-              onClick={() => runAction("/api/billing/paypal/manage/activate", "Subscription reactivated.")}
+              onClick={() =>
+                runAction(
+                  "/api/billing/paypal/manage/activate",
+                  isArabic ? "عاد الاشتراك إلى الحالة النشطة." : "Subscription reactivated.",
+                )
+              }
             >
-              Reactivate subscription
+              {isArabic ? "إعادة التفعيل" : "Reactivate subscription"}
             </Button>
           )}
 
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/pricing">Change plan</Link>
+            <Link href={prefixLocalePath("/pricing", locale)}>{isArabic ? "غيّر الباقة" : "Change plan"}</Link>
           </Button>
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           <Button size="sm" asChild>
-            <Link href="/pricing">Upgrade with PayPal</Link>
+            <Link href={prefixLocalePath("/pricing", locale)}>{isArabic ? "الترقية عبر PayPal" : "Upgrade with PayPal"}</Link>
           </Button>
         </div>
       )}
 
       <p className="text-xs text-muted-foreground">
-        Current tier: <span className="font-medium text-foreground">{tier}</span> · Status: {statusLabel(status)}
+        {isArabic ? "الباقة الحالية:" : "Current tier:"} <span className="font-medium text-foreground">{tierLabel(tier, locale)}</span>
+        {" · "}
+        {isArabic ? "الحالة:" : "Status:"} {statusLabel(status, locale)}
       </p>
 
       {feedback ? <p className="text-xs text-emerald-600">{feedback}</p> : null}
