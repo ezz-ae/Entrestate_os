@@ -4,6 +4,10 @@ import { Footer } from "@/components/footer"
 import { ProjectCard } from "@/components/decision/project-card"
 import { formatAed, formatScore } from "@/components/decision/formatters"
 import { getDeveloperBySlug } from "@/lib/decision-infrastructure"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
+import { pickLocalizedText } from "@/lib/format/entities"
+import { formatInteger } from "@/lib/format/number"
 
 export const dynamic = "force-dynamic"
 
@@ -17,11 +21,13 @@ function slugify(value: string) {
 
 export default async function DeveloperDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+  const locale = await getRequestLocale()
   const detail = await getDeveloperBySlug(slug)
   if (!detail) notFound()
 
   const developer = detail.developer
   const profile = developer.profile as Record<string, unknown> | null
+  const developerLabel = pickLocalizedText(locale, profile?.developer_ar, developer.developer, "Developer")
 
   return (
     <main id="main-content">
@@ -32,7 +38,7 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
           <div className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(680px_circle_at_50%_-280px,rgba(59,130,246,0.2),transparent_58%)] opacity-80" />
 
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Developer Detail</p>
-          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{String(developer.developer ?? "Developer")}</h1>
+          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{developerLabel}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {[profile?.founded_year, profile?.hq].filter(Boolean).join(" · ") || "Developer profile"}
           </p>
@@ -40,23 +46,23 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
           <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-5">
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
               <p className="text-xs text-muted-foreground">Reliability</p>
-              <p className="font-medium text-foreground">{formatScore(developer.reliability)}</p>
+              <p className="font-medium text-foreground">{formatScore(developer.reliability, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
               <p className="text-xs text-muted-foreground">Efficiency</p>
-              <p className="font-medium text-foreground">{formatScore(developer.efficiency)}</p>
+              <p className="font-medium text-foreground">{formatScore(developer.efficiency, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
               <p className="text-xs text-muted-foreground">Projects</p>
-              <p className="font-medium text-foreground">{String(developer.projects ?? "—")}</p>
+              <p className="font-medium text-foreground">{formatInteger(developer.projects, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
               <p className="text-xs text-muted-foreground">Safe projects</p>
-              <p className="font-medium text-foreground">{String(developer.safe_projects ?? "—")}</p>
+              <p className="font-medium text-foreground">{formatInteger(developer.safe_projects, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
               <p className="text-xs text-muted-foreground">Avg ticket</p>
-              <p className="font-medium text-foreground">{formatAed(developer.avg_price)}</p>
+              <p className="font-medium text-foreground">{formatAed(developer.avg_price, locale)}</p>
             </div>
           </div>
         </header>
@@ -73,6 +79,7 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
                   name={String(project.name ?? "Project")}
                   area={String(project.area ?? "")}
                   developer={String(developer.developer ?? "")}
+                  developer_ar={typeof profile?.developer_ar === "string" ? profile.developer_ar : null}
                   l1_canonical_price={typeof project.l1_canonical_price === "number" ? project.l1_canonical_price : null}
                   l1_canonical_yield={typeof project.l1_canonical_yield === "number" ? project.l1_canonical_yield : null}
                   l2_stress_test_grade={
@@ -96,12 +103,12 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
                   className="flex items-center justify-between rounded-lg border border-border/50 bg-background/50 px-3 py-2"
                 >
                   <a
-                    href={`/areas/${slugify(String(area.area ?? "area"))}`}
+                    href={prefixLocalePath(`/areas/${slugify(String(area.area ?? "area"))}`, locale)}
                     className="truncate pr-3 text-foreground transition hover:text-primary"
                   >
                     {String(area.area ?? "Area")}
                   </a>
-                  <span className="text-xs text-muted-foreground">{String(area.projects ?? "—")}</span>
+                  <span className="text-xs text-muted-foreground">{formatInteger(area.projects, locale)}</span>
                 </li>
               ))}
             </ul>

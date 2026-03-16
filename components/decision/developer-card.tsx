@@ -1,10 +1,17 @@
+"use client"
+
 import Link from "next/link"
 import { Building2, ArrowUpRight } from "lucide-react"
+import { useLocale } from "next-intl"
 import { formatAed } from "@/components/decision/formatters"
+import { pickLocalizedText } from "@/lib/format/entities"
+import { formatInteger } from "@/lib/format/number"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type DeveloperCardProps = {
   slug: string
   developer: string
+  developer_ar?: string | null
   projects?: number | null
   reliability?: number | null
   avg_price?: number | null
@@ -25,11 +32,30 @@ function reliabilityConfig(score: number | null) {
 }
 
 export function DeveloperCard(developer: DeveloperCardProps) {
+  const locale = useLocale() as AppLocale
   const topAreas = Array.isArray(developer.top_areas) ? developer.top_areas.slice(0, 3) : []
   const topProjects = Array.isArray(developer.top_projects) ? developer.top_projects.slice(0, 3) : []
   const relScore = typeof developer.reliability === "number" ? developer.reliability : null
   const relPct = relScore !== null ? Math.min(Math.max(relScore, 0), 100) : 0
   const rel = reliabilityConfig(relScore)
+  const developerLabel = pickLocalizedText(locale, developer.developer_ar, developer.developer)
+  const copy = locale === "ar"
+    ? {
+        projects: "مشاريع مكتملة",
+        deliveryReliability: "موثوقية التسليم",
+        avgTicket: "متوسط حجم التذكرة",
+        activeAreas: "المناطق النشطة",
+        keyProjects: "أهم المشاريع",
+        openDetails: `فتح تفاصيل المطور ${developerLabel}`,
+      }
+    : {
+        projects: "completed projects",
+        deliveryReliability: "Delivery Reliability",
+        avgTicket: "Avg Ticket Size",
+        activeAreas: "Active Areas",
+        keyProjects: "Key Projects",
+        openDetails: `Open ${developerLabel} developer details`,
+      }
 
   return (
     <article className="group relative isolate block overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.4)]">
@@ -44,9 +70,9 @@ export function DeveloperCard(developer: DeveloperCardProps) {
             {!developer.logo_url ? <Building2 className="h-5 w-5 text-muted-foreground/50" /> : null}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-foreground">{developer.developer}</p>
+            <p className="truncate text-base font-semibold text-foreground">{developerLabel}</p>
             <p className="text-xs text-muted-foreground">
-              {developer.projects?.toLocaleString() ?? "—"} completed projects
+              {formatInteger(developer.projects, locale)} {copy.projects}
             </p>
           </div>
         </div>
@@ -60,7 +86,7 @@ export function DeveloperCard(developer: DeveloperCardProps) {
         {/* Reliability bar */}
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Delivery Reliability</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.deliveryReliability}</p>
             <div className="flex items-center gap-1.5">
               {rel.tier ? (
                 <span className="text-[10px] text-muted-foreground">{rel.tier}</span>
@@ -78,8 +104,8 @@ export function DeveloperCard(developer: DeveloperCardProps) {
 
         {/* Avg ticket — always visible */}
         <div className="mt-4">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Avg Ticket Size</p>
-          <p className="mt-0.5 text-lg font-bold tabular-nums text-foreground">{formatAed(developer.avg_price)}</p>
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.avgTicket}</p>
+          <p className="mt-0.5 text-lg font-bold tabular-nums text-foreground">{formatAed(developer.avg_price, locale)}</p>
         </div>
 
         {/* Hover reveal — areas + projects */}
@@ -88,12 +114,13 @@ export function DeveloperCard(developer: DeveloperCardProps) {
             <div className="border-t border-border/60 pt-3 space-y-3">
               {topAreas.length > 0 ? (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Active Areas</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">{copy.activeAreas}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {topAreas.map((areaName) => (
                       <Link
                         key={`${developer.slug}-area-${areaName}`}
-                        href={`/areas/${slugify(areaName)}`}
+                        href={prefixLocalePath(`/areas/${slugify(areaName)}`, locale)}
+                        locale={false}
                         className="relative z-30 rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-[11px] text-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
                       >
                         {areaName}
@@ -105,12 +132,13 @@ export function DeveloperCard(developer: DeveloperCardProps) {
 
               {topProjects.length > 0 ? (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Key Projects</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">{copy.keyProjects}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {topProjects.map((projectName) => (
                       <Link
                         key={`${developer.slug}-project-${projectName}`}
-                        href={`/properties/${slugify(projectName)}`}
+                        href={prefixLocalePath(`/properties/${slugify(projectName)}`, locale)}
+                        locale={false}
                         className="relative z-30 rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-[11px] text-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
                       >
                         {projectName}
@@ -124,7 +152,12 @@ export function DeveloperCard(developer: DeveloperCardProps) {
         ) : null}
       </div>
 
-      <Link href={`/developers/${developer.slug}`} className="absolute inset-0 z-10" aria-label={`Open ${developer.developer} developer details`} />
+      <Link
+        href={prefixLocalePath(`/developers/${developer.slug}`, locale)}
+        locale={false}
+        className="absolute inset-0 z-10"
+        aria-label={copy.openDetails}
+      />
     </article>
   )
 }

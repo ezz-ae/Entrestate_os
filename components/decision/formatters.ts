@@ -1,15 +1,16 @@
-export function formatAed(value: unknown) {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return "AED —"
-  return `AED ${Math.round(value).toLocaleString()}`
+import { formatAed as formatAedValue } from "@/lib/format/currency"
+import { formatDecimal } from "@/lib/format/number"
+
+export function formatAed(value: unknown, locale?: string | null, options?: { compact?: boolean; fallback?: string }) {
+  return formatAedValue(value, locale, options)
 }
 
-export function formatYield(value: unknown) {
+export function formatYield(value: unknown, locale?: string | null) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—"
-  return `${value.toFixed(1)}%`
+  return `${formatDecimal(value, locale, 1, 1)}%`
 }
 
-export function formatScore(value: unknown) {
+export function formatScore(value: unknown, locale?: string | null) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—"
-  return value.toFixed(1)
+  return formatDecimal(value, locale, 1, 1)
 }
-

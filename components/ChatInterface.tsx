@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
+import { useLocale } from "next-intl"
 import { useCopilot } from "@/components/copilot-provider"
 import { motion, AnimatePresence } from "framer-motion"
 import { MarqueePrompts } from "@/components/marketing/marquee-prompts"
@@ -46,6 +47,10 @@ import type {
   ComprehensiveProfileReportAudience,
   ComprehensiveProfileReportTemplate,
 } from "@/lib/profile/types"
+import { formatAed as formatAedValue } from "@/lib/format/currency"
+import { formatDecimal } from "@/lib/format/number"
+import { pickLocalizedText } from "@/lib/format/entities"
+import type { AppLocale } from "@/i18n/locale"
 
 type ChatInterfaceProps = {
   id?: string
@@ -231,14 +236,14 @@ function toText(value: unknown, fallback = "-") {
   return fallback
 }
 
-function formatAed(value: number | null) {
+function formatAed(value: number | null, locale: string) {
   if (value === null) return "-"
-  return `AED ${Math.round(value).toLocaleString()}`
+  return formatAedValue(value, locale, { fallback: "-" })
 }
 
-function formatMetric(value: number | null, decimals = 1) {
+function formatMetric(value: number | null, locale: string, decimals = 1) {
   if (value === null) return "-"
-  return value.toFixed(decimals)
+  return formatDecimal(value, locale, decimals, decimals, "-")
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -400,7 +405,7 @@ function extractToolOutputs(messages: any[]): Record<string, unknown>[] {
   return outputs
 }
 
-function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[]): WorkspaceCard[] {
+function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: string): WorkspaceCard[] {
   const rows = toolOutputs
     .flatMap((output) => toRows(output.rows))
     .filter((row) => Object.keys(row).length > 0)
@@ -449,14 +454,14 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[]): Workspace
   const avgScore = scoreValues.length > 0 ? scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length : null
 
   return [
-    { title: "Matched projects", value: rows.length.toLocaleString(), subtitle: "From live inventory scan" },
-    { title: "Avg asking price", value: formatAed(avgPrice), subtitle: "Across matched results" },
+    { title: "Matched projects", value: formatDecimal(rows.length, locale, 0, 0), subtitle: "From live inventory scan" },
+    { title: "Avg asking price", value: formatAed(avgPrice, locale), subtitle: "Across matched results" },
     { title: "Decision label", value: topDecision, subtitle: `Timing label lead: ${topTiming}` },
-    { title: "Data confidence", value: topConfidence, subtitle: `Avg investor score: ${formatMetric(avgScore)}` },
+    { title: "Data confidence", value: topConfidence, subtitle: `Avg investor score: ${formatMetric(avgScore, locale)}` },
   ]
 }
 
-function deriveComparisonRows(toolOutputs: Record<string, unknown>[]): ComparisonRow[] {
+function deriveComparisonRows(toolOutputs: Record<string, unknown>[], locale: string): ComparisonRow[] {
   const rows = toolOutputs
     .flatMap((output) => toRows(output.rows))
     .filter((row) => typeof row.name === "string" || typeof row.project_name === "string")
@@ -468,8 +473,8 @@ function deriveComparisonRows(toolOutputs: Record<string, unknown>[]): Compariso
 
     unique.set(label, {
       label,
-      area: toText(row.final_area === null ? row.area : row.final_area),
-      developer: toText(row.developer),
+      area: pickLocalizedText(locale, row.area_ar, row.final_area === null ? row.area : row.final_area, "-"),
+      developer: pickLocalizedText(locale, row.developer_ar, row.developer, "-"),
       confidence: toText(row.price_confidence ?? row.l1_confidence),
       timingSignal: toText(row.timing_label ?? row.l3_timing_signal),
       stressGrade: toText(row.stress_grade_v1 ?? row.l2_stress_test_grade),
@@ -642,6 +647,7 @@ export function ChatInterface({
   initialBlocked = false,
   initialCooldownSecondsRemaining = null,
 }: ChatInterfaceProps) {
+  const locale = useLocale() as AppLocale
   const { data: session } = authClient.useSession()
   const canUpload = Boolean(session?.user)
   const searchParams = useSearchParams()
@@ -789,8 +795,8 @@ export function ChatInterface({
   }, [chatBlocked, limit])
 
   const toolOutputs = useMemo(() => extractToolOutputs(messages as any[]), [messages])
-  const workspaceCards = useMemo(() => deriveWorkspaceCards(toolOutputs), [toolOutputs])
-  const comparisonRows = useMemo(() => deriveComparisonRows(toolOutputs), [toolOutputs])
+  const workspaceCards = useMemo(() => deriveWorkspaceCards(toolOutputs, locale), [locale, toolOutputs])
+  const comparisonRows = useMemo(() => deriveComparisonRows(toolOutputs, locale), [locale, toolOutputs])
   const dldNotifications = useMemo(() => deriveDldNotifications(toolOutputs), [toolOutputs])
   const dataFreshness = useMemo(() => resolveDataFreshness(toolOutputs), [toolOutputs])
 
@@ -885,19 +891,19 @@ export function ChatInterface({
     if (!selectedRow) return null
 
     return [
-      { label: "Stress score", value: formatMetric(selectedRow.stressScore) },
+      { label: "Stress score", value: formatMetric(selectedRow.stressScore, locale) },
       { label: "Stress grade", value: selectedRow.stressGrade || "-" },
       { label: "Timing label", value: selectedRow.timingSignal || "-" },
-      { label: "Investor score", value: formatMetric(selectedRow.score) },
-      { label: "Developer reliability", value: formatMetric(selectedRow.developerReliabilityScore) },
-      { label: "Supply resilience", value: formatMetric(selectedRow.supplyResilienceScore) },
-      { label: "Liquidity resilience", value: formatMetric(selectedRow.liquidityResilienceScore) },
-      { label: "Pricing discipline", value: formatMetric(selectedRow.pricingDisciplineScore) },
-      { label: "Handover reliability", value: formatMetric(selectedRow.handoverReliabilityScore) },
-      { label: "Area stability", value: formatMetric(selectedRow.areaStabilityScore) },
-      { label: "Payment plan", value: formatMetric(selectedRow.paymentPlanScore) },
+      { label: "Investor score", value: formatMetric(selectedRow.score, locale) },
+      { label: "Developer reliability", value: formatMetric(selectedRow.developerReliabilityScore, locale) },
+      { label: "Supply resilience", value: formatMetric(selectedRow.supplyResilienceScore, locale) },
+      { label: "Liquidity resilience", value: formatMetric(selectedRow.liquidityResilienceScore, locale) },
+      { label: "Pricing discipline", value: formatMetric(selectedRow.pricingDisciplineScore, locale) },
+      { label: "Handover reliability", value: formatMetric(selectedRow.handoverReliabilityScore, locale) },
+      { label: "Area stability", value: formatMetric(selectedRow.areaStabilityScore, locale) },
+      { label: "Payment plan", value: formatMetric(selectedRow.paymentPlanScore, locale) },
     ]
-  }, [selectedRow])
+  }, [locale, selectedRow])
 
   const chartCaps = useMemo(() => {
     const maxPrice = Math.max(...comparisonRows.map((row) => row.price ?? 0), 0)
@@ -1670,7 +1676,7 @@ export function ChatInterface({
                     </div>
                   </div>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    {formatAed(row.price)} • Yield {formatMetric(row.yield)}% • Score {formatMetric(row.score)}
+                    {formatAed(row.price, locale)} • Yield {formatMetric(row.yield, locale)}% • Score {formatMetric(row.score, locale)}
                   </p>
                 </button>
               ))}

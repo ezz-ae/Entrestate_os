@@ -333,7 +333,9 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
           name,
           name AS project_name,
           developer,
+          developer_ar,
           area,
+          area_ar,
           area AS final_area,
           NULL::numeric AS bedrooms_min,
           NULL::numeric AS bedrooms_max,
@@ -438,7 +440,9 @@ export async function getProjectBySlug(slug: string): Promise<{
           name,
           name AS project_name,
           developer,
+          developer_ar,
           area,
+          area_ar,
           area AS final_area,
           NULL::numeric AS bedrooms_min,
           NULL::numeric AS bedrooms_max,
@@ -567,7 +571,9 @@ export async function getProjectBySlug(slug: string): Promise<{
             name,
             name AS project_name,
             developer,
+            developer_ar,
             area,
+            area_ar,
             area AS final_area,
             price_from,
             rental_yield,
@@ -705,9 +711,10 @@ export async function listAreas(): Promise<{
         ORDER BY efficiency DESC NULLS LAST
       `)
 
-  const profiles = await runOptionalQuery<{ area_name: string; image_url: string | null; area_type: string | null }>(Prisma.sql`
+  const profiles = await runOptionalQuery<{ area_name: string; area_ar: string | null; image_url: string | null; area_type: string | null }>(Prisma.sql`
     SELECT
       area_name,
+      area_ar,
       image_url,
       area_type
     FROM gc_area_profiles
@@ -822,6 +829,7 @@ export async function getAreaBySlug(slug: string): Promise<{
     runOptionalQuery(Prisma.sql`
       SELECT
         area_name,
+        area_ar,
         image_url,
         area_type,
         city
@@ -872,6 +880,7 @@ export async function listDevelopers(): Promise<{
           slug,
           tier,
           logo,
+          developer_ar,
           project_count,
           avg_score,
           avg_yield,
@@ -1078,6 +1087,7 @@ export async function getDeveloperBySlug(slug: string): Promise<{
     runOptionalQuery(Prisma.sql`
       SELECT
         name,
+        developer_ar,
         logo_url,
         founded_year,
         hq,

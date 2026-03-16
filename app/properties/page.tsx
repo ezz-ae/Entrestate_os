@@ -5,6 +5,11 @@ import { ProjectCard } from "@/components/decision/project-card"
 import { listProperties } from "@/lib/decision-infrastructure"
 import { BarChart3, TrendingUp, ShieldCheck, Zap, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
+import { formatAed } from "@/lib/format/currency"
+import { formatDate } from "@/lib/format/date"
+import { formatInteger } from "@/lib/format/number"
 
 export const dynamic = "force-dynamic"
 
@@ -20,13 +25,6 @@ type SearchParams = {
   page?: string
 }
 
-function formatAed(v: number | null) {
-  if (v === null) return "—"
-  if (v >= 1_000_000) return `AED ${(v / 1_000_000).toFixed(1)}M`
-  if (v >= 1_000) return `AED ${(v / 1_000).toFixed(0)}K`
-  return `AED ${v.toLocaleString()}`
-}
-
 function buildFilterHref(base: Record<string, string | undefined>, override: Record<string, string | undefined>) {
   const merged = { ...base, ...override }
   const params = new URLSearchParams()
@@ -38,6 +36,7 @@ function buildFilterHref(base: Record<string, string | undefined>, override: Rec
 }
 
 export default async function PropertiesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const locale = await getRequestLocale()
   const params = await searchParams
   const page = Number.parseInt(params.page ?? "1", 10)
   const currentPage = Number.isFinite(page) && page > 0 ? page : 1
@@ -71,7 +70,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
   const avgYield = yields.length > 0 ? yields.reduce((a, b) => a + b, 0) / yields.length : null
 
   const freshnessLabel = result.data_as_of
-    ? new Date(result.data_as_of).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    ? formatDate(result.data_as_of, locale)
     : null
 
   // Base params for filter links (preserve all except the one being changed)
@@ -100,7 +99,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
               Project <span className="text-muted-foreground/40 italic">Intelligence</span>
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl font-medium leading-relaxed">
-              {totalProjectsCount.toLocaleString()} active UAE projects — scored for market timing, stress resilience, and verified data confidence.
+              {formatInteger(totalProjectsCount, locale)} active UAE projects — scored for market timing, stress resilience, and verified data confidence.
             </p>
           </div>
           {freshnessLabel && (
@@ -116,9 +115,9 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
         {/* Metric cards */}
         <div className="mb-12 grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
-            { label: "Inventory Depth", value: totalProjectsCount.toLocaleString(), sub: hasFilters ? "Filtered Results" : "Total UAE Active", icon: BarChart3, color: "text-primary", bg: "bg-primary/5" },
+            { label: "Inventory Depth", value: formatInteger(totalProjectsCount, locale), sub: hasFilters ? "Filtered Results" : "Total UAE Active", icon: BarChart3, color: "text-primary", bg: "bg-primary/5" },
             { label: "Active BUY Signals", value: `${buyCount} / ${projects.length}`, sub: "Page Opportunity density", icon: Zap, color: "text-emerald-500", bg: "bg-emerald-500/5" },
-            { label: "Market Price L1", value: formatAed(avgPrice), sub: "Derived mean benchmark", icon: TrendingUp, color: "text-sky-500", bg: "bg-sky-500/5" },
+            { label: "Market Price L1", value: formatAed(avgPrice, locale, { compact: true, fallback: "—" }), sub: "Derived mean benchmark", icon: TrendingUp, color: "text-sky-500", bg: "bg-sky-500/5" },
             { label: "Strategic Yield", value: avgYield !== null ? `${avgYield.toFixed(1)}%` : "—", sub: "Annualized gross mean", icon: ShieldCheck, color: "text-violet-500", bg: "bg-violet-500/5" },
           ].map((card) => {
             const Icon = card.icon
@@ -152,7 +151,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
               return (
                 <Link
                   key={signal}
-                  href={buildFilterHref(baseParams, { timing: isActive ? undefined : signal, page: undefined })}
+                  href={prefixLocalePath(buildFilterHref(baseParams, { timing: isActive ? undefined : signal, page: undefined }), locale)}
                   className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${colors}`}
                 >
                   {signal}
@@ -171,7 +170,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
               return (
                 <Link
                   key={grade}
-                  href={buildFilterHref(baseParams, { stress: isActive ? undefined : grade, page: undefined })}
+                  href={prefixLocalePath(buildFilterHref(baseParams, { stress: isActive ? undefined : grade, page: undefined }), locale)}
                   className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
                     isActive
                       ? "border-primary/50 bg-primary/10 text-foreground"
@@ -187,7 +186,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
           {hasFilters && (
             <>
               <span className="text-border/60">·</span>
-              <Link href="/properties" className="rounded-full border border-border/50 px-3 py-1 text-xs text-muted-foreground transition hover:border-primary/30 hover:text-foreground">
+              <Link href={prefixLocalePath("/properties", locale)} locale={false} className="rounded-full border border-border/50 px-3 py-1 text-xs text-muted-foreground transition hover:border-primary/30 hover:text-foreground">
                 Clear all
               </Link>
             </>
@@ -200,25 +199,25 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
             {params.timing && (
               <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
                 Signal: {params.timing}
-                <Link href={buildFilterHref(baseParams, { timing: undefined, page: undefined })} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { timing: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.stress && (
               <span className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-foreground">
                 Risk Grade: {params.stress}
-                <Link href={buildFilterHref(baseParams, { stress: undefined, page: undefined })} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { stress: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.area && (
               <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
                 Area: {params.area}
-                <Link href={buildFilterHref(baseParams, { area: undefined, page: undefined })} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { area: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.developer && (
               <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
                 Developer: {params.developer}
-                <Link href={buildFilterHref(baseParams, { developer: undefined, page: undefined })} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { developer: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
           </div>
@@ -226,7 +225,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
 
         {/* Showing count */}
         <p className="mb-4 text-xs text-muted-foreground/60">
-          Page {currentPage} of {totalPages || 1} · showing {projects.length} of {totalProjectsCount.toLocaleString()} projects
+          Page {formatInteger(currentPage, locale)} of {formatInteger(totalPages || 1, locale)} · showing {formatInteger(projects.length, locale)} of {formatInteger(totalProjectsCount, locale)} projects
         </p>
 
         {/* Grid */}
@@ -238,7 +237,9 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
               slug={String(project.slug)}
               name={String(project.name ?? "Unnamed project")}
               area={String(project.final_area ?? project.area ?? "")}
+              area_ar={typeof project.area_ar === "string" ? project.area_ar : null}
               developer={String(project.developer ?? "")}
+              developer_ar={typeof project.developer_ar === "string" ? project.developer_ar : null}
               l1_canonical_price={typeof project.l1_canonical_price === "number" ? project.l1_canonical_price : null}
               l1_canonical_yield={typeof project.l1_canonical_yield === "number" ? project.l1_canonical_yield : null}
               l2_stress_test_grade={typeof project.l2_stress_test_grade === "string" ? project.l2_stress_test_grade : null}
@@ -251,7 +252,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
             <div className="col-span-3 rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-16 text-center">
               <p className="text-sm font-medium text-foreground">No projects match these filters</p>
               <p className="mt-1 text-xs text-muted-foreground">Try adjusting your timing signal or risk grade filter.</p>
-              <Link href="/properties" className="mt-4 inline-block rounded-full border border-border/60 bg-card px-4 py-2 text-xs text-foreground transition hover:border-primary/40">
+              <Link href={prefixLocalePath("/properties", locale)} locale={false} className="mt-4 inline-block rounded-full border border-border/60 bg-card px-4 py-2 text-xs text-foreground transition hover:border-primary/40">
                 Clear all filters
               </Link>
             </div>
@@ -263,7 +264,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
           <div className="mt-10 flex items-center justify-center gap-2">
             {currentPage > 1 && (
               <Link
-                href={buildFilterHref(baseParams, { page: String(currentPage - 1) })}
+                href={prefixLocalePath(buildFilterHref(baseParams, { page: String(currentPage - 1) }), locale)}
                 className="rounded-xl border border-border/60 bg-card/60 px-4 py-2 text-sm text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
               >
                 ← Previous
@@ -281,7 +282,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
                 return (
                   <Link
                     key={p}
-                    href={buildFilterHref(baseParams, { page: String(p) })}
+                    href={prefixLocalePath(buildFilterHref(baseParams, { page: String(p) }), locale)}
                     className={`flex h-9 w-9 items-center justify-center rounded-lg border text-xs font-medium transition ${
                       isActive
                         ? "border-primary/40 bg-primary/10 text-foreground"
@@ -295,7 +296,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
             </div>
             {currentPage < totalPages && (
               <Link
-                href={buildFilterHref(baseParams, { page: String(currentPage + 1) })}
+                href={prefixLocalePath(buildFilterHref(baseParams, { page: String(currentPage + 1) }), locale)}
                 className="rounded-xl border border-border/60 bg-card/60 px-4 py-2 text-sm text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
               >
                 Next →

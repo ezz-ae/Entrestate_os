@@ -6,6 +6,8 @@ import { ProjectCard } from "@/components/decision/project-card"
 import { ConfidenceBadge, StressGradeBadge, TimingSignalBadge } from "@/components/decision/badges"
 import { formatAed, formatYield, formatScore } from "@/components/decision/formatters"
 import { getProjectBySlug } from "@/lib/decision-infrastructure"
+import { getRequestLocale } from "@/i18n/request"
+import { pickLocalizedText } from "@/lib/format/entities"
 
 export const dynamic = "force-dynamic"
 
@@ -28,12 +30,14 @@ function toObject(value: unknown): Record<string, unknown> {
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+  const locale = await getRequestLocale()
   const detail = await getProjectBySlug(slug)
 
   if (!detail) notFound()
 
   const project = detail.project
-  const area = String(project.final_area ?? project.area ?? "Unknown area")
+  const area = pickLocalizedText(locale, project.area_ar, project.final_area ?? project.area, "Unknown area")
+  const developer = pickLocalizedText(locale, project.developer_ar, project.developer, "Developer")
   const paymentPlanRows = toRecordArray(project.payment_plan_structured)
   const unitRows = toRecordArray(project.units)
   const areaContext = toObject(detail.area_context)
@@ -49,24 +53,24 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Project Detail</p>
           <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{String(project.name ?? "Project")}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{[area, project.developer].filter(Boolean).join(" · ")}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{[area, developer].filter(Boolean).join(" · ")}</p>
 
           <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
               <p className="text-xs text-muted-foreground">Canonical price</p>
-              <p className="font-medium text-foreground">{formatAed(project.l1_canonical_price)}</p>
+              <p className="font-medium text-foreground">{formatAed(project.l1_canonical_price, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
               <p className="text-xs text-muted-foreground">Canonical yield</p>
-              <p className="font-medium text-foreground">{formatYield(project.l1_canonical_yield)}</p>
+              <p className="font-medium text-foreground">{formatYield(project.l1_canonical_yield, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
               <p className="text-xs text-muted-foreground">God metric</p>
-              <p className="font-medium text-foreground">{formatScore(project.engine_god_metric)}</p>
+              <p className="font-medium text-foreground">{formatScore(project.engine_god_metric, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
               <p className="text-xs text-muted-foreground">Stress engine</p>
-              <p className="font-medium text-foreground">{formatScore(project.engine_stress_test)}</p>
+              <p className="font-medium text-foreground">{formatScore(project.engine_stress_test, locale)}</p>
             </div>
           </div>
 
@@ -167,7 +171,9 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                     slug={String(similar.slug)}
                     name={String(similar.name ?? "Project")}
                     area={String(similar.area ?? "")}
+                    area_ar={typeof similar.area_ar === "string" ? similar.area_ar : null}
                     developer={String(similar.developer ?? "")}
+                    developer_ar={typeof similar.developer_ar === "string" ? similar.developer_ar : null}
                     l1_canonical_price={typeof similar.l1_canonical_price === "number" ? similar.l1_canonical_price : null}
                     l1_canonical_yield={typeof similar.l1_canonical_yield === "number" ? similar.l1_canonical_yield : null}
                     l2_stress_test_grade={

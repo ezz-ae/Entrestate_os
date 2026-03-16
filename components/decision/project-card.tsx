@@ -1,12 +1,19 @@
+"use client"
+
 import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
+import { useLocale } from "next-intl"
 import { formatAed, formatScore, formatYield } from "@/components/decision/formatters"
+import { pickLocalizedText } from "@/lib/format/entities"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type ProjectCardProps = {
   slug: string
   name: string
   area?: string | null
+  area_ar?: string | null
   developer?: string | null
+  developer_ar?: string | null
   price_from?: number | null
   rental_yield?: number | null
   stress_grade_v1?: string | null
@@ -38,11 +45,27 @@ function gradeColor(grade: string | null | undefined) {
 }
 
 export function ProjectCard(project: ProjectCardProps) {
+  const locale = useLocale() as AppLocale
   const price = project.price_from ?? project.l1_canonical_price ?? null
   const yieldValue = project.rental_yield ?? project.l1_canonical_yield ?? null
   const score = project.investor_score_v1 ?? project.engine_god_metric ?? null
   const timing = project.timing_label ?? project.l3_timing_signal ?? null
   const stressGrade = project.stress_grade_v1 ?? project.l2_stress_test_grade ?? null
+  const areaLabel = pickLocalizedText(locale, project.area_ar, project.area, "")
+  const developerLabel = pickLocalizedText(locale, project.developer_ar, project.developer, "")
+  const copy = locale === "ar"
+    ? {
+        detailsPending: "التفاصيل قيد الاستكمال",
+        yield: "العائد",
+        grade: "الدرجة",
+        score: "النتيجة",
+      }
+    : {
+        detailsPending: "Details pending",
+        yield: "Yield",
+        grade: "Grade",
+        score: "Score",
+      }
 
   const accent = timingAccent(timing)
   const signal = (timing ?? "—").toUpperCase()
@@ -50,7 +73,8 @@ export function ProjectCard(project: ProjectCardProps) {
 
   return (
     <Link
-      href={`/properties/${project.slug}`}
+      href={prefixLocalePath(`/properties/${project.slug}`, locale)}
+      locale={false}
       className={`group relative block overflow-hidden rounded-2xl border border-border bg-card border-l-4 ${accent.border} transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.4)]`}
     >
       {/* Top section — always visible */}
@@ -72,12 +96,12 @@ export function ProjectCard(project: ProjectCardProps) {
 
         {/* Location + developer */}
         <p className="mt-1 truncate text-xs text-muted-foreground">
-          {[project.area, project.developer].filter(Boolean).join(" · ") || "Details pending"}
+          {[areaLabel, developerLabel].filter(Boolean).join(" · ") || copy.detailsPending}
         </p>
 
         {/* Price — always visible */}
         <p className="mt-4 text-xl font-bold tabular-nums text-foreground">
-          {formatAed(price)}
+          {formatAed(price, locale)}
         </p>
       </div>
 
@@ -88,16 +112,16 @@ export function ProjectCard(project: ProjectCardProps) {
       <div className="translate-y-2 overflow-hidden opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
         <div className="grid grid-cols-3 gap-px bg-border/40 border-t-0">
           <div className="bg-card px-4 py-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Yield</p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatYield(yieldValue)}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.yield}</p>
+            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatYield(yieldValue, locale)}</p>
           </div>
           <div className="bg-card px-4 py-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Grade</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.grade}</p>
             <p className={`mt-0.5 text-sm font-bold tabular-nums ${gradeColor(grade)}`}>{grade ?? "—"}</p>
           </div>
           <div className="bg-card px-4 py-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Score</p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatScore(score)}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.score}</p>
+            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatScore(score, locale)}</p>
           </div>
         </div>
       </div>

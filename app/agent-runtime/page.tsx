@@ -94,7 +94,9 @@ export default async function AgentRuntimePage({ searchParams }: { searchParams:
               slug={String(project.slug)}
               name={String(project.name ?? "Project")}
               area={String(project.final_area ?? project.area ?? "")}
+              area_ar={typeof project.area_ar === "string" ? project.area_ar : null}
               developer={String(project.developer ?? "")}
+              developer_ar={typeof project.developer_ar === "string" ? project.developer_ar : null}
               l1_canonical_price={typeof project.l1_canonical_price === "number" ? project.l1_canonical_price : null}
               l1_canonical_yield={typeof project.l1_canonical_yield === "number" ? project.l1_canonical_yield : null}
               l2_stress_test_grade={typeof project.l2_stress_test_grade === "string" ? project.l2_stress_test_grade : null}

@@ -55,6 +55,10 @@ import {
   type McpDescribeTableInput,
   type McpQueryInput,
 } from "@/lib/mcp/schemas"
+import { normalizeLocale } from "@/i18n/locale"
+import { pickLocalizedText } from "@/lib/format/entities"
+import { formatAed as formatAedValue } from "@/lib/format/currency"
+import { formatDecimal, formatInteger } from "@/lib/format/number"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -217,9 +221,9 @@ function extractProjectQuery(message: string) {
   return null
 }
 
-function buildProjectContent(row: Record<string, unknown>) {
+function buildProjectContent(row: Record<string, unknown>, locale: string) {
   const name = typeof row.project_name === "string" ? row.project_name : typeof row.name === "string" ? row.name : "Project"
-  const area = typeof row.area === "string" ? row.area : "UAE"
+  const area = pickLocalizedText(locale, row.area_ar, row.area, "UAE")
   const price = toFiniteNumber(row.price_from)
   const yieldValue = toFiniteNumber(row.rental_yield)
   const stressGrade = typeof row.stress_grade === "string" ? row.stress_grade : typeof row.stress_grade_v1 === "string" ? row.stress_grade_v1 : "-"
@@ -230,29 +234,29 @@ function buildProjectContent(row: Record<string, unknown>) {
   const evidenceScore = toFiniteNumber(row.evidence_score)
   const investorScore = toFiniteNumber(row.investor_score ?? row.investor_score_v1)
   const decision = typeof row.decision_label === "string" ? row.decision_label : typeof row.decision_label_v1 === "string" ? row.decision_label_v1 : "-"
-  const developer = typeof row.developer === "string" ? row.developer : "Developer"
+  const developer = pickLocalizedText(locale, row.developer_ar, row.developer, "Developer")
 
   return [
     `${name} — ${area}`,
     "────────────────────────────",
-    price === null ? null : `Price:     ${formatAed(price)}`,
-    yieldValue === null ? null : `Yield:     ${yieldValue.toFixed(2)}%`,
+    price === null ? null : `Price:     ${formatAed(price, locale)}`,
+    yieldValue === null ? null : `Yield:     ${formatDecimal(yieldValue, locale, 2, 2)}%`,
     `Stress:    ${stressGrade} (${stressScore === null ? "-" : Math.round(stressScore)})`,
     `Timing:    ${timing} (${timingScore === null ? "-" : Math.round(timingScore)})`,
     `Evidence:  ${evidence} (${evidenceScore === null ? "-" : Math.round(evidenceScore)})`,
-    `Score:     ${investorScore === null ? "-" : Math.round(investorScore)}`,
+    `Score:     ${investorScore === null ? "-" : formatInteger(Math.round(investorScore), locale)}`,
     "",
     `Decision:  ${decision}`,
     `Developer: ${developer}`,
   ].filter(Boolean).join("\n")
 }
 
-function buildScreeningTable(rows: Record<string, unknown>[]) {
+function buildScreeningTable(rows: Record<string, unknown>[], locale: string) {
   const header = "| Project | Area | Price | Yield | Stress | Timing | Evidence | Score | Signal |"
   const divider = "|---|---|---:|---:|---|---|---|---:|---|"
   const body = rows.slice(0, 8).map((row) => {
     const name = typeof row.project_name === "string" ? row.project_name : typeof row.name === "string" ? row.name : "Project"
-    const area = typeof row.area === "string" ? row.area : "-"
+    const area = pickLocalizedText(locale, row.area_ar, row.area, "-")
     const price = toFiniteNumber(row.price_from)
     const yieldValue = toFiniteNumber(row.rental_yield)
     const stress = typeof row.stress_grade === "string" ? row.stress_grade : typeof row.stress_grade_v1 === "string" ? row.stress_grade_v1 : "-"
@@ -261,7 +265,7 @@ function buildScreeningTable(rows: Record<string, unknown>[]) {
     const score = toFiniteNumber(row.investor_score ?? row.investor_score_v1)
     const signal = typeof row.decision_label === "string" ? row.decision_label : typeof row.decision_label_v1 === "string" ? row.decision_label_v1 : "-"
 
-    return `| ${name} | ${area} | ${price === null ? "-" : formatAed(price)} | ${yieldValue === null ? "-" : `${yieldValue.toFixed(2)}%`} | ${stress} | ${timing} | ${evidence} | ${score === null ? "-" : Math.round(score)} | ${signal} |`
+    return `| ${name} | ${area} | ${price === null ? "-" : formatAed(price, locale)} | ${yieldValue === null ? "-" : `${formatDecimal(yieldValue, locale, 2, 2)}%`} | ${stress} | ${timing} | ${evidence} | ${score === null ? "-" : formatInteger(Math.round(score), locale)} | ${signal} |`
   })
 
   return [header, divider, ...body].join("\n")
@@ -296,8 +300,8 @@ function toRows(value: unknown): Record<string, unknown>[] {
   return value.map((entry) => toRecord(entry)).filter((entry): entry is Record<string, unknown> => Boolean(entry))
 }
 
-function formatAed(value: number) {
-  return `AED ${Math.round(value).toLocaleString()}`
+function formatAed(value: number, locale: string) {
+  return formatAedValue(value, locale)
 }
 
 function parseBudgetAed(message: string): number | null {
@@ -368,7 +372,7 @@ function resolveDataAsOf(toolResults: unknown[]): string {
   return new Date().toISOString()
 }
 
-function buildPulseContentFromToolResults(toolResults: unknown[]): string | null {
+function buildPulseContentFromToolResults(toolResults: unknown[], locale: string): string | null {
   for (let index = toolResults.length - 1; index >= 0; index -= 1) {
     const record = toRecord(toolResults[index]) as ToolResultEnvelope | null
     if (!record) continue
@@ -385,9 +389,9 @@ function buildPulseContentFromToolResults(toolResults: unknown[]): string | null
     const velocityRows = toRows(record.top_areas_by_velocity).slice(0, 2)
     const velocitySummary = velocityRows
       .map((row) => {
-        const area = typeof row.area === "string" ? row.area : "Area"
+        const area = pickLocalizedText(locale, row.area_ar, row.area, "Area")
         const velocity = toFiniteNumber(row.daily_velocity)
-        return velocity === null ? area : `${area} ${velocity.toFixed(1)}`
+        return velocity === null ? area : `${area} ${formatDecimal(velocity, locale, 1, 1)}`
       })
       .join(" | ")
 
@@ -395,17 +399,17 @@ function buildPulseContentFromToolResults(toolResults: unknown[]): string | null
       "Dubai Market Pulse",
       "────────────────────────────────",
       totalVolume === null ? null : `Volume:        AED ${(totalVolume / 1_000_000_000).toFixed(2)}B YTD`,
-      totalTransactions === null ? null : `Transactions:  ${Math.round(totalTransactions).toLocaleString()}`,
+      totalTransactions === null ? null : `Transactions:  ${formatInteger(Math.round(totalTransactions), locale)}`,
       velocitySummary ? `Daily Velocity: ${velocitySummary}` : null,
-      offplanCount === null || avgOffplan === null ? null : `Off-Plan:      ${Math.round(offplanCount).toLocaleString()} (avg ${formatAed(avgOffplan)})`,
-      readyCount === null || avgReady === null ? null : `Ready:         ${Math.round(readyCount).toLocaleString()} (avg ${formatAed(avgReady)})`,
+      offplanCount === null || avgOffplan === null ? null : `Off-Plan:      ${formatInteger(Math.round(offplanCount), locale)} (avg ${formatAed(avgOffplan, locale)})`,
+      readyCount === null || avgReady === null ? null : `Ready:         ${formatInteger(Math.round(readyCount), locale)} (avg ${formatAed(avgReady, locale)})`,
     ].filter(Boolean).join("\n")
   }
 
   return null
 }
 
-function buildDataCardsFromRows(rows: Record<string, unknown>[]): ChatCard[] {
+function buildDataCardsFromRows(rows: Record<string, unknown>[], locale: string): ChatCard[] {
   if (rows.length === 0) {
     return [
       {
@@ -423,7 +427,9 @@ function buildDataCardsFromRows(rows: Record<string, unknown>[]): ChatCard[] {
 
   const areaFrequency = new Map<string, number>()
   for (const row of rows) {
-    const areaValue = typeof row.area === "string" && row.area.trim().length > 0
+    const areaValue = typeof row.area_ar === "string" && row.area_ar.trim().length > 0 && locale === "ar"
+      ? row.area_ar
+      : typeof row.area === "string" && row.area.trim().length > 0
       ? row.area
       : typeof row.final_area === "string" && row.final_area.trim().length > 0
         ? row.final_area
@@ -442,7 +448,7 @@ function buildDataCardsFromRows(rows: Record<string, unknown>[]): ChatCard[] {
     {
       type: "stat",
       title: "Matches",
-      value: rows.length.toLocaleString(),
+      value: formatInteger(rows.length, locale),
       subtitle: "From live inventory",
     },
   ]
@@ -450,7 +456,7 @@ function buildDataCardsFromRows(rows: Record<string, unknown>[]): ChatCard[] {
   cards.push({
     type: "stat",
     title: "Average price",
-    value: avgPrice === null ? "-" : formatAed(avgPrice),
+    value: avgPrice === null ? "-" : formatAed(avgPrice, locale),
     subtitle: "From matching inventory",
   })
 
@@ -575,10 +581,10 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
   })
 }
 
-async function buildDeterministicFallback(message: string, context?: { city?: string; area?: string }) {
+async function buildDeterministicFallback(message: string, locale: string, context?: { city?: string; area?: string }) {
   if (message.trim().toUpperCase().includes("PULSE")) {
     const pulse = await executeDldMarketPulse()
-    const pulseContent = buildPulseContentFromToolResults([pulse])
+    const pulseContent = buildPulseContentFromToolResults([pulse], locale)
     return {
       content: pulseContent ?? "Dubai Market Pulse is temporarily unavailable.",
       dataCards: undefined,
@@ -597,7 +603,9 @@ async function buildDeterministicFallback(message: string, context?: { city?: st
         name AS project_name,
         name,
         area,
+        area_ar,
         developer,
+        developer_ar,
         price_from,
         rental_yield,
         timing_score,
@@ -626,8 +634,8 @@ async function buildDeterministicFallback(message: string, context?: { city?: st
     const project = projectRows[0]
     if (project) {
       return {
-        content: buildProjectContent(project),
-        dataCards: buildDataCardsFromRows([project]),
+        content: buildProjectContent(project, locale),
+        dataCards: buildDataCardsFromRows([project], locale),
         evidence: {
           sources_used: ["inventory_clean"],
         },
@@ -656,8 +664,8 @@ async function buildDeterministicFallback(message: string, context?: { city?: st
   })
 
   const rows = toRows(result.rows)
-  const cards = buildDataCardsFromRows(rows)
-  const content = rows.length > 0 ? buildScreeningTable(rows) : "No matching projects found."
+  const cards = buildDataCardsFromRows(rows, locale)
+  const content = rows.length > 0 ? buildScreeningTable(rows, locale) : "No matching projects found."
 
   return {
     content,
@@ -811,6 +819,7 @@ export async function POST(request: Request) {
     } as const
 
     const message = parsed.data.message ?? parsed.data.intent ?? ""
+    const locale = normalizeLocale(request.headers.get("x-entrestate-locale"))
     const prompt = buildUserPrompt(message, parsed.data.context)
 
     if (isNonActionableTerminalInput(message)) {
@@ -839,7 +848,7 @@ export async function POST(request: Request) {
     }
 
     if (!model) {
-      const fallback = await buildDeterministicFallback(message, parsed.data.context)
+      const fallback = await buildDeterministicFallback(message, locale, parsed.data.context)
       return NextResponse.json(
         {
           ...fallback,
@@ -881,23 +890,23 @@ export async function POST(request: Request) {
         .filter((entry) => entry !== undefined)
 
       const rows = extractRowsFromToolResults(toolResults)
-      const dataCards = rows.length > 0 ? buildDataCardsFromRows(rows) : undefined
+      const dataCards = rows.length > 0 ? buildDataCardsFromRows(rows, locale) : undefined
       const notifications = buildDldNotificationsFromToolResults(toolResults)
       const confidenceWarnings = collectToolWarnings(toolResults)
-      const pulseContent = buildPulseContentFromToolResults(toolResults)
+      const pulseContent = buildPulseContentFromToolResults(toolResults, locale)
       const toolSummary = toolResults.length > 0 ? JSON.stringify(toolResults[toolResults.length - 1]).slice(0, 1200) : ""
       const deterministic = text.length === 0 && rows.length === 0 && !pulseContent
-        ? await buildDeterministicFallback(message, parsed.data.context)
+        ? await buildDeterministicFallback(message, locale, parsed.data.context)
         : null
       const projectQuery = extractProjectQuery(message)
       const content = text.length > 0
         ? text
         : projectQuery && rows.length > 0
-          ? buildProjectContent(rows[0])
+          ? buildProjectContent(rows[0], locale)
         : pulseContent && message.trim().toUpperCase().includes("PULSE")
           ? pulseContent
         : rows.length > 0
-          ? buildScreeningTable(rows)
+          ? buildScreeningTable(rows, locale)
         : deterministic?.content
           ? deterministic.content
         : toolSummary.length > 0
@@ -930,7 +939,7 @@ export async function POST(request: Request) {
       )
     } catch (error) {
       console.error("Chat route LLM execution failed:", { requestId, error })
-      const fallback = await buildDeterministicFallback(message, parsed.data.context)
+      const fallback = await buildDeterministicFallback(message, locale, parsed.data.context)
       return NextResponse.json(
         {
           ...fallback,

@@ -5,6 +5,11 @@ import { DeveloperCard } from "@/components/decision/developer-card"
 import { listDevelopers } from "@/lib/decision-infrastructure"
 import { TrendingUp, Building2, BarChart3, ShieldCheck, Users2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
+import { formatAed } from "@/lib/format/currency"
+import { formatDate } from "@/lib/format/date"
+import { formatInteger } from "@/lib/format/number"
 
 export const dynamic = "force-dynamic"
 
@@ -17,15 +22,9 @@ function tierOf(score: number | null): "excellent" | "good" | "watch" | "unknown
   return "watch"
 }
 
-function formatAed(v: number | null) {
-  if (v === null) return "—"
-  if (v >= 1_000_000) return `AED ${(v / 1_000_000).toFixed(1)}M`
-  if (v >= 1_000) return `AED ${(v / 1_000).toFixed(0)}K`
-  return `AED ${v.toLocaleString()}`
-}
-
 export default async function DevelopersPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const { filter, sort = "reliability" } = await searchParams
+  const locale = await getRequestLocale()
   const data = await listDevelopers()
 
   const developers = data.developers
@@ -76,7 +75,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
   ]
 
   const freshnessLabel = data.data_as_of
-    ? new Date(data.data_as_of).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    ? formatDate(data.data_as_of, locale)
     : null
 
   return (
@@ -95,7 +94,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
               Developer <span className="text-muted-foreground/40 italic">Reliability</span>
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl font-medium leading-relaxed">
-              {developers.length.toLocaleString()} active UAE developers scored for delivery consistency, stress-grade distribution, and historical execution quality.
+              {formatInteger(developers.length, locale)} active UAE developers scored for delivery consistency, stress-grade distribution, and historical execution quality.
             </p>
           </div>
           {freshnessLabel && (
@@ -111,10 +110,10 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
         {/* Metric cards */}
         <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
-            { label: "Tracked Developers", value: totalDevelopersCount.toLocaleString(), sub: "Active in UAE market", icon: Building2, color: "text-primary" },
-            { label: "Total Projects", value: totalProjects.toLocaleString(), sub: "Across all portfolios", icon: BarChart3, color: "text-sky-500" },
+            { label: "Tracked Developers", value: formatInteger(totalDevelopersCount, locale), sub: "Active in UAE market", icon: Building2, color: "text-primary" },
+            { label: "Total Projects", value: formatInteger(totalProjects, locale), sub: "Across all portfolios", icon: BarChart3, color: "text-sky-500" },
             { label: "Avg Reliability", value: avgRel !== null ? `${avgRel.toFixed(0)} / 100` : "—", sub: avgRel !== null ? (avgRel >= 70 ? "Market is healthy" : "Mixed execution quality") : "Insufficient data", icon: ShieldCheck, color: avgRel !== null ? (avgRel >= 70 ? "text-emerald-500" : "text-amber-500") : "text-muted-foreground" },
-            { label: "Avg Project Price", value: formatAed(avgPrice), sub: "Across tracked inventory", icon: TrendingUp, color: "text-violet-500" },
+            { label: "Avg Project Price", value: formatAed(avgPrice, locale, { compact: true, fallback: "—" }), sub: "Across tracked inventory", icon: TrendingUp, color: "text-violet-500" },
           ].map((card) => {
             const Icon = card.icon
             return (
@@ -171,8 +170,8 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
             {FILTER_TABS.map((tab) => {
               const isActive = (tab.key === "" && !filter) || tab.key === filter
               const href = tab.key
-                ? `/developers?filter=${tab.key}${sort !== "reliability" ? `&sort=${sort}` : ""}`
-                : `/developers${sort !== "reliability" ? `?sort=${sort}` : ""}`
+                ? prefixLocalePath(`/developers?filter=${tab.key}${sort !== "reliability" ? `&sort=${sort}` : ""}`, locale)
+                : prefixLocalePath(`/developers${sort !== "reliability" ? `?sort=${sort}` : ""}`, locale)
               return (
                 <Link
                   key={tab.key}
@@ -188,7 +187,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
                   )}
                   {tab.label}
                   <span className={`tabular-nums text-[10px] ${isActive ? "text-background/60" : "text-muted-foreground"}`}>
-                    {tab.count}
+                    {formatInteger(tab.count, locale)}
                   </span>
                 </Link>
               )
@@ -202,8 +201,8 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
               {SORT_OPTIONS.map((opt) => {
                 const isActive = sort === opt.key || (opt.key === "reliability" && !sort)
                 const href = filter
-                  ? `/developers?filter=${filter}&sort=${opt.key}`
-                  : `/developers?sort=${opt.key}`
+                  ? prefixLocalePath(`/developers?filter=${filter}&sort=${opt.key}`, locale)
+                  : prefixLocalePath(`/developers?sort=${opt.key}`, locale)
                 return (
                   <Link
                     key={opt.key}
@@ -224,7 +223,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
 
         {/* Showing count */}
         <p className="mb-4 text-xs text-muted-foreground/60">
-          Showing {filtered.length} of {developers.length} developers
+          Showing {formatInteger(filtered.length, locale)} of {formatInteger(developers.length, locale)} developers
           {filter ? ` · filtered by ${filter}` : ""}
         </p>
 
@@ -236,6 +235,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
               key={String(developer.slug)}
               slug={String(developer.slug)}
               developer={String(developer.developer ?? "Developer")}
+              developer_ar={typeof developer.developer_ar === "string" ? developer.developer_ar : null}
               projects={typeof developer.projects === "number" ? developer.projects : null}
               reliability={typeof developer.reliability === "number" ? developer.reliability : null}
               avg_price={typeof developer.avg_price === "number" ? developer.avg_price : null}
@@ -256,7 +256,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
             <div className="col-span-3 rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-16 text-center">
               <p className="text-sm font-medium text-foreground">No developers in this tier</p>
               <p className="mt-1 text-xs text-muted-foreground">Try a different filter or view all developers.</p>
-              <Link href="/developers" className="mt-4 inline-block rounded-full border border-border/60 bg-card px-4 py-2 text-xs text-foreground transition hover:border-primary/40">
+              <Link href={prefixLocalePath("/developers", locale)} locale={false} className="mt-4 inline-block rounded-full border border-border/60 bg-card px-4 py-2 text-xs text-foreground transition hover:border-primary/40">
                 Clear filter
               </Link>
             </div>
