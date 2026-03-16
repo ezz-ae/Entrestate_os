@@ -126,6 +126,51 @@ function withGuardrails<T extends Record<string, unknown>>(output: T): T & { gua
   }
 }
 
+function normalizeTerminalInput(message: string) {
+  return message.trim().toLowerCase().replace(/\s+/g, " ")
+}
+
+function extractLatestUserText(messages: UIMessage[]) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]
+    if (message.role !== "user") continue
+
+    for (const part of message.parts ?? []) {
+      if (part.type === "text" && typeof part.text === "string" && part.text.trim().length > 0) {
+        return part.text.trim()
+      }
+    }
+  }
+
+  return ""
+}
+
+function isNonActionableTerminalInput(message: string) {
+  const normalized = normalizeTerminalInput(message)
+  if (normalized.length === 0) return true
+
+  return /^(hi|hello|hey|hey there|yo|sup|help|start|menu|commands|what can you do|how are you|who are you|ok|okay|thanks|thank you|\?+)$/.test(
+    normalized,
+  )
+}
+
+function buildTerminalCommandGuide() {
+  return [
+    "ENTRESTATE Decision Terminal",
+    "────────────────────────────────",
+    "Mode: Awaiting command",
+    "Commands: SCREEN | PROJECT | AREA | COMPARE | RISK | MEMO | PULSE",
+    "",
+    "Examples:",
+    "- PULSE",
+    "- PROJECT Marina Vista",
+    "- SCREEN projects under AED 2M",
+    "- AREA Jumeirah Village Circle",
+    "- COMPARE Dubai Marina vs JBR",
+    "- RISK Emaar Properties",
+  ].join("\n")
+}
+
 export async function POST(request: Request) {
   const requestId = getRequestId(request)
 
@@ -287,6 +332,39 @@ export async function POST(request: Request) {
     }
 
     const normalizedMessages = normalizeIncomingMessages(body.messages)
+    const latestUserText = extractLatestUserText(normalizedMessages)
+
+    if (isNonActionableTerminalInput(latestUserText)) {
+      const stream = createUIMessageStream({
+        originalMessages: normalizedMessages,
+        execute: ({ writer }) => {
+          writer.write({ type: "start" })
+          writer.write({ type: "start-step" })
+          writer.write({ type: "text-start", id: "text-1" })
+          writer.write({
+            type: "text-delta",
+            id: "text-1",
+            delta: buildTerminalCommandGuide(),
+          })
+          writer.write({ type: "text-end", id: "text-1" })
+          writer.write({ type: "finish-step" })
+          writer.write({ type: "finish", finishReason: "stop" })
+        },
+      })
+
+      return createUIMessageStreamResponse({
+        stream,
+        headers: {
+          "x-request-id": requestId,
+          "x-entrestate-tier": entitlement.tier,
+          "x-copilot-usage-used": String(usage.used),
+          "x-copilot-usage-limit": usage.limit === null ? "unlimited" : String(usage.limit),
+          "x-copilot-usage-remaining": usage.remaining === null ? "unlimited" : String(usage.remaining),
+          "x-copilot-usage-blocked": String(usage.blocked),
+          "x-copilot-cooldown-seconds": usage.cooldownSecondsRemaining === null ? "0" : String(usage.cooldownSecondsRemaining),
+        },
+      })
+    }
 
     const model = resolveCopilotModel()
     if (!model) {

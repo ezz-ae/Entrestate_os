@@ -173,6 +173,36 @@ function buildUserPrompt(message: string, context?: { city?: string; area?: stri
   return segments.join("\n\n")
 }
 
+function normalizeTerminalInput(message: string) {
+  return message.trim().toLowerCase().replace(/\s+/g, " ")
+}
+
+function isNonActionableTerminalInput(message: string) {
+  const normalized = normalizeTerminalInput(message)
+  if (normalized.length === 0) return true
+
+  return /^(hi|hello|hey|hey there|yo|sup|help|start|menu|commands|what can you do|how are you|who are you|ok|okay|thanks|thank you|\?+)$/.test(
+    normalized,
+  )
+}
+
+function buildTerminalCommandGuide() {
+  return [
+    "ENTRESTATE Decision Terminal",
+    "────────────────────────────────",
+    "Mode: Awaiting command",
+    "Commands: SCREEN | PROJECT | AREA | COMPARE | RISK | MEMO | PULSE",
+    "",
+    "Examples:",
+    "- PULSE",
+    "- PROJECT Marina Vista",
+    "- SCREEN projects under AED 2M",
+    "- AREA Jumeirah Village Circle",
+    "- COMPARE Dubai Marina vs JBR",
+    "- RISK Emaar Properties",
+  ].join("\n")
+}
+
 function toFiniteNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value
   if (typeof value === "string") {
@@ -675,6 +705,31 @@ export async function POST(request: Request) {
 
     const message = parsed.data.message ?? parsed.data.intent ?? ""
     const prompt = buildUserPrompt(message, parsed.data.context)
+
+    if (isNonActionableTerminalInput(message)) {
+      return NextResponse.json(
+        {
+          content: buildTerminalCommandGuide(),
+          suggestions: [
+            "PULSE",
+            "PROJECT Marina Vista",
+            "SCREEN projects under AED 2M",
+            "AREA Jumeirah Village Circle",
+          ],
+          compiler_output: buildCompilerOutput(message),
+          requestId,
+          request_id: requestId,
+          usage,
+        },
+        {
+          status: 200,
+          headers: {
+            "x-request-id": requestId,
+            ...buildUsageHeaders(usage),
+          },
+        },
+      )
+    }
 
     if (!model) {
       const fallback = await buildDeterministicFallback(message, parsed.data.context)
