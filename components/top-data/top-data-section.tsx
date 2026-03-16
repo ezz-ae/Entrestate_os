@@ -3,6 +3,7 @@ import { formatAed, formatScore, formatYield } from "@/components/decision/forma
 
 type TopDataSectionProps = {
   section: string
+  locale?: string
   title: string
   subtitle: string | null
   confidence: string | null
@@ -47,19 +48,23 @@ function asText(value: unknown, fallback = "—") {
   return typeof value === "string" && value.trim().length > 0 ? value : fallback
 }
 
-function formatAedValue(value: number | null) {
-  return value === null ? "—" : formatAed(value)
+function isArabicLocale(locale?: string | null) {
+  return locale === "ar" || locale?.startsWith("ar-")
 }
 
-function formatYieldValue(value: number | null) {
-  return value === null ? "—" : formatYield(value)
+function formatAedValue(value: number | null, locale?: string | null) {
+  return value === null ? "—" : formatAed(value, locale)
 }
 
-function formatTimestamp(value: string | null) {
+function formatYieldValue(value: number | null, locale?: string | null) {
+  return value === null ? "—" : formatYield(value, locale)
+}
+
+function formatTimestamp(value: string | null, locale?: string | null) {
   if (!value) return "—"
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(undefined, {
+  return date.toLocaleString(isArabicLocale(locale) ? "ar-AE" : "en-AE", {
     month: "short",
     day: "2-digit",
     hour: "2-digit",
@@ -143,15 +148,16 @@ function dataToRecords(data: unknown): GenericObject[] {
   return []
 }
 
-function sectionSubtitle(confidence: string | null, lastUpdated: string | null) {
+function sectionSubtitle(confidence: string | null, lastUpdated: string | null, locale?: string | null) {
   const parts = []
   if (lastUpdated) parts.push(lastUpdated)
-  if (confidence) parts.push(`Confidence: ${confidence}`)
+  if (confidence) parts.push(isArabicLocale(locale) ? `الثقة: ${confidence}` : `Confidence: ${confidence}`)
   return parts.join(" · ")
 }
 
 function SectionShell({
   section,
+  locale,
   title,
   subtitle,
   confidence,
@@ -159,6 +165,7 @@ function SectionShell({
   children,
 }: {
   section: string
+  locale?: string
   title: string
   subtitle: string | null
   confidence: string | null
@@ -179,17 +186,18 @@ function SectionShell({
         <div className="flex flex-shrink-0 items-center gap-2">
           <ConfidenceBadge confidence={confidence} />
           {lastUpdated ? (
-            <span className="text-[10px] text-muted-foreground">{formatTimestamp(lastUpdated)}</span>
+            <span className="text-[10px] text-muted-foreground">{formatTimestamp(lastUpdated, locale)}</span>
           ) : null}
         </div>
       </div>
 
+      <div className="border-b border-border/60 px-4 py-2 text-[11px] text-muted-foreground">{sectionSubtitle(confidence, lastUpdated, locale)}</div>
       <div className="p-4">{children}</div>
     </article>
   )
 }
 
-function MarketPulseView({ data }: { data: unknown }) {
+function MarketPulseView({ data, locale }: { data: unknown; locale?: string }) {
   const rootPayload = asObject(data)
   const summaryPayload = asObject(rootPayload.summary)
   const payload = dataToRecords(data)[0] ?? (Object.keys(summaryPayload).length > 0 ? summaryPayload : rootPayload)
@@ -201,20 +209,20 @@ function MarketPulseView({ data }: { data: unknown }) {
   return (
     <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
       <div className="rounded-lg border border-border/60 bg-background/40 p-3">
-        <p className="text-[11px] text-muted-foreground">Projects</p>
-        <p className="mt-1 text-lg font-semibold text-foreground">{total.toLocaleString()}</p>
+        <p className="text-[11px] text-muted-foreground">{isArabicLocale(locale) ? "المشاريع" : "Projects"}</p>
+        <p className="mt-1 text-lg font-semibold text-foreground">{total.toLocaleString(isArabicLocale(locale) ? "ar-AE" : "en-US")}</p>
       </div>
       <div className="rounded-lg border border-border/60 bg-background/40 p-3">
-        <p className="text-[11px] text-muted-foreground">Avg price</p>
-        <p className="mt-1 text-lg font-semibold text-foreground">{formatAedValue(avgPrice)}</p>
+        <p className="text-[11px] text-muted-foreground">{isArabicLocale(locale) ? "متوسط السعر" : "Avg price"}</p>
+        <p className="mt-1 text-lg font-semibold text-foreground">{formatAedValue(avgPrice, locale)}</p>
       </div>
       <div className="rounded-lg border border-border/60 bg-background/40 p-3">
-        <p className="text-[11px] text-muted-foreground">Avg yield</p>
-        <p className="mt-1 text-lg font-semibold text-foreground">{formatYieldValue(avgYield)}</p>
+        <p className="text-[11px] text-muted-foreground">{isArabicLocale(locale) ? "متوسط العائد" : "Avg yield"}</p>
+        <p className="mt-1 text-lg font-semibold text-foreground">{formatYieldValue(avgYield, locale)}</p>
       </div>
       <div className="rounded-lg border border-border/60 bg-background/40 p-3">
-        <p className="text-[11px] text-muted-foreground">BUY signals</p>
-        <p className="mt-1 text-lg font-semibold text-emerald-300">{buySignals.toLocaleString()}</p>
+        <p className="text-[11px] text-muted-foreground">{isArabicLocale(locale) ? "إشارات BUY" : "BUY signals"}</p>
+        <p className="mt-1 text-lg font-semibold text-emerald-300">{buySignals.toLocaleString(isArabicLocale(locale) ? "ar-AE" : "en-US")}</p>
       </div>
     </div>
   )
@@ -615,18 +623,18 @@ function GenericListView({ data }: { data: unknown }) {
   )
 }
 
-function renderSection(section: string, data: unknown) {
-  if (section === "market-pulse") return <MarketPulseView data={data} />
+function renderSection(section: string, data: unknown, locale?: string) {
+  if (section === "market-pulse") return <MarketPulseView data={data} locale={locale} />
   if (section === "timing-signals") return <TimingSignalsView data={data} />
   if (section === "stress-grades") return <StressGradesView data={data} />
   if (section === "yield-labels") {
-    return <LabelDistributionView data={data} emptyMessage="No yield distribution available." />
+    return <LabelDistributionView data={data} emptyMessage={isArabicLocale(locale) ? "لا يوجد توزيع متاح للعائد." : "No yield distribution available."} />
   }
   if (section === "evidence-levels") {
-    return <LabelDistributionView data={data} emptyMessage="No evidence distribution available." />
+    return <LabelDistributionView data={data} emptyMessage={isArabicLocale(locale) ? "لا يوجد توزيع متاح للأدلة." : "No evidence distribution available."} />
   }
   if (section === "decision-labels") {
-    return <LabelDistributionView data={data} emptyMessage="No decision label distribution available." />
+    return <LabelDistributionView data={data} emptyMessage={isArabicLocale(locale) ? "لا يوجد توزيع متاح لتصنيفات القرار." : "No decision label distribution available."} />
   }
   if (section === "top-projects") return <TopProjectsTableView data={data} />
   if (section === "area-intelligence") return <AreaIntelligenceView data={data} />
@@ -639,10 +647,10 @@ function renderSection(section: string, data: unknown) {
   return <GenericListView data={data} />
 }
 
-export function TopDataSection({ section, title, subtitle, confidence, lastUpdated, data }: TopDataSectionProps) {
+export function TopDataSection({ section, locale, title, subtitle, confidence, lastUpdated, data }: TopDataSectionProps) {
   return (
-    <SectionShell section={section} title={title} subtitle={subtitle} confidence={confidence} lastUpdated={lastUpdated}>
-      {renderSection(section, data)}
+    <SectionShell section={section} locale={locale} title={title} subtitle={subtitle} confidence={confidence} lastUpdated={lastUpdated}>
+      {renderSection(section, data, locale)}
     </SectionShell>
   )
 }

@@ -10,26 +10,28 @@ export function proxy(request: NextRequest) {
   const segments = pathname.split("/").filter(Boolean)
   const pathLocale = segments[0]
   const internalPathname = isLocale(pathLocale) ? stripLocalePrefix(pathname) : pathname
+  const cookieLocale = request.cookies.get(localeCookieName)?.value
+  const activeLocale = isLocale(pathLocale) ? pathLocale : isLocale(cookieLocale) ? cookieLocale : defaultLocale
+  const notFoundText = activeLocale === "ar" ? "غير موجود" : "Not Found"
+  const unavailableText = activeLocale === "ar" ? "الخدمة غير متاحة" : "Service Unavailable"
   const isAutomationBuilderRoute = AUTOMATION_BUILDER_PATHS.some((path) => internalPathname.startsWith(path))
   const isKillSwitchRoute = KILL_SWITCH_PATHS.some((path) => internalPathname.startsWith(path))
 
   if (isAutomationBuilderRoute) {
     const enabled = process.env.NEXT_PUBLIC_ENABLE_AUTOMATION_BUILDER === "true"
     if (process.env.NODE_ENV === "production" && !enabled) {
-      return new NextResponse("Not Found", { status: 404 })
+      return new NextResponse(notFoundText, { status: 404 })
     }
   }
 
   if (isKillSwitchRoute && process.env.ENTRESTATE_KILL_SWITCH === "true") {
-    return new NextResponse("Service Unavailable", { status: 503 })
+    return new NextResponse(unavailableText, { status: 503 })
   }
 
   if (internalPathname.startsWith("/api")) {
     return NextResponse.next()
   }
 
-  const cookieLocale = request.cookies.get(localeCookieName)?.value
-  const activeLocale = isLocale(pathLocale) ? pathLocale : isLocale(cookieLocale) ? cookieLocale : defaultLocale
   const requestHeaders = new Headers(request.headers)
 
   requestHeaders.set("x-entrestate-locale", activeLocale)

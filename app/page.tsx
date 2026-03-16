@@ -15,39 +15,98 @@ import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/homepage/hero-section"
 import { DecisionTunnelStepper } from "@/components/homepage/decision-tunnel-stepper"
 import { getMarketPulseSummary } from "@/lib/frontend-content"
-import { SEO, absoluteUrl } from "@/lib/seo"
+import { SEO, absoluteUrl, getLocaleAlternates, getSeoCopy } from "@/lib/seo"
 import { ChatInterface } from "@/components/ChatInterface"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
 import { getCopilotDailyLimit, getCopilotDailyUsage } from "@/lib/copilot-usage"
 import { headers } from "next/headers"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
 export const dynamic = "force-dynamic"
 
-export const metadata: Metadata = {
-  title: "UAE Real Estate Decision Intelligence",
-  description:
-    "Analyze UAE property markets with evidence-backed scoring, developer reliability signals, and investor-grade decision workflows.",
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: SEO.defaultTitle,
-    description:
-      "Analyze UAE property markets with evidence-backed scoring, developer reliability signals, and investor-grade decision workflows.",
-    url: "/",
-    images: [absoluteUrl(SEO.defaultOgImagePath)],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: SEO.defaultTitle,
-    description:
-      "Analyze UAE property markets with evidence-backed scoring, developer reliability signals, and investor-grade decision workflows.",
-    images: [absoluteUrl(SEO.defaultOgImagePath)],
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale()
+  const copy = getSeoCopy(locale)
+
+  return {
+    title: copy.homeTitle,
+    description: copy.homeDescription,
+    alternates: getLocaleAlternates("/"),
+    openGraph: {
+      title: copy.defaultTitle,
+      description: copy.homeDescription,
+      url: getLocaleAlternates("/").languages?.[locale],
+      images: [absoluteUrl(SEO.defaultOgImagePath)],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: copy.defaultTitle,
+      description: copy.homeDescription,
+      images: [absoluteUrl(SEO.defaultOgImagePath)],
+    },
+  }
 }
 
-
-const SURFACES = [
+function getSurfaces(locale: "en" | "ar") {
+  return locale === "ar"
+    ? [
+        {
+          icon: Sparkles,
+          label: "دردشة القرار الذكية",
+          description: "اشرح ميزانيتك وهدفك وقيودك. ستحصل على قائمة مرشحة مع درجات وتفسير واضح، لا مجرد قوائم.",
+          href: "/chat",
+          cta: "ابدأ التحليل",
+          accent: "text-blue-400",
+          bg: "bg-blue-500/5 border-blue-500/20 hover:border-blue-500/40",
+        },
+        {
+          icon: Building2,
+          label: "مخزون المشاريع",
+          description: "كل مشروع نشط في الإمارات مع تقييم كامل. صفِّ حسب BUY/HOLD/WAIT ودرجة الضغط والعائد والمنطقة.",
+          href: "/properties",
+          cta: "تصفح المشاريع",
+          accent: "text-indigo-400",
+          bg: "bg-indigo-500/5 border-indigo-500/20 hover:border-indigo-500/40",
+        },
+        {
+          icon: Map,
+          label: "ذكاء المناطق",
+          description: "متوسطات العائد وضغط المعروض وعمق التسعير وأفضل المشاريع في كل منطقة داخل الإمارات.",
+          href: "/areas",
+          cta: "استكشف المناطق",
+          accent: "text-teal-400",
+          bg: "bg-teal-500/5 border-teal-500/20 hover:border-teal-500/40",
+        },
+        {
+          icon: Users2,
+          label: "موثوقية المطورين",
+          description: "ثبات التسليم وتوزيع درجات الضغط والسجل التنفيذي لكل مطور نشط.",
+          href: "/developers",
+          cta: "عرض المطورين",
+          accent: "text-violet-400",
+          bg: "bg-violet-500/5 border-violet-500/20 hover:border-violet-500/40",
+        },
+        {
+          icon: TrendingUp,
+          label: "ذكاء السوق",
+          description: "إشارات التوقيت الحية وطبقات القدرة الشرائية وترتيب المناطق وموثوقية المطورين في لوحة واحدة.",
+          href: "/top-data",
+          cta: "عرض الإشارات",
+          accent: "text-amber-400",
+          bg: "bg-amber-500/5 border-amber-500/20 hover:border-amber-500/40",
+        },
+        {
+          icon: FileText,
+          label: "مكتبة الأبحاث",
+          description: "دراسات سوقية طويلة وتحليلات للمناطق والمطورين بصياغة تدعم اتخاذ القرار.",
+          href: "/reports/library",
+          cta: "قراءة التقارير",
+          accent: "text-rose-400",
+          bg: "bg-rose-500/5 border-rose-500/20 hover:border-rose-500/40",
+        },
+      ]
+    : [
   {
     icon: Sparkles,
     label: "AI Decision Chat",
@@ -103,8 +162,25 @@ const SURFACES = [
     bg: "bg-rose-500/5 border-rose-500/20 hover:border-rose-500/40",
   },
 ]
+}
 
-const WHO_FOR = [
+function getWhoFor(locale: "en" | "ar") {
+  return locale === "ar"
+    ? [
+        {
+          audience: "المستثمرون",
+          description: "تحتاج إلى معرفة ما إذا كانت نقطة الدخول مناسبة، وما إذا كان المطور يلتزم، وهل العائد حقيقي قبل ضخ رأس المال.",
+        },
+        {
+          audience: "المستشارون والمحللون",
+          description: "تحتاج إلى أدلة منظمة يمكنك الاعتماد عليها في اجتماع العميل، لا مجرد كتيب PDF بل كائن قرار قابل للتدقيق.",
+        },
+        {
+          audience: "المؤسسات",
+          description: "تحتاج إلى تقييم على مستوى المحافظ، وقياس مرونة الضغط على نطاق واسع، وطبقة بيانات يمكن دمجها في سير العمل الداخلي.",
+        },
+      ]
+    : [
   {
     audience: "Investors",
     description: "You need to know if the entry point is right, if the developer delivers, and whether the yield is real — before committing capital.",
@@ -118,6 +194,7 @@ const WHO_FOR = [
     description: "You need portfolio-level scoring, stress resilience at scale, and a data layer that can integrate with your internal workflows.",
   },
 ]
+}
 
 const structuredDataObj = {
   "@context": "https://schema.org",
@@ -146,6 +223,10 @@ export default async function HomePage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
+  const surfaces = getSurfaces(locale)
+  const whoFor = getWhoFor(locale)
   const headersList = await headers()
   const userAgent = headersList.get("user-agent") || ""
   const isMobile = /mobile|android|iphone|ipad|phone/i.test(userAgent)
@@ -222,12 +303,14 @@ export default async function HomePage({
         {/* ── Decision tunnel ── */}
         <section className="mt-20">
           <div className="mb-8 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">How it works</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{isArabic ? "كيف يعمل" : "How it works"}</p>
             <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
-              The 4-stage decision tunnel
+              {isArabic ? "نفق القرار المكوّن من 4 مراحل" : "The 4-stage decision tunnel"}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
-              Every signal passes through a structured pipeline. No raw listing data goes directly to a decision.
+              {isArabic
+                ? "كل إشارة تمر عبر خط معالجة منظم. لا تنتقل بيانات القوائم الخام مباشرة إلى القرار."
+                : "Every signal passes through a structured pipeline. No raw listing data goes directly to a decision."}
             </p>
           </div>
           <DecisionTunnelStepper />
@@ -236,21 +319,23 @@ export default async function HomePage({
         {/* ── Intelligence surfaces ── */}
         <section className="mt-20">
           <div className="mb-8 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">The platform</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{isArabic ? "المنصة" : "The platform"}</p>
             <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
-              Six intelligence surfaces
+              {isArabic ? "ست واجهات للذكاء" : "Six intelligence surfaces"}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
-              Each surface is a different entry point into the same underlying scored dataset.
+              {isArabic
+                ? "كل واجهة تمثل مدخلاً مختلفاً إلى نفس قاعدة البيانات المقيّمة في الخلفية."
+                : "Each surface is a different entry point into the same underlying scored dataset."}
             </p>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {SURFACES.map((s) => {
+            {surfaces.map((s) => {
               const Icon = s.icon
               return (
                 <Link
                   key={s.label}
-                  href={s.href}
+                  href={prefixLocalePath(s.href, locale)}
                   className={`group flex flex-col justify-between rounded-2xl border p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:hover:shadow-black/20 ${s.bg}`}
                 >
                   <div>
@@ -260,7 +345,7 @@ export default async function HomePage({
                   </div>
                   <div className="mt-4 flex items-center gap-1 text-xs font-medium text-primary">
                     {s.cta}
-                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                    <ArrowRight className={`h-3 w-3 transition-transform ${isArabic ? "group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`} />
                   </div>
                 </Link>
               )
@@ -271,13 +356,13 @@ export default async function HomePage({
         {/* ── Who it's for ── */}
         <section className="mt-20">
           <div className="mb-8 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">Who this is for</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{isArabic ? "لمن صُممت" : "Who this is for"}</p>
             <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
-              Built for people who make real decisions
+              {isArabic ? "مصممة لمن يتخذون قرارات حقيقية" : "Built for people who make real decisions"}
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {WHO_FOR.map((w) => (
+            {whoFor.map((w) => (
               <div key={w.audience} className="rounded-2xl border border-border/60 bg-card/50 px-6 py-5">
                 <p className="text-sm font-semibold text-foreground">{w.audience}</p>
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{w.description}</p>
@@ -291,7 +376,7 @@ export default async function HomePage({
           <div className="flex flex-col gap-5 md:flex-row md:items-center">
             <ShieldCheck className="h-8 w-8 shrink-0 text-primary/60" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">5-Layer Evidence Stack — you always know how reliable a number is</p>
+              <p className="text-sm font-semibold text-foreground">{isArabic ? "مكدس أدلة من 5 طبقات — تعرف دائماً مدى موثوقية كل رقم" : "5-Layer Evidence Stack — you always know how reliable a number is"}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {[
                   { tag: "L1 Canonical", color: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" },
@@ -306,15 +391,17 @@ export default async function HomePage({
                 ))}
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                Raw external data never drives a decision directly. Every metric is adjudicated through the pipeline before reaching L1 Canonical status.
+                {isArabic
+                  ? "البيانات الخارجية الخام لا تقود القرار مباشرة. كل مقياس يمر عبر خط التحقق قبل الوصول إلى حالة L1 Canonical."
+                  : "Raw external data never drives a decision directly. Every metric is adjudicated through the pipeline before reaching L1 Canonical status."}
               </p>
             </div>
             <div className="shrink-0">
               <Link
-                href="/docs/data-information"
+                href={prefixLocalePath("/docs/data-information", locale)}
                 className="flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-primary hover:underline"
               >
-                How data works <ArrowRight className="h-3 w-3" />
+                {isArabic ? "كيف تعمل البيانات" : "How data works"} <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { blogPosts } from "@/lib/blog-data"
 import { docsArticles } from "@/lib/docs-articles"
 import { libraryArticles } from "@/lib/library-data"
 import { getSiteUrl } from "@/lib/seo"
+import { locales, prefixLocalePath } from "@/i18n/locale"
 
 const baseUrl = getSiteUrl()
 
@@ -52,33 +53,41 @@ const staticRoutes = [
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date()
 
-  const staticEntries = staticRoutes.map((route) => ({
-    url: `${baseUrl}${route}`,
-    lastModified,
-    changeFrequency: route === "" ? "daily" : "weekly",
-    priority: route === "" ? 1 : 0.7,
-  }))
+  const staticEntries = locales.flatMap((locale) =>
+    staticRoutes.map((route) => ({
+      url: `${baseUrl}${prefixLocalePath(route || "/", locale)}`,
+      lastModified,
+      changeFrequency: route === "" ? "daily" : "weekly",
+      priority: route === "" ? 1 : 0.7,
+    })),
+  )
 
-  const blogEntries = blogPosts.map((post) => ({
-    url: `${baseUrl}/blog/${post.slug}`,
-    lastModified: new Date(post.publishedAt),
-    changeFrequency: "monthly" as const,
-    priority: 0.8,
-  }))
+  const blogEntries = locales.flatMap((locale) =>
+    blogPosts.map((post) => ({
+      url: `${baseUrl}${prefixLocalePath(`/blog/${post.slug}`, locale)}`,
+      lastModified: new Date(post.publishedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
+  )
 
-  const docsArticleEntries = docsArticles.map((article) => ({
-    url: `${baseUrl}/docs/articles/${article.slug}`,
-    lastModified,
-    changeFrequency: "monthly" as const,
-    priority: 0.75,
-  }))
+  const docsArticleEntries = locales.flatMap((locale) =>
+    docsArticles.map((article) => ({
+      url: `${baseUrl}${prefixLocalePath(`/docs/articles/${article.slug}`, locale)}`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.75,
+    })),
+  )
 
-  const libraryEntries = libraryArticles.map((article) => ({
-    url: `${baseUrl}/library/${article.slug}`,
-    lastModified,
-    changeFrequency: "monthly" as const,
-    priority: 0.7,
-  }))
+  const libraryEntries = locales.flatMap((locale) =>
+    libraryArticles.map((article) => ({
+      url: `${baseUrl}${prefixLocalePath(`/library/${article.slug}`, locale)}`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
+  )
 
   return [...staticEntries, ...blogEntries, ...docsArticleEntries, ...libraryEntries]
 }

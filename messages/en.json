@@ -17,6 +17,42 @@
     "en": "EN",
     "ar": "AR"
   },
+  "common": {
+    "skipToMain": "Skip to main content"
+  },
+  "system": {
+    "loadingTitle": "Loading experience",
+    "loadingBody": "We’re preparing the latest page state and market context.",
+    "loadingShort": "Loading…",
+    "errorTitle": "Something went wrong",
+    "errorBody": "This view failed to render. You can retry now or return to the homepage.",
+    "retry": "Try again",
+    "backHome": "Back to home",
+    "reference": "Reference",
+    "serviceUnavailable": "Service unavailable",
+    "notFound": "Not found"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The page you're looking for doesn't exist or has been moved.",
+    "backHome": "Back to Home",
+    "exploreMarkets": "Explore Markets",
+    "quickLinks": "Quick links:",
+    "markets": "Markets",
+    "library": "Library",
+    "workspace": "Workspace",
+    "about": "About"
+  },
+  "reports": {
+    "libraryLabel": "Reports Library",
+    "errorTitle": "We hit a loading issue",
+    "errorBody": "The report library failed to render this request. You can retry immediately or open generated reports.",
+    "retry": "Try again",
+    "openGenerated": "Open generated reports"
+  },
+  "chatPage": {
+    "subscriptionActivated": "Subscription activated. Your new tier is syncing now."
+  },
   "chat": {
     "heroPlaceholder": "Describe your investment goal, budget, or a specific project to analyse…",
     "composerPlaceholder": "Ask for project screening, price checks, area risk briefs, and full investor memos.",

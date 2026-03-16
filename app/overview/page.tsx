@@ -22,6 +22,8 @@ import { TrustBar } from "@/components/decision/trust-bar"
 import { getHomepageContentSections, getMarketPulseSummary, getOutcomeIntentCounts } from "@/lib/frontend-content"
 import { formatAed } from "@/components/decision/formatters"
 import { Button } from "@/components/ui/button"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
 export const dynamic = "force-dynamic"
 
@@ -94,6 +96,8 @@ function generateInsight(buyPct: number, avgYield: number | null, highConfidence
 }
 
 export default async function OverviewPage() {
+  const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
   const [homepage, pulse, intents] = await Promise.all([
     getHomepageContentSections().catch(() => ({ data_as_of: new Date().toISOString(), sections: [] })),
     getMarketPulseSummary().catch(() => ({
@@ -157,7 +161,7 @@ export default async function OverviewPage() {
                 <span className="text-muted-foreground/30">·</span>
                 <p className="text-xs text-muted-foreground">{updatedLabel}</p>
               </div>
-              <h1 className="mt-1.5 text-2xl font-bold text-foreground md:text-3xl tracking-tight">Decision Engine</h1>
+              <h1 className="mt-1.5 text-2xl font-bold text-foreground md:text-3xl tracking-tight">{isArabic ? "محرك القرار" : "Decision Engine"}</h1>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <span className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wider ${sentiment.color} backdrop-blur-sm shadow-sm`}>
@@ -165,9 +169,9 @@ export default async function OverviewPage() {
                 {sentiment.label}
               </span>
               <Button variant="intelligent" size="sm" asChild className="h-9 shadow-lg">
-                <Link href="/chat">
+                <Link href={prefixLocalePath("/chat", locale)}>
                   <Sparkles className="h-3.5 w-3.5 mr-1" />
-                  Ask AI
+                  {isArabic ? "اسأل الذكاء" : "Ask AI"}
                 </Link>
               </Button>
             </div>
@@ -182,7 +186,7 @@ export default async function OverviewPage() {
           {kpis.map((kpi) => {
             const Icon = kpi.icon
             return (
-              <Link key={kpi.label} href={kpi.href} className="group flex flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)] dark:hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]">
+              <Link key={kpi.label} href={prefixLocalePath(kpi.href, locale)} className="group flex flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)] dark:hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
                   <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${kpi.iconClass}`} />
@@ -197,10 +201,10 @@ export default async function OverviewPage() {
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
             <Filter className="h-3 w-3" />
-            Quick filters
+            {isArabic ? "فلاتر سريعة" : "Quick filters"}
           </span>
           {QUICK_FILTERS.map((f) => (
-            <Link key={f.label} href={f.href} className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${f.color}`}>{f.label}</Link>
+            <Link key={f.label} href={prefixLocalePath(f.href, locale)} className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${f.color}`}>{f.label}</Link>
           ))}
         </div>
 
@@ -232,8 +236,8 @@ export default async function OverviewPage() {
                 ))}
               </div>
               <div className="mt-4 border-t border-border/60 pt-3">
-                <Link href="/properties?timing=BUY" className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
-                  View all BUY-rated projects <ArrowUpRight className="h-3 w-3" />
+                <Link href={prefixLocalePath("/properties?timing=BUY", locale)} className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
+                  {isArabic ? "عرض كل المشاريع المصنفة BUY" : "View all BUY-rated projects"} <ArrowUpRight className="h-3 w-3" />
                 </Link>
               </div>
             </article>
@@ -309,26 +313,26 @@ export default async function OverviewPage() {
               })}
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3">
-              <Link href="/properties" className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">Browse all projects <ArrowUpRight className="h-3 w-3" /></Link>
-              <Link href="/chat" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"><Sparkles className="h-3 w-3" />Open AI chat</Link>
+              <Link href={prefixLocalePath("/properties", locale)} className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">{isArabic ? "تصفح كل المشاريع" : "Browse all projects"} <ArrowUpRight className="h-3 w-3" /></Link>
+              <Link href={prefixLocalePath("/chat", locale)} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"><Sparkles className="h-3 w-3" />{isArabic ? "افتح الدردشة الذكية" : "Open AI chat"}</Link>
             </div>
           </article>
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Link href="/chat" className="group flex items-center justify-between rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 transition-all hover:bg-primary/10 hover:-translate-y-0.5">
+          <Link href={prefixLocalePath("/chat", locale)} className="group flex items-center justify-between rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 transition-all hover:bg-primary/10 hover:-translate-y-0.5">
             <div>
-              <p className="text-sm font-semibold text-foreground">AI Decision Chat</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">Shortlist projects · Compare areas · Review V1 stress signals</p>
+              <p className="text-sm font-semibold text-foreground">{isArabic ? "دردشة القرار الذكية" : "AI Decision Chat"}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "قائمة مختصرة للمشاريع · مقارنة المناطق · مراجعة إشارات الضغط V1" : "Shortlist projects · Compare areas · Review V1 stress signals"}</p>
             </div>
             <div className="ml-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md transition group-hover:scale-105">
               <Sparkles className="h-4 w-4" />
             </div>
           </Link>
-          <Link href="/top-data" className="group flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)]">
+          <Link href={prefixLocalePath("/top-data", locale)} className="group flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)]">
             <div>
-              <p className="text-sm font-semibold text-foreground">Market Intelligence Board</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">Pulse · Timing · Stress · Area depth · Developer reliability</p>
+              <p className="text-sm font-semibold text-foreground">{isArabic ? "لوحة ذكاء السوق" : "Market Intelligence Board"}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "نبض السوق · التوقيت · الضغط · عمق المناطق · موثوقية المطورين" : "Pulse · Timing · Stress · Area depth · Developer reliability"}</p>
             </div>
             <div className="ml-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40 transition group-hover:bg-muted/70">
               <BarChart3 className="h-4 w-4 text-foreground" />

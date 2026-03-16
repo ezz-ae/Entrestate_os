@@ -4,12 +4,17 @@ import { getCurrentEntitlement } from "@/lib/account-entitlement"
 import { getCopilotDailyLimit, getCopilotDailyUsage } from "@/lib/copilot-usage"
 import { redirect } from "next/navigation"
 import { headers } from "next/headers"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
+import { getTranslations } from "next-intl/server"
 
 export default async function ChatPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const locale = await getRequestLocale()
+  const t = await getTranslations({ locale, namespace: "chatPage" })
   // Check for mobile user agent to handle "no chat page on mobile" requirement
   const headersList = await headers()
   const userAgent = headersList.get("user-agent") || ""
@@ -25,7 +30,7 @@ export default async function ChatPage({
     if (sessionId) {
       chatParams.set("id", sessionId)
     }
-    redirect(`/?${chatParams.toString()}`)
+    redirect(`${prefixLocalePath("/", locale)}?${chatParams.toString()}`)
   }
 
   const entitlement = await getCurrentEntitlement()
@@ -49,7 +54,7 @@ export default async function ChatPage({
       <Navbar />
       <div className="mx-auto max-w-[1600px] px-6 pb-14 pt-28 md:pt-32">
         {billingParam === "success" ? (
-          <p className="mb-4 text-sm text-emerald-600">Subscription activated. Your new tier is syncing now.</p>
+          <p className="mb-4 text-sm text-emerald-600">{t("subscriptionActivated")}</p>
         ) : null}
         <ChatInterface
           id={sessionId || undefined}

@@ -37,6 +37,7 @@ function buildFilterHref(base: Record<string, string | undefined>, override: Rec
 
 export default async function PropertiesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
   const params = await searchParams
   const page = Number.parseInt(params.page ?? "1", 10)
   const currentPage = Number.isFinite(page) && page > 0 ? page : 1
@@ -83,6 +84,40 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
     maxPrice: params.maxPrice,
   }
 
+  const copy = {
+    liveFeed: isArabic ? "تغذية المشاريع الحية" : "Live Project Feed",
+    titleLead: isArabic ? "ذكاء" : "Project",
+    titleAccent: isArabic ? "المشاريع" : "Intelligence",
+    headerBody: isArabic
+      ? `${formatInteger(totalProjectsCount, locale)} مشروعاً نشطاً في الإمارات — مع تقييم لتوقيت السوق ومرونة الضغط وموثوقية البيانات.`
+      : `${formatInteger(totalProjectsCount, locale)} active UAE projects — scored for market timing, stress resilience, and verified data confidence.`,
+    freshness: isArabic ? "تحديث البيانات" : "Data Freshness",
+    inventoryDepth: isArabic ? "عمق المخزون" : "Inventory Depth",
+    filtered: isArabic ? "نتائج مفلترة" : "Filtered Results",
+    totalActive: isArabic ? "إجمالي النشط في الإمارات" : "Total UAE Active",
+    activeBuy: isArabic ? "إشارات BUY النشطة" : "Active BUY Signals",
+    density: isArabic ? "كثافة الفرص في الصفحة" : "Page Opportunity density",
+    marketPrice: isArabic ? "سعر السوق L1" : "Market Price L1",
+    marketPriceSub: isArabic ? "متوسط معياري مشتق" : "Derived mean benchmark",
+    strategicYield: isArabic ? "العائد الاستراتيجي" : "Strategic Yield",
+    strategicYieldSub: isArabic ? "متوسط سنوي إجمالي" : "Annualized gross mean",
+    signal: isArabic ? "الإشارة:" : "Signal:",
+    risk: isArabic ? "المخاطر:" : "Risk:",
+    clearAll: isArabic ? "مسح الكل" : "Clear all",
+    signalChip: isArabic ? "الإشارة" : "Signal",
+    riskChip: isArabic ? "درجة المخاطر" : "Risk Grade",
+    areaChip: isArabic ? "المنطقة" : "Area",
+    developerChip: isArabic ? "المطور" : "Developer",
+    pageSummary: isArabic
+      ? `الصفحة ${formatInteger(currentPage, locale)} من ${formatInteger(totalPages || 1, locale)} · عرض ${formatInteger(projects.length, locale)} من ${formatInteger(totalProjectsCount, locale)} مشروعاً`
+      : `Page ${formatInteger(currentPage, locale)} of ${formatInteger(totalPages || 1, locale)} · showing ${formatInteger(projects.length, locale)} of ${formatInteger(totalProjectsCount, locale)} projects`,
+    emptyTitle: isArabic ? "لا توجد مشاريع مطابقة لهذه الفلاتر" : "No projects match these filters",
+    emptyBody: isArabic ? "جرّب تعديل إشارة التوقيت أو فلتر درجة المخاطر." : "Try adjusting your timing signal or risk grade filter.",
+    clearFilters: isArabic ? "مسح جميع الفلاتر" : "Clear all filters",
+    previous: isArabic ? "السابق →" : "← Previous",
+    next: isArabic ? "← التالي" : "Next →",
+  }
+
   return (
     <main id="main-content">
       <Navbar />
@@ -93,18 +128,18 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
           <div>
             <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/5 rounded-full border border-primary/10">
               <Building2 className="w-3 h-3" />
-              Live Project Feed
+              {copy.liveFeed}
             </div>
             <h1 className="text-4xl md:text-6xl font-serif font-bold text-foreground leading-tight tracking-tight">
-              Project <span className="text-muted-foreground/40 italic">Intelligence</span>
+              {copy.titleLead} <span className="text-muted-foreground/40 italic">{copy.titleAccent}</span>
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl font-medium leading-relaxed">
-              {formatInteger(totalProjectsCount, locale)} active UAE projects — scored for market timing, stress resilience, and verified data confidence.
+              {copy.headerBody}
             </p>
           </div>
           {freshnessLabel && (
             <div className="flex flex-col md:items-end">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-1">Data Freshness</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-1">{copy.freshness}</span>
               <p className="text-xs font-bold text-foreground bg-secondary/50 px-3 py-1 rounded-lg border border-border/40">
                 {freshnessLabel}
               </p>
@@ -115,10 +150,10 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
         {/* Metric cards */}
         <div className="mb-12 grid grid-cols-2 gap-4 md:grid-cols-4">
           {[
-            { label: "Inventory Depth", value: formatInteger(totalProjectsCount, locale), sub: hasFilters ? "Filtered Results" : "Total UAE Active", icon: BarChart3, color: "text-primary", bg: "bg-primary/5" },
-            { label: "Active BUY Signals", value: `${buyCount} / ${projects.length}`, sub: "Page Opportunity density", icon: Zap, color: "text-emerald-500", bg: "bg-emerald-500/5" },
-            { label: "Market Price L1", value: formatAed(avgPrice, locale, { compact: true, fallback: "—" }), sub: "Derived mean benchmark", icon: TrendingUp, color: "text-sky-500", bg: "bg-sky-500/5" },
-            { label: "Strategic Yield", value: avgYield !== null ? `${avgYield.toFixed(1)}%` : "—", sub: "Annualized gross mean", icon: ShieldCheck, color: "text-violet-500", bg: "bg-violet-500/5" },
+            { label: copy.inventoryDepth, value: formatInteger(totalProjectsCount, locale), sub: hasFilters ? copy.filtered : copy.totalActive, icon: BarChart3, color: "text-primary", bg: "bg-primary/5" },
+            { label: copy.activeBuy, value: `${formatInteger(buyCount, locale)} / ${formatInteger(projects.length, locale)}`, sub: copy.density, icon: Zap, color: "text-emerald-500", bg: "bg-emerald-500/5" },
+            { label: copy.marketPrice, value: formatAed(avgPrice, locale, { compact: true, fallback: "—" }), sub: copy.marketPriceSub, icon: TrendingUp, color: "text-sky-500", bg: "bg-sky-500/5" },
+            { label: copy.strategicYield, value: avgYield !== null ? `${avgYield.toFixed(1)}%` : "—", sub: copy.strategicYieldSub, icon: ShieldCheck, color: "text-violet-500", bg: "bg-violet-500/5" },
           ].map((card) => {
             const Icon = card.icon
             return (
@@ -140,7 +175,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
         <div className="mb-6 flex flex-wrap items-center gap-2">
           {/* Timing signal */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-muted-foreground/60">Signal:</span>
+            <span className="text-[11px] text-muted-foreground/60">{copy.signal}</span>
             {(["BUY", "HOLD", "WAIT"] as const).map((signal) => {
               const isActive = params.timing === signal
               const colors = {
@@ -164,7 +199,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
 
           {/* Stress grade */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-muted-foreground/60">Risk:</span>
+            <span className="text-[11px] text-muted-foreground/60">{copy.risk}</span>
             {(["A", "B", "C", "D"] as const).map((grade) => {
               const isActive = params.stress === grade
               return (
@@ -187,7 +222,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
             <>
               <span className="text-border/60">·</span>
               <Link href={prefixLocalePath("/properties", locale)} locale={false} className="rounded-full border border-border/50 px-3 py-1 text-xs text-muted-foreground transition hover:border-primary/30 hover:text-foreground">
-                Clear all
+                {copy.clearAll}
               </Link>
             </>
           )}
@@ -198,25 +233,25 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
           <div className="mb-4 flex flex-wrap gap-2">
             {params.timing && (
               <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
-                Signal: {params.timing}
+                {copy.signalChip}: {params.timing}
                 <Link href={prefixLocalePath(buildFilterHref(baseParams, { timing: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.stress && (
               <span className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-foreground">
-                Risk Grade: {params.stress}
+                {copy.riskChip}: {params.stress}
                 <Link href={prefixLocalePath(buildFilterHref(baseParams, { stress: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.area && (
               <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
-                Area: {params.area}
+                {copy.areaChip}: {params.area}
                 <Link href={prefixLocalePath(buildFilterHref(baseParams, { area: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.developer && (
               <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
-                Developer: {params.developer}
+                {copy.developerChip}: {params.developer}
                 <Link href={prefixLocalePath(buildFilterHref(baseParams, { developer: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
@@ -225,7 +260,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
 
         {/* Showing count */}
         <p className="mb-4 text-xs text-muted-foreground/60">
-          Page {formatInteger(currentPage, locale)} of {formatInteger(totalPages || 1, locale)} · showing {formatInteger(projects.length, locale)} of {formatInteger(totalProjectsCount, locale)} projects
+          {copy.pageSummary}
         </p>
 
         {/* Grid */}
@@ -250,10 +285,10 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
           ))}
           {projects.length === 0 && (
             <div className="col-span-3 rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-16 text-center">
-              <p className="text-sm font-medium text-foreground">No projects match these filters</p>
-              <p className="mt-1 text-xs text-muted-foreground">Try adjusting your timing signal or risk grade filter.</p>
+              <p className="text-sm font-medium text-foreground">{copy.emptyTitle}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{copy.emptyBody}</p>
               <Link href={prefixLocalePath("/properties", locale)} locale={false} className="mt-4 inline-block rounded-full border border-border/60 bg-card px-4 py-2 text-xs text-foreground transition hover:border-primary/40">
-                Clear all filters
+                {copy.clearFilters}
               </Link>
             </div>
           )}
@@ -267,7 +302,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
                 href={prefixLocalePath(buildFilterHref(baseParams, { page: String(currentPage - 1) }), locale)}
                 className="rounded-xl border border-border/60 bg-card/60 px-4 py-2 text-sm text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
               >
-                ← Previous
+                {copy.previous}
               </Link>
             )}
             <div className="flex items-center gap-1">
@@ -299,7 +334,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
                 href={prefixLocalePath(buildFilterHref(baseParams, { page: String(currentPage + 1) }), locale)}
                 className="rounded-xl border border-border/60 bg-card/60 px-4 py-2 text-sm text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
               >
-                Next →
+                {copy.next}
               </Link>
             )}
           </div>

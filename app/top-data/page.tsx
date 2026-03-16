@@ -2,6 +2,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { getTopDataRows } from "@/lib/frontend-content"
 import { TopDataSection } from "@/components/top-data/top-data-section"
+import { getRequestLocale } from "@/i18n/request"
 
 export const dynamic = "force-dynamic"
 
@@ -104,6 +105,23 @@ const SECTION_COPY: Record<
   },
 }
 
+const SECTION_COPY_AR: Record<(typeof REQUIRED_SECTIONS)[number], { title: string; subtitle: string }> = {
+  "market-pulse": { title: "نبض السوق", subtitle: "لقطة شاملة للمشاريع النشطة ومتوسط السعر ومتوسط العائد وفرص BUY." },
+  "timing-signals": { title: "إشارات التوقيت", subtitle: "توزيع إشارات STRONG_BUY / BUY / HOLD / WAIT / AVOID مع سياق السعر والعائد." },
+  "stress-grades": { title: "درجات الضغط", subtitle: "توزيع مرونة المحفظة من الدرجة A حتى E." },
+  "yield-labels": { title: "تصنيفات العائد", subtitle: "توزيع شرائح العائد مع سياق التسعير." },
+  "evidence-levels": { title: "مستويات الأدلة", subtitle: "مزيج ثقة البيانات وتغطية الأدلة المتحققة." },
+  "decision-labels": { title: "تصنيفات القرار", subtitle: "توزيع من STRONG_BUY إلى AVOID عبر المخزون المقيم." },
+  affordability: { title: "طبقات القدرة الشرائية", subtitle: "مزيج المشاريع حسب الشريحة السعرية وملف العائد." },
+  "outcome-intents": { title: "نيات النتائج", subtitle: "الأهداف الاستثمارية التي يخدمها المخزون الحالي بشكل أفضل." },
+  "top-projects": { title: "أفضل المشاريع", subtitle: "جدول بالمشاريع الأعلى ترتيباً مع السعر والعائد والضغط والتوقيت والنتيجة." },
+  "area-intelligence": { title: "ذكاء المناطق", subtitle: "عمق المشاريع والتسعير والكفاءة وضغط المعروض على مستوى المنطقة." },
+  "developer-reliability": { title: "موثوقية المطورين", subtitle: "ثبات المطورين وعدد المشاريع الآمنة والسجل التنفيذي." },
+  "golden-visa": { title: "الإقامة الذهبية", subtitle: "عدد المشاريع المؤهلة وملف الجودة للمشترين فوق 2 مليون درهم." },
+  "trust-bar": { title: "شريط الثقة", subtitle: "هرمية البيانات ومحركات التقييم وتوزيع الثقة عبر مجموعة البيانات." },
+  "dld-market": { title: "سوق DLD", subtitle: "لقطات من المعاملات وأبرز تدفقات الصفقات من تغذية دائرة الأراضي." },
+}
+
 function sectionLayoutClass(section: (typeof REQUIRED_SECTIONS)[number]) {
   if (section === "market-pulse") return "xl:col-span-3"
   if (section === "top-projects") return "xl:col-span-3"
@@ -128,7 +146,10 @@ function toRequiredSection(value: string | null | undefined): RequiredSection | 
 }
 
 export default async function TopDataPage() {
+  const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
   const topData = await getTopDataRows()
+  const sectionCopy = isArabic ? SECTION_COPY_AR : SECTION_COPY
 
   const rowsBySection = new Map<RequiredSection, (typeof topData.sections)[number]>()
   for (const row of topData.sections) {
@@ -145,10 +166,12 @@ export default async function TopDataPage() {
       <Navbar />
       <div className="mx-auto max-w-[1400px] px-6 pb-20 pt-28 md:pt-36">
         <header className="mb-8">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">Market Data</p>
-          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">UAE Market Intelligence</h1>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "بيانات السوق" : "Market Data"}</p>
+          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{isArabic ? "ذكاء سوق الإمارات" : "UAE Market Intelligence"}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            A guided intelligence board for pricing, timing, stress, developer quality, and opportunity signals.
+            {isArabic
+              ? "لوحة ذكاء موجهة للتسعير والتوقيت والضغط وجودة المطورين وإشارات الفرص."
+              : "A guided intelligence board for pricing, timing, stress, developer quality, and opportunity signals."}
           </p>
         </header>
 
@@ -158,28 +181,35 @@ export default async function TopDataPage() {
               <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]" />
               <span className="text-xs text-muted-foreground">
                 <span className="font-semibold text-foreground">{availableSections.length}</span>
-                /{REQUIRED_SECTIONS.length} sections loaded
+                {isArabic ? `/${REQUIRED_SECTIONS.length} أقسام محمّلة` : `/${REQUIRED_SECTIONS.length} sections loaded`}
               </span>
             </div>
           )}
           <div className="rounded-xl border border-border/60 bg-card/70 px-4 py-2.5 text-xs text-muted-foreground">
-            Start with <span className="font-medium text-foreground">Market Pulse</span> → scan{" "}
-            <span className="font-medium text-foreground">Timing</span> &{" "}
-            <span className="font-medium text-foreground">Stress</span> → drill into{" "}
-            <span className="font-medium text-foreground">Top Projects</span>
+            {isArabic ? (
+              <>
+                ابدأ بـ <span className="font-medium text-foreground">نبض السوق</span> ← افحص <span className="font-medium text-foreground">التوقيت</span> و <span className="font-medium text-foreground">الضغط</span> ← تعمّق في <span className="font-medium text-foreground">أفضل المشاريع</span>
+              </>
+            ) : (
+              <>
+                Start with <span className="font-medium text-foreground">Market Pulse</span> → scan <span className="font-medium text-foreground">Timing</span> & <span className="font-medium text-foreground">Stress</span> → drill into <span className="font-medium text-foreground">Top Projects</span>
+              </>
+            )}
           </div>
           {missingSections.length > 0 ? (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-2.5 text-xs text-amber-400">
-              Missing: {missingSections.map((key) => SECTION_COPY[key].title).join(", ")}
+              {isArabic ? "مفقود: " : "Missing: "}{missingSections.map((key) => sectionCopy[key].title).join(", ")}
             </div>
           ) : null}
         </section>
 
         {availableSections.length === 0 && (
           <div className="mb-8 rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-16 text-center">
-            <p className="text-sm font-medium text-foreground">Market intelligence is refreshing</p>
+            <p className="text-sm font-medium text-foreground">{isArabic ? "يتم تحديث ذكاء السوق" : "Market intelligence is refreshing"}</p>
             <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
-              The data pipeline is processing the latest UAE market signals. Sections will appear once the current cycle completes — typically within a few hours.
+              {isArabic
+                ? "يقوم خط البيانات بمعالجة أحدث إشارات السوق في الإمارات. ستظهر الأقسام فور اكتمال الدورة الحالية — عادة خلال بضع ساعات."
+                : "The data pipeline is processing the latest UAE market signals. Sections will appear once the current cycle completes — typically within a few hours."}
             </p>
           </div>
         )}
@@ -189,17 +219,18 @@ export default async function TopDataPage() {
           {REQUIRED_SECTIONS.map((sectionKey) => {
             const section = rowsBySection.get(sectionKey)
             const nowIso = new Date().toISOString()
-            const fallback = SECTION_COPY[sectionKey]
+            const fallback = sectionCopy[sectionKey]
 
             return (
               <div key={sectionKey} className={sectionLayoutClass(sectionKey)}>
                 <TopDataSection
                   section={sectionKey}
+                  locale={locale}
                   title={section?.title ?? fallback.title}
                   subtitle={section?.subtitle ?? fallback.subtitle}
                   confidence={section?.confidence ?? "LOW"}
                   lastUpdated={section?.last_updated ?? nowIso}
-                  data={section?.data_json ?? { message: "No section data available" }}
+                  data={section?.data_json ?? { message: isArabic ? "لا توجد بيانات متاحة لهذا القسم" : "No section data available" }}
                 />
               </div>
             )
