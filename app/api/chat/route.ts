@@ -188,18 +188,17 @@ function isNonActionableTerminalInput(message: string) {
 
 function buildTerminalCommandGuide() {
   return [
-    "ENTRESTATE Decision Terminal",
-    "────────────────────────────────",
-    "Mode: Awaiting command",
-    "Commands: SCREEN | PROJECT | AREA | COMPARE | RISK | MEMO | PULSE",
+    "You can ask naturally — I’ll translate it into Entrestate’s decision workflow.",
     "",
-    "Examples:",
-    "- PULSE",
-    "- PROJECT Marina Vista",
-    "- SCREEN projects under AED 2M",
-    "- AREA Jumeirah Village Circle",
-    "- COMPARE Dubai Marina vs JBR",
-    "- RISK Emaar Properties",
+    "Quick ways to use me:",
+    "- Market pulse: PULSE or 'what's happening in the market?'",
+    "- Project analysis: PROJECT Marina Vista or 'analyze Marina Vista'",
+    "- Screening: SCREEN projects under AED 2M or 'show me projects under 2M'",
+    "- Area view: AREA Jumeirah Village Circle or 'is JVC attractive right now?'",
+    "- Comparison: COMPARE Dubai Marina vs JBR",
+    "- Risk: RISK Emaar Properties or 'show me Emaar risk'",
+    "",
+    "I’ll keep the answer concise, evidence-based, and structured.",
   ].join("\n")
 }
 
