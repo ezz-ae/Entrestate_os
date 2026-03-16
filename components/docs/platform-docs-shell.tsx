@@ -31,7 +31,7 @@ function getDocsNavGroups(locale: AppLocale): DocsNavGroup[] {
       { title: isArabic ? "السوق" : "Industry", href: "/docs/industry", icon: Building2 },
       { title: isArabic ? "الوظائف والتدريب" : "Careers & Intern", href: "/docs/careers-intern", icon: Briefcase },
       { title: isArabic ? "علاقات المستثمرين" : "Investors Relations", href: "/docs/investors-relations", icon: BarChart3 },
-      { title: isArabic ? "مقالات الخريطة الذهنية" : "Mind Map Articles", href: "/docs/articles", icon: FileText },
+      { title: isArabic ? "مقالات المنصة" : "Mind Map Articles", href: "/docs/articles", icon: FileText },
       { title: isArabic ? "البيانات والمعلومات" : "Data & Information", href: "/docs/data-information", icon: FileText },
     ],
   },
@@ -84,15 +84,15 @@ export function PlatformDocsShell({ children }: { children: ReactNode }) {
   const docsNavGroups = getDocsNavGroups(locale)
   const copy = {
     brand: isArabic ? "وثائق Entrestate" : "Entrestate Docs",
-    platformMap: isArabic ? "خريطة المنصة" : "Platform Map",
+    platformMap: isArabic ? "أقسام المنصة" : "Platform Map",
     partners: isArabic ? "الشركاء" : "Partners",
     investors: isArabic ? "المستثمرون" : "Investors",
     articles: isArabic ? "المقالات" : "Articles",
-    searchDocs: isArabic ? "ابحث في الوثائق" : "Search docs",
-    aiSupport: isArabic ? "مساعدة الذكاء الاصطناعي" : "AI Support",
-    aiWorkflow: isArabic ? "سير عمل الذكاء الاصطناعي" : "AI Workflow",
+    searchDocs: isArabic ? "ابحث في التوثيق" : "Search docs",
+    aiSupport: isArabic ? "المساعد الذكي" : "AI Support",
+    aiWorkflow: isArabic ? "استخدامات المساعد" : "AI Workflow",
     aiWorkflowBody: isArabic
-      ? "اطلب من المساعد تلخيص أي قسم في موجز جاهز للشركاء أو المستثمرين."
+      ? "اطلب من المساعد تلخيص أي صفحة أو تجهيز موجز سريع للشركاء أو المستثمرين."
       : "Ask AI to summarize any section into partner or investor-ready briefs.",
     openAssistant: isArabic ? "فتح المساعد" : "Open assistant",
   }

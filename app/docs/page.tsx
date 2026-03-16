@@ -39,23 +39,23 @@ export default function DocsPage() {
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
   const copy = {
-    badge: isArabic ? "قاعدة المعرفة 4.0" : "Knowledge Base v4.0",
-    titleLineOne: isArabic ? "نظام الذكاء" : "The Intelligence OS for",
-    titleAccent: isArabic ? "للعقار في الإمارات" : "UAE Real Estate",
+    badge: isArabic ? "مركز المعرفة 4.0" : "Knowledge Base v4.0",
+    titleLineOne: isArabic ? "المرجع التشغيلي" : "The Intelligence OS for",
+    titleAccent: isArabic ? "لعقار الإمارات" : "UAE Real Estate",
     intro: isArabic
-      ? "Entrestate هي بنية قرار. نحول الإشارات السوقية الخام إلى مخرجات قابلة للدفاع مؤسسياً عبر معمارية واضحة من خط البيانات إلى نفق القرار."
+      ? "هذا هو مرجع Entrestate للمنتج والبيانات والمنهجية. هنا تجد كيف تتحول بيانات السوق إلى قراءة استثمارية واضحة يمكن الرجوع إليها بثقة."
       : "Entrestate is decision infrastructure. We transform raw market signals into defensible, institutional-grade outcomes through an auditable Pipeline-to-Tunnel architecture.",
     investorPackage: isArabic ? "حزمة المستثمر" : "Investor Package",
     technicalSpec: isArabic ? "المواصفة التقنية" : "Technical Spec",
     browseSection: isArabic ? "استعراض القسم" : "Browse Section",
     activeProjects: isArabic ? "المشاريع النشطة" : "Active Projects",
     trackedAcrossUae: isArabic ? "متابعة عبر الإمارات" : "Tracked across UAE",
-    canonicalDevelopers: isArabic ? "المطورون المرجعيون" : "Canonical Developers",
+    canonicalDevelopers: isArabic ? "المطورون المعتمدون" : "Canonical Developers",
     normalizedVerified: isArabic ? "موحدة ومتحقق منها" : "Normalized & verified",
     buySignals: isArabic ? "إشارات BUY" : "BUY Signals",
     evidenceBacked: isArabic ? "مدعومة بالأدلة" : "Evidence-backed",
-    pipelinePhases: isArabic ? "مراحل خط البيانات" : "Pipeline Phases",
-    sequentialRefinement: isArabic ? "تنقيح متسلسل للبيانات" : "Sequential data refinement",
+    pipelinePhases: isArabic ? "مراحل المعالجة" : "Pipeline Phases",
+    sequentialRefinement: isArabic ? "معالجة متدرجة للبيانات" : "Sequential data refinement",
   }
   const keyNumbers = [
     { label: copy.activeProjects, value: "2,813", detail: copy.trackedAcrossUae },

@@ -9,9 +9,9 @@ export default async function DocsArticlesPage() {
   const isArabic = locale === "ar"
   const copy = {
     eyebrow: isArabic ? "وثائق المنصة / المقالات" : "Platform Docs / Articles",
-    title: isArabic ? "مقالات الخريطة الذهنية" : "Mind Map Articles",
+    title: isArabic ? "مقالات المنصة" : "Mind Map Articles",
     intro: isArabic
-      ? "كل عقدة في الخريطة الذهنية لـ Entrestate ممثلة كمقال مستقل مناسب للشركاء والمشغلين والمستثمرين."
+      ? "مجموعة مقالات تشرح وحدات المنصة ومسارات العمل والمفاهيم الأساسية للشركاء والمشغلين والمستثمرين."
       : "Every node in the Entrestate mind map is represented as an individual article for partner, operator, and investor-level reading.",
     readArticle: isArabic ? "قراءة المقال" : "Read article",
   }

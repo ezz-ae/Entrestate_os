@@ -76,16 +76,16 @@ export default function MapPage() {
           <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
             <div>
               <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "الخريطة" : "Map"}</p>
-              <h1 className="mt-3 text-3xl md:text-5xl font-serif text-foreground">{isArabic ? "طبقة الثقة المكانية" : "Spatial Trust Surface"}</h1>
+              <h1 className="mt-3 text-3xl md:text-5xl font-serif text-foreground">{isArabic ? "خريطة السوق" : "Spatial Trust Surface"}</h1>
               <p className="mt-3 text-sm text-muted-foreground max-w-2xl">
                 {isArabic
-                  ? "عناقيد المناطق ملوّنة وفق إشارات السوق. اضغط على أي منطقة لاستكشاف مشاريعها وذكائها الاستثماري."
+                  ? "استكشف المناطق بحسب العائد والسعر وكثافة المشاريع. اضغط على أي منطقة لعرض التفاصيل."
                   : "Area clusters colored by market signals. Click any area to explore its projects and intelligence."}
               </p>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-4 py-2 text-xs text-muted-foreground">
               <Activity className="h-3.5 w-3.5 text-accent" />
-              {isArabic ? `${areas.length} منطقة محمّلة` : `${areas.length} areas loaded`}
+              {isArabic ? `${areas.length} منطقة متاحة` : `${areas.length} areas loaded`}
             </div>
           </header>
 
@@ -94,7 +94,7 @@ export default function MapPage() {
             <section className="rounded-2xl border border-border/70 bg-card/70 p-6">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-4">
                 <MapPin className="h-4 w-4 text-accent" />
-                {isArabic ? "عناقيد المناطق" : "Area clusters"}
+                {isArabic ? "المناطق" : "Area clusters"}
               </div>
 
               {loading ? (
@@ -148,7 +148,7 @@ export default function MapPage() {
               </div>
               <div className="mt-4 space-y-4">
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "الطبقات الأساسية" : "Core layers"}</p>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "مستويات العرض" : "Core layers"}</p>
                   <div className="mt-3 space-y-2">
                     {layerOptions.map((layer) => (
                       <button

@@ -123,14 +123,14 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
         {/* Header */}
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/40">
-            {isArabic ? "Entrestate · ذكاء المناطق" : "Entrestate · Area Intelligence"}
+            {isArabic ? "Entrestate · المناطق" : "Entrestate · Area Intelligence"}
           </p>
           <h2 className="mt-4 font-serif text-3xl font-medium text-foreground">
-            {isArabic ? "خريطة سوق الإمارات" : "UAE Market Map"}
+            {isArabic ? "خريطة المناطق في الإمارات" : "UAE Market Map"}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground/70">
             {isArabic
-              ? `${areas.length} ملفاً للمناطق مع بيانات مباشرة للعائد والتسعير والمشاريع. اضغط على أي نقطة للاستكشاف.`
+              ? `${areas.length} منطقة مع بيانات مباشرة للأسعار والعائد والمشاريع. اضغط على أي نقطة للاستكشاف.`
               : `${areas.length} area profiles with live yield, pricing, and project data. Click any dot to explore.`}
           </p>
         </div>
@@ -139,11 +139,11 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
         <div className="space-y-3">
           <div className="rounded-2xl border border-border/40 bg-card/40 p-5">
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/40">
-              {isArabic ? "لقطة السوق" : "Market snapshot"}
+              {isArabic ? "ملخص سريع" : "Market snapshot"}
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">{isArabic ? "المناطق المتتبعة" : "Areas tracked"}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">{isArabic ? "عدد المناطق" : "Areas tracked"}</p>
                 <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{areas.length}</p>
               </div>
               {globalAvgYield !== null && (
@@ -178,7 +178,7 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
               ))}
               <div className="mt-2 flex items-center gap-3">
                 <div className="h-2.5 w-2.5 shrink-0 rounded-full border border-muted-foreground/30" />
-                <span className="text-xs text-muted-foreground/40">{isArabic ? "حجم النقطة = عدد المشاريع" : "Dot size = project count"}</span>
+                <span className="text-xs text-muted-foreground/40">{isArabic ? "حجم النقطة يعكس عدد المشاريع" : "Dot size = project count"}</span>
               </div>
             </div>
           </div>
@@ -190,7 +190,7 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
           className="flex items-center justify-center gap-2 rounded-xl border border-border/50 py-3 text-sm text-muted-foreground transition hover:border-border hover:text-foreground"
         >
           <Layers className="h-4 w-4" />
-          {isArabic ? "تصفح جميع ملفات المناطق" : "Browse all area profiles"}
+          {isArabic ? "عرض جميع المناطق" : "Browse all area profiles"}
         </Link>
       </div>
     )
@@ -223,7 +223,7 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
           </h2>
           {typeof area.projects === "number" && (
             <p className="mt-1 text-sm text-muted-foreground/50">
-              {isArabic ? `${area.projects} مشروعاً نشطاً تم تقييمه` : `${area.projects} active projects scored`}
+              {isArabic ? `${area.projects} مشروعاً خاضعاً للتقييم` : `${area.projects} active projects scored`}
             </p>
           )}
         </div>

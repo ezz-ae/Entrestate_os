@@ -115,7 +115,7 @@ const SECTION_COPY_AR: Record<(typeof REQUIRED_SECTIONS)[number], { title: strin
   affordability: { title: "طبقات القدرة الشرائية", subtitle: "مزيج المشاريع حسب الشريحة السعرية وملف العائد." },
   "outcome-intents": { title: "نيات النتائج", subtitle: "الأهداف الاستثمارية التي يخدمها المخزون الحالي بشكل أفضل." },
   "top-projects": { title: "أفضل المشاريع", subtitle: "جدول بالمشاريع الأعلى ترتيباً مع السعر والعائد والضغط والتوقيت والنتيجة." },
-  "area-intelligence": { title: "ذكاء المناطق", subtitle: "عمق المشاريع والتسعير والكفاءة وضغط المعروض على مستوى المنطقة." },
+  "area-intelligence": { title: "المناطق", subtitle: "مقارنة بين المناطق من حيث المشاريع والتسعير والكفاءة وضغط المعروض." },
   "developer-reliability": { title: "موثوقية المطورين", subtitle: "ثبات المطورين وعدد المشاريع الآمنة والسجل التنفيذي." },
   "golden-visa": { title: "الإقامة الذهبية", subtitle: "عدد المشاريع المؤهلة وملف الجودة للمشترين فوق 2 مليون درهم." },
   "trust-bar": { title: "شريط الثقة", subtitle: "هرمية البيانات ومحركات التقييم وتوزيع الثقة عبر مجموعة البيانات." },
@@ -167,10 +167,10 @@ export default async function TopDataPage() {
       <div className="mx-auto max-w-[1400px] px-6 pb-20 pt-28 md:pt-36">
         <header className="mb-8">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "بيانات السوق" : "Market Data"}</p>
-          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{isArabic ? "ذكاء سوق الإمارات" : "UAE Market Intelligence"}</h1>
+          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{isArabic ? "لوحة السوق الإماراتي" : "UAE Market Intelligence"}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isArabic
-              ? "لوحة ذكاء موجهة للتسعير والتوقيت والضغط وجودة المطورين وإشارات الفرص."
+              ? "لوحة تجمع التسعير والتوقيت والضغط وموثوقية المطورين وإشارات الفرص في مكان واحد."
               : "A guided intelligence board for pricing, timing, stress, developer quality, and opportunity signals."}
           </p>
         </header>

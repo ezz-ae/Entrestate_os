@@ -139,7 +139,7 @@ export function Footer() {
         link.label,
         {
           "AI Copilot": "المساعد الذكي",
-          "Areas Intelligence": "ذكاء المناطق",
+          "Areas Intelligence": "المناطق",
           "Developer Profiles": "ملفات المطورين",
           Properties: "العقارات",
           "Market Data": "بيانات السوق",
@@ -246,7 +246,7 @@ export function Footer() {
             {/* Left */}
             <div className="max-w-lg">
               <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-primary">
-                {t("Decision Intelligence Platform", "منصة ذكاء القرار")}
+                {t("Decision Intelligence Platform", "منصة القرار")}
               </p>
               <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
                 {t("Built for professionals who need precision, not noise.", "مبنية للمهنيين الذين يحتاجون إلى الدقة، لا الضجيج.")}
