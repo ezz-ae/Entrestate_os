@@ -875,27 +875,27 @@ export async function listDevelopers(): Promise<{
   const curatedRows = USE_CURATED_DEVELOPERS_VIEW
     ? await runQuery(Prisma.sql`
         SELECT
-          id,
-          name,
-          slug,
-          tier,
-          logo,
-          developer_ar,
-          project_count,
-          avg_score,
-          avg_yield,
-          avg_price,
-          buy_signals,
-          safe_projects,
-          areas,
-          top_project,
-          payload,
-          description,
-          hq,
-          developer_type,
-          total_projects,
-          priced_projects
-        FROM ${DEVELOPERS_TABLE_SQL}
+          d.id,
+          d.name,
+          d.slug,
+          d.tier,
+          d.logo,
+          to_jsonb(d) ->> 'developer_ar' AS developer_ar,
+          d.project_count,
+          d.avg_score,
+          d.avg_yield,
+          d.avg_price,
+          d.buy_signals,
+          d.safe_projects,
+          d.areas,
+          d.top_project,
+          d.payload,
+          d.description,
+          d.hq,
+          d.developer_type,
+          d.total_projects,
+          d.priced_projects
+        FROM ${DEVELOPERS_TABLE_SQL} d
         ORDER BY project_count DESC
       `)
     : []
@@ -1105,18 +1105,18 @@ export async function getDeveloperBySlug(slug: string): Promise<{
   if (!developer && USE_CURATED_DEVELOPERS_VIEW) {
     const curatedRows = await runQuery(Prisma.sql`
       SELECT
-        name AS developer,
-        slug,
-        developer_ar,
-        avg_score AS reliability,
-        avg_score AS efficiency,
-        avg_price,
-        safe_projects,
-        project_count AS projects,
-        hq,
-        description,
-        payload
-      FROM ${DEVELOPERS_TABLE_SQL}
+        d.name AS developer,
+        d.slug,
+        to_jsonb(d) ->> 'developer_ar' AS developer_ar,
+        d.avg_score AS reliability,
+        d.avg_score AS efficiency,
+        d.avg_price,
+        d.safe_projects,
+        d.project_count AS projects,
+        d.hq,
+        d.description,
+        d.payload
+      FROM ${DEVELOPERS_TABLE_SQL} d
       WHERE slug = ${slug}
       LIMIT 1
     `)

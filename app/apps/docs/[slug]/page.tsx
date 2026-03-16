@@ -4,6 +4,8 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react"
 import { ExplainWithChat } from "@/components/explain-with-chat"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
 type DocSection = {
   title: string
@@ -139,8 +141,24 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default function AppDocPage({ params }: { params: { slug: string } }) {
+export default async function AppDocPage({ params }: { params: { slug: string } }) {
+  const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
   const page = docPages[params.slug]
+  const copy = {
+    notFoundTitle: isArabic ? "لم يتم العثور على دليل التطبيق" : "App guide not found",
+    notFoundBody: isArabic ? "تعذر العثور على هذا الدليل. اختر تطبيقاً آخر من صفحة التطبيقات." : "We could not find that guide. Choose another app from the Apps page.",
+    backToApps: isArabic ? "العودة إلى التطبيقات" : "Back to Apps",
+    eyebrow: isArabic ? "دليل التطبيق" : "App Guide",
+    whenToUse: isArabic ? "متى تستخدم هذا التطبيق" : "When to use this app",
+    quickSummary: isArabic ? "ملخص سريع" : "Quick summary",
+    tip: isArabic ? "نصيحة: اجعل الوصف موجزاً ومركزاً. هذا التطبيق مصمم لإخراج سريع وواضح." : "Tip: Keep the brief short and focused. This app is designed for fast, clear output.",
+    setup: isArabic ? "إعداده خلال دقائق" : "Set it up in minutes",
+    step: isArabic ? "الخطوة" : "Step",
+    nextStep: isArabic ? "الخطوة التالية" : "Next step",
+    readyToOpen: isArabic ? `جاهز لفتح ${toTitleCase(params.slug)}؟` : `Ready to open ${toTitleCase(params.slug)}?`,
+    openBody: isArabic ? "افتح التطبيق وابدأ بمشروع واحد أو تدفق عميل واحد." : "Open the app and start with a single project or lead flow.",
+  }
 
   if (!page) {
     return (
@@ -148,12 +166,12 @@ export default function AppDocPage({ params }: { params: { slug: string } }) {
         <Navbar />
         <div className="pt-28 pb-20 md:pt-36 md:pb-32">
           <div className="mx-auto w-full max-w-4xl px-6">
-            <h1 className="text-3xl font-semibold text-foreground">App guide not found</h1>
+            <h1 className="text-3xl font-semibold text-foreground">{copy.notFoundTitle}</h1>
             <p className="mt-3 text-muted-foreground">
-              We could not find that guide. Choose another app from the Apps page.
+              {copy.notFoundBody}
             </p>
-            <Link href="/apps" className="mt-6 inline-flex items-center gap-2 text-primary">
-              Back to Apps
+            <Link href={prefixLocalePath("/apps", locale)} className="mt-6 inline-flex items-center gap-2 text-primary">
+              {copy.backToApps}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -169,7 +187,7 @@ export default function AppDocPage({ params }: { params: { slug: string } }) {
       <div className="pt-28 pb-20 md:pt-36 md:pb-32">
         <div className="mx-auto w-full max-w-[1200px] px-6">
           <section className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/15 via-background/60 to-background/80 p-8 mb-10">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">App Guide</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">{copy.eyebrow}</p>
             <h1 className="text-3xl md:text-5xl font-serif text-foreground mt-3">{page.title}</h1>
             <p className="mt-4 text-base text-muted-foreground max-w-2xl">{page.subtitle}</p>
           </section>
@@ -178,7 +196,7 @@ export default function AppDocPage({ params }: { params: { slug: string } }) {
             <div className="rounded-2xl border border-border/70 bg-card/70 p-7">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <ShieldCheck className="h-4 w-4 text-accent" />
-                When to use this app
+                {copy.whenToUse}
               </div>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
                 {page.useCases.map((item) => (
@@ -191,7 +209,7 @@ export default function AppDocPage({ params }: { params: { slug: string } }) {
             <div className="rounded-2xl border border-border/70 bg-background/50 p-7">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Sparkles className="h-4 w-4 text-accent" />
-                Quick summary
+                {copy.quickSummary}
               </div>
               <p className="mt-3 text-sm text-muted-foreground">
                 {page.subtitle}
@@ -200,7 +218,7 @@ export default function AppDocPage({ params }: { params: { slug: string } }) {
                 <ExplainWithChat prompt={`Explain the ${page.title} guide and how to use it.`} />
               </div>
               <div className="mt-6 rounded-xl border border-border/60 bg-card/70 p-4 text-xs text-muted-foreground">
-                Tip: Keep the brief short and focused. This app is designed for fast, clear output.
+                {copy.tip}
               </div>
             </div>
           </section>
@@ -217,12 +235,12 @@ export default function AppDocPage({ params }: { params: { slug: string } }) {
           <section className="rounded-2xl border border-border/70 bg-background/40 p-7 mb-12">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
               <CheckCircle2 className="h-4 w-4 text-accent" />
-              Set it up in minutes
+              {copy.setup}
             </div>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               {page.steps.map((step, index) => (
                 <div key={step} className="rounded-xl border border-border/60 bg-card/70 p-5">
-                  <div className="text-xs text-muted-foreground">Step {index + 1}</div>
+                  <div className="text-xs text-muted-foreground">{copy.step} {index + 1}</div>
                   <p className="mt-2 text-sm font-medium text-foreground">{step}</p>
                 </div>
               ))}
@@ -232,15 +250,15 @@ export default function AppDocPage({ params }: { params: { slug: string } }) {
           <section className="rounded-2xl border border-border/70 bg-card/70 p-7">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">Next step</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">{copy.nextStep}</p>
                 <h2 className="text-xl font-semibold text-foreground mt-2">
-                  Ready to open {toTitleCase(params.slug)}?
+                  {copy.readyToOpen}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Open the app and start with a single project or lead flow.
+                  {copy.openBody}
                 </p>
               </div>
-              <Link href={page.cta.href} className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm text-primary-foreground">
+              <Link href={prefixLocalePath(page.cta.href, locale)} className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm text-primary-foreground">
                 {page.cta.label}
                 <ArrowRight className="h-4 w-4" />
               </Link>

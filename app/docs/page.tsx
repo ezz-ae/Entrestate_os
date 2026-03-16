@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { useLocale } from "next-intl"
 import {
   ArrowRight,
   Bot,
@@ -23,6 +24,7 @@ import {
 import { platformDocsSections } from "@/lib/platform-docs"
 import type { ComponentType } from "react"
 import { Button } from "@/components/ui/button"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 const sectionIcon: Record<string, ComponentType<{ className?: string }>> = {
   "partners-apis": Handshake,
@@ -33,14 +35,35 @@ const sectionIcon: Record<string, ComponentType<{ className?: string }>> = {
   "data-information": Database,
 }
 
-const keyNumbers = [
-  { label: "Active Projects", value: "2,813", detail: "Tracked across UAE" },
-  { label: "Canonical Developers", value: "481", detail: "Normalized & verified" },
-  { label: "BUY Signals", value: "136", detail: "Evidence-backed" },
-  { label: "Pipeline Phases", value: "10", detail: "Sequential data refinement" },
-]
-
 export default function DocsPage() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
+  const copy = {
+    badge: isArabic ? "قاعدة المعرفة 4.0" : "Knowledge Base v4.0",
+    titleLineOne: isArabic ? "نظام الذكاء" : "The Intelligence OS for",
+    titleAccent: isArabic ? "للعقار في الإمارات" : "UAE Real Estate",
+    intro: isArabic
+      ? "Entrestate هي بنية قرار. نحول الإشارات السوقية الخام إلى مخرجات قابلة للدفاع مؤسسياً عبر معمارية واضحة من خط البيانات إلى نفق القرار."
+      : "Entrestate is decision infrastructure. We transform raw market signals into defensible, institutional-grade outcomes through an auditable Pipeline-to-Tunnel architecture.",
+    investorPackage: isArabic ? "حزمة المستثمر" : "Investor Package",
+    technicalSpec: isArabic ? "المواصفة التقنية" : "Technical Spec",
+    browseSection: isArabic ? "استعراض القسم" : "Browse Section",
+    activeProjects: isArabic ? "المشاريع النشطة" : "Active Projects",
+    trackedAcrossUae: isArabic ? "متابعة عبر الإمارات" : "Tracked across UAE",
+    canonicalDevelopers: isArabic ? "المطورون المرجعيون" : "Canonical Developers",
+    normalizedVerified: isArabic ? "موحدة ومتحقق منها" : "Normalized & verified",
+    buySignals: isArabic ? "إشارات BUY" : "BUY Signals",
+    evidenceBacked: isArabic ? "مدعومة بالأدلة" : "Evidence-backed",
+    pipelinePhases: isArabic ? "مراحل خط البيانات" : "Pipeline Phases",
+    sequentialRefinement: isArabic ? "تنقيح متسلسل للبيانات" : "Sequential data refinement",
+  }
+  const keyNumbers = [
+    { label: copy.activeProjects, value: "2,813", detail: copy.trackedAcrossUae },
+    { label: copy.canonicalDevelopers, value: "481", detail: copy.normalizedVerified },
+    { label: copy.buySignals, value: "136", detail: copy.evidenceBacked },
+    { label: copy.pipelinePhases, value: "10", detail: copy.sequentialRefinement },
+  ]
+
   return (
     <div className="selection:bg-primary/20">
       {/* Hero */}
@@ -49,25 +72,25 @@ export default function DocsPage() {
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/5 rounded-full border border-primary/10 mb-6">
             <Globe className="w-3 h-3" />
-            Knowledge Base v4.0
+            {copy.badge}
           </div>
           <h1 className="text-4xl md:text-6xl font-serif font-bold text-foreground leading-[1.1] tracking-tight max-w-3xl">
-            The Intelligence OS for<br />
-            <span className="text-muted-foreground/40 italic">UAE Real Estate</span>
+            {copy.titleLineOne}<br />
+            <span className="text-muted-foreground/40 italic">{copy.titleAccent}</span>
           </h1>
           <p className="mt-8 max-w-2xl text-lg text-muted-foreground font-medium leading-relaxed">
-            Entrestate is <span className="text-foreground">decision infrastructure</span>. We transform raw market signals into defensible, institutional-grade outcomes through an auditable Pipeline-to-Tunnel architecture.
+            {copy.intro}
           </p>
           <div className="mt-10 flex flex-wrap gap-4">
             <Button variant="premium" size="lg" asChild className="h-12 px-8 shadow-xl">
-              <Link href="/docs/investors-relations">
-                Investor Package
+              <Link href={prefixLocalePath("/docs/investors-relations", locale)}>
+                {copy.investorPackage}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button variant="outline" size="lg" asChild className="h-12 px-8 rounded-full border-border/60">
-              <Link href="/docs/documentation">
-                Technical Spec
+              <Link href={prefixLocalePath("/docs/documentation", locale)}>
+                {copy.technicalSpec}
               </Link>
             </Button>
           </div>
@@ -79,7 +102,7 @@ export default function DocsPage() {
         {platformDocsSections.map((section) => {
           const Icon = sectionIcon[section.slug] || FileText
           return (
-            <Link key={section.slug} href={`/docs/${section.slug}`} className="group">
+            <Link key={section.slug} href={prefixLocalePath(`/docs/${section.slug}`, locale)} className="group">
               <div className="h-full p-8 rounded-[2rem] border border-border/60 bg-card/30 backdrop-blur-sm transition-all hover:border-primary/40 hover:bg-card hover:shadow-2xl hover:shadow-primary/5">
                 <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <Icon className="w-6 h-6 text-primary" />
@@ -87,7 +110,7 @@ export default function DocsPage() {
                 <h3 className="text-xl font-serif font-bold text-foreground mb-3">{section.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{section.summary}</p>
                 <div className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-all">
-                  Browse Section <ArrowRight className="w-3 h-3" />
+                  {copy.browseSection} <ArrowRight className="w-3 h-3" />
                 </div>
               </div>
             </Link>

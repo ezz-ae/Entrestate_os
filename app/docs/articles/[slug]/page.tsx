@@ -4,6 +4,8 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, CircleCheck } from "lucide-react"
 import { docsArticles, getArticleBySlug } from "@/lib/docs-articles"
 import { SEO, absoluteUrl } from "@/lib/seo"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -53,6 +55,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DocsArticlePage({ params }: Props) {
   const { slug } = await params
+  const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
   const article = getArticleBySlug(slug)
 
   if (!article) {
@@ -79,15 +83,21 @@ export default async function DocsArticlePage({ params }: Props) {
     },
   }
 
+  const copy = {
+    back: isArabic ? "العودة إلى المقالات" : "Back to articles",
+    scope: isArabic ? "النطاق" : "Scope",
+    execution: isArabic ? "التنفيذ" : "Execution",
+  }
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
       />
-      <Link href="/docs/articles" className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+      <Link href={prefixLocalePath("/docs/articles", locale)} className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" />
-        Back to articles
+        {copy.back}
       </Link>
 
       <header className="mb-6 rounded-2xl border border-border/70 bg-card/70 p-6 md:p-8">
@@ -98,7 +108,7 @@ export default async function DocsArticlePage({ params }: Props) {
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-border/70 bg-card/70 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Scope</h2>
+          <h2 className="text-lg font-semibold text-foreground">{copy.scope}</h2>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             {article.scope.map((item) => (
               <li key={item} className="flex items-start gap-2">
@@ -109,7 +119,7 @@ export default async function DocsArticlePage({ params }: Props) {
           </ul>
         </article>
         <article className="rounded-2xl border border-border/70 bg-card/70 p-6">
-          <h2 className="text-lg font-semibold text-foreground">Execution</h2>
+          <h2 className="text-lg font-semibold text-foreground">{copy.execution}</h2>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             {article.execution.map((item) => (
               <li key={item} className="flex items-start gap-2">
