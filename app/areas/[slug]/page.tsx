@@ -28,7 +28,39 @@ export default async function AreaDetailPage({ params }: { params: Promise<{ slu
 
   const area = detail.area
   const profile = area.profile as Record<string, unknown> | null
-  const areaLabel = pickLocalizedText(locale, profile?.area_ar, area.area, "Area")
+  const copy = locale === "ar"
+    ? {
+        areaFallback: "المنطقة",
+        developerFallback: "المطور",
+        pageEyebrow: "تفاصيل المنطقة",
+        profileFallback: "ملف استخبارات المنطقة",
+        projects: "المشاريع",
+        avgPrice: "متوسط السعر",
+        avgYield: "متوسط العائد",
+        supplyPressure: "ضغط المعروض",
+        buySignals: "إشارات BUY",
+        projectsInArea: "المشاريع في المنطقة",
+        developerPresence: "حضور المطورين",
+        projectFallback: "المشروع",
+      }
+    : {
+        areaFallback: "Area",
+        developerFallback: "Developer",
+        pageEyebrow: "Area Detail",
+        profileFallback: "Area intelligence profile",
+        projects: "Projects",
+        avgPrice: "Avg price",
+        avgYield: "Avg yield",
+        supplyPressure: "Supply pressure",
+        buySignals: "BUY signals",
+        projectsInArea: "Projects in area",
+        developerPresence: "Developer presence",
+        projectFallback: "Project",
+      }
+  const areaLabel = pickLocalizedText(locale, profile?.area_ar, area.area, copy.areaFallback)
+  const cityLabel = typeof profile?.city === "string"
+    ? pickLocalizedText(locale, null, profile.city, profile.city)
+    : null
 
   return (
     <main id="main-content">
@@ -38,31 +70,31 @@ export default async function AreaDetailPage({ params }: { params: Promise<{ slu
           <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/25" />
           <div className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(680px_circle_at_50%_-280px,rgba(59,130,246,0.2),transparent_58%)] opacity-80" />
 
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">Area Detail</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">{copy.pageEyebrow}</p>
           <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{areaLabel}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {[profile?.area_type, profile?.city].filter(Boolean).join(" · ") || "Area intelligence profile"}
+            {[profile?.area_type, cityLabel].filter(Boolean).join(" · ") || copy.profileFallback}
           </p>
 
           <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-5">
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Projects</p>
+              <p className="text-xs text-muted-foreground">{copy.projects}</p>
               <p className="font-medium text-foreground">{formatInteger(area.projects, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Avg price</p>
+              <p className="text-xs text-muted-foreground">{copy.avgPrice}</p>
               <p className="font-medium text-foreground">{formatAed(area.avg_price, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Avg yield</p>
+              <p className="text-xs text-muted-foreground">{copy.avgYield}</p>
               <p className="font-medium text-foreground">{formatYield(area.avg_yield, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Supply pressure</p>
+              <p className="text-xs text-muted-foreground">{copy.supplyPressure}</p>
               <p className="font-medium text-foreground">{String(area.supply_pressure ?? "—")}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">BUY signals</p>
+              <p className="text-xs text-muted-foreground">{copy.buySignals}</p>
               <p className="font-medium text-foreground">{String(area.buy_signals ?? "—")}</p>
             </div>
           </div>
@@ -71,13 +103,13 @@ export default async function AreaDetailPage({ params }: { params: Promise<{ slu
         <section className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
             <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/20" />
-            <h2 className="text-lg font-semibold text-foreground">Projects in area</h2>
+            <h2 className="text-lg font-semibold text-foreground">{copy.projectsInArea}</h2>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
               {detail.projects.map((project) => (
                 <ProjectCard
                   key={String(project.slug)}
                   slug={String(project.slug)}
-                  name={String(project.name ?? "Project")}
+                  name={String(project.name ?? copy.projectFallback)}
                   area={String(area.area ?? "")}
                   area_ar={typeof profile?.area_ar === "string" ? profile.area_ar : null}
                   developer={String(project.developer ?? "")}
@@ -97,7 +129,7 @@ export default async function AreaDetailPage({ params }: { params: Promise<{ slu
 
           <aside className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
             <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/20" />
-            <h2 className="text-lg font-semibold text-foreground">Developer presence</h2>
+            <h2 className="text-lg font-semibold text-foreground">{copy.developerPresence}</h2>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               {detail.developers.map((developer, index) => (
                 <li
@@ -109,7 +141,7 @@ export default async function AreaDetailPage({ params }: { params: Promise<{ slu
                     locale={false}
                     className="truncate pr-3 text-foreground transition hover:text-primary"
                   >
-                    {String(developer.developer ?? "Developer")}
+                    {pickLocalizedText(locale, developer.developer_ar, developer.developer, copy.developerFallback)}
                   </Link>
                   <span className="text-xs text-muted-foreground">
                     {formatInteger(developer.projects, locale)}

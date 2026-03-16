@@ -11,10 +11,10 @@ import { pickLocalizedText } from "@/lib/format/entities"
 
 export const dynamic = "force-dynamic"
 
-function formatValue(value: unknown): string {
-  if (typeof value === "number") return Number.isFinite(value) ? value.toLocaleString() : "—"
+function formatValue(value: unknown, locale: string, booleanCopy: { yes: string; no: string }): string {
+  if (typeof value === "number") return Number.isFinite(value) ? value.toLocaleString(locale) : "—"
   if (typeof value === "string") return value.trim() || "—"
-  if (typeof value === "boolean") return value ? "Yes" : "No"
+  if (typeof value === "boolean") return value ? booleanCopy.yes : booleanCopy.no
   return "—"
 }
 
@@ -36,8 +36,52 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
   if (!detail) notFound()
 
   const project = detail.project
-  const area = pickLocalizedText(locale, project.area_ar, project.final_area ?? project.area, "Unknown area")
-  const developer = pickLocalizedText(locale, project.developer_ar, project.developer, "Developer")
+  const copy = locale === "ar"
+    ? {
+        unknownArea: "منطقة غير معروفة",
+        developerFallback: "المطور",
+        pageEyebrow: "تفاصيل المشروع",
+        projectFallback: "المشروع",
+        canonicalPrice: "السعر المرجعي",
+        canonicalYield: "العائد المرجعي",
+        investorScore: "نتيجة المستثمر",
+        stressEngine: "محرك الضغط",
+        paymentPlan: "خطة الدفع",
+        noPaymentPlan: "لا توجد خطة دفع منظمة حالياً.",
+        milestone: "مرحلة",
+        units: "الوحدات",
+        noUnits: "لا توجد عينات وحدات متاحة حالياً.",
+        unit: "وحدة",
+        areaContext: "سياق المنطقة",
+        developerProfile: "ملف المطور",
+        similarProjects: "مشاريع مشابهة",
+        yes: "نعم",
+        no: "لا",
+      }
+    : {
+        unknownArea: "Unknown area",
+        developerFallback: "Developer",
+        pageEyebrow: "Project Detail",
+        projectFallback: "Project",
+        canonicalPrice: "Canonical price",
+        canonicalYield: "Canonical yield",
+        investorScore: "Investor score",
+        stressEngine: "Stress engine",
+        paymentPlan: "Payment plan",
+        noPaymentPlan: "No structured payment plan available.",
+        milestone: "Milestone",
+        units: "Units",
+        noUnits: "No unit-level samples available yet.",
+        unit: "Unit",
+        areaContext: "Area context",
+        developerProfile: "Developer profile",
+        similarProjects: "Similar projects",
+        yes: "Yes",
+        no: "No",
+      }
+
+  const area = pickLocalizedText(locale, project.area_ar, project.final_area ?? project.area, copy.unknownArea)
+  const developer = pickLocalizedText(locale, project.developer_ar, project.developer, copy.developerFallback)
   const paymentPlanRows = toRecordArray(project.payment_plan_structured)
   const unitRows = toRecordArray(project.units)
   const areaContext = toObject(detail.area_context)
@@ -51,25 +95,25 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/25" />
           <div className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(680px_circle_at_50%_-280px,rgba(59,130,246,0.2),transparent_58%)] opacity-80" />
 
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">Project Detail</p>
-          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{String(project.name ?? "Project")}</h1>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">{copy.pageEyebrow}</p>
+          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{String(project.name ?? copy.projectFallback)}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{[area, developer].filter(Boolean).join(" · ")}</p>
 
           <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Canonical price</p>
+              <p className="text-xs text-muted-foreground">{copy.canonicalPrice}</p>
               <p className="font-medium text-foreground">{formatAed(project.l1_canonical_price, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Canonical yield</p>
+              <p className="text-xs text-muted-foreground">{copy.canonicalYield}</p>
               <p className="font-medium text-foreground">{formatYield(project.l1_canonical_yield, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">God metric</p>
+              <p className="text-xs text-muted-foreground">{copy.investorScore}</p>
               <p className="font-medium text-foreground">{formatScore(project.engine_god_metric, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Stress engine</p>
+              <p className="text-xs text-muted-foreground">{copy.stressEngine}</p>
               <p className="font-medium text-foreground">{formatScore(project.engine_stress_test, locale)}</p>
             </div>
           </div>
@@ -85,18 +129,18 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           <div className="space-y-6">
             <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
               <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/20" />
-              <h2 className="text-lg font-semibold text-foreground">Payment plan</h2>
+              <h2 className="text-lg font-semibold text-foreground">{copy.paymentPlan}</h2>
               {paymentPlanRows.length === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">No structured payment plan available.</p>
+                <p className="mt-2 text-sm text-muted-foreground">{copy.noPaymentPlan}</p>
               ) : (
                 <div className="mt-2 space-y-2">
                   {paymentPlanRows.slice(0, 6).map((row, index) => (
                     <div key={`plan-${index}`} className="rounded-lg border border-border/50 bg-background/50 p-3 text-xs">
-                      <p className="font-medium text-foreground">Milestone {index + 1}</p>
+                      <p className="font-medium text-foreground">{copy.milestone} {index + 1}</p>
                       <p className="mt-1 text-muted-foreground">
                         {Object.entries(row)
                           .slice(0, 3)
-                          .map(([key, value]) => `${key}: ${formatValue(value)}`)
+                          .map(([key, value]) => `${key}: ${formatValue(value, locale, copy)}`)
                           .join(" · ")}
                       </p>
                     </div>
@@ -107,18 +151,18 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
             <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
               <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/20" />
-              <h2 className="text-lg font-semibold text-foreground">Units</h2>
+              <h2 className="text-lg font-semibold text-foreground">{copy.units}</h2>
               {unitRows.length === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">No unit-level samples available yet.</p>
+                <p className="mt-2 text-sm text-muted-foreground">{copy.noUnits}</p>
               ) : (
                 <div className="mt-2 space-y-2">
                   {unitRows.slice(0, 6).map((row, index) => (
                     <div key={`unit-${index}`} className="rounded-lg border border-border/50 bg-background/50 p-3 text-xs">
-                      <p className="font-medium text-foreground">Unit {index + 1}</p>
+                      <p className="font-medium text-foreground">{copy.unit} {index + 1}</p>
                       <p className="mt-1 text-muted-foreground">
                         {Object.entries(row)
                           .slice(0, 4)
-                          .map(([key, value]) => `${key}: ${formatValue(value)}`)
+                          .map(([key, value]) => `${key}: ${formatValue(value, locale, copy)}`)
                           .join(" · ")}
                       </p>
                     </div>
@@ -129,12 +173,12 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
             <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
               <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/20" />
-              <h2 className="text-lg font-semibold text-foreground">Area context</h2>
+              <h2 className="text-lg font-semibold text-foreground">{copy.areaContext}</h2>
               <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {Object.entries(areaContext).slice(0, 6).map(([key, value]) => (
                   <div key={key} className="rounded-lg border border-border/50 bg-background/50 p-3 text-xs">
                     <p className="text-muted-foreground">{key}</p>
-                    <p className="mt-1 font-medium text-foreground">{formatValue(value)}</p>
+                    <p className="mt-1 font-medium text-foreground">{formatValue(value, locale, copy)}</p>
                   </div>
                 ))}
               </div>
@@ -142,12 +186,12 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
             <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
               <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/20" />
-              <h2 className="text-lg font-semibold text-foreground">Developer profile</h2>
+              <h2 className="text-lg font-semibold text-foreground">{copy.developerProfile}</h2>
               <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {Object.entries(developerProfile).slice(0, 6).map(([key, value]) => (
                   <div key={key} className="rounded-lg border border-border/50 bg-background/50 p-3 text-xs">
                     <p className="text-muted-foreground">{key}</p>
-                    <p className="mt-1 font-medium text-foreground">{formatValue(value)}</p>
+                    <p className="mt-1 font-medium text-foreground">{formatValue(value, locale, copy)}</p>
                   </div>
                 ))}
               </div>
@@ -163,13 +207,13 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
             <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
               <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/20" />
-              <h2 className="text-lg font-semibold text-foreground">Similar projects</h2>
+              <h2 className="text-lg font-semibold text-foreground">{copy.similarProjects}</h2>
               <div className="mt-3 space-y-3">
                 {detail.similar_projects.map((similar) => (
                   <ProjectCard
                     key={String(similar.slug)}
                     slug={String(similar.slug)}
-                    name={String(similar.name ?? "Project")}
+                    name={String(similar.name ?? copy.projectFallback)}
                     area={String(similar.area ?? "")}
                     area_ar={typeof similar.area_ar === "string" ? similar.area_ar : null}
                     developer={String(similar.developer ?? "")}

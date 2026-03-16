@@ -38,7 +38,7 @@ const { values: args } = parseArgs({
 const BASE_URL =
   args.url ??
   (args.prod
-    ? process.env.PRODUCTION_URL ?? "https://entrestate.com"
+    ? process.env.PRODUCTION_URL ?? "https://www.entrestate.com"
     : process.env.STAGING_URL   ?? "http://localhost:3000")
 
 const BYPASS_TOKEN = args.prod ? undefined : process.env.VERCEL_BYPASS_TOKEN

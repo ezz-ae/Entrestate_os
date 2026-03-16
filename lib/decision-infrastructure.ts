@@ -1099,15 +1099,48 @@ export async function getDeveloperBySlug(slug: string): Promise<{
     `),
   ])
 
-  const developer = (developerRows[0] as DecisionRecord | undefined) ?? null
+  let developer = (developerRows[0] as DecisionRecord | undefined) ?? null
+  let profile = (profileRows[0] as DecisionRecord | undefined) ?? null
+
+  if (!developer && USE_CURATED_DEVELOPERS_VIEW) {
+    const curatedRows = await runQuery(Prisma.sql`
+      SELECT
+        name AS developer,
+        slug,
+        developer_ar,
+        avg_score AS reliability,
+        avg_score AS efficiency,
+        avg_price,
+        safe_projects,
+        project_count AS projects,
+        hq,
+        description,
+        payload
+      FROM ${DEVELOPERS_TABLE_SQL}
+      WHERE slug = ${slug}
+      LIMIT 1
+    `)
+
+    developer = (curatedRows[0] as DecisionRecord | undefined) ?? null
+
+    if (developer && !profile) {
+      profile = {
+        developer_ar: developer.developer_ar ?? null,
+        hq: developer.hq ?? null,
+        description: developer.description ?? null,
+        ...(typeof developer.payload === "object" && developer.payload !== null ? developer.payload as DecisionRecord : {}),
+      }
+    }
+  }
+
   if (!developer) return null
 
   return {
     data_as_of: new Date().toISOString(),
     developer: {
       ...(developer as DecisionRecord),
-      slug: slugifyName(String(developer.developer ?? "developer")),
-      profile: (profileRows[0] as DecisionRecord | undefined) ?? null,
+      slug: typeof developer.slug === "string" ? developer.slug : slugifyName(String(developer.developer ?? "developer")),
+      profile,
     },
     projects: projectRows.map((row) => ({
       ...(row as DecisionRecord),

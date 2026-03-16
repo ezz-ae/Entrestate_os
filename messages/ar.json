@@ -76,5 +76,77 @@
     },
     "placeholder": "اسأل أي شيء...",
     "view": "عرض"
+  },
+  "signals": {
+    "STRONG_BUY": "شراء قوي",
+    "BUY": "شراء",
+    "HOLD": "احتفاظ",
+    "WAIT": "انتظار",
+    "AVOID": "تجنب"
+  },
+  "timing": {
+    "STRONG_BUY": "توقيت ممتاز",
+    "BUY": "توقيت جيد",
+    "HOLD": "توقيت محايد",
+    "WAIT": "انتظر",
+    "AVOID": "توقيت سيء"
+  },
+  "stress": {
+    "A": "ممتاز",
+    "B": "جيد",
+    "C": "متوسط",
+    "D": "ضعيف",
+    "E": "خطر"
+  },
+  "yield": {
+    "EXCEPTIONAL": "استثنائي",
+    "STRONG": "قوي",
+    "FAIR": "معقول",
+    "WEAK": "ضعيف",
+    "POOR": "سيء"
+  },
+  "evidence": {
+    "L5": "مؤكد - المستوى 5",
+    "L4": "قوي - المستوى 4",
+    "L3": "متوسط - المستوى 3"
+  },
+  "metrics": {
+    "Investor Score": "نتيجة المستثمر",
+    "Timing Score": "نتيجة التوقيت",
+    "Stress Score": "نتيجة الضغط",
+    "Yield Score": "نتيجة العائد",
+    "Evidence Score": "نتيجة الأدلة",
+    "Price": "السعر",
+    "Yield": "العائد",
+    "Golden Visa": "التأشيرة الذهبية",
+    "Transactions": "المعاملات",
+    "Volume": "الحجم",
+    "Velocity": "السرعة",
+    "Off-Plan": "على الخريطة",
+    "Ready": "جاهز"
+  },
+  "cta": {
+    "Get Exclusive Pricing": "احصل على أسعار حصرية",
+    "Request Access": "اطلب الوصول",
+    "View Project": "عرض المشروع",
+    "Compare": "مقارنة",
+    "Generate Memo": "إنشاء تقرير",
+    "Screen Projects": "فرز المشاريع",
+    "View Area": "عرض المنطقة",
+    "View Developer": "عرض المطور"
+  },
+  "areasPack": {
+    "Jumeirah Village Circle": "قرية جميرا الدائرية",
+    "Business Bay": "بزنس باي",
+    "Dubai Marina": "مرسى دبي",
+    "Downtown Dubai": "وسط مدينة دبي",
+    "Dubai Hills Estate": "تلال دبي",
+    "Palm Jumeirah": "نخلة جميرا",
+    "Dubai South": "دبي الجنوب",
+    "MBR City": "مدينة محمد بن راشد",
+    "Al Furjan": "الفرجان",
+    "Arjan": "أرجان",
+    "DAMAC Hills": "داماك هيلز",
+    "Dubai Creek Harbour": "مرسى خور دبي"
   }
 }

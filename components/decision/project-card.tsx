@@ -7,6 +7,22 @@ import { formatAed, formatScore, formatYield } from "@/components/decision/forma
 import { pickLocalizedText } from "@/lib/format/entities"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
+const SIGNAL_LABELS_AR: Record<string, string> = {
+  STRONG_BUY: "شراء قوي",
+  BUY: "شراء",
+  HOLD: "احتفاظ",
+  WAIT: "انتظار",
+  AVOID: "تجنب",
+}
+
+const STRESS_LABELS_AR: Record<string, string> = {
+  A: "ممتاز",
+  B: "جيد",
+  C: "متوسط",
+  D: "ضعيف",
+  E: "خطر",
+}
+
 type ProjectCardProps = {
   slug: string
   name: string
@@ -44,6 +60,11 @@ function gradeColor(grade: string | null | undefined) {
   return "text-muted-foreground"
 }
 
+function formatCanonicalArabicLabel(locale: AppLocale, value: string, labels: Record<string, string>) {
+  if (locale !== "ar") return value
+  return labels[value] ? `${value} · ${labels[value]}` : value
+}
+
 export function ProjectCard(project: ProjectCardProps) {
   const locale = useLocale() as AppLocale
   const price = project.price_from ?? project.l1_canonical_price ?? null
@@ -70,6 +91,8 @@ export function ProjectCard(project: ProjectCardProps) {
   const accent = timingAccent(timing)
   const signal = (timing ?? "—").toUpperCase()
   const grade = stressGrade?.toUpperCase() ?? null
+  const signalLabel = formatCanonicalArabicLabel(locale, signal, SIGNAL_LABELS_AR)
+  const gradeLabel = grade ? formatCanonicalArabicLabel(locale, grade, STRESS_LABELS_AR) : "—"
 
   return (
     <Link
@@ -83,7 +106,7 @@ export function ProjectCard(project: ProjectCardProps) {
           {/* Signal badge */}
           <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${accent.label}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} />
-            {signal}
+            {signalLabel}
           </span>
           {/* Arrow — appears on hover */}
           <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-border bg-muted/40 opacity-0 transition-all duration-200 group-hover:opacity-100">
@@ -117,7 +140,7 @@ export function ProjectCard(project: ProjectCardProps) {
           </div>
           <div className="bg-card px-4 py-3">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.grade}</p>
-            <p className={`mt-0.5 text-sm font-bold tabular-nums ${gradeColor(grade)}`}>{grade ?? "—"}</p>
+            <p className={`mt-0.5 text-sm font-bold tabular-nums ${gradeColor(grade)}`}>{gradeLabel}</p>
           </div>
           <div className="bg-card px-4 py-3">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.score}</p>

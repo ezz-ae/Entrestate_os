@@ -27,7 +27,38 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
 
   const developer = detail.developer
   const profile = developer.profile as Record<string, unknown> | null
-  const developerLabel = pickLocalizedText(locale, profile?.developer_ar, developer.developer, "Developer")
+  const copy = locale === "ar"
+    ? {
+        developerFallback: "المطور",
+        pageEyebrow: "تفاصيل المطور",
+        profileFallback: "ملف المطور",
+        reliability: "الاعتمادية",
+        efficiency: "الكفاءة",
+        projects: "المشاريع",
+        safeProjects: "المشاريع الآمنة",
+        avgTicket: "متوسط السعر",
+        areaPresence: "الحضور في المناطق",
+        areaFallback: "المنطقة",
+        profileNotes: "ملاحظات الملف",
+        operationsAvailable: "تتوفر بيانات البصمة التشغيلية",
+        projectFallback: "المشروع",
+      }
+    : {
+        developerFallback: "Developer",
+        pageEyebrow: "Developer Detail",
+        profileFallback: "Developer profile",
+        reliability: "Reliability",
+        efficiency: "Efficiency",
+        projects: "Projects",
+        safeProjects: "Safe projects",
+        avgTicket: "Avg ticket",
+        areaPresence: "Area presence",
+        areaFallback: "Area",
+        profileNotes: "Profile notes",
+        operationsAvailable: "Operational footprint available",
+        projectFallback: "Project",
+      }
+  const developerLabel = pickLocalizedText(locale, profile?.developer_ar, developer.developer, copy.developerFallback)
 
   return (
     <main id="main-content">
@@ -37,31 +68,31 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
           <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/25" />
           <div className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(680px_circle_at_50%_-280px,rgba(59,130,246,0.2),transparent_58%)] opacity-80" />
 
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">Developer Detail</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">{copy.pageEyebrow}</p>
           <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{developerLabel}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {[profile?.founded_year, profile?.hq].filter(Boolean).join(" · ") || "Developer profile"}
+            {[profile?.founded_year, profile?.hq].filter(Boolean).join(" · ") || copy.profileFallback}
           </p>
 
           <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-5">
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Reliability</p>
+              <p className="text-xs text-muted-foreground">{copy.reliability}</p>
               <p className="font-medium text-foreground">{formatScore(developer.reliability, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Efficiency</p>
+              <p className="text-xs text-muted-foreground">{copy.efficiency}</p>
               <p className="font-medium text-foreground">{formatScore(developer.efficiency, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Projects</p>
+              <p className="text-xs text-muted-foreground">{copy.projects}</p>
               <p className="font-medium text-foreground">{formatInteger(developer.projects, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Safe projects</p>
+              <p className="text-xs text-muted-foreground">{copy.safeProjects}</p>
               <p className="font-medium text-foreground">{formatInteger(developer.safe_projects, locale)}</p>
             </div>
             <div className="rounded-xl border border-border/60 bg-background/60 p-3">
-              <p className="text-xs text-muted-foreground">Avg ticket</p>
+              <p className="text-xs text-muted-foreground">{copy.avgTicket}</p>
               <p className="font-medium text-foreground">{formatAed(developer.avg_price, locale)}</p>
             </div>
           </div>
@@ -70,13 +101,13 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
         <section className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
             <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/20" />
-            <h2 className="text-lg font-semibold text-foreground">Projects</h2>
+            <h2 className="text-lg font-semibold text-foreground">{copy.projects}</h2>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
               {detail.projects.map((project) => (
                 <ProjectCard
                   key={String(project.slug)}
                   slug={String(project.slug)}
-                  name={String(project.name ?? "Project")}
+                  name={String(project.name ?? copy.projectFallback)}
                   area={String(project.area ?? "")}
                   developer={String(developer.developer ?? "")}
                   developer_ar={typeof profile?.developer_ar === "string" ? profile.developer_ar : null}
@@ -95,7 +126,7 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
 
           <aside className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
             <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/20" />
-            <h2 className="text-lg font-semibold text-foreground">Area presence</h2>
+            <h2 className="text-lg font-semibold text-foreground">{copy.areaPresence}</h2>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               {detail.area_presence.map((area, index) => (
                 <li
@@ -106,7 +137,7 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
                     href={prefixLocalePath(`/areas/${slugify(String(area.area ?? "area"))}`, locale)}
                     className="truncate pr-3 text-foreground transition hover:text-primary"
                   >
-                    {String(area.area ?? "Area")}
+                    {pickLocalizedText(locale, null, area.area, copy.areaFallback)}
                   </a>
                   <span className="text-xs text-muted-foreground">{formatInteger(area.projects, locale)}</span>
                 </li>
@@ -115,9 +146,9 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
 
             {profile ? (
               <div className="mt-4 rounded-xl border border-border/50 bg-background/50 p-3 text-xs text-muted-foreground">
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Profile notes</p>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{copy.profileNotes}</p>
                 <p className="mt-1 text-sm text-foreground">
-                  {[profile?.footprint, profile?.continuity].filter(Boolean).join(" · ") || "Operational footprint available"}
+                  {[profile?.footprint, profile?.continuity].filter(Boolean).join(" · ") || copy.operationsAvailable}
                 </p>
               </div>
             ) : null}
