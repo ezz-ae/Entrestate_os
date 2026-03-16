@@ -759,6 +759,7 @@ export async function listAreas(): Promise<{
       const topProjects = topProjectsMap.get(key) ?? []
       return {
         ...row,
+        area_ar: profile?.area_ar ?? null,
         image_url: profile?.image_url ?? null,
         area_type: profile?.area_type ?? null,
         top_projects: topProjects,
@@ -929,9 +930,10 @@ export async function listDevelopers(): Promise<{
         ORDER BY reliability DESC NULLS LAST
       `)
 
-  const profiles = await runOptionalQuery<{ name: string; logo_url: string | null; founded_year: string | null; hq: string | null }>(Prisma.sql`
+  const profiles = await runOptionalQuery<{ name: string; developer_ar: string | null; logo_url: string | null; founded_year: string | null; hq: string | null }>(Prisma.sql`
     SELECT
       name,
+      developer_ar,
       logo_url,
       founded_year,
       hq
@@ -1013,6 +1015,7 @@ export async function listDevelopers(): Promise<{
       const topProjects = inlineTopProjects.length > 0 ? inlineTopProjects : topProjectsMap.get(key) ?? []
       return {
         ...row,
+        developer_ar: (row as DecisionRecord).developer_ar ?? profile?.developer_ar ?? null,
         logo_url: rowLogo ?? profile?.logo_url ?? null,
         founded_year: profile?.founded_year ?? null,
         hq: profile?.hq ?? null,

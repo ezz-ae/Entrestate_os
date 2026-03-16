@@ -1,12 +1,15 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useLocale } from "next-intl"
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import Link from "next/link"
 import { areaCoordinates } from "@/lib/area-coordinates"
 import { DecisionRecord } from "@/lib/decision-infrastructure"
+import { pickLocalizedText } from "@/lib/format/entities"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import {
   MapPin,
   TrendingUp,
@@ -106,6 +109,8 @@ function FlyToArea({ coords }: { coords: [number, number] | null }) {
 // ── Detail panel ──────────────────────────────────────────────────────────────
 
 function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
   const withYield = areas.filter((a) => typeof a.avg_yield === "number")
   const globalAvgYield =
     withYield.length > 0
@@ -118,13 +123,15 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
         {/* Header */}
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/40">
-            Entrestate · Area Intelligence
+            {isArabic ? "Entrestate · ذكاء المناطق" : "Entrestate · Area Intelligence"}
           </p>
           <h2 className="mt-4 font-serif text-3xl font-medium text-foreground">
-            UAE Market Map
+            {isArabic ? "خريطة سوق الإمارات" : "UAE Market Map"}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground/70">
-            {areas.length} area profiles with live yield, pricing, and project data. Click any dot to explore.
+            {isArabic
+              ? `${areas.length} ملفاً للمناطق مع بيانات مباشرة للعائد والتسعير والمشاريع. اضغط على أي نقطة للاستكشاف.`
+              : `${areas.length} area profiles with live yield, pricing, and project data. Click any dot to explore.`}
           </p>
         </div>
 
@@ -132,11 +139,11 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
         <div className="space-y-3">
           <div className="rounded-2xl border border-border/40 bg-card/40 p-5">
             <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/40">
-              Market snapshot
+              {isArabic ? "لقطة السوق" : "Market snapshot"}
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">Areas tracked</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">{isArabic ? "المناطق المتتبعة" : "Areas tracked"}</p>
                 <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{areas.length}</p>
               </div>
               {globalAvgYield !== null && (
@@ -171,18 +178,19 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
               ))}
               <div className="mt-2 flex items-center gap-3">
                 <div className="h-2.5 w-2.5 shrink-0 rounded-full border border-muted-foreground/30" />
-                <span className="text-xs text-muted-foreground/40">Dot size = project count</span>
+                <span className="text-xs text-muted-foreground/40">{isArabic ? "حجم النقطة = عدد المشاريع" : "Dot size = project count"}</span>
               </div>
             </div>
           </div>
         </div>
 
         <Link
-          href="/areas"
+          href={prefixLocalePath("/areas", locale)}
+          locale={false}
           className="flex items-center justify-center gap-2 rounded-xl border border-border/50 py-3 text-sm text-muted-foreground transition hover:border-border hover:text-foreground"
         >
           <Layers className="h-4 w-4" />
-          Browse all area profiles
+          {isArabic ? "تصفح جميع ملفات المناطق" : "Browse all area profiles"}
         </Link>
       </div>
     )
@@ -194,6 +202,7 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
   const topProjects = Array.isArray(area.top_projects)
     ? (area.top_projects as string[]).slice(0, 5)
     : []
+  const areaLabel = pickLocalizedText(locale, area.area_ar, area.area, "Area")
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -210,11 +219,11 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
             </span>
           )}
           <h2 className="mt-3 font-serif text-3xl font-medium leading-snug text-foreground">
-            {String(area.area ?? "")}
+            {areaLabel}
           </h2>
           {typeof area.projects === "number" && (
             <p className="mt-1 text-sm text-muted-foreground/50">
-              {area.projects} active projects scored
+              {isArabic ? `${area.projects} مشروعاً نشطاً تم تقييمه` : `${area.projects} active projects scored`}
             </p>
           )}
         </div>
@@ -222,13 +231,13 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
         {/* Key metrics */}
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-border/40 bg-card/40 p-4">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground/40">Avg Price</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground/40">{isArabic ? "متوسط السعر" : "Avg Price"}</p>
             <p className="mt-1.5 text-lg font-bold tabular-nums text-foreground">
               {typeof area.avg_price === "number" ? formatAED(area.avg_price) : "—"}
             </p>
           </div>
           <div className="rounded-xl border border-border/40 bg-card/40 p-4">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground/40">Avg Yield</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground/40">{isArabic ? "متوسط العائد" : "Avg Yield"}</p>
             <p className="mt-1.5 text-lg font-bold tabular-nums" style={{ color: yieldVal !== null ? color : undefined }}>
               {yieldVal !== null ? `${yieldVal.toFixed(1)}%` : "—"}
             </p>
@@ -239,7 +248,7 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
         {yieldVal !== null && (
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground/40">Yield strength</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground/40">{isArabic ? "قوة العائد" : "Yield strength"}</p>
               <p className="text-[10px] tabular-nums text-muted-foreground/40">{yieldVal.toFixed(1)}% / 10%</p>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-border/30">
@@ -257,14 +266,15 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
             <div className="mb-3 flex items-center gap-2">
               <Building2 className="h-3.5 w-3.5 text-muted-foreground/40" />
               <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/40">
-                Top projects
+                {isArabic ? "أهم المشاريع" : "Top projects"}
               </p>
             </div>
             <div className="space-y-1.5">
               {topProjects.map((project) => (
                 <Link
                   key={project}
-                  href={`/properties/${slugifyProject(project)}`}
+                  href={prefixLocalePath(`/properties/${slugifyProject(project)}`, locale)}
+                  locale={false}
                   className="group flex items-center justify-between rounded-lg border border-border/30 bg-card/30 px-3 py-2.5 text-sm transition-all hover:border-border/60 hover:bg-card/60"
                 >
                   <span className="truncate text-foreground/80 group-hover:text-foreground">{project}</span>
@@ -278,11 +288,12 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
         {/* CTA */}
         <div className="mt-auto">
           <Link
-            href={`/areas/${area.slug}`}
+            href={prefixLocalePath(`/areas/${area.slug}`, locale)}
+            locale={false}
             className="flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 hover:-translate-y-0.5 hover:shadow-lg"
             style={{ background: color, boxShadow: `0 4px 24px -4px ${color}60` }}
           >
-            Explore {String(area.area ?? "area")}
+            {isArabic ? `استكشف ${areaLabel}` : `Explore ${String(area.area ?? "area")}`}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -294,6 +305,8 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function AreaMapDesktop({ areas }: { areas: Area[] }) {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
   const [selectedArea, setSelectedArea] = useState<Area | null>(null)
   const [flyTarget, setFlyTarget] = useState<[number, number] | null>(null)
 
@@ -382,7 +395,7 @@ export function AreaMapDesktop({ areas }: { areas: Area[] }) {
           {/* Instruction overlay (only before selection) */}
           {!selectedArea && (
             <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-border/40 bg-background/80 px-4 py-2 text-[11px] text-muted-foreground/60 backdrop-blur-md">
-              Click any dot to explore that area
+              {isArabic ? "اضغط على أي نقطة لاستكشاف تلك المنطقة" : "Click any dot to explore that area"}
             </div>
           )}
         </div>

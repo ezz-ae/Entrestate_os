@@ -2,8 +2,10 @@
 
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { useLocale } from "next-intl";
 import { areaCoordinates } from "@/lib/area-coordinates";
 import { DecisionRecord } from "@/lib/decision-infrastructure";
+import { pickLocalizedText } from "@/lib/format/entities";
 
 type AreaMapProps = {
   areas: Array<DecisionRecord & { slug: string }>;
@@ -22,6 +24,7 @@ function yieldColor(yieldVal: number): string {
 }
 
 export function AreaMap({ areas }: AreaMapProps) {
+  const locale = useLocale();
   const center: [number, number] = [25.118, 55.139];
 
   return (
@@ -101,6 +104,7 @@ export function AreaMap({ areas }: AreaMapProps) {
           const areaName = String(area.area ?? "").toLowerCase();
           const coords = areaCoordinates[areaName];
           if (!coords) return null;
+          const areaLabel = pickLocalizedText(locale, area.area_ar, area.area, "Area");
 
           const hasYield = typeof area.avg_yield === "number";
           const yieldVal = hasYield ? (area.avg_yield as number) : 0;
@@ -124,7 +128,7 @@ export function AreaMap({ areas }: AreaMapProps) {
               <Popup>
                 <div style={{ minWidth: "170px", padding: "12px 14px", fontFamily: "inherit" }}>
                   <p style={{ fontWeight: 700, fontSize: "13px", marginBottom: "10px", color: "#e2e8f0", letterSpacing: "0.01em" }}>
-                    {String(area.area ?? "")}
+                    {areaLabel}
                   </p>
                   <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                     {typeof area.avg_price === "number" && (

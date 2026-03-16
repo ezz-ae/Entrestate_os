@@ -39,6 +39,11 @@ export function DeveloperCard(developer: DeveloperCardProps) {
   const relPct = relScore !== null ? Math.min(Math.max(relScore, 0), 100) : 0
   const rel = reliabilityConfig(relScore)
   const developerLabel = pickLocalizedText(locale, developer.developer_ar, developer.developer)
+  const localizedTopAreas = topAreas.map((areaName) => ({
+    slug: slugify(areaName),
+    label: pickLocalizedText(locale, null, areaName, areaName),
+    value: areaName,
+  }))
   const copy = locale === "ar"
     ? {
         projects: "مشاريع مكتملة",
@@ -112,18 +117,18 @@ export function DeveloperCard(developer: DeveloperCardProps) {
         {(topAreas.length > 0 || topProjects.length > 0) ? (
           <div className="mt-3 translate-y-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
             <div className="border-t border-border/60 pt-3 space-y-3">
-              {topAreas.length > 0 ? (
+              {localizedTopAreas.length > 0 ? (
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">{copy.activeAreas}</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {topAreas.map((areaName) => (
+                    {localizedTopAreas.map((area) => (
                       <Link
-                        key={`${developer.slug}-area-${areaName}`}
-                        href={prefixLocalePath(`/areas/${slugify(areaName)}`, locale)}
+                        key={`${developer.slug}-area-${area.value}`}
+                        href={prefixLocalePath(`/areas/${area.slug}`, locale)}
                         locale={false}
                         className="relative z-30 rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-[11px] text-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
                       >
-                        {areaName}
+                        {area.label}
                       </Link>
                     ))}
                   </div>

@@ -1,13 +1,17 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useLocale } from "next-intl"
 import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MapPin, Layers, Activity, TrendingUp, Shield, Loader2 } from "lucide-react"
+import { pickLocalizedText } from "@/lib/format/entities"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type AreaCluster = {
   area: string
+  area_ar?: string | null
   slug: string
   city?: string | null
   projects: number
@@ -29,6 +33,8 @@ function getHeatColor(value: number | null, max: number): string {
 }
 
 export default function MapPage() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
   const [areas, setAreas] = useState<AreaCluster[]>([])
   const [loading, setLoading] = useState(true)
   const [activeLayer, setActiveLayer] = useState("Yield bands")
@@ -69,15 +75,17 @@ export default function MapPage() {
         <div className="mx-auto w-full max-w-[1440px] px-6">
           <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
             <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">Map</p>
-              <h1 className="mt-3 text-3xl md:text-5xl font-serif text-foreground">Spatial Trust Surface</h1>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "الخريطة" : "Map"}</p>
+              <h1 className="mt-3 text-3xl md:text-5xl font-serif text-foreground">{isArabic ? "طبقة الثقة المكانية" : "Spatial Trust Surface"}</h1>
               <p className="mt-3 text-sm text-muted-foreground max-w-2xl">
-                Area clusters colored by market signals. Click any area to explore its projects and intelligence.
+                {isArabic
+                  ? "عناقيد المناطق ملوّنة وفق إشارات السوق. اضغط على أي منطقة لاستكشاف مشاريعها وذكائها الاستثماري."
+                  : "Area clusters colored by market signals. Click any area to explore its projects and intelligence."}
               </p>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-4 py-2 text-xs text-muted-foreground">
               <Activity className="h-3.5 w-3.5 text-accent" />
-              {areas.length} areas loaded
+              {isArabic ? `${areas.length} منطقة محمّلة` : `${areas.length} areas loaded`}
             </div>
           </header>
 
@@ -86,7 +94,7 @@ export default function MapPage() {
             <section className="rounded-2xl border border-border/70 bg-card/70 p-6">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-4">
                 <MapPin className="h-4 w-4 text-accent" />
-                Area clusters
+                {isArabic ? "عناقيد المناطق" : "Area clusters"}
               </div>
 
               {loading ? (
@@ -98,20 +106,21 @@ export default function MapPage() {
                   {areas.map((area) => (
                     <Link
                       key={area.slug}
-                      href={`/areas/${area.slug}`}
+                      href={prefixLocalePath(`/areas/${area.slug}`, locale)}
+                      locale={false}
                       className={`rounded-xl border p-3 transition-all hover:scale-[1.02] hover:shadow-md ${getClusterColor(area)}`}
                     >
-                      <div className="text-xs font-medium text-foreground truncate">{area.area}</div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">{area.projects} projects</div>
+                      <div className="text-xs font-medium text-foreground truncate">{pickLocalizedText(locale, area.area_ar, area.area, area.area)}</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">{isArabic ? `${area.projects} مشروع` : `${area.projects} projects`}</div>
                       <div className="mt-2 grid grid-cols-2 gap-1 text-[10px]">
                         <div>
-                          <span className="text-muted-foreground">Yield</span>
+                          <span className="text-muted-foreground">{isArabic ? "العائد" : "Yield"}</span>
                           <div className="font-medium text-foreground">
                             {typeof area.avg_yield === "number" ? `${Number(area.avg_yield).toFixed(1)}%` : "\u2014"}
                           </div>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Price</span>
+                          <span className="text-muted-foreground">{isArabic ? "السعر" : "Price"}</span>
                           <div className="font-medium text-foreground">
                             {typeof area.avg_price === "number"
                               ? `${(Number(area.avg_price) / 1_000_000).toFixed(1)}M`
@@ -122,7 +131,7 @@ export default function MapPage() {
                       {area.buy_signals > 0 && (
                         <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] text-emerald-400">
                           <TrendingUp className="h-2.5 w-2.5" />
-                          {area.buy_signals} BUY
+                          {isArabic ? `${area.buy_signals} BUY` : `${area.buy_signals} BUY`}
                         </div>
                       )}
                     </Link>
@@ -135,11 +144,11 @@ export default function MapPage() {
             <section className="rounded-2xl border border-border/70 bg-card/70 p-6">
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Layers className="h-4 w-4 text-accent" />
-                Active layers
+                {isArabic ? "الطبقات النشطة" : "Active layers"}
               </div>
               <div className="mt-4 space-y-4">
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Core layers</p>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "الطبقات الأساسية" : "Core layers"}</p>
                   <div className="mt-3 space-y-2">
                     {layerOptions.map((layer) => (
                       <button
