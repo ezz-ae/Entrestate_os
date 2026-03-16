@@ -28,7 +28,7 @@ export function proxy(request: NextRequest) {
     return new NextResponse(unavailableText, { status: 503 })
   }
 
-  if (internalPathname.startsWith("/api")) {
+  if (internalPathname === "/api" || internalPathname.startsWith("/api/")) {
     return NextResponse.next()
   }
 
