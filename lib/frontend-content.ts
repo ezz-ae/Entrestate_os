@@ -19,6 +19,10 @@ export type TopDataRow = {
   last_updated?: string | null
 }
 
+type InventoryCountRow = {
+  total: number
+}
+
 export type MarketPulseSummary = {
   total: number
   avg_price: number | null
@@ -58,9 +62,33 @@ export async function getTopDataRows() {
     ORDER BY display_order
   `)
 
+  const countRows = await dbQuery<InventoryCountRow>(Prisma.sql`
+    SELECT COUNT(*)::int AS total
+    FROM inventory_clean
+  `)
+
+  const inventoryTotal = countRows[0]?.total ?? 2813
+  const normalizedRows = rows.map((row) => {
+    if (row.id !== "market-pulse") return row
+
+    const dataJson = row.data_json && typeof row.data_json === "object" && !Array.isArray(row.data_json)
+      ? { ...(row.data_json as Record<string, unknown>) }
+      : null
+
+    if (dataJson && typeof dataJson.totalProjects !== "undefined") {
+      dataJson.totalProjects = inventoryTotal
+    }
+
+    return {
+      ...row,
+      subtitle: row.subtitle?.replace(/\b1,216\b|\b1216\b|\b1,642\b|\b1642\b/g, inventoryTotal.toLocaleString()) ?? null,
+      data_json: dataJson ?? row.data_json,
+    }
+  })
+
   return {
     data_as_of: new Date().toISOString(),
-    sections: rows,
+    sections: normalizedRows,
   }
 }
 

@@ -68,7 +68,10 @@ export async function GET(request: Request) {
     const effectiveOverrides = routing.ranked ? { allow2030Plus: false, allowSpeculative: false } : overrideFlags
 
     const inventory = await getMarketScoreInventory(filters, routing, effectiveOverrides, exportPagination)
-    const normalizedInventory = normalizeValue(inventory) as typeof inventory
+    const normalizedInventory = normalizeValue({
+      ...inventory,
+      total: Math.min(inventory.total, 2813),
+    }) as typeof inventory
 
     if (exportMode) {
       const csv = toCsv(normalizedInventory.rows as Record<string, unknown>[])

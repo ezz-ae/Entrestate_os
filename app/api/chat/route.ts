@@ -46,6 +46,7 @@ import {
   mcpDescribeTable,
   mcpQuery,
 } from "@/lib/mcp/server"
+import { Prisma, dbQuery } from "@/lib/db"
 import {
   mcpCrossReferenceInputSchema,
   mcpDescribeTableInputSchema,
@@ -188,18 +189,82 @@ function isNonActionableTerminalInput(message: string) {
 
 function buildTerminalCommandGuide() {
   return [
-    "You can ask naturally — I’ll translate it into Entrestate’s decision workflow.",
+    "ENTRESTATE Decision Terminal",
+    "────────────────────────────────",
+    "Mode: Awaiting command",
+    "Commands: SCREEN | PROJECT | AREA | COMPARE | RISK | MEMO | PULSE",
     "",
-    "Quick ways to use me:",
-    "- Market pulse: PULSE or 'what's happening in the market?'",
-    "- Project analysis: PROJECT Marina Vista or 'analyze Marina Vista'",
-    "- Screening: SCREEN projects under AED 2M or 'show me projects under 2M'",
-    "- Area view: AREA Jumeirah Village Circle or 'is JVC attractive right now?'",
-    "- Comparison: COMPARE Dubai Marina vs JBR",
-    "- Risk: RISK Emaar Properties or 'show me Emaar risk'",
-    "",
-    "I’ll keep the answer concise, evidence-based, and structured.",
+    "Examples:",
+    "- PULSE",
+    "- PROJECT Marina Vista",
+    "- SCREEN projects under AED 2M",
+    "- AREA Jumeirah Village Circle",
+    "- COMPARE Dubai Marina vs JBR",
+    "- RISK Emaar Properties",
   ].join("\n")
+}
+
+function extractProjectQuery(message: string) {
+  const trimmed = message.trim()
+  const explicitMatch = trimmed.match(/^project\s+(.+)$/i)
+  if (explicitMatch?.[1]) return explicitMatch[1].trim()
+
+  const analysisMatch = trimmed.match(/^(?:analyze|analyse|review|show)\s+(.+)$/i)
+  if (analysisMatch?.[1] && !/(projects under|market pulse|compare|risk|area)/i.test(analysisMatch[1])) {
+    return analysisMatch[1].trim()
+  }
+
+  return null
+}
+
+function buildProjectContent(row: Record<string, unknown>) {
+  const name = typeof row.project_name === "string" ? row.project_name : typeof row.name === "string" ? row.name : "Project"
+  const area = typeof row.area === "string" ? row.area : "UAE"
+  const price = toFiniteNumber(row.price_from)
+  const yieldValue = toFiniteNumber(row.rental_yield)
+  const stressGrade = typeof row.stress_grade === "string" ? row.stress_grade : typeof row.stress_grade_v1 === "string" ? row.stress_grade_v1 : "-"
+  const stressScore = toFiniteNumber(row.stress_score)
+  const timing = typeof row.timing_label === "string" ? row.timing_label : "-"
+  const timingScore = toFiniteNumber(row.timing_score)
+  const evidence = typeof row.evidence_label === "string" ? row.evidence_label : typeof row.evidence_label_v1 === "string" ? row.evidence_label_v1 : "-"
+  const evidenceScore = toFiniteNumber(row.evidence_score)
+  const investorScore = toFiniteNumber(row.investor_score ?? row.investor_score_v1)
+  const decision = typeof row.decision_label === "string" ? row.decision_label : typeof row.decision_label_v1 === "string" ? row.decision_label_v1 : "-"
+  const developer = typeof row.developer === "string" ? row.developer : "Developer"
+
+  return [
+    `${name} — ${area}`,
+    "────────────────────────────",
+    price === null ? null : `Price:     ${formatAed(price)}`,
+    yieldValue === null ? null : `Yield:     ${yieldValue.toFixed(2)}%`,
+    `Stress:    ${stressGrade} (${stressScore === null ? "-" : Math.round(stressScore)})`,
+    `Timing:    ${timing} (${timingScore === null ? "-" : Math.round(timingScore)})`,
+    `Evidence:  ${evidence} (${evidenceScore === null ? "-" : Math.round(evidenceScore)})`,
+    `Score:     ${investorScore === null ? "-" : Math.round(investorScore)}`,
+    "",
+    `Decision:  ${decision}`,
+    `Developer: ${developer}`,
+  ].filter(Boolean).join("\n")
+}
+
+function buildScreeningTable(rows: Record<string, unknown>[]) {
+  const header = "| Project | Area | Price | Yield | Stress | Timing | Evidence | Score | Signal |"
+  const divider = "|---|---|---:|---:|---|---|---|---:|---|"
+  const body = rows.slice(0, 8).map((row) => {
+    const name = typeof row.project_name === "string" ? row.project_name : typeof row.name === "string" ? row.name : "Project"
+    const area = typeof row.area === "string" ? row.area : "-"
+    const price = toFiniteNumber(row.price_from)
+    const yieldValue = toFiniteNumber(row.rental_yield)
+    const stress = typeof row.stress_grade === "string" ? row.stress_grade : typeof row.stress_grade_v1 === "string" ? row.stress_grade_v1 : "-"
+    const timing = typeof row.timing_label === "string" ? row.timing_label : "-"
+    const evidence = typeof row.evidence_label === "string" ? row.evidence_label : typeof row.evidence_label_v1 === "string" ? row.evidence_label_v1 : "-"
+    const score = toFiniteNumber(row.investor_score ?? row.investor_score_v1)
+    const signal = typeof row.decision_label === "string" ? row.decision_label : typeof row.decision_label_v1 === "string" ? row.decision_label_v1 : "-"
+
+    return `| ${name} | ${area} | ${price === null ? "-" : formatAed(price)} | ${yieldValue === null ? "-" : `${yieldValue.toFixed(2)}%`} | ${stress} | ${timing} | ${evidence} | ${score === null ? "-" : Math.round(score)} | ${signal} |`
+  })
+
+  return [header, divider, ...body].join("\n")
 }
 
 function toFiniteNumber(value: unknown): number | null {
@@ -524,6 +589,53 @@ async function buildDeterministicFallback(message: string, context?: { city?: st
     }
   }
 
+  const projectQuery = extractProjectQuery(message)
+  if (projectQuery) {
+    const projectRows = await dbQuery<Record<string, unknown>>(Prisma.sql`
+      SELECT
+        id,
+        name AS project_name,
+        name,
+        area,
+        developer,
+        price_from,
+        rental_yield,
+        timing_score,
+        timing_label,
+        stress_score,
+        stress_grade_v1 AS stress_grade,
+        evidence_score,
+        evidence_label_v1 AS evidence_label,
+        investor_score_v1 AS investor_score,
+        decision_label_v1 AS decision_label,
+        developer_reliability_score,
+        supply_resilience_score,
+        liquidity_resilience_score,
+        pricing_discipline_score,
+        handover_reliability_score,
+        area_stability_score,
+        payment_plan_score
+      FROM inventory_clean
+      WHERE LOWER(name) LIKE LOWER('%' || ${projectQuery} || '%')
+      ORDER BY
+        CASE WHEN LOWER(name) = LOWER(${projectQuery}) THEN 0 ELSE 1 END,
+        investor_score_v1 DESC NULLS LAST
+      LIMIT 1
+    `)
+
+    const project = projectRows[0]
+    if (project) {
+      return {
+        content: buildProjectContent(project),
+        dataCards: buildDataCardsFromRows([project]),
+        evidence: {
+          sources_used: ["inventory_clean"],
+        },
+        data_as_of: new Date().toISOString(),
+      }
+    }
+  }
+
   const budgetMax = parseBudgetAed(message)
   const beds = parseBedsFromMessage(message)
   const timingLabel = parseTimingSignal(message)
@@ -545,11 +657,7 @@ async function buildDeterministicFallback(message: string, context?: { city?: st
 
   const rows = toRows(result.rows)
   const cards = buildDataCardsFromRows(rows)
-
-  const leadArea = cards.find((card) => card.type === "area")?.value
-  const content = rows.length > 0
-    ? `The data shows ${rows.length.toLocaleString()} matching projects${leadArea ? `, led by ${leadArea}` : ""}.`
-    : "No matching projects found."
+  const content = rows.length > 0 ? buildScreeningTable(rows) : "No matching projects found."
 
   return {
     content,
@@ -781,10 +889,15 @@ export async function POST(request: Request) {
       const deterministic = text.length === 0 && rows.length === 0 && !pulseContent
         ? await buildDeterministicFallback(message, parsed.data.context)
         : null
+      const projectQuery = extractProjectQuery(message)
       const content = text.length > 0
         ? text
+        : projectQuery && rows.length > 0
+          ? buildProjectContent(rows[0])
         : pulseContent && message.trim().toUpperCase().includes("PULSE")
           ? pulseContent
+        : rows.length > 0
+          ? buildScreeningTable(rows)
         : deterministic?.content
           ? deterministic.content
         : toolSummary.length > 0
