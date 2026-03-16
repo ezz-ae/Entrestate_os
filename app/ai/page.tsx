@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
-export default function AiPage() {
-  redirect("/workspace/data-scientist")
+export default async function AiPage() {
+  const locale = await getRequestLocale()
+  redirect(prefixLocalePath("/workspace/data-scientist", locale))
 }
-

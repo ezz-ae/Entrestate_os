@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
-export default function MediaPage() {
-  redirect("/docs/industry")
+export default async function MediaPage() {
+  const locale = await getRequestLocale()
+  redirect(prefixLocalePath("/docs/industry", locale))
 }
-

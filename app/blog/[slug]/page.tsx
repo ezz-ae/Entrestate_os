@@ -13,6 +13,29 @@ import { ArrowLeft, Calendar, Clock, Share2, Twitter, Linkedin } from "lucide-re
 import { getBlogPost, blogPosts } from "@/lib/blog-data"
 import { SyntaxHighlighter } from "@/lib/syntax-highlighter"
 import { SEO, absoluteUrl } from "@/lib/seo"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { formatDate } from "@/lib/format/date"
+
+const CATEGORY_LABELS: Record<string, string> = {
+  Strategy: "الاستراتيجية",
+  Operations: "التشغيل",
+  Systems: "الأنظمة",
+  Economics: "الاقتصاد",
+  Data: "البيانات",
+  Marketing: "التسويق",
+}
+
+function categoryLabel(category: string, locale: AppLocale) {
+  if (locale !== "ar") return category
+  return CATEGORY_LABELS[category] ?? category
+}
+
+function localizeReadTime(value: string, locale: AppLocale) {
+  if (locale !== "ar") return value
+  const minutes = Number.parseInt(value, 10)
+  return Number.isFinite(minutes) ? `${minutes} دقائق` : value
+}
 
 export async function generateStaticParams() {
   return blogPosts.map((post) => ({
@@ -21,12 +44,13 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const locale = await getRequestLocale()
   const { slug } = await params
   const post = getBlogPost(slug)
 
   if (!post) {
     return {
-      title: "Article Not Found",
+      title: locale === "ar" ? "المقال غير موجود" : "Article Not Found",
       robots: {
         index: false,
         follow: false,
@@ -34,7 +58,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
   }
 
-  const url = `/blog/${post.slug}`
+  const url = prefixLocalePath(`/blog/${post.slug}`, locale)
 
   return {
     title: post.title,
@@ -61,6 +85,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const locale = (await getRequestLocale()) as AppLocale
+  const isArabic = locale === "ar"
   const { slug } = await params
   const post = getBlogPost(slug)
 
@@ -69,7 +95,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://entrestate.ai"
-  const articleUrl = `${siteUrl}/blog/${post.slug}`
+  const articlePath = prefixLocalePath(`/blog/${post.slug}`, locale)
+  const articleUrl = `${siteUrl}${articlePath}`
   const shareText = encodeURIComponent(post.title)
   const encodedUrl = encodeURIComponent(articleUrl)
   const twitterUrl = `https://twitter.com/intent/tweet?text=${shareText}&url=${encodedUrl}`
@@ -312,30 +339,26 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <article className="container mx-auto px-6 max-w-4xl">
           {/* Back link */}
           <Link
-            href="/blog"
+            href={prefixLocalePath("/blog", locale)}
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Blog
+            {isArabic ? "العودة إلى المقالات" : "Back to Blog"}
           </Link>
 
           {/* Header */}
           <header className="mb-10">
             <div className="flex items-center gap-3 mb-4">
               <Badge variant="outline" className="border-primary/30 text-primary">
-                {post.category}
+                {categoryLabel(post.category, locale)}
               </Badge>
               <span className="text-sm text-muted-foreground flex items-center gap-1.5">
                 <Calendar className="w-4 h-4" />
-                {new Date(post.publishedAt).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                })}
+                {formatDate(post.publishedAt, locale, { month: "long", day: "numeric", year: "numeric" })}
               </span>
               <span className="text-sm text-muted-foreground flex items-center gap-1.5">
                 <Clock className="w-4 h-4" />
-                {post.readTime}
+                {localizeReadTime(post.readTime, locale)}
               </span>
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">{post.title}</h1>
@@ -358,17 +381,17 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button asChild variant="outline" size="icon" className="h-9 w-9 bg-transparent" aria-label="Share on Twitter">
+              <Button asChild variant="outline" size="icon" className="h-9 w-9 bg-transparent" aria-label={isArabic ? "مشاركة عبر X" : "Share on Twitter"}>
                 <Link href={twitterUrl} target="_blank" rel="noreferrer">
                   <Twitter className="w-4 h-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="icon" className="h-9 w-9 bg-transparent" aria-label="Share on LinkedIn">
+              <Button asChild variant="outline" size="icon" className="h-9 w-9 bg-transparent" aria-label={isArabic ? "مشاركة عبر LinkedIn" : "Share on LinkedIn"}>
                 <Link href={linkedinUrl} target="_blank" rel="noreferrer">
                   <Linkedin className="w-4 h-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="icon" className="h-9 w-9 bg-transparent" aria-label="Share article">
+              <Button asChild variant="outline" size="icon" className="h-9 w-9 bg-transparent" aria-label={isArabic ? "مشاركة المقال" : "Share article"}>
                 <Link href={mailtoUrl}>
                   <Share2 className="w-4 h-4" />
                 </Link>
@@ -393,10 +416,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           {/* Related Posts */}
           {relatedPosts.length > 0 && (
             <section className="mt-16 pt-16 border-t border-border">
-              <h2 className="text-2xl font-bold text-foreground mb-8">Related Articles</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-8">{isArabic ? "مقالات ذات صلة" : "Related Articles"}</h2>
               <div className="grid md:grid-cols-2 gap-6">
                 {relatedPosts.map((related) => (
-                  <Link key={related.slug} href={`/blog/${related.slug}`} className="group">
+                  <Link key={related.slug} href={prefixLocalePath(`/blog/${related.slug}`, locale)} className="group">
                     <div className="bg-surface-elevated border border-border rounded-lg overflow-hidden hover:border-primary/30 transition-colors">
                       <div className="relative aspect-[16/9]">
                         <Image
@@ -410,7 +433,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                         <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
                           {related.title}
                         </h3>
-                        <p className="text-sm text-muted-foreground mt-2">{related.readTime}</p>
+                        <p className="text-sm text-muted-foreground mt-2">{localizeReadTime(related.readTime, locale)}</p>
                       </div>
                     </div>
                   </Link>
