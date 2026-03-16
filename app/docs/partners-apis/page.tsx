@@ -1,6 +1,9 @@
 import Link from "next/link"
 import { ArrowRight, Puzzle, Handshake, Server, Database, Shield, Layers, Users, Code } from "lucide-react"
 
+import { getRequestLocale } from "@/i18n/request"
+import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
+import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 const partnerTracks = [
   {
     icon: Database,
@@ -93,7 +96,12 @@ const integrationModel = [
   },
 ]
 
-export default function PartnersApisDocsPage() {
+export default async function PartnersApisDocsPage() {
+  const locale = await getRequestLocale()
+  if (locale === "ar") {
+    return <ArabicDocPage locale={locale} content={getArabicDocsPage("partners-apis")} />
+  }
+
   return (
     <>
       {/* Hero */}

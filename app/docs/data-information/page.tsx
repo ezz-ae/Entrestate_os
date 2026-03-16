@@ -1,6 +1,9 @@
 import Link from "next/link"
 import { ArrowRight, Database, Layers, Shield, Filter, RefreshCw, CheckCircle, AlertTriangle } from "lucide-react"
 
+import { getRequestLocale } from "@/i18n/request"
+import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
+import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 const evidenceLayers = [
   {
     layer: "L1",
@@ -93,7 +96,12 @@ const recoveryMetrics = [
   { field: "Coordinates", raw: "~60%", target: ">95%", method: "Address parsing + satellite imagery confirmation" },
 ]
 
-export default function DataInformationPage() {
+export default async function DataInformationPage() {
+  const locale = await getRequestLocale()
+  if (locale === "ar") {
+    return <ArabicDocPage locale={locale} content={getArabicDocsPage("data-information")} />
+  }
+
   return (
     <>
       {/* Hero */}

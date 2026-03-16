@@ -1,6 +1,9 @@
 import Link from "next/link"
 import { ArrowRight, Building2, TrendingUp, Shield, BarChart3, AlertTriangle, Zap, Eye } from "lucide-react"
 
+import { getRequestLocale } from "@/i18n/request"
+import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
+import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 const marketMetrics = [
   { value: "2,813", label: "Active Projects", detail: "Tracked across UAE" },
   { value: "71%", label: "Speculative", detail: "Of total inventory" },
@@ -36,7 +39,12 @@ const stressFactors = [
   },
 ]
 
-export default function IndustryDocsPage() {
+export default async function IndustryDocsPage() {
+  const locale = await getRequestLocale()
+  if (locale === "ar") {
+    return <ArabicDocPage locale={locale} content={getArabicDocsPage("industry")} />
+  }
+
   return (
     <>
       {/* Hero */}

@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, CircleCheck } from "lucide-react"
-import { docsArticles, getArticleBySlug } from "@/lib/docs-articles"
+import { docsArticles, getLocalizedArticleBySlug } from "@/lib/docs-articles"
 import { SEO, absoluteUrl } from "@/lib/seo"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
@@ -17,7 +17,8 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const article = getArticleBySlug(slug)
+  const locale = await getRequestLocale()
+  const article = getLocalizedArticleBySlug(slug, locale)
 
   if (!article) {
     return {
@@ -57,7 +58,7 @@ export default async function DocsArticlePage({ params }: Props) {
   const { slug } = await params
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
-  const article = getArticleBySlug(slug)
+  const article = getLocalizedArticleBySlug(slug, locale)
 
   if (!article) {
     notFound()

@@ -364,3 +364,104 @@ export function getArticleBySlug(slug: string) {
 export function getArticleByTitle(title: string) {
   return docsArticles.find((article) => article.title === title)
 }
+
+const articleCategoryArabicMap: Record<string, string> = {
+  Foundation: "الأساس",
+  "Decision Tunnel": "مسار القرار",
+  "Evidence Stack": "طبقات الأدلة",
+  "Market Scoring": "تقييم السوق",
+  "Broker Dashboard": "لوحة الوسيط",
+  Automation: "الأتمتة",
+  "Core Data Objects": "كائنات البيانات الأساسية",
+  "Data & Information": "البيانات والمعلومات",
+}
+
+const articleTitleArabicOverrides: Record<string, string> = {
+  "Entrestate Decision Infrastructure": "بنية القرار في Entrestate",
+  "Decision Tunnel (Workflow)": "مسار القرار داخل المنصة",
+  "Stage 1: Intent": "المرحلة 1: فهم الطلب",
+  "NL Goal to TableSpec JSON": "تحويل الطلب إلى TableSpec",
+  "Intent-Aware Parsing": "فهم الطلب بحسب نية المستخدم",
+  "Hidden Parameter Extraction": "استخراج الشروط الضمنية",
+  "Stage 2: Evidence": "المرحلة 2: جمع الأدلة",
+  "Exclusion Policy (Filter Distressed/Duplicates)": "سياسة الاستبعاد وتنظيف السجل",
+  "5-Layer Evidence Stack": "طبقات الأدلة الخمس",
+  "Data Hygiene (Canonical Graph)": "تنظيف البيانات وبناء الرسم المعتمد",
+  "Stage 3: Judgment": "المرحلة 3: التقييم",
+  "65% Market Score (Objective Quality)": "نتيجة السوق 65%",
+  "35% Personal Match (Subjective Lens)": "الملاءمة الشخصية 35%",
+  "Ranking & Scoring Engine": "محرك الترتيب والنتيجة",
+  "Stage 4: Action": "المرحلة 4: التنفيذ",
+  "Branded Decision Objects (PDF/Memos)": "مخرجات القرار الجاهزة",
+  "Evidence Drawer (Transparency/Footnotes)": "درج الأدلة",
+  "Automation Studio": "استوديو الأتمتة",
+  "Evidence Stack Hierarchy": "هيكل طبقات الأدلة",
+  "L1: Canonical (Static Truths/Audited)": "L1: المصدر المعتمد",
+  "L2: Derived (Calculated Truths)": "L2: البيانات المشتقة",
+  "L3: Dynamic (Living States/Inventory)": "L3: الحالة الحية للمخزون",
+  "L4: External (Market Sensors/RERA/DLD)": "L4: المصادر الخارجية",
+  "L5: Raw (Unprocessed Extraction)": "L5: المدخلات الخام",
+  "Market Scoring Signals": "إشارات تقييم السوق",
+  "Timing Signals (Entry/Exit Windows)": "إشارات التوقيت",
+  "Stress Resilience (Grade A-F)": "مرونة الضغط",
+  "Verified Gross Yield": "العائد الإجمالي الموثق",
+  "Data Confidence Level": "مستوى الثقة في البيانات",
+  "Broker Dashboard Features": "قدرات لوحة الوسيط",
+  "AI Assistant (Gemini 1.5)": "المساعد الذكي",
+  "Core Data Objects": "كائنات البيانات الأساسية",
+  "Time Table (Atomic Intelligence Unit)": "الوحدة الذكية Time Table",
+  "TableSpec (Query Blueprint)": "مخطط الاستعلام TableSpec",
+  "Decision Objects (Outcome Artifacts)": "مخرجات القرار",
+  "Profile Intelligence (User Preferences)": "ذكاء الملف الشخصي",
+  "Data & Information": "البيانات والمعلومات",
+  "Dubai Land Department (DLD)": "دائرة الأراضي والأملاك",
+  Stakeholders: "أصحاب العلاقة",
+  "Investor Relations": "علاقات المستثمرين",
+}
+
+function localizeArticleTitle(title: string) {
+  return articleTitleArabicOverrides[title] ?? `ملف تشغيلي: ${title}`
+}
+
+function localizeArticleCategory(category: string) {
+  return articleCategoryArabicMap[category] ?? "وثائق المنصة"
+}
+
+export function getLocalizedDocsArticle(article: DocsArticle, locale: string): DocsArticle {
+  if (locale !== "ar") return article
+
+  const localizedTitle = localizeArticleTitle(article.title)
+  const localizedCategory = localizeArticleCategory(article.category)
+
+  return {
+    ...article,
+    title: localizedTitle,
+    category: localizedCategory,
+    summary: `شرح مختصر لدور ${localizedTitle} داخل Entrestate، ومتى يُستخدم، وكيف ينعكس أثره على القرار والمخرجات التشغيلية.`,
+    scope: [
+      `يوضح هذا الملف وظيفة ${localizedTitle} داخل المنصة ومسار العمل.`,
+      `يربط هذا الموضوع بين ${localizedCategory} وبقية طبقات القرار والبيانات.`,
+      "يصلح كمرجع سريع للشركاء والفرق الداخلية عند المراجعة أو الشرح.",
+    ],
+    execution: [
+      `استخدم هذا الملف لفهم موضع ${localizedTitle} داخل التشغيل اليومي للمنصة.`,
+      "راجع علاقته بالأدلة والحوكمة قبل أي تعديل في المنطق أو العرض.",
+      "اعتمد عليه كمرجع موحّد عند التطوير أو التدقيق أو تجهيز المواد الخارجية.",
+    ],
+  }
+}
+
+export function getLocalizedDocsArticles(locale: string) {
+  return docsArticles.map((article) => getLocalizedDocsArticle(article, locale))
+}
+
+export function getLocalizedArticleBySlug(slug: string, locale: string) {
+  const article = getArticleBySlug(slug)
+  if (!article) return undefined
+  return getLocalizedDocsArticle(article, locale)
+}
+
+export function getLocalizedArticleCategories(locale: string) {
+  const articles = getLocalizedDocsArticles(locale)
+  return Array.from(new Set(articles.map((article) => article.category)))
+}

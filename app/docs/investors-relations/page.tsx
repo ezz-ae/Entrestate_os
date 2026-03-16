@@ -13,6 +13,9 @@ import {
   Lock,
   Globe,
 } from "lucide-react"
+import { getRequestLocale } from "@/i18n/request"
+import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
+import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 
 const marketNumbers = [
   { value: "2,813", label: "Active Projects", detail: "Tracked across UAE in real time" },
@@ -114,7 +117,12 @@ const diligenceItems = [
   },
 ]
 
-export default function InvestorsRelationsDocsPage() {
+export default async function InvestorsRelationsDocsPage() {
+  const locale = await getRequestLocale()
+  if (locale === "ar") {
+    return <ArabicDocPage locale={locale} content={getArabicDocsPage("investors-relations")} />
+  }
+
   return (
     <>
       {/* Hero */}

@@ -1,5 +1,8 @@
 import { CheckCircle2, AlertTriangle, XCircle, ArrowRight } from "lucide-react"
 
+import { getRequestLocale } from "@/i18n/request"
+import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
+import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 type ScoreColor = "green" | "amber" | "red"
 
 const scoreConfig: Record<ScoreColor, { label: string; dot: string; badge: string; row: string }> = {
@@ -149,7 +152,12 @@ const greenCount = scoreCategories.filter((c) => c.score === "green").length
 const amberCount = scoreCategories.filter((c) => c.score === "amber").length
 const redCount = scoreCategories.filter((c) => c.score === "red").length
 
-export default function CTODeploymentReviewPage() {
+export default async function CTODeploymentReviewPage() {
+  const locale = await getRequestLocale()
+  if (locale === "ar") {
+    return <ArabicDocPage locale={locale} content={getArabicDocsPage("cto-deployment-review")} />
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
       {/* Header */}

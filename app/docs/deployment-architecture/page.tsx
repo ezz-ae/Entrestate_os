@@ -1,5 +1,8 @@
 import { Server, GitBranch, RefreshCw, Shield, Database, Layers, ArrowRight, CheckCircle, AlertTriangle, Zap } from "lucide-react"
 
+import { getRequestLocale } from "@/i18n/request"
+import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
+import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 const environments = [
   {
     name: "Production",
@@ -59,7 +62,12 @@ const dataRefreshPolicy = [
   { signal: "AI session history", value: "Persisted per-user in Neon on every completion", color: "text-emerald-400" },
 ]
 
-export default function DeploymentArchitecturePage() {
+export default async function DeploymentArchitecturePage() {
+  const locale = await getRequestLocale()
+  if (locale === "ar") {
+    return <ArabicDocPage locale={locale} content={getArabicDocsPage("deployment-architecture")} />
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
       <header className="mb-12">

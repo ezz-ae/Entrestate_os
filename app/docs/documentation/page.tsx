@@ -2,6 +2,9 @@ import Link from "next/link"
 import { ArrowRight, Bot, Layers, Target, Zap, Factory, FileText, Shield } from "lucide-react"
 import { DocumentationMindMap } from "@/components/docs/documentation-mind-map"
 
+import { getRequestLocale } from "@/i18n/request"
+import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
+import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 const pipelinePhases = [
   { phase: "1", name: "Source Ingestion", output: "Raw HTML / JSON Objects", consumer: "Internal Data Layer" },
   { phase: "2", name: "Entity Extraction", output: "Project Names, Initial Prices", consumer: "Stage 2: Evidence (L5 Raw)" },
@@ -93,7 +96,12 @@ const scoringWeights = [
   { metric: "L3 Price Momentum", aggressive: "0.10", conservative: "-0.10", impact: "Rewards/penalizes market heat" },
 ]
 
-export default function DocumentationDocsPage() {
+export default async function DocumentationDocsPage() {
+  const locale = await getRequestLocale()
+  if (locale === "ar") {
+    return <ArabicDocPage locale={locale} content={getArabicDocsPage("documentation")} />
+  }
+
   return (
     <>
       {/* Hero */}

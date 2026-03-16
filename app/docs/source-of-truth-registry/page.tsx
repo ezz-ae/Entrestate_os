@@ -1,6 +1,9 @@
 import Link from "next/link"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 
+import { getRequestLocale } from "@/i18n/request"
+import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
+import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 const registryFields = [
   "metric_name",
   "source_system",
@@ -11,7 +14,12 @@ const registryFields = [
   "audit_link",
 ]
 
-export default function SourceOfTruthRegistryDocsPage() {
+export default async function SourceOfTruthRegistryDocsPage() {
+  const locale = await getRequestLocale()
+  if (locale === "ar") {
+    return <ArabicDocPage locale={locale} content={getArabicDocsPage("source-of-truth-registry")} />
+  }
+
   return (
     <>
       <Link href="/docs/data-information" className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -62,4 +70,3 @@ export default function SourceOfTruthRegistryDocsPage() {
     </>
   )
 }
-

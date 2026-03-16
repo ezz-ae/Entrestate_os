@@ -1,11 +1,19 @@
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react"
 
+import { getRequestLocale } from "@/i18n/request"
+import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
+import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 const requiredFields = ["metric", "value", "period", "definition", "calculation", "evidence_link"]
 
 const seededMetrics = ["ARR", "Pipeline Value", "Retention Rate", "CAC Payback", "Gross Margin", "Runway"]
 
-export default function InvestorMetricsAuditDocsPage() {
+export default async function InvestorMetricsAuditDocsPage() {
+  const locale = await getRequestLocale()
+  if (locale === "ar") {
+    return <ArabicDocPage locale={locale} content={getArabicDocsPage("investor-metrics-audit")} />
+  }
+
   return (
     <>
       <Link href="/docs/investors-relations" className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -71,4 +79,3 @@ export default function InvestorMetricsAuditDocsPage() {
     </>
   )
 }
-

@@ -1,12 +1,15 @@
 import Link from "next/link"
 import { ArrowRight, BookMarked } from "lucide-react"
-import { articleCategories, docsArticles } from "@/lib/docs-articles"
+import { getLocalizedArticleCategories, getLocalizedDocsArticles } from "@/lib/docs-articles"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 
 export default async function DocsArticlesPage() {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
+  const articles = getLocalizedDocsArticles(locale)
+  const articleCategories = getLocalizedArticleCategories(locale)
+
   const copy = {
     eyebrow: isArabic ? "وثائق المنصة / المقالات" : "Platform Docs / Articles",
     title: isArabic ? "مقالات المنصة" : "Mind Map Articles",
@@ -28,7 +31,7 @@ export default async function DocsArticlesPage() {
 
       <section className="space-y-6">
         {articleCategories.map((category) => {
-          const categoryArticles = docsArticles.filter((article) => article.category === category)
+          const categoryArticles = articles.filter((article) => article.category === category)
           return (
             <article key={category} className="rounded-2xl border border-border/70 bg-card/70 p-6">
               <div className="flex items-center gap-2">

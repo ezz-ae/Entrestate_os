@@ -1,6 +1,9 @@
 import Link from "next/link"
 import { ArrowRight, Users, Code, Database, Handshake, Briefcase, GraduationCap, Target, Zap } from "lucide-react"
 
+import { getRequestLocale } from "@/i18n/request"
+import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
+import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 const engineeringRoles = [
   {
     title: "Platform Engineer",
@@ -78,7 +81,12 @@ const cultureValues = [
   },
 ]
 
-export default function CareersInternDocsPage() {
+export default async function CareersInternDocsPage() {
+  const locale = await getRequestLocale()
+  if (locale === "ar") {
+    return <ArabicDocPage locale={locale} content={getArabicDocsPage("careers-intern")} />
+  }
+
   return (
     <>
       {/* Hero */}
