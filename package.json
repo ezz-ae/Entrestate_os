@@ -88,6 +88,7 @@
     "motion": "12.23.26",
     "nanoid": "latest",
     "next": "16.0.10",
+    "next-intl": "^4.8.3",
     "next-themes": "^0.4.6",
     "papaparse": "^5.4.1",
     "qrcode": "^1.5.4",

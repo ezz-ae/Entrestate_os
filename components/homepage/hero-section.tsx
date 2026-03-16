@@ -1,8 +1,10 @@
 "use client"
 
 import Link from "next/link"
+import { useLocale } from "next-intl"
 import { ArrowRight, Sparkles, TrendingUp, ShieldCheck, BarChart3, Layers } from "lucide-react"
 import { formatAed } from "@/components/decision/formatters"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type Props = {
   totalProjects: number
@@ -11,16 +13,75 @@ type Props = {
   avgYield: number | null
 }
 
-const EVIDENCE_LAYERS = [
-  { id: "L1", label: "Canonical", color: "bg-primary" },
-  { id: "L2", label: "Derived", color: "bg-blue-400" },
-  { id: "L3", label: "Dynamic", color: "bg-violet-400" },
-  { id: "L4", label: "External", color: "bg-amber-400" },
-  { id: "L5", label: "Raw", color: "bg-muted-foreground/40" },
-]
+const COPY = {
+  en: {
+    projectsScored: "projects scored",
+    buySignalsLive: "BUY signals live",
+    titleLineOne: "The Real Estate",
+    titleLineTwo: "Decision System",
+    description:
+      "Beyond portals. Entrestate is a proprietary intelligence engine that scores every project across timing, stress resilience, yield, and evidence quality through a five-layer data architecture — bringing precision to real estate investment.",
+    openDashboard: "Open Dashboard",
+    decisionCopilot: "DECISION COPILOT",
+    stats: {
+      projects: "Projects scored",
+      buy: "BUY signals",
+      yield: "Avg gross yield",
+      price: "Avg price",
+    },
+    sampleOutput: "Sample Output",
+    score: "score",
+    grossYield: "Gross Yield",
+    stressGrade: "Stress Grade",
+    priceSqft: "Price / sqft",
+    evidenceLayers: "Evidence layers",
+    developerNote: "Ellington · Grade A",
+    absorption: "Absorption 94%",
+    footerNote: "Scored across 5 data layers · Updated daily from DLD",
+    realOutput: "Real output format · Data is live",
+    evidenceLayerLabels: ["Canonical", "Derived", "Dynamic", "External", "Raw"],
+  },
+  ar: {
+    projectsScored: "مشروع تم تقييمه",
+    buySignalsLive: "إشارات BUY مباشرة",
+    titleLineOne: "منظومة القرار",
+    titleLineTwo: "للعقار",
+    description:
+      "أبعد من البوابات العقارية. انتريستيت هو محرك ذكاء خاص يقيم كل مشروع عبر التوقيت، والمرونة تحت الضغط، والعائد، وجودة الأدلة ضمن بنية بيانات من خمس طبقات — ليمنح الاستثمار العقاري دقة أعلى.",
+    openDashboard: "افتح لوحة التحكم",
+    decisionCopilot: "DECISION COPILOT",
+    stats: {
+      projects: "المشاريع المقيمة",
+      buy: "إشارات BUY",
+      yield: "متوسط العائد الإجمالي",
+      price: "متوسط السعر",
+    },
+    sampleOutput: "مثال على المخرجات",
+    score: "النتيجة",
+    grossYield: "العائد الإجمالي",
+    stressGrade: "درجة الضغط",
+    priceSqft: "السعر / قدم²",
+    evidenceLayers: "طبقات الأدلة",
+    developerNote: "إلينغتون · الدرجة A",
+    absorption: "الامتصاص 94%",
+    footerNote: "يتم التقييم عبر 5 طبقات بيانات · تحديث يومي من DLD",
+    realOutput: "صيغة مخرجات حقيقية · البيانات مباشرة",
+    evidenceLayerLabels: ["أساسي", "مشتق", "ديناميكي", "خارجي", "خام"],
+  },
+} as const
 
 export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: Props) {
+  const locale = useLocale() as AppLocale
+  const copy = COPY[locale] ?? COPY.en
+  const numberLocale = locale === "ar" ? "ar-AE-u-nu-latn" : "en-US"
   const buyPct = totalProjects > 0 ? ((buySignals / totalProjects) * 100).toFixed(0) : "—"
+  const evidenceLayers = [
+    { id: "L1", label: copy.evidenceLayerLabels[0], color: "bg-primary" },
+    { id: "L2", label: copy.evidenceLayerLabels[1], color: "bg-blue-400" },
+    { id: "L3", label: copy.evidenceLayerLabels[2], color: "bg-violet-400" },
+    { id: "L4", label: copy.evidenceLayerLabels[3], color: "bg-amber-400" },
+    { id: "L5", label: copy.evidenceLayerLabels[4], color: "bg-muted-foreground/40" },
+  ]
 
   return (
     <section className="relative">
@@ -41,43 +102,45 @@ export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: P
           {/* Live badge */}
           <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-4 py-1.5 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.5)]" />
-            {totalProjects.toLocaleString()} projects scored · {buySignals.toLocaleString()} BUY signals live
+            {totalProjects.toLocaleString(numberLocale)} {copy.projectsScored} · {buySignals.toLocaleString(numberLocale)} {copy.buySignalsLive}
           </p>
 
           <h1 className="font-serif text-4xl font-medium leading-[1.1] tracking-tight text-foreground md:text-5xl lg:text-6xl">
-            The Real Estate<br />
-            <span className="text-primary">Decision System</span>
+            {copy.titleLineOne}<br />
+            <span className="text-primary">{copy.titleLineTwo}</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-[17px]">
-            Beyond portals. Entrestate is a proprietary intelligence engine that scores every project across timing, stress resilience, yield, and evidence quality through a five-layer data architecture — bringing precision to real estate investment.
+            {copy.description}
           </p>
 
           {/* CTAs */}
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
-              href="/overview"
+              href={prefixLocalePath("/overview", locale)}
+              locale={false}
               className="hidden md:flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
             >
-              Open Dashboard
+              {copy.openDashboard}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/chat"
+              href={prefixLocalePath("/chat", locale)}
+              locale={false}
               className="flex items-center gap-2 rounded-full border border-border bg-card px-7 py-3 text-sm font-semibold text-foreground transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
             >
               <Sparkles className="h-4 w-4 text-primary" />
-              Ask the AI
+              {copy.decisionCopilot}
             </Link>
           </div>
 
           {/* Proof strip */}
           <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2">
             {[
-              { label: "Projects scored", value: totalProjects.toLocaleString() },
-              { label: "BUY signals", value: `${buySignals.toLocaleString()} (${buyPct}%)`, accent: true },
-              { label: "Avg gross yield", value: typeof avgYield === "number" ? `${avgYield.toFixed(1)}%` : "—" },
-              { label: "Avg price", value: formatAed(avgPrice) },
+              { label: copy.stats.projects, value: totalProjects.toLocaleString(numberLocale) },
+              { label: copy.stats.buy, value: `${buySignals.toLocaleString(numberLocale)} (${buyPct}%)`, accent: true },
+              { label: copy.stats.yield, value: typeof avgYield === "number" ? `${avgYield.toFixed(1)}%` : "—" },
+              { label: copy.stats.price, value: formatAed(avgPrice) },
             ].map((item) => (
               <div key={item.label} className="flex items-baseline gap-1.5">
                 <span className={`text-sm font-semibold tabular-nums ${item.accent ? "text-emerald-400" : "text-foreground"}`}>
@@ -102,7 +165,7 @@ export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: P
                   <BarChart3 className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Sample Output</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">{copy.sampleOutput}</p>
                   <p className="text-xs font-medium text-foreground">JVC · Studio · AED 1.1M</p>
                 </div>
               </div>
@@ -127,15 +190,15 @@ export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: P
                 </svg>
                 <div className="text-center">
                   <p className="text-lg font-bold tabular-nums text-foreground leading-none">82</p>
-                  <p className="text-[9px] text-muted-foreground/50">score</p>
+                  <p className="text-[9px] text-muted-foreground/50">{copy.score}</p>
                 </div>
               </div>
 
               <div className="flex-1 space-y-2">
                 {[
-                  { label: "Gross Yield", value: "8.1%", color: "text-emerald-400" },
-                  { label: "Stress Grade", value: "A", color: "text-emerald-400" },
-                  { label: "Price / sqft", value: "AED 1,100", color: "text-foreground" },
+                  { label: copy.grossYield, value: "8.1%", color: "text-emerald-400" },
+                  { label: copy.stressGrade, value: "A", color: "text-emerald-400" },
+                  { label: copy.priceSqft, value: "AED 1,100", color: "text-foreground" },
                 ].map((m) => (
                   <div key={m.label} className="flex items-center justify-between">
                     <span className="text-[11px] text-muted-foreground/60">{m.label}</span>
@@ -149,10 +212,10 @@ export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: P
             <div className="mb-3">
               <div className="mb-2 flex items-center gap-1.5">
                 <Layers className="h-3 w-3 text-muted-foreground/40" />
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">Evidence layers</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">{copy.evidenceLayers}</p>
               </div>
               <div className="flex items-center gap-1.5">
-                {EVIDENCE_LAYERS.map((layer, i) => (
+                {evidenceLayers.map((layer) => (
                   <div key={layer.id} className="flex flex-1 flex-col items-center gap-1">
                     <div className={`h-1.5 w-full rounded-full ${layer.color} opacity-80`} />
                     <span className="text-[9px] font-mono text-muted-foreground/40">{layer.id}</span>
@@ -165,23 +228,23 @@ export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: P
             <div className="flex items-center justify-between rounded-lg border border-border/30 bg-background/20 px-3 py-2">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-3.5 w-3.5 text-primary/60" />
-                <span className="text-[11px] text-muted-foreground/60">Ellington · Grade A</span>
+                <span className="text-[11px] text-muted-foreground/60">{copy.developerNote}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <TrendingUp className="h-3 w-3 text-emerald-400/60" />
-                <span className="text-[11px] text-emerald-400/80 font-medium">Absorption 94%</span>
+                <span className="text-[11px] text-emerald-400/80 font-medium">{copy.absorption}</span>
               </div>
             </div>
 
             {/* Footer note */}
             <p className="mt-3 text-center text-[9px] text-muted-foreground/30">
-              Scored across 5 data layers · Updated daily from DLD
+              {copy.footerNote}
             </p>
           </div>
 
           {/* Floating label */}
           <p className="mt-3 text-center text-[10px] text-muted-foreground/30 uppercase tracking-widest">
-            Real output format · Data is live
+            {copy.realOutput}
           </p>
         </div>
 

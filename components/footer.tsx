@@ -3,9 +3,11 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useLocale } from "next-intl"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useNewReport, markReportSeen } from "@/hooks/use-new-report"
 import { LATEST_LIBRARY_REPORT } from "@/lib/latest-library-report"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import {
   ArrowRight,
   MapPin,
@@ -115,6 +117,83 @@ function GitHubIcon({ className }: { className?: string }) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function Footer() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
+  const t = (en: string, ar: string) => (isArabic ? ar : en)
+  const toHref = (href: string) => (href.endsWith(".xml") ? href : prefixLocalePath(href, locale))
+  const localizedColumns = columns.map((col) => ({
+    ...col,
+    heading: t(
+      col.heading,
+      {
+        Product: "المنتج",
+        Platform: "المنصة",
+        "Data & Research": "البيانات والأبحاث",
+        Company: "الشركة",
+        Legal: "قانوني",
+      }[col.heading] ?? col.heading,
+    ),
+    links: col.links.map((link) => ({
+      ...link,
+      label: t(
+        link.label,
+        {
+          "AI Copilot": "المساعد الذكي",
+          "Areas Intelligence": "ذكاء المناطق",
+          "Developer Profiles": "ملفات المطورين",
+          Properties: "العقارات",
+          "Market Data": "بيانات السوق",
+          "Reports Library": "مكتبة التقارير",
+          Documentation: "التوثيق",
+          "Partners & APIs": "الشركاء وواجهات البرمجة",
+          "Data Science Dashboard": "لوحة علوم البيانات",
+          "Agent Builder": "منشئ الوكلاء",
+          Pricing: "الأسعار",
+          Changelog: "سجل التحديثات",
+          Roadmap: "خارطة الطريق",
+          "Dubai Land Department": "دائرة الأراضي والأملاك",
+          "Source of Truth Registry": "سجل مصدر الحقيقة",
+          "Generated Reports": "التقارير المولدة",
+          "Investor KPI Audit": "تدقيق مؤشرات المستثمر",
+          Articles: "المقالات",
+          "Market Score": "درجة السوق",
+          About: "من نحن",
+          "Investor Relations": "علاقات المستثمرين",
+          Careers: "الوظائف",
+          Industry: "القطاع",
+          Media: "الإعلام",
+          Contact: "تواصل معنا",
+          "Privacy Policy": "سياسة الخصوصية",
+          "Terms of Service": "شروط الخدمة",
+          "Data Usage": "استخدام البيانات",
+          "Cookie Policy": "سياسة ملفات الارتباط",
+          Status: "الحالة",
+          Support: "الدعم",
+        }[link.label] ?? link.label,
+      ),
+    })),
+  }))
+  const localizedTrustBadges = trustBadges.map((badge) => ({
+    ...badge,
+    label: t(
+      badge.label,
+      {
+        "DLD Data Sourced": "بيانات من DLD",
+        "SOC 2 Compliant": "متوافق مع SOC 2",
+        "Verified Listings": "قوائم موثقة",
+        "UAE Market Focus": "تركيز على سوق الإمارات",
+      }[badge.label] ?? badge.label,
+    ),
+    sub: t(
+      badge.sub,
+      {
+        "Dubai Land Department": "دائرة الأراضي والأملاك",
+        "Data security standards": "معايير أمن البيانات",
+        "Cross-referenced records": "سجلات تمت مطابقتها",
+        "Dubai · Abu Dhabi · Sharjah": "دبي · أبوظبي · الشارقة",
+      }[badge.sub] ?? badge.sub,
+    ),
+  }))
   const { report, dismiss } = useNewReport()
   const [reportEmailSent, setReportEmailSent] = useState(false)
   const [reportSending, setReportSending] = useState(false)
@@ -167,33 +246,39 @@ export function Footer() {
             {/* Left */}
             <div className="max-w-lg">
               <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-primary">
-                Decision Intelligence Platform
+                {t("Decision Intelligence Platform", "منصة ذكاء القرار")}
               </p>
               <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-                Built for professionals who need precision, not noise.
+                {t("Built for professionals who need precision, not noise.", "مبنية للمهنيين الذين يحتاجون إلى الدقة، لا الضجيج.")}
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                Market coverage, project evidence, and investor-first workflows for UAE real estate operators. Backed by live DLD data.
+                {t(
+                  "Market coverage, project evidence, and investor-first workflows for UAE real estate operators. Backed by live DLD data.",
+                  "تغطية السوق، وأدلة المشاريع، وسير عمل يركز على المستثمر لمشغلي العقار في الإمارات. مدعومة ببيانات DLD المباشرة.",
+                )}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
-                  href="/chat"
+                  href={toHref("/chat")}
+                  locale={false}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20"
                 >
-                  Open Copilot
+                  {t("Open Copilot", "افتح المساعد")}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  href="/plans"
+                  href={toHref("/plans")}
+                  locale={false}
                   className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
                 >
-                  View Plans
+                  {t("View Plans", "عرض الباقات")}
                 </Link>
                 <Link
-                  href="/contact"
+                  href={toHref("/contact")}
+                  locale={false}
                   className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Talk to Sales
+                  {t("Talk to Sales", "تحدث إلى المبيعات")}
                   <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
               </div>
@@ -211,7 +296,7 @@ export function Footer() {
                         <FileText className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">Report ready</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">{t("Report ready", "التقرير جاهز")}</p>
                         <p className="mt-0.5 line-clamp-2 text-sm font-medium text-foreground leading-snug">
                           {report.title}
                         </p>
@@ -226,7 +311,10 @@ export function Footer() {
                   </div>
 
                   <p className="mb-4 text-xs text-muted-foreground leading-relaxed">
-                    Your AI-generated report is saved in your library. Want a copy sent directly to your inbox?
+                    {t(
+                      "Your AI-generated report is saved in your library. Want a copy sent directly to your inbox?",
+                      "تم حفظ تقريرك الذي أنشأه الذكاء الاصطناعي في مكتبتك. هل تريد نسخة تُرسل مباشرة إلى بريدك؟",
+                    )}
                   </p>
 
                   {/* Actions */}
@@ -237,22 +325,22 @@ export function Footer() {
                       className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
                     >
                       <Mail className="h-3.5 w-3.5 shrink-0" />
-                      {reportSending ? "Sending…" : "Email me this report"}
+                      {reportSending ? t("Sending…", "جارٍ الإرسال…") : t("Email me this report", "أرسل هذا التقرير إلى بريدي")}
                     </button>
                     <Link
                       href={`/reports/${report.publicId}`}
                       onClick={() => dismiss(report.id)}
                       className="flex items-center justify-center rounded-lg border border-border/60 px-4 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
-                      View
+                      {t("View", "عرض")}
                     </Link>
                   </div>
 
                   <p className="mt-3 text-[10px] text-muted-foreground/40">
-                    Generated {new Date(report.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })}
+                    {t("Generated", "تم الإنشاء")} {new Date(report.createdAt).toLocaleDateString(locale === "ar" ? "ar-AE-u-nu-latn" : "en-US", { month: "long", day: "numeric" })}
                     {" · "}
-                    <Link href="/account/reports" className="underline underline-offset-2 hover:text-muted-foreground/60">
-                      All reports
+                    <Link href={toHref("/account/reports")} locale={false} className="underline underline-offset-2 hover:text-muted-foreground/60">
+                      {t("All reports", "كل التقارير")}
                     </Link>
                   </p>
                 </div>
@@ -264,15 +352,16 @@ export function Footer() {
                       <Mail className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">Report on its way</p>
-                      <p className="text-xs text-muted-foreground">Check your inbox shortly.</p>
+                      <p className="text-sm font-medium text-foreground">{t("Report on its way", "التقرير في الطريق")}</p>
+                      <p className="text-xs text-muted-foreground">{t("Check your inbox shortly.", "تحقق من بريدك بعد قليل.")}</p>
                     </div>
                   </div>
                   <Link
-                    href="/account/reports"
+                    href={toHref("/account/reports")}
+                    locale={false}
                     className="text-xs text-muted-foreground/50 underline underline-offset-2 hover:text-muted-foreground"
                   >
-                    View all reports →
+                    {t("View all reports →", "عرض كل التقارير ←")}
                   </Link>
                 </div>
               ) : (
@@ -284,7 +373,7 @@ export function Footer() {
                       <BookOpen className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">Latest Report</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">{t("Latest Report", "أحدث تقرير")}</p>
                       <p className="mt-0.5 text-[10px] text-muted-foreground/50">{LATEST_LIBRARY_REPORT.date} · {LATEST_LIBRARY_REPORT.category}</p>
                     </div>
                   </div>
@@ -298,18 +387,19 @@ export function Footer() {
 
                   {/* Read button */}
                   <Link
-                    href={LATEST_LIBRARY_REPORT.href}
+                    href={toHref(LATEST_LIBRARY_REPORT.href)}
+                    locale={false}
                     className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-border/60 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-border hover:bg-secondary/60"
                   >
                     <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                    Open &amp; read report
+                    {t("Open & read report", "افتح التقرير واقرأه")}
                   </Link>
 
                   {/* Email form */}
                   {libraryEmailSent ? (
                     <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
                       <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                      <p className="text-xs text-emerald-400">Report sent — check your inbox.</p>
+                      <p className="text-xs text-emerald-400">{t("Report sent — check your inbox.", "تم إرسال التقرير — تحقق من بريدك.")}</p>
                     </div>
                   ) : (
                     <form onSubmit={handleLibraryEmail} className="flex gap-2">
@@ -317,7 +407,7 @@ export function Footer() {
                         type="email"
                         value={libraryEmail}
                         onChange={(e) => setLibraryEmail(e.target.value)}
-                        placeholder="you@company.com"
+                        placeholder={t("you@company.com", "you@company.com")}
                         required
                         className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
@@ -327,7 +417,7 @@ export function Footer() {
                         className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
                       >
                         <Mail className="h-3 w-3 shrink-0" />
-                        {libraryEmailSending ? "…" : "Email me"}
+                        {libraryEmailSending ? "…" : t("Email me", "أرسل لي")}
                       </button>
                     </form>
                   )}
@@ -342,7 +432,7 @@ export function Footer() {
       <div className="border-b border-border/30">
         <div className="container mx-auto px-6 py-5">
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-            {trustBadges.map(({ icon: Icon, label, sub }) => (
+            {localizedTrustBadges.map(({ icon: Icon, label, sub }) => (
               <div key={label} className="flex items-center gap-2.5 text-muted-foreground/60">
                 <Icon className="h-3.5 w-3.5 shrink-0 text-primary/60" />
                 <div>
@@ -362,7 +452,7 @@ export function Footer() {
 
           {/* Brand column */}
           <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-            <Link href="/" className="mb-5 flex items-center gap-2">
+            <Link href={toHref("/")} locale={false} className="mb-5 flex items-center gap-2">
               <div className="flex gap-0.5" aria-hidden="true">
                 <div className="h-3 w-3 rounded-sm bg-foreground" />
                 <div className="h-3 w-3 rounded-sm bg-foreground/50" />
@@ -371,13 +461,16 @@ export function Footer() {
               <span className="text-base font-medium tracking-tight text-foreground">entrestate</span>
             </Link>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              The decision infrastructure for UAE real estate — market data, project intelligence, and investor workflows in one place.
+              {t(
+                "The decision infrastructure for UAE real estate — market data, project intelligence, and investor workflows in one place.",
+                "البنية التحتية لاتخاذ القرار في عقارات الإمارات — بيانات السوق، وذكاء المشاريع، وسير عمل المستثمر في مكان واحد.",
+              )}
             </p>
             <div className="mt-5 flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_2px_rgba(52,211,153,0.4)]" />
-              <span className="text-[11px] text-muted-foreground/60">All systems operational</span>
-              <Link href="/status" className="ml-1 text-[11px] text-muted-foreground/40 underline underline-offset-2 hover:text-muted-foreground">
-                Status
+              <span className="text-[11px] text-muted-foreground/60">{t("All systems operational", "جميع الأنظمة تعمل")}</span>
+              <Link href={toHref("/status")} locale={false} className="ml-1 text-[11px] text-muted-foreground/40 underline underline-offset-2 hover:text-muted-foreground">
+                {t("Status", "الحالة")}
               </Link>
             </div>
 
@@ -415,12 +508,12 @@ export function Footer() {
             {/* Region badge */}
             <div className="mt-5 inline-flex items-center gap-1.5 rounded-md border border-border/50 bg-card/40 px-2.5 py-1.5">
               <MapPin className="h-3 w-3 text-muted-foreground/50" />
-              <span className="text-[11px] text-muted-foreground/60">Dubai, United Arab Emirates</span>
+              <span className="text-[11px] text-muted-foreground/60">{t("Dubai, United Arab Emirates", "دبي، الإمارات العربية المتحدة")}</span>
             </div>
           </div>
 
           {/* Link columns */}
-          {columns.map((col) => (
+          {localizedColumns.map((col) => (
             <div key={col.heading}>
               <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/50">
                 {col.heading}
@@ -429,7 +522,8 @@ export function Footer() {
                 {col.links.map((link) => (
                   <li key={link.label}>
                     <Link
-                      href={link.href}
+                      href={toHref(link.href)}
+                      locale={false}
                       className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {link.label}
@@ -448,23 +542,24 @@ export function Footer() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
               <p className="text-[11px] text-muted-foreground/50">
-                &copy; {new Date().getFullYear()} Entrestate Technologies. All rights reserved.
+                &copy; {new Date().getFullYear()} {t("Entrestate Technologies. All rights reserved.", "Entrestate Technologies. جميع الحقوق محفوظة.")}
               </p>
               <span className="hidden text-muted-foreground/20 sm:inline">·</span>
               <p className="text-[11px] text-muted-foreground/40">
-                Registered in the United Arab Emirates
+                {t("Registered in the United Arab Emirates", "مسجلة في دولة الإمارات العربية المتحدة")}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
               {[
-                { label: "Privacy", href: "/privacy" },
-                { label: "Terms", href: "/terms" },
-                { label: "Cookies", href: "/cookies" },
-                { label: "Sitemap", href: "/sitemap.xml" },
+                { label: t("Privacy", "الخصوصية"), href: "/privacy" },
+                { label: t("Terms", "الشروط"), href: "/terms" },
+                { label: t("Cookies", "الكوكيز"), href: "/cookies" },
+                { label: t("Sitemap", "خريطة الموقع"), href: "/sitemap.xml" },
               ].map((link) => (
                 <Link
                   key={link.label}
-                  href={link.href}
+                  href={toHref(link.href)}
+                  locale={false}
                   className="text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground"
                 >
                   {link.label}

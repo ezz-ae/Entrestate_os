@@ -4,34 +4,39 @@ import type React from "react"
 import { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useLocale, useTranslations } from "next-intl"
 import { Menu, X } from "lucide-react"
 import { AccountMenu } from "@/components/account-menu"
 import { LlmSidebar } from "@/components/llm-search/sidebar"
+import { LocaleSwitcher } from "@/components/locale-switcher"
 import { useCopilot } from "@/components/copilot-provider"
 import { authClient } from "@/lib/auth/client"
 import { MessageSquare } from "lucide-react"
 import { ReportNudge } from "@/components/report-nudge"
-
-const navLinks = [
-  { label: "Chat", href: "/chat" },
-  { label: "Overview", href: "/overview" },
-  { label: "Areas", href: "/areas" },
-  { label: "Developers", href: "/developers" },
-  { label: "Properties", href: "/properties" },
-  { label: "Research", href: "/reports/library" },
-]
+import { prefixLocalePath, stripLocalePrefix, type AppLocale } from "@/i18n/locale"
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [hasOpenChatIntent, setHasOpenChatIntent] = useState(false)
   const pathname = usePathname()
-  const isChatPage = pathname.startsWith("/chat")
+  const locale = useLocale() as AppLocale
+  const t = useTranslations("nav")
+  const normalizedPathname = stripLocalePrefix(pathname)
+  const navLinks = [
+    { label: t("chat"), href: "/chat" },
+    { label: t("overview"), href: "/overview" },
+    { label: t("areas"), href: "/areas" },
+    { label: t("developers"), href: "/developers" },
+    { label: t("properties"), href: "/properties" },
+    { label: t("research"), href: "/reports/library" },
+  ]
+  const isChatPage = normalizedPathname.startsWith("/chat")
   const router = useRouter()
   const { toggleSidebar, openSidebar, isSidebarOpen } = useCopilot()
   const { data: session } = authClient.useSession()
   const isAuthenticated = Boolean(session?.user)
   const shouldRenderSidebar = !isChatPage && (isAuthenticated || isSidebarOpen || hasOpenChatIntent)
-  const logoHref = isChatPage || pathname === "/" ? "/?view=home" : "/"
+  const logoHref = isChatPage || normalizedPathname === "/" ? "/?view=home" : "/"
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -52,13 +57,13 @@ export function Navbar() {
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith("/#")) {
       const hash = href.substring(1)
-      if (pathname === "/") {
+      if (normalizedPathname === "/") {
         e.preventDefault()
         const el = document.querySelector(hash)
         if (el) el.scrollIntoView({ behavior: "smooth" })
       } else {
         e.preventDefault()
-        router.push("/")
+        router.push(prefixLocalePath("/", locale))
         setTimeout(() => {
           const el = document.querySelector(hash)
           if (el) el.scrollIntoView({ behavior: "smooth" })
@@ -81,7 +86,7 @@ export function Navbar() {
       return
     }
 
-    router.push("/chat")
+    router.push(prefixLocalePath("/chat", locale))
   }
 
   return (
@@ -90,8 +95,8 @@ export function Navbar() {
         className="app-header fixed top-0 left-0 right-0 z-50 animate-navbar-slide backdrop-blur-md bg-background/90 border-b border-border/50"
       >
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          <nav className="flex items-center justify-between" aria-label="Main navigation">
-            <Link href={logoHref} className="flex items-center gap-2.5">
+          <nav className="flex items-center justify-between" aria-label={t("mainNavigation")}>
+            <Link href={prefixLocalePath(logoHref, locale)} locale={false} className="flex items-center gap-2.5">
               <div className="flex gap-0.5" aria-hidden="true">
                 <div className="w-3 h-3 rounded-sm bg-foreground" />
                 <div className="w-3 h-3 rounded-sm bg-foreground/60" />
@@ -102,11 +107,12 @@ export function Navbar() {
 
             <div className="hidden lg:flex items-center gap-5 xl:gap-8">
               {navLinks.map((link) => {
-                const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
+                const isActive = link.href === "/" ? normalizedPathname === "/" : normalizedPathname.startsWith(link.href)
                 return (
                   <Link
                     key={link.label}
-                    href={link.href}
+                    href={prefixLocalePath(link.href, locale)}
+                    locale={false}
                     onClick={(e) => handleNavClick(e, link.href)}
                     className={`nav-link-underline text-sm transition-colors ${
                       isActive
@@ -121,11 +127,14 @@ export function Navbar() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              <div className="hidden md:block">
+                <LocaleSwitcher />
+              </div>
               {!isChatPage && !isAuthenticated ? (
                 <button
                   onClick={handleCopilotClick}
                   className="hidden md:flex items-center rounded-full border border-border bg-secondary p-2 text-foreground hover:bg-secondary/80 transition-colors"
-                  aria-label="Open assistant"
+                  aria-label={t("openAssistant")}
                 >
                   <MessageSquare className="h-4 w-4" />
                 </button>
@@ -135,7 +144,7 @@ export function Navbar() {
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="lg:hidden relative z-50 p-2 text-foreground"
-                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-label={isMobileMenuOpen ? t("closeMenu") : t("openMenu")}
               >
                 <div className="relative w-5 h-5">
                   <Menu
@@ -171,7 +180,8 @@ export function Navbar() {
             {navLinks.map((link, i) => (
               <Link
                 key={link.label}
-                href={link.href}
+                href={prefixLocalePath(link.href, locale)}
+                locale={false}
                 onClick={(e) => handleNavClick(e, link.href)}
                 className={`text-3xl font-medium text-foreground hover:text-accent transition-all duration-500 py-2 ${
                   isMobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
@@ -188,12 +198,14 @@ export function Navbar() {
             }`}
             style={{ transitionDelay: isMobileMenuOpen ? "400ms" : "0ms" }}
           >
+            <LocaleSwitcher />
             <Link
-              href="/account"
+              href={prefixLocalePath("/account", locale)}
+              locale={false}
               onClick={() => setIsMobileMenuOpen(false)}
               className="text-base text-muted-foreground hover:text-foreground transition-colors"
             >
-              Account
+              {t("account")}
             </Link>
           </div>
         </div>

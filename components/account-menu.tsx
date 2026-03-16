@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useLocale } from "next-intl"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, Shield, CreditCard, Users, Boxes, LogOut } from "lucide-react"
 import { authClient } from "@/lib/auth/client"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 const FALLBACK_USER = {
   name: "Entrestate Member",
@@ -21,10 +23,35 @@ const FALLBACK_USER = {
   avatar: "/avatars/avatar-01.svg",
 }
 
+const COPY = {
+  en: {
+    account: "Account",
+    signIn: "Sign in",
+    overview: "Account overview",
+    team: "Team access",
+    billing: "Billing",
+    security: "Security",
+    apps: "Connected apps",
+    signOut: "Sign out",
+  },
+  ar: {
+    account: "الحساب",
+    signIn: "تسجيل الدخول",
+    overview: "نظرة عامة على الحساب",
+    team: "وصول الفريق",
+    billing: "الفوترة",
+    security: "الأمان",
+    apps: "التطبيقات المرتبطة",
+    signOut: "تسجيل الخروج",
+  },
+} as const
+
 export function AccountMenu() {
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
+  const locale = useLocale() as AppLocale
   const { data: session, isPending } = authClient.useSession()
+  const copy = COPY[locale] ?? COPY.en
 
   useEffect(() => {
     setMounted(true)
@@ -32,20 +59,21 @@ export function AccountMenu() {
 
   if (!mounted || isPending) {
     return (
-      <div className="flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 text-sm text-foreground opacity-50">
-        <div className="h-7 w-7 rounded-full bg-muted animate-pulse" />
-        <span className="hidden sm:inline">Account</span>
-      </div>
-    )
+        <div className="flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1.5 text-sm text-foreground opacity-50">
+          <div className="h-7 w-7 rounded-full bg-muted animate-pulse" />
+        <span className="hidden sm:inline">{copy.account}</span>
+        </div>
+      )
   }
 
   if (!session?.user) {
     return (
       <Link
-        href="/login"
+        href={prefixLocalePath("/login", locale)}
+        locale={false}
         className="flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-1.5 text-sm text-foreground hover:bg-secondary/80 transition-colors"
       >
-        Sign in
+        {copy.signIn}
       </Link>
     )
   }
@@ -62,7 +90,7 @@ export function AccountMenu() {
 
   const handleSignOut = async () => {
     await authClient.signOut()
-    router.push("/login")
+    router.push(prefixLocalePath("/login", locale))
     router.refresh()
   }
 
@@ -73,7 +101,7 @@ export function AccountMenu() {
           <AvatarImage src={avatar} alt={displayName} />
           <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
         </Avatar>
-        <span className="hidden sm:inline">Account</span>
+        <span className="hidden sm:inline">{copy.account}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="space-y-1">
@@ -82,33 +110,33 @@ export function AccountMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/account" className="flex items-center gap-2">
+          <Link href={prefixLocalePath("/account", locale)} locale={false} className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            Account overview
+            {copy.overview}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/account#team" className="flex items-center gap-2">
+          <Link href={prefixLocalePath("/account#team", locale)} locale={false} className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Team access
+            {copy.team}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/account#billing" className="flex items-center gap-2">
+          <Link href={prefixLocalePath("/account#billing", locale)} locale={false} className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
-            Billing
+            {copy.billing}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/account#security" className="flex items-center gap-2">
+          <Link href={prefixLocalePath("/account#security", locale)} locale={false} className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
-            Security
+            {copy.security}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/account#apps" className="flex items-center gap-2">
+          <Link href={prefixLocalePath("/account#apps", locale)} locale={false} className="flex items-center gap-2">
             <Boxes className="h-4 w-4" />
-            Connected apps
+            {copy.apps}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -120,7 +148,7 @@ export function AccountMenu() {
           className="flex items-center gap-2"
         >
           <LogOut className="h-4 w-4" />
-          Sign out
+          {copy.signOut}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

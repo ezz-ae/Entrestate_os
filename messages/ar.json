@@ -1,0 +1,20 @@
+{
+  "nav": {
+    "chat": "الدردشة",
+    "overview": "نظرة عامة",
+    "areas": "المناطق",
+    "developers": "المطورون",
+    "properties": "العقارات",
+    "research": "الأبحاث",
+    "account": "الحساب",
+    "openAssistant": "فتح المساعد",
+    "openMenu": "فتح القائمة",
+    "closeMenu": "إغلاق القائمة",
+    "mainNavigation": "التنقل الرئيسي"
+  },
+  "locale": {
+    "label": "اللغة",
+    "en": "EN",
+    "ar": "AR"
+  }
+}

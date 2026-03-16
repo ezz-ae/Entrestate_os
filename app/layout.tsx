@@ -1,8 +1,11 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
+import { NextIntlClientProvider } from "next-intl"
 import { ThemeProvider } from "@/components/theme-provider"
 import { CopilotProvider } from "@/components/copilot-provider"
 import { SEO, absoluteUrl, getSiteUrl } from "@/lib/seo"
+import { getLocaleDirection } from "@/i18n/locale"
+import { getLocaleMessages, getRequestLocale } from "@/i18n/request"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -76,13 +79,16 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = await getRequestLocale()
+  const messages = await getLocaleMessages(locale)
+
   return (
-    <html lang="en" suppressHydrationWarning className="bg-background">
+    <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className="bg-background">
       <body className="font-sans antialiased">
         <a
           href="#main-content"
@@ -90,11 +96,13 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <CopilotProvider>
-            {children}
-          </CopilotProvider>
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+            <CopilotProvider>
+              {children}
+            </CopilotProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   )
