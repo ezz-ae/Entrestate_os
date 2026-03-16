@@ -178,9 +178,9 @@ export function Footer() {
     label: t(
       badge.label,
       {
-        "DLD Data Sourced": "بيانات من DLD",
+        "DLD Data Sourced": "بيانات موثقة من DLD",
         "SOC 2 Compliant": "متوافق مع SOC 2",
-        "Verified Listings": "قوائم موثقة",
+        "Verified Listings": "مشاريع متحقق منها",
         "UAE Market Focus": "تركيز على سوق الإمارات",
       }[badge.label] ?? badge.label,
     ),
@@ -189,7 +189,7 @@ export function Footer() {
       {
         "Dubai Land Department": "دائرة الأراضي والأملاك",
         "Data security standards": "معايير أمن البيانات",
-        "Cross-referenced records": "سجلات تمت مطابقتها",
+        "Cross-referenced records": "سجلات مطابقة",
         "Dubai · Abu Dhabi · Sharjah": "دبي · أبوظبي · الشارقة",
       }[badge.sub] ?? badge.sub,
     ),

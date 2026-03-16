@@ -1,3 +1,5 @@
+import { type AppLocale } from "@/i18n/locale"
+
 export type PlatformDocsSection = {
   slug: string
   title: string
@@ -5,17 +7,7 @@ export type PlatformDocsSection = {
   highlights: string[]
 }
 
-export type MindMapNode = {
-  title: string
-  children?: MindMapNode[]
-}
-
-export type MindMapBranch = {
-  title: string
-  nodes: MindMapNode[]
-}
-
-export const platformDocsSections: PlatformDocsSection[] = [
+export const platformDocsSectionsEn: PlatformDocsSection[] = [
   {
     slug: "documentation",
     title: "Platform Architecture",
@@ -89,6 +81,97 @@ export const platformDocsSections: PlatformDocsSection[] = [
     ],
   },
 ]
+
+export const platformDocsSectionsAr: PlatformDocsSection[] = [
+  {
+    slug: "documentation",
+    title: "بنية المنصة",
+    summary:
+      "المخطط التقني الكامل: خط معالجة البيانات من 10 مراحل، طبقات الأدلة الخمس، مسار القرار المكون من 4 مراحل، ونموذج التشغيل الموحد.",
+    highlights: [
+      "خط معالجة متسلسل من 10 مراحل: من استلام البيانات الخام إلى تجميع الأدلة",
+      "طبقات الأدلة الخمس: هرمية الحقيقة المعرفية (من L1 المعتمد إلى L5 الخام)",
+      "مسار القرار من 4 مراحل: النية، الأدلة، الحكم، التنفيذ",
+      "محرك نتيجة الاستثمار ومنطق الوزن 65/35",
+    ],
+  },
+  {
+    slug: "investors-relations",
+    title: "علاقات المستثمرين",
+    summary:
+      "أطروحة الاستثمار، فرص السوق، الخندق التنافسي، مقاييس الجذب، والوثائق الجاهزة للفحص للشركاء الاستراتيجيين ورؤوس الأموال المؤسسية.",
+    highlights: [
+      "بنية تحتية للقرار تحل محل سوق بوابات العقارات الذي تبلغ قيمته 2 مليار دولار",
+      "2,813 مشروعاً نشطاً، 481 مطوراً معتمداً، 136 إشارة شراء (BUY)",
+      "بنية قائمة على الأدلة تخلق خندقاً من الثقة القابلة للدفاع عنها",
+      "نموذج ربحي قائم على الفئات: مجاني، احترافي، مؤسسي",
+    ],
+  },
+  {
+    slug: "partners-apis",
+    title: "الشركاء وواجهات البرمجة",
+    summary:
+      "بنية الشراكة، واجهات التكامل، قدرات API، ومسارات البناء المشترك لمزودي البيانات والوسطاء وشركاء التوزيع.",
+    highlights: [
+      "تكامل شركاء البيانات مع تتبع أصل المصدر",
+      "مكاتب قرار الوسطاء وواجهات سير عمل الاستشارات",
+      "حزمة تطوير البرمجيات (Embed SDK): وحدات ذكاء بيضاء",
+      "محرك العزو وآليات النمو الفيروسي",
+    ],
+  },
+  {
+    slug: "data-information",
+    title: "نموذج البيانات والأدلة",
+    summary:
+      "الأساس المعرفي: كيف تتحول إشارات السوق الخام إلى حقائق مؤسسية من خلال طبقات الأدلة الخمس، سياسات الاستبعاد، وحوكمة البيانات المعتمدة.",
+    highlights: [
+      "هرمية الحقيقة L1-L5 مع تسجيل مستويات الثقة",
+      "تكامل مستشعرات DLD و RERA و Property Finder",
+      "سياسة الاستبعاد: البيع الاضطراري، التحويلات الداخلية، التكرار",
+      "استعادة الحقيقة الثابتة واستخراج الحقول المكثف",
+    ],
+  },
+  {
+    slug: "industry",
+    title: "القطاع وذكاء السوق",
+    summary:
+      "هيكل سوق العقارات في الإمارات، تحليل المشهد التنافسي، التحليلات التوقعية، تقييم مرونة الضغط، والذكاء الاصطناعي المسؤول.",
+    highlights: [
+      "71% من مخزون الإمارات مصنف كمضاربة، فقط 99 خياراً محافظاً",
+      "مناطق النمو: متوسط عائد 12.3% مقابل المناطق الممتازة: 7.1%",
+      "تحديثات الأسعار المرتبطة بالتقلبات (تعتمد على الأحداث، وليس الوقت)",
+      "تسلسل أدلة شفاف وإفصاح كامل عن مستويات الثقة",
+    ],
+  },
+  {
+    slug: "careers-intern",
+    title: "الوظائف والتدريب",
+    summary:
+      "انضم إلى الفريق الذي يبني نظام تشغيل العقارات في الإمارات. أدوار في الهندسة، علوم البيانات، الشراكات، والعمليات في دبي.",
+    highlights: [
+      "هندسة المنصة والبنية التحتية للذكاء الاصطناعي",
+      "ذكاء السوق وعمليات خط معالجة البيانات",
+      "تطوير الشراكات والحلول المؤسسية",
+      "مسارات تدريبية مع توجيه وملكية حقيقية للمشاريع",
+    ],
+  },
+]
+
+export function getPlatformDocsSections(locale: AppLocale) {
+  return locale === "ar" ? platformDocsSectionsAr : platformDocsSectionsEn
+}
+
+export type MindMapNode = {
+  title: string
+  children?: MindMapNode[]
+}
+
+export type MindMapBranch = {
+  title: string
+  nodes: MindMapNode[]
+}
+
+export const platformDocsSections: PlatformDocsSection[] = platformDocsSectionsEn
 
 export const mindMapBranches = [
   {

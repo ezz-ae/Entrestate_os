@@ -106,20 +106,20 @@ const SECTION_COPY: Record<
 }
 
 const SECTION_COPY_AR: Record<(typeof REQUIRED_SECTIONS)[number], { title: string; subtitle: string }> = {
-  "market-pulse": { title: "نبض السوق", subtitle: "لقطة شاملة للمشاريع النشطة ومتوسط السعر ومتوسط العائد وفرص BUY." },
-  "timing-signals": { title: "إشارات التوقيت", subtitle: "توزيع إشارات STRONG_BUY / BUY / HOLD / WAIT / AVOID مع سياق السعر والعائد." },
-  "stress-grades": { title: "درجات الضغط", subtitle: "توزيع مرونة المحفظة من الدرجة A حتى E." },
-  "yield-labels": { title: "تصنيفات العائد", subtitle: "توزيع شرائح العائد مع سياق التسعير." },
-  "evidence-levels": { title: "مستويات الأدلة", subtitle: "مزيج ثقة البيانات وتغطية الأدلة المتحققة." },
-  "decision-labels": { title: "تصنيفات القرار", subtitle: "توزيع من STRONG_BUY إلى AVOID عبر المخزون المقيم." },
-  affordability: { title: "طبقات القدرة الشرائية", subtitle: "مزيج المشاريع حسب الشريحة السعرية وملف العائد." },
-  "outcome-intents": { title: "نيات النتائج", subtitle: "الأهداف الاستثمارية التي يخدمها المخزون الحالي بشكل أفضل." },
-  "top-projects": { title: "أفضل المشاريع", subtitle: "جدول بالمشاريع الأعلى ترتيباً مع السعر والعائد والضغط والتوقيت والنتيجة." },
-  "area-intelligence": { title: "المناطق", subtitle: "مقارنة بين المناطق من حيث المشاريع والتسعير والكفاءة وضغط المعروض." },
-  "developer-reliability": { title: "موثوقية المطورين", subtitle: "ثبات المطورين وعدد المشاريع الآمنة والسجل التنفيذي." },
-  "golden-visa": { title: "الإقامة الذهبية", subtitle: "عدد المشاريع المؤهلة وملف الجودة للمشترين فوق 2 مليون درهم." },
-  "trust-bar": { title: "شريط الثقة", subtitle: "هرمية البيانات ومحركات التقييم وتوزيع الثقة عبر مجموعة البيانات." },
-  "dld-market": { title: "سوق DLD", subtitle: "لقطات من المعاملات وأبرز تدفقات الصفقات من تغذية دائرة الأراضي." },
+  "market-pulse": { title: "نبض السوق", subtitle: "نظرة شاملة للمشاريع النشطة، متوسط الأسعار، متوسط العوائد، وفرص الشراء المتاحة." },
+  "timing-signals": { title: "إشارات التوقيت", subtitle: "توزيع إشارات الشراء والانتظار (STRONG_BUY / BUY / HOLD / WAIT / AVOID) مع سياق الأسعار والعوائد." },
+  "stress-grades": { title: "تصنيفات الضغط", subtitle: "تحليل مرونة المحفظة العقارية وتوزيعها من الدرجة A حتى E." },
+  "yield-labels": { title: "شرائح العائد", subtitle: "توزيع فئات العائد الاستثماري بناءً على سياق التسعير." },
+  "evidence-levels": { title: "مستويات الموثوقية", subtitle: "مؤشر دقة البيانات وتغطية الأدلة الميدانية المتحققة." },
+  "decision-labels": { title: "مؤشرات القرار", subtitle: "توزيع تقييمات الوحدات من الشراء القوي إلى التجنب عبر كامل المخزون." },
+  affordability: { title: "فئات الملاءة المالية", subtitle: "تصنيف المشاريع حسب القدرة الشرائية وملف العائد الاستثماري." },
+  "outcome-intents": { title: "الأهداف الاستثمارية", subtitle: "تحديد الأهداف الاستثمارية التي يخدمها المخزون الحالي بأفضل شكل." },
+  "top-projects": { title: "أبرز المشاريع", subtitle: "ترتيب المشاريع الأعلى أداءً بناءً على السعر، العائد، مؤشر الضغط، والتوقيت." },
+  "area-intelligence": { title: "تحليل المناطق", subtitle: "مقارنة دقيقة بين المناطق من حيث عمق المشاريع، التنافسية السعرية، وضغط المعروض." },
+  "developer-reliability": { title: "موثوقية المطورين", subtitle: "تحليل سجل الإنجاز، معدلات التسليم، وعدد المشاريع المصنفة كفرص آمنة." },
+  "golden-visa": { title: "تأشيرة المستثمر", subtitle: "رصد المشاريع المؤهلة للحصول على الإقامة الذهبية (فوق 2 مليون درهم)." },
+  "trust-bar": { title: "معيار الثقة", subtitle: "هيكلية البيانات ومصادرها، وتوزيع مستويات اليقين عبر منصة التحليل." },
+  "dld-market": { title: "بيانات دائرة الأراضي", subtitle: "رصد فوري لأحدث صفقات البيع والتدفقات المالية من سجلات دائرة الأراضي والأملاك." },
 }
 
 function sectionLayoutClass(section: (typeof REQUIRED_SECTIONS)[number]) {
@@ -166,11 +166,11 @@ export default async function TopDataPage() {
       <Navbar />
       <div className="mx-auto max-w-[1400px] px-6 pb-20 pt-28 md:pt-36">
         <header className="mb-8">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "بيانات السوق" : "Market Data"}</p>
-          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{isArabic ? "لوحة السوق الإماراتي" : "UAE Market Intelligence"}</h1>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "تحليلات السوق" : "Market Data"}</p>
+          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{isArabic ? "رصد السوق العقاري الإماراتي" : "UAE Market Intelligence"}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isArabic
-              ? "لوحة تجمع التسعير والتوقيت والضغط وموثوقية المطورين وإشارات الفرص في مكان واحد."
+              ? "منصة تحليلية شاملة تجمع بيانات التسعير، توقيت السوق، مؤشرات الضغط، وموثوقية المطورين لدعم القرار الاستثماري."
               : "A guided intelligence board for pricing, timing, stress, developer quality, and opportunity signals."}
           </p>
         </header>

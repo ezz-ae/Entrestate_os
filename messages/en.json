@@ -22,8 +22,8 @@
   },
   "system": {
     "loadingTitle": "Loading experience",
-    "loadingBody": "We’re preparing the latest page state and market context.",
-    "loadingShort": "Loading…",
+    "loadingBody": "We\u2019re preparing the latest page state and market context.",
+    "loadingShort": "Loading\u2026",
     "errorTitle": "Something went wrong",
     "errorBody": "This view failed to render. You can retry now or return to the homepage.",
     "retry": "Try again",
@@ -54,10 +54,10 @@
     "subscriptionActivated": "Subscription activated. Your new tier is syncing now."
   },
   "chat": {
-    "heroPlaceholder": "Describe your investment goal, budget, or a specific project to analyse…",
-    "composerPlaceholder": "Ask for project screening, price checks, area risk briefs, and full investor memos.",
-    "liveAnalysis": "Analysing live market data",
-    "noMatchingCommands": "No matching commands.",
+    "heroPlaceholder": "What's on your mind? Tell me about your investment goals...",
+    "composerPlaceholder": "Ask me anything\u2014try screening projects, checking prices, or generating a memo.",
+    "liveAnalysis": "Analyzing live market data...",
+    "noMatchingCommands": "I couldn't find a matching command. Try 'screen' or 'project'.",
     "compareTitle": "Project Comparison",
     "compareEmpty": "Ask to compare projects or areas to populate this panel.",
     "slashExamples": {
@@ -67,14 +67,14 @@
   },
   "sidebar": {
     "decisionIntelligence": "Decision Intelligence",
-    "decisionSubtitle": "Ask about any area, project, or developer in the UAE market.",
+    "decisionSubtitle": "Ask me about any area, project, or developer in the UAE.",
     "quickReplies": {
-      "more": "Tell me more",
-      "risks": "What are the risks?",
-      "summarize": "Summarize",
-      "report": "Generate a report"
+      "more": "Tell me more about this",
+      "report": "Generate a detailed report",
+      "risks": "What are the risks involved?",
+      "summarize": "Can you summarize this?"
     },
-    "placeholder": "Ask anything...",
+    "placeholder": "How can I help you?",
     "view": "View"
   }
 }

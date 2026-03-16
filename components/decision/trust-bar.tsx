@@ -9,11 +9,11 @@ type TrustBarProps = {
   updatedAt?: string | null
 }
 
-function formatUpdatedAt(value: string | null | undefined) {
+function formatUpdatedAt(value: string | null | undefined, locale: string) {
   if (!value) return "—"
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return "—"
-  return d.toLocaleString(undefined, { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+  return d.toLocaleString(locale === "ar" ? "ar-AE" : "en-US", { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
 }
 
 export function TrustBar({ verifiedRows, highConfidencePct, updatedAt }: TrustBarProps) {
@@ -43,7 +43,7 @@ export function TrustBar({ verifiedRows, highConfidencePct, updatedAt }: TrustBa
       <div className="h-4 w-px bg-border/60" />
       <div className="flex items-center gap-2 px-4 py-2.5 text-muted-foreground">
         <Clock className="h-3.5 w-3.5" />
-        <span>{isArabic ? "تم التحديث" : "Updated"} <span className="font-medium text-foreground">{formatUpdatedAt(updatedAt)}</span></span>
+        <span>{isArabic ? "تم التحديث" : "Updated"} <span className="font-medium text-foreground">{formatUpdatedAt(updatedAt, locale)}</span></span>
       </div>
     </div>
   )

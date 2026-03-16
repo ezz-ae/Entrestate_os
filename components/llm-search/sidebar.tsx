@@ -266,16 +266,16 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const { data: session } = authClient.useSession()
   const starterCards = locale === "ar"
     ? [
-        { label: "قارن المناطق", prompt: "قارن أفضل المناطق أداءً في دبي من حيث العائد ونمو الأسعار. ما المناطق التي تقدم أفضل فرصة استثمارية الآن؟" },
-        { label: "افحص الصفقات", prompt: "افحص أفضل صفقات البيع على الخارطة المتاحة الآن. أبحث عن مشاريع بمطور قوي وعائد جيد وخطط سداد مناسبة." },
-        { label: "نظرة على السوق", prompt: "اعطني نظرة حالية على سوق عقارات دبي — الاتجاهات الرئيسية وزخم الأسعار وأين تتحرك السيولة الذكية." },
-        { label: "خارطة الاستثمار", prompt: "ساعدني في بناء خارطة استثمار لعقارات دبي. أريد فهم أفضل استراتيجية دخول والمناطق المستهدفة والعوائد المتوقعة." },
+        { label: "ساعدني في المقارنة", prompt: "هل يمكنك مساعدتي في المقارنة بين أفضل المناطق أداءً في دبي من حيث العائد ونمو الأسعار؟ أريد معرفة أين توجد أفضل الفرص حالياً." },
+        { label: "ابحث لي عن صفقات", prompt: "أبحث عن أفضل صفقات البيع على الخارطة المتاحة حالياً. هل يمكنك العثور على مشاريع لمطورين موثوقين بعوائد جيدة وخطط سداد مرنة؟" },
+        { label: "ماذا يحدث في السوق؟", prompt: "أخبرني بما يحدث في سوق عقارات دبي حالياً — ما هي الاتجاهات الرئيسية وأين تتوجه الاستثمارات الذكية؟" },
+        { label: "خطط لاستثماري", prompt: "هل يمكنك مساعدتي في رسم خارطة طريق لاستثماري العقاري في دبي؟ أريد فهم أفضل استراتيجيات الدخول والعوائد المتوقعة." },
       ]
     : [
-        { label: "Compare areas", prompt: "Compare the top performing areas in Dubai by yield and price appreciation. Which areas offer the best investment potential right now?" },
-        { label: "Screen deals", prompt: "Screen the best off-plan deals available now. I'm looking for projects with strong developer track record, good yield potential, and favorable payment plans." },
-        { label: "Market overview", prompt: "Give me a current overview of the Dubai real estate market — key trends, pricing momentum, and where the smart money is moving." },
-        { label: "Investment roadmap", prompt: "Help me build an investment roadmap for Dubai real estate. I want to understand the best entry strategy, areas to target, and expected returns." },
+        { label: "Help me compare", prompt: "Can you help me compare the top performing areas in Dubai by yield and price growth? I'd like to know where the best opportunities are right now." },
+        { label: "Find me deals", prompt: "I'm looking for the best off-plan deals available now. Can you find projects from reliable developers with good yields and flexible payment plans?" },
+        { label: "What's happening in the market?", prompt: "Tell me what's happening in the Dubai real estate market right now — what are the key trends and where is the smart money going?" },
+        { label: "Plan my investment", prompt: "Can you help me build an investment roadmap for Dubai? I want to understand the best entry strategies and expected returns." },
       ]
 
   const user = session?.user

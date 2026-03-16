@@ -30,7 +30,7 @@ function tierLabel(value: Props["tier"], locale: AppLocale) {
 }
 
 function statusLabel(value: string | null, locale: AppLocale) {
-  if (!value) return locale === "ar" ? "غير واضحة" : "unknown"
+  if (!value) return locale === "ar" ? "غير معروفة" : "unknown"
   const normalized = value.replaceAll("_", " ").toLowerCase()
   if (locale !== "ar") return normalized
 
@@ -39,7 +39,7 @@ function statusLabel(value: string | null, locale: AppLocale) {
       return "نشطة"
     case "approval pending":
     case "approved":
-      return "قيد الاعتماد"
+      return "قيد المراجعة"
     case "suspended":
       return "معلّقة"
     case "cancelled":

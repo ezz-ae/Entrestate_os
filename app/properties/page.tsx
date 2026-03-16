@@ -85,36 +85,36 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
   }
 
   const copy = {
-    liveFeed: isArabic ? "تغذية المشاريع الحية" : "Live Project Feed",
+    liveFeed: isArabic ? "رصد مباشر للمشاريع" : "Live Project Feed",
     titleLead: isArabic ? "ذكاء" : "Project",
     titleAccent: isArabic ? "المشاريع" : "Intelligence",
     headerBody: isArabic
-      ? `${formatInteger(totalProjectsCount, locale)} مشروعاً نشطاً في الإمارات — مع تقييم لتوقيت السوق ومرونة الضغط وموثوقية البيانات.`
+      ? `${formatInteger(totalProjectsCount, locale)} مشروعاً نشطاً في الإمارات — مع تقييم دقيق لتوقيت السوق، مرونة الضغط، وموثوقية البيانات.`
       : `${formatInteger(totalProjectsCount, locale)} active UAE projects — scored for market timing, stress resilience, and verified data confidence.`,
     freshness: isArabic ? "تحديث البيانات" : "Data Freshness",
     inventoryDepth: isArabic ? "عمق المخزون" : "Inventory Depth",
-    filtered: isArabic ? "نتائج مفلترة" : "Filtered Results",
-    totalActive: isArabic ? "إجمالي النشط في الإمارات" : "Total UAE Active",
-    activeBuy: isArabic ? "إشارات BUY النشطة" : "Active BUY Signals",
+    filtered: isArabic ? "نتائج مخصصة" : "Filtered Results",
+    totalActive: isArabic ? "إجمالي المشاريع النشطة" : "Total UAE Active",
+    activeBuy: isArabic ? "فرص الشراء المتاحة" : "Active BUY Signals",
     density: isArabic ? "كثافة الفرص في الصفحة" : "Page Opportunity density",
-    marketPrice: isArabic ? "سعر السوق L1" : "Market Price L1",
+    marketPrice: isArabic ? "سعر السوق (L1)" : "Market Price L1",
     marketPriceSub: isArabic ? "متوسط معياري مشتق" : "Derived mean benchmark",
     strategicYield: isArabic ? "العائد الاستراتيجي" : "Strategic Yield",
     strategicYieldSub: isArabic ? "متوسط سنوي إجمالي" : "Annualized gross mean",
     signal: isArabic ? "الإشارة:" : "Signal:",
     risk: isArabic ? "المخاطر:" : "Risk:",
-    clearAll: isArabic ? "مسح الكل" : "Clear all",
-    signalChip: isArabic ? "الإشارة" : "Signal",
-    riskChip: isArabic ? "درجة المخاطر" : "Risk Grade",
+    clearAll: isArabic ? "مسح التفضيلات" : "Clear all",
+    signalChip: isArabic ? "إشارة السوق" : "Signal",
+    riskChip: isArabic ? "تصنيف المخاطر" : "Risk Grade",
     areaChip: isArabic ? "المنطقة" : "Area",
     developerChip: isArabic ? "المطور" : "Developer",
     pageSummary: isArabic
       ? `الصفحة ${formatInteger(currentPage, locale)} من ${formatInteger(totalPages || 1, locale)} · عرض ${formatInteger(projects.length, locale)} من ${formatInteger(totalProjectsCount, locale)} مشروعاً`
       : `Page ${formatInteger(currentPage, locale)} of ${formatInteger(totalPages || 1, locale)} · showing ${formatInteger(projects.length, locale)} of ${formatInteger(totalProjectsCount, locale)} projects`,
     emptyTitle: isArabic ? "لا توجد مشاريع مطابقة لهذه الفلاتر" : "No projects match these filters",
-    emptyBody: isArabic ? "جرّب تعديل إشارة التوقيت أو فلتر درجة المخاطر." : "Try adjusting your timing signal or risk grade filter.",
-    clearFilters: isArabic ? "مسح جميع الفلاتر" : "Clear all filters",
-    previous: isArabic ? "السابق →" : "← Previous",
+    emptyBody: isArabic ? "جرّب تعديل إشارة التوقيت أو تصنيف درجة المخاطر." : "Try adjusting your timing signal or risk grade filter.",
+    clearFilters: isArabic ? "إعادة تعيين الفلاتر" : "Clear all filters",
+    previous: isArabic ? "السابق ←" : "← Previous",
     next: isArabic ? "← التالي" : "Next →",
   }
 

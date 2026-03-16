@@ -80,22 +80,22 @@ function getQuickAccess(locale: AppLocale) {
 
   return [
     {
-      label: isArabic ? "المساعد" : "AI Chat",
-      description: isArabic ? "جلسات القرار، فرز المشاريع، والمذكرات" : "Decision sessions, deal screener, memos",
+      label: isArabic ? "مساعد القرار الذكي" : "AI Chat",
+      description: isArabic ? "تحليل الصفقات، تصفية المشاريع، والتقارير الاستثمارية" : "Decision sessions, deal screener, memos",
       href: "/chat",
       icon: MessageSquareText,
       tiers: ["free", "pro", "team", "institutional"] as const,
     },
     {
-      label: isArabic ? "بيانات السوق" : "Market Data",
-      description: isArabic ? "جداول السوق ولقطته المباشرة" : "Top-data tables and market pulse",
+      label: isArabic ? "مركز بيانات السوق" : "Market Data",
+      description: isArabic ? "جداول البيانات، التحليلات المباشرة، ونبض السوق" : "Top-data tables and market pulse",
       href: "/top-data",
       icon: BarChart3,
       tiers: ["free", "pro", "team", "institutional"] as const,
     },
     {
-      label: isArabic ? "المناطق" : "Area Intelligence",
-      description: isArabic ? "قراءة المناطق وضغط المعروض" : "Area trust maps and supply pressure",
+      label: isArabic ? "تحليل المناطق" : "Area Intelligence",
+      description: isArabic ? "خارطة الموثوقية ومؤشرات ضغط المعروض" : "Area trust maps and supply pressure",
       href: "/areas",
       icon: MapPin,
       tiers: ["free", "pro", "team", "institutional"] as const,

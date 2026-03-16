@@ -81,16 +81,16 @@ const chatRequestSchema = z
 function getDefaultSuggestions(locale: string) {
   return locale === "ar"
     ? [
-        "استوديوهات تحت 800 ألف درهم في الخليج التجاري",
-        "قارن دبي مارينا مع جميرا بيتش ريزيدنس",
-        "أفضل المناطق للتسليم خلال 1-2 سنة",
-        "مشاريع في أبوظبي تحت 2 مليون درهم",
+        "هل يمكنك إيجاد استوديوهات تحت 800 ألف درهم في الخليج التجاري؟",
+        "ساعدني في المقارنة بين دبي مارينا وجميرا بيتش ريزيدنس",
+        "ما هي أفضل المناطق التي سيتم تسليم مشاريعها خلال عامين؟",
+        "أبحث عن مشاريع في أبوظبي بميزانية تحت 2 مليون درهم"
       ]
     : [
-        "Studios under AED 800K in Business Bay",
-        "Compare Dubai Marina vs JBR",
-        "Best areas for 1-2 year delivery",
-        "Projects in Abu Dhabi under AED 2M",
+        "Can you find me studios under AED 800K in Business Bay?",
+        "Help me compare Dubai Marina vs JBR",
+        "What are the best areas for projects delivering in the next 2 years?",
+        "I'm looking for projects in Abu Dhabi under AED 2M"
       ]
 }
 

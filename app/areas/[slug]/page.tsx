@@ -32,15 +32,15 @@ export default async function AreaDetailPage({ params }: { params: Promise<{ slu
     ? {
         areaFallback: "المنطقة",
         developerFallback: "المطور",
-        pageEyebrow: "تفاصيل المنطقة",
-        profileFallback: "ملف استخبارات المنطقة",
+        pageEyebrow: "بيانات المنطقة",
+        profileFallback: "ملف التحليل العقاري للمنطقة",
         projects: "المشاريع",
         avgPrice: "متوسط السعر",
         avgYield: "متوسط العائد",
         supplyPressure: "ضغط المعروض",
-        buySignals: "إشارات BUY",
-        projectsInArea: "المشاريع في المنطقة",
-        developerPresence: "حضور المطورين",
+        buySignals: "فرص الشراء",
+        projectsInArea: "المشاريع المتاحة",
+        developerPresence: "نطاق المطورين",
         projectFallback: "المشروع",
       }
     : {

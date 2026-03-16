@@ -21,7 +21,7 @@ import {
   Code,
   Globe,
 } from "lucide-react"
-import { platformDocsSections } from "@/lib/platform-docs"
+import { getPlatformDocsSections } from "@/lib/platform-docs"
 import type { ComponentType } from "react"
 import { Button } from "@/components/ui/button"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
@@ -38,6 +38,7 @@ const sectionIcon: Record<string, ComponentType<{ className?: string }>> = {
 export default function DocsPage() {
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
+  const sections = getPlatformDocsSections(locale)
   const copy = {
     badge: isArabic ? "مركز المعرفة 4.0" : "Knowledge Base v4.0",
     titleLineOne: isArabic ? "المرجع التشغيلي" : "The Intelligence OS for",
@@ -99,7 +100,7 @@ export default function DocsPage() {
 
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-        {platformDocsSections.map((section) => {
+        {sections.map((section) => {
           const Icon = sectionIcon[section.slug] || FileText
           return (
             <Link key={section.slug} href={prefixLocalePath(`/docs/${section.slug}`, locale)} className="group">
@@ -110,7 +111,7 @@ export default function DocsPage() {
                 <h3 className="text-xl font-serif font-bold text-foreground mb-3">{section.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">{section.summary}</p>
                 <div className="mt-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-all">
-                  {copy.browseSection} <ArrowRight className="w-3 h-3" />
+                  {copy.browseSection} <ArrowRight className={`w-3 h-3 ${isArabic ? "rotate-180" : ""}`} />
                 </div>
               </div>
             </Link>
@@ -133,15 +134,31 @@ export default function DocsPage() {
       <section className="rounded-[3rem] border border-border/70 bg-foreground text-background p-10 md:p-20 relative overflow-hidden shadow-2xl shadow-foreground/20">
         <div className="absolute top-0 right-0 w-1/3 h-full bg-primary/20 blur-[120px] pointer-events-none" />
         <div className="relative z-10 max-w-4xl">
-          <h2 className="text-3xl md:text-5xl font-serif font-bold leading-tight mb-8">The One-System Model</h2>
+          <h2 className="text-3xl md:text-5xl font-serif font-bold leading-tight mb-8">
+            {isArabic ? "نموذج النظام الموحد" : "The One-System Model"}
+          </h2>
           <p className="text-lg md:text-xl text-background/70 font-medium leading-relaxed mb-12">
-            Entrestate replaces fragmented data silos with a unified <span className="text-background underline decoration-primary underline-offset-8">Pipeline-to-Tunnel</span> architecture. Every internal signal is inseparable from the final decision.
+            {isArabic 
+              ? "تستبدل Entrestate جزر البيانات المنعزلة ببنية تحتية موحدة تربط كل إشارة داخلية بالقرار النهائي."
+              : "Entrestate replaces fragmented data silos with a unified Pipeline-to-Tunnel architecture. Every internal signal is inseparable from the final decision."}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { title: "Supply Chain", desc: "Sequential data refinement across 10 distinct phases.", icon: Layers },
-              { title: "Governance", desc: "Institutional-grade verification for every data object.", icon: Shield },
-              { title: "The Tunnel", desc: "High-conviction investment outcomes and analysis.", icon: Target },
+              { 
+                title: isArabic ? "سلسلة الإمداد" : "Supply Chain", 
+                desc: isArabic ? "معالجة متسلسلة للبيانات عبر 10 مراحل متميزة." : "Sequential data refinement across 10 distinct phases.", 
+                icon: Layers 
+              },
+              { 
+                title: isArabic ? "الحوكمة" : "Governance", 
+                desc: isArabic ? "تحقق بمستوى مؤسسي لكل كائن بيانات داخل النظام." : "Institutional-grade verification for every data object.", 
+                icon: Shield 
+              },
+              { 
+                title: isArabic ? "المسار" : "The Tunnel", 
+                desc: isArabic ? "نتائج استثمارية وتحليلات ذات يقين عالٍ." : "High-conviction investment outcomes and analysis.", 
+                icon: Target 
+              },
             ].map((feature, i) => (
               <div key={i} className="p-6 rounded-2xl border border-background/10 bg-background/5">
                 <feature.icon className="w-8 h-8 text-primary mb-4" />

@@ -6,7 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Check } from "lucide-react"
 import Link from "next/link"
 
+import { useLocale } from "next-intl"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+
 export function PricingSection() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
   const [isVisible, setIsVisible] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
 
@@ -28,23 +33,41 @@ export function PricingSection() {
     return () => observer.disconnect()
   }, [])
 
-  const developerFeatures = [
-    "Explorer + Market Score access",
-    "Market desk requests",
-    "Weekly market refresh",
-    "Data packs (CSV) export",
-    "Standard support",
-    "Workspace notes + saved views",
-  ]
+  const developerFeatures = isArabic 
+    ? [
+        "الوصول إلى المستكشف ودرجة السوق",
+        "طلبات مكتب أبحاث السوق",
+        "تحديث أسبوعي لبيانات السوق",
+        "تصدير حزم البيانات (CSV)",
+        "دعم فني قياسي",
+        "مساحة ملاحظات وعروض محفوظة",
+      ]
+    : [
+        "Explorer + Market Score access",
+        "Market desk requests",
+        "Weekly market refresh",
+        "Data packs (CSV) export",
+        "Standard support",
+        "Workspace notes + saved views",
+      ]
 
-  const enterpriseFeatures = [
-    "Everything in Starter",
-    "Custom data extracts",
-    "Team roles and permissions",
-    "Dedicated analyst support",
-    "Priority refresh cadence",
-    "Private data lanes",
-  ]
+  const enterpriseFeatures = isArabic
+    ? [
+        "كل ما في الباقة الأساسية",
+        "مستخرجات بيانات مخصصة",
+        "أدوار الفريق وصلاحيات الوصول",
+        "دعم مباشر من محللينا",
+        "وتيرة تحديث ذات أولوية",
+        "مسارات بيانات خاصة",
+      ]
+    : [
+        "Everything in Starter",
+        "Custom data extracts",
+        "Team roles and permissions",
+        "Dedicated analyst support",
+        "Priority refresh cadence",
+        "Private data lanes",
+      ]
 
   return (
     <section ref={sectionRef} id="pricing" className="relative py-24 md:py-32 overflow-hidden bg-background">
@@ -58,14 +81,16 @@ export function PricingSection() {
                 isVisible ? "animate-slide-up-section" : "opacity-0"
               }`}
             >
-              Simple, transparent pricing
+              {isArabic ? "أسعار بسيطة وشفافة" : "Simple, transparent pricing"}
             </h2>
             <p
               className={`text-muted-foreground text-lg leading-relaxed ${
                 isVisible ? "animate-slide-up-section-delayed" : "opacity-0"
               }`}
             >
-              Start with a clear plan, scale when your team is ready. No hidden fees, no surprises.
+              {isArabic 
+                ? "ابدأ بخطة واضحة، ووسع نطاق عمل فريقك عندما تكون مستعداً. لا رسوم خفية ولا مفاجآت."
+                : "Start with a clear plan, scale when your team is ready. No hidden fees, no surprises."}
             </p>
           </div>
 
@@ -91,15 +116,15 @@ export function PricingSection() {
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                   </svg>
                 </div>
-                <CardTitle className="text-2xl text-foreground">Starter</CardTitle>
+                <CardTitle className="text-2xl text-foreground">{isArabic ? "الأساس" : "Starter"}</CardTitle>
                 <CardDescription className="text-muted-foreground mt-2">
-                  Best for individual brokers and small teams.
+                  {isArabic ? "مثالية للوسطاء والفرق الصغيرة." : "Best for individual brokers and small teams."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="relative flex flex-col flex-1 pt-6">
                 <div className="mb-6">
-                  <span className="text-xl font-semibold text-foreground">Monthly access</span>
-                  <p className="text-muted-foreground text-sm mt-1">Clear monthly pricing</p>
+                  <span className="text-xl font-semibold text-foreground">{isArabic ? "وصول شهري" : "Monthly access"}</span>
+                  <p className="text-muted-foreground text-sm mt-1">{isArabic ? "أسعار شهرية واضحة" : "Clear monthly pricing"}</p>
                 </div>
                 <ul className="space-y-4 flex-1">
                   {developerFeatures.map((feature, index) => (
@@ -112,7 +137,7 @@ export function PricingSection() {
                   ))}
                 </ul>
                 <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground mt-8">
-                  <Link href="/signup">Request access</Link>
+                  <Link href={prefixLocalePath("/signup", locale)}>{isArabic ? "اطلب الوصول" : "Request access"}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -140,19 +165,19 @@ export function PricingSection() {
                   </svg>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CardTitle className="text-2xl text-foreground">Enterprise</CardTitle>
+                  <CardTitle className="text-2xl text-foreground">{isArabic ? "المؤسسي" : "Enterprise"}</CardTitle>
                   <span className="px-2.5 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-medium">
-                    Custom
+                    {isArabic ? "مخصص" : "Custom"}
                   </span>
                 </div>
                 <CardDescription className="text-muted-foreground mt-2">
-                  For organizations that need deeper coverage and support.
+                  {isArabic ? "للمؤسسات التي تحتاج تغطية ودعماً أعمق." : "For organizations that need deeper coverage and support."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="relative flex flex-col flex-1 pt-6">
                 <div className="mb-6">
-                  <span className="text-xl font-semibold text-foreground">Custom pricing</span>
-                  <p className="text-muted-foreground text-sm mt-1">Tailored to your coverage needs</p>
+                  <span className="text-xl font-semibold text-foreground">{isArabic ? "تسعير مخصص" : "Custom pricing"}</span>
+                  <p className="text-muted-foreground text-sm mt-1">{isArabic ? "مصمم حسب احتياجاتك" : "Tailored to your coverage needs"}</p>
                 </div>
                 <ul className="space-y-4 flex-1">
                   {enterpriseFeatures.map((feature, index) => (
@@ -169,7 +194,7 @@ export function PricingSection() {
                   variant="outline"
                   className="w-full border-white/20 bg-transparent hover:bg-white/5 text-foreground mt-8"
                 >
-                  <Link href="/contact">Request Demo</Link>
+                  <Link href={prefixLocalePath("/contact", locale)}>{isArabic ? "اطلب عرضاً توضيحياً" : "Request Demo"}</Link>
                 </Button>
               </CardContent>
             </Card>

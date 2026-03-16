@@ -21,11 +21,11 @@ export default async function AreasPage() {
             {isArabic ? "المناطق" : "Areas"}
           </p>
           <h1 className="mt-2 font-serif text-3xl font-medium text-foreground md:text-5xl">
-            {isArabic ? "خريطة المناطق" : "Area Intelligence Map"}
+            {isArabic ? "خريطة ذكاء المناطق" : "Area Intelligence Map"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isArabic
-              ? `${formatInteger(data.areas.length, locale)} منطقة مع متوسطات الأسعار والعائد ومؤشرات التوقيت. اضغط على أي منطقة للاستكشاف.`
+              ? `تحليل لـ ${formatInteger(data.areas.length, locale)} منطقة تشمل متوسطات الأسعار والعوائد ومؤشرات التوقيت. اضغط على أي منطقة للاستكشاف.`
               : `${formatInteger(data.areas.length, locale)} area profiles — pricing depth, yield averages, and market timing signals. Click any dot to explore.`}
           </p>
         </header>

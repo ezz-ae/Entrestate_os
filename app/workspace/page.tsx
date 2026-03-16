@@ -127,9 +127,9 @@ export default function WorkspacePage() {
     () => (isArabic ? ["أبحاث السوق", "قراءة المشروع", "مطابقة المستثمر", "لوحة السوق"] : ["Market Research Desk", "Market Score", "Investor Match Desk", "Dashboards"]),
     [isArabic],
   )
-  const coreTools = tools.filter((tool) => coreToolLabels.includes(tool.label))
+  const coreTools = useMemo(() => tools.filter((tool) => coreToolLabels.includes(tool.label)), [tools, coreToolLabels])
   const [featuredTool, ...primaryTools] = coreTools
-  const supportTools = tools.filter((tool) => !coreToolLabels.includes(tool.label))
+  const supportTools = useMemo(() => tools.filter((tool) => !coreToolLabels.includes(tool.label)), [tools, coreToolLabels])
 
   const pulseData = useMemo(() => {
     if (!scoreCharts?.avgScoreByStatus?.length) return []

@@ -743,7 +743,7 @@ function MarketsContent() {
     const requestLine = isArabic ? `الطلب: ${requestLabel}` : `Request: ${requestLabel}`
     const inputSummary = Object.entries(inputValues)
       .filter(([, value]) => String(value ?? "").trim().length > 0)
-      .map(([key, value]) => `${key}: ${value}`)
+      .map(([key, value]) => `${isArabic ? (arabicInputLabels[key] ?? key) : key}: ${value}`)
       .join(", ")
     const inputsLine = inputSummary ? (isArabic ? `المدخلات: ${inputSummary}` : `Inputs: ${inputSummary}`) : null
     const topRows = resultRows.slice(0, 6).map((row, index) => {
@@ -1011,12 +1011,12 @@ function MarketsContent() {
       params.set("limit", "12")
 
       const res = await fetch(`/api/markets?${params.toString()}`)
-      if (!res.ok) throw new Error("Failed to load market results")
+      if (!res.ok) throw new Error(isArabic ? "فشل تحميل نتائج السوق" : "Failed to load market results")
       const data = await res.json()
       setResultRows(data.results || [])
       setResultCount(data.total ?? 0)
     } catch (error) {
-      setResultError(error instanceof Error ? error.message : "Failed to load results")
+      setResultError(error instanceof Error ? error.message : (isArabic ? "فشل تحميل النتائج" : "Failed to load results"))
       setResultRows([])
       setResultCount(null)
     } finally {
@@ -1060,7 +1060,7 @@ function MarketsContent() {
             <form onSubmit={handleSubmit} className={`${running ? "mt-6" : "mt-8"}`}>
               <div className="rounded-3xl border border-border/60 bg-card/60 backdrop-blur-lg shadow-[0_24px_80px_-50px_rgba(15,23,42,0.45)]">
                 <div className="px-6 pt-5 text-sm text-muted-foreground">
-                  {isArabic ? "ابدأ من السؤال الذي يشغلك" : "Discover what&apos;s possible"}
+                  {isArabic ? "اكتشف ما هو ممكن" : "Discover what&apos;s possible"}
                 </div>
                 <div className="px-6 pb-4">
                   <input
@@ -1082,9 +1082,9 @@ function MarketsContent() {
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                       <Layers className="h-4 w-4" />
-                      <span>{isArabic ? "13 مسارًا جاهزًا" : "13 packs ready"}</span>
+                      <span>{isArabic ? "13 مساراً جاهزاً" : "13 packs ready"}</span>
                     </div>
-                    <span className="text-muted-foreground/70">{isArabic ? "بيانات سوقية مباشرة" : "Live market data"}</span>
+                    <span className="text-muted-foreground/70">{isArabic ? "بيانات السوق الحية" : "Live market data"}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <button type="button" className="flex items-center gap-2 rounded-full border border-border/60 bg-background/40 px-3 py-2 text-muted-foreground hover:text-foreground">
