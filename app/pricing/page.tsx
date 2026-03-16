@@ -2,38 +2,58 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useLocale } from "next-intl"
 import { Check, Minus, ChevronDown, ChevronUp, Tag } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 function CouponBanner({
   coupon,
   onClear,
+  locale,
 }: {
   coupon: { code: string; discount_pct: number } | null
   onClear: () => void
+  locale: AppLocale
 }) {
   if (!coupon) return null
+  const isArabic = locale === "ar"
   return (
     <div className="mb-6 flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
       <div className="flex items-center gap-2 text-sm text-emerald-600">
         <Tag className="h-4 w-4" />
         <span>
-          Coupon <strong>{coupon.code.toUpperCase()}</strong> applied — {coupon.discount_pct}% off your first month
+          {isArabic ? (
+            <>
+              تم تفعيل الكود <strong>{coupon.code.toUpperCase()}</strong> — خصم {coupon.discount_pct}% على أول شهر
+            </>
+          ) : (
+            <>
+              Coupon <strong>{coupon.code.toUpperCase()}</strong> applied — {coupon.discount_pct}% off your first month
+            </>
+          )}
         </span>
       </div>
       <button onClick={onClear} className="text-xs text-emerald-500 hover:text-emerald-400 underline">
-        Remove
+        {isArabic ? "إزالة" : "Remove"}
       </button>
     </div>
   )
 }
 
-function CouponInput({ onApplied }: { onApplied: (coupon: { code: string; discount_pct: number }) => void }) {
+function CouponInput({
+  onApplied,
+  locale,
+}: {
+  onApplied: (coupon: { code: string; discount_pct: number }) => void
+  locale: AppLocale
+}) {
   const [code, setCode] = useState("")
   const [state, setState] = useState<"idle" | "loading" | "error">("idle")
   const [errorMsg, setErrorMsg] = useState("")
+  const isArabic = locale === "ar"
 
   async function handleApply(e: React.FormEvent) {
     e.preventDefault()
@@ -52,11 +72,11 @@ function CouponInput({ onApplied }: { onApplied: (coupon: { code: string; discou
         setCode("")
         setState("idle")
       } else {
-        setErrorMsg(data.reason ?? "Invalid coupon code.")
+        setErrorMsg(data.reason ?? (isArabic ? "الكود غير صالح." : "Invalid coupon code."))
         setState("error")
       }
     } catch {
-      setErrorMsg("Could not validate coupon. Try again.")
+      setErrorMsg(isArabic ? "تعذر التحقق من الكود. حاول مرة أخرى." : "Could not validate coupon. Try again.")
       setState("error")
     }
   }
@@ -68,12 +88,12 @@ function CouponInput({ onApplied }: { onApplied: (coupon: { code: string; discou
         <input
           value={code}
           onChange={(e) => { setCode(e.target.value); setState("idle"); setErrorMsg("") }}
-          placeholder="Coupon code"
+          placeholder={isArabic ? "أدخل الكود" : "Coupon code"}
           className="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
         />
       </div>
       <Button type="submit" variant="outline" size="sm" disabled={state === "loading" || !code.trim()}>
-        {state === "loading" ? "…" : "Apply"}
+        {state === "loading" ? "…" : isArabic ? "تفعيل" : "Apply"}
       </Button>
       {state === "error" && errorMsg && (
         <span className="text-xs text-red-500">{errorMsg}</span>
@@ -283,6 +303,148 @@ const FAQ_GROUPS = [
   },
 ]
 
+function getLocalizedTiers(locale: AppLocale) {
+  if (locale !== "ar") return tiers
+  return [
+    {
+      name: "الأساس",
+      price: "مجاني",
+      sub: "دائمًا بدون رسوم",
+      blurb: "ابدأ بهدوء. 3 جلسات يوميًا مع مؤشرات السوق الأساسية.",
+      cta: "ابدأ الآن",
+      checkoutTier: null,
+      popular: false,
+    },
+    {
+      name: "احترافي",
+      price: "$299",
+      sub: "شهريًا",
+      blurb: "جلسات غير محدودة، فرز كامل للفرص، وتصدير البيانات بنقرة واحدة.",
+      cta: "اشترك عبر PayPal",
+      checkoutTier: "pro",
+      popular: true,
+    },
+    {
+      name: "فرق",
+      price: "$999",
+      sub: "شهريًا",
+      blurb: "مقاعد للفريق، قوائم مشتركة، تقارير جاهزة، وسجل واضح للقرارات.",
+      cta: "اشترك عبر PayPal",
+      checkoutTier: "team",
+      popular: false,
+    },
+    {
+      name: "مؤسسي",
+      price: "$4,000",
+      sub: "شهريًا",
+      blurb: "متابعة المحافظ، رقابة المخاطر، تكاملات، ودعم على مستوى المؤسسة.",
+      cta: "اشترك عبر PayPal",
+      checkoutTier: "institutional",
+      popular: false,
+    },
+  ]
+}
+
+function getLocalizedFeatureGroups(locale: AppLocale) {
+  if (locale !== "ar") return FEATURE_GROUPS
+  return [
+    {
+      group: "مساعد القرار",
+      rows: [
+        { label: "جلسات المساعد", values: ["نافذة مجانية + انتظار", "غير محدود", "غير محدود", "غير محدود"] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "فرز الفرص", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "فحص السعر", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "ملخص مخاطر المنطقة", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "فحص المطور", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "مذكرة استثمار", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+      ],
+    },
+    {
+      group: "رؤية السوق",
+      rows: [
+        { label: "نبض السوق", values: [true, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "جداول المؤشرات", values: ["قراءة فقط", true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "خريطة السوق", values: [true, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "موثوقية المطور", values: [true, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "إشارات التوقيت (BUY / HOLD / WAIT)", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "خرائط ضغط المعروض", values: [false, false, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+      ],
+    },
+    {
+      group: "البيانات والتصدير",
+      rows: [
+        { label: "تصدير CSV", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "مذكرة PDF", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "قوائم محفوظة", values: ["1", "10", "غير محدود", "غير محدود"] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "قوائم مشتركة", values: [false, false, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "سجل التتبع", values: [false, false, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "وصول API", values: [false, false, false, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+      ],
+    },
+    {
+      group: "الحساب",
+      rows: [
+        { label: "مقاعد الفريق", values: ["1", "1", "5", "25+"] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "دعم أولوية", values: [false, false, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "مدير حساب", values: [false, false, false, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+        { label: "تهيئة مخصصة", values: [false, false, false, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+      ],
+    },
+  ]
+}
+
+function getLocalizedFaqGroups(locale: AppLocale) {
+  if (locale !== "ar") return FAQ_GROUPS
+  return [
+    {
+      group: "المنصة",
+      items: [
+        { q: "ما هو Entrestate بالضبط؟", a: "Entrestate منصة قرار عقاري، وليست بوابة إعلانات. نجمع بيانات السوق، ننظفها، ثم نحولها إلى قراءة واضحة تساعدك على اختيار المشروع المناسب وتوقيت الدخول الصحيح." },
+        { q: "ما الفرق بينه وبين Property Finder أو Bayut؟", a: "تلك المنصات تعرض المعروض. أما Entrestate فيقيّم المعروض نفسه: السعر، التوقيت، الضغط، العائد، وثقة البيانات، ثم يربطه بهدف المستثمر لا بمجرد قائمة مشاريع." },
+        { q: "ما المقصود بمسار القرار؟", a: "هو الطريقة التي يعمل بها المنتج: نفهم طلبك، نجمع الأدلة، نرتّب الخيارات، ثم نعطيك مخرجًا عمليًا مثل قائمة فرص أو مذكرة استثمار." },
+        { q: "ما هي طبقات الثقة الخمس؟", a: "كل رقم في المنصة له درجة ثقة واضحة، من بيانات موثقة بالكامل إلى بيانات أولية ما زالت تحت التحقق. لهذا لا نخفي الشك، بل نظهره لك بوضوح." },
+      ],
+    },
+    {
+      group: "الإشارات والتقييم",
+      items: [
+        { q: "ماذا يعني BUY؟", a: "يعني أن المشروع اجتاز طبقات التقييم وحقق مستوى قويًا في التوقيت والمرونة والعائد وثقة البيانات، بما يناسب هدف المستثمر." },
+        { q: "كيف يُحسب Market Score؟", a: "النتيجة تعتمد على أربعة أعمدة: التوقيت، والمرونة تحت الضغط، والعائد، وثقة البيانات. هذه الأعمدة تعمل معًا لتكوين قراءة سوقية قابلة للدفاع عنها." },
+        { q: "ما معنى درجة الضغط؟", a: "درجة الضغط تقيس قدرة المشروع على تحمل تقلب السوق والتنفيذ والتسليم. يدخل فيها تاريخ المطور، سيولة السوق، استقرار المنطقة، وخطة السداد." },
+        { q: "كيف يغيّر ملف المستثمر النتائج؟", a: "نفس المشروع قد يبدو مناسبًا لمستثمر وغير مناسب لآخر. لذلك نعيد ترتيب النتائج بحسب أسلوبك: محافظ، متوازن، أو أعلى مخاطرة." },
+        { q: "ما المقصود بإشارة التوقيت؟", a: "هي قراءة تقول لك هل الآن هو الوقت المناسب للدخول، أم الأفضل الانتظار، أو الاكتفاء بالمراقبة. ليست حكمًا على المشروع فقط، بل على اللحظة أيضًا." },
+      ],
+    },
+    {
+      group: "المساعد والتقارير",
+      items: [
+        { q: "ما الذي يقدمه مساعد القرار؟", a: "يفرز المشاريع بحسب الميزانية والهدف، يقارن بين المناطق والمطورين، يعرض مؤشرات V1 الفعلية، ويكتب لك مخرجات جاهزة مثل مذكرات الاستثمار والتقارير." },
+        { q: "ما هي أوامر الشرطة المائلة؟", a: "هي اختصارات سريعة داخل المحادثة مثل /screen و /compare و /memo و /risk. تسرّع الوصول للمهمة بدل كتابة الطلب من الصفر." },
+        { q: "ما هي Decision Canvas؟", a: "هي مساحة عمل حيّة بجانب المحادثة تعرض البطاقات، المؤشرات، والجداول المقارنة حتى ترى الصورة كاملة أثناء التقييم." },
+        { q: "هل أستطيع تصدير التقارير؟", a: "نعم. في الباقات الأعلى يمكنك حفظ الجلسات كمذكرات وتقارير قابلة للمشاركة أو التنزيل بروابط مباشرة وصيغ جاهزة." },
+      ],
+    },
+    {
+      group: "الوسطاء والفرق",
+      items: [
+        { q: "ماذا تتضمن لوحة الوسطاء؟", a: "تضم قراءة العملاء المحتملين، أتمتة تحويل البروشور إلى مشروع، مقارنة المنافسين، وأدوات تساعد فريق المبيعات في متابعة الاعتراضات والفرص." },
+        { q: "كيف يعمل تقييم العملاء المحتملين؟", a: "يعتمد على التفاعل، دقة الطلب، ملاءمة الميزانية، سرعة الاستجابة، ومصدر العميل. ثم يرفع لك الأولويات بدل التساوي بين الجميع." },
+        { q: "ما هي أتمتة البروشور إلى مشروع؟", a: "ترفع ملف المطور، فتستخرج المنصة منه خطة السداد والمواصفات والموقع والتسليم، ثم تبني لك مشروعًا جاهزًا للمراجعة بسرعة كبيرة." },
+      ],
+    },
+    {
+      group: "الأسعار والفوترة",
+      items: [
+        { q: "كيف تعمل الفوترة؟", a: "كل الباقات شهرية عبر PayPal. يمكنك الترقية أو الإيقاف في أي وقت، ولا نخزن بيانات البطاقة على خوادمنا." },
+        { q: "ما هي الباقة المجانية؟", a: "الباقة الأساسية تتيح لك تجربة المنصة، مع جلسات يومية محدودة وبعض الجداول والخرائط وقائمة متابعة واحدة." },
+        { q: "ماذا تضيف باقة Pro؟", a: "تفتح لك الجلسات غير المحدودة، والفرز الكامل، وفحص السعر، وتقارير المستثمر، وتصدير CSV وPDF، مع أدوات أعمق لاتخاذ القرار." },
+        { q: "متى أحتاج باقة Team؟", a: "إذا كان القرار يتم داخل فريق، فهذه الباقة هي الأنسب. تضيف مقاعد متعددة، قوائم مشتركة، تقارير، وسجل متابعة للعمل الجماعي." },
+        { q: "ماذا تتضمن الباقة المؤسسية؟", a: "الباقة المؤسسية موجهة للصناديق والمكاتب العائلية والجهات الكبيرة، وتشمل مقاعد موسعة، API، متابعة محافظ، ودعم خاص." },
+      ],
+    },
+  ]
+}
+
 function FaqGroup({ group, items }: { group: string; items: { q: string; a: string }[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   return (
@@ -335,7 +497,12 @@ function FeatureCell({ value }: { value: FeatureValue }) {
 }
 
 export default function PricingPage() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
   const [activeCoupon, setActiveCoupon] = useState<{ code: string; discount_pct: number } | null>(null)
+  const localizedTiers = getLocalizedTiers(locale)
+  const localizedFeatureGroups = getLocalizedFeatureGroups(locale)
+  const localizedFaqGroups = getLocalizedFaqGroups(locale)
 
   function buildCheckoutUrl(checkoutTier: string) {
     const base = `/api/billing/paypal/checkout?tier=${checkoutTier}`
@@ -356,26 +523,28 @@ export default function PricingPage() {
       <div className="mx-auto max-w-[1100px] px-6 pb-24 pt-28 md:pt-36">
         {/* Header */}
         <header className="mb-12 text-center">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">Pricing</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "الأسعار" : "Pricing"}</p>
           <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-4xl">
-            Plans for every stage
+            {isArabic ? "باقات تناسب كل مرحلة من رحلة القرار" : "Plans for every stage"}
           </h1>
           <p className="mt-3 text-sm text-muted-foreground max-w-lg mx-auto">
-            Monthly PayPal subscriptions. Cancel anytime. No contracts.
+            {isArabic
+              ? "باقات شهرية عبر PayPal. يمكنك الإيقاف أو الترقية في أي وقت بدون التزام طويل."
+              : "Monthly PayPal subscriptions. Cancel anytime. No contracts."}
           </p>
         </header>
 
         {/* Coupon */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <CouponBanner coupon={activeCoupon} onClear={() => setActiveCoupon(null)} />
+          <CouponBanner coupon={activeCoupon} onClear={() => setActiveCoupon(null)} locale={locale} />
           {!activeCoupon && (
-            <CouponInput onApplied={setActiveCoupon} />
+            <CouponInput onApplied={setActiveCoupon} locale={locale} />
           )}
         </div>
 
         {/* Tier cards */}
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 mb-16">
-          {tiers.map((tier) => (
+          {localizedTiers.map((tier) => (
             <article
               key={tier.name}
               className={`relative rounded-2xl border p-5 flex flex-col ${
@@ -386,7 +555,7 @@ export default function PricingPage() {
             >
               {tier.popular && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-foreground px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background">
-                  Most popular
+                  {isArabic ? "الأكثر طلبًا" : "Most popular"}
                 </span>
               )}
               <p className="text-sm font-semibold text-foreground">{tier.name}</p>
@@ -395,7 +564,7 @@ export default function PricingPage() {
                   <>
                     <span className="text-2xl font-bold text-emerald-500">{getDisplayPrice(tier)}</span>
                     <span className="text-xs text-muted-foreground line-through ml-1">{tier.price}</span>
-                    <span className="text-xs text-muted-foreground">first month</span>
+                    <span className="text-xs text-muted-foreground">{isArabic ? "للشهر الأول" : "first month"}</span>
                   </>
                 ) : (
                   <>
@@ -422,19 +591,19 @@ export default function PricingPage() {
 
         {/* Feature comparison table */}
         <section>
-          <h2 className="mb-6 text-sm font-semibold text-foreground">Full feature comparison</h2>
+          <h2 className="mb-6 text-sm font-semibold text-foreground">{isArabic ? "مقارنة المزايا" : "Full feature comparison"}</h2>
           <div className="rounded-2xl border border-border/70 bg-card/70 overflow-hidden">
             {/* Column headers */}
             <div className="grid grid-cols-5 border-b border-border/70 bg-muted/20">
               <div className="col-span-1 px-4 py-3" />
-              {tiers.map((t) => (
+              {localizedTiers.map((t) => (
                 <div key={t.name} className="px-2 py-3 text-center">
                   <p className="text-xs font-semibold text-foreground">{t.name}</p>
                 </div>
               ))}
             </div>
 
-            {FEATURE_GROUPS.map((group, gi) => (
+            {localizedFeatureGroups.map((group, gi) => (
               <div key={group.group} className={gi > 0 ? "border-t border-border/50" : ""}>
                 {/* Group label */}
                 <div className="grid grid-cols-5 bg-muted/10 px-4 py-2">
@@ -465,41 +634,45 @@ export default function PricingPage() {
 
         {/* Trust strip */}
         <footer className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
-          <span>Payments via PayPal — no card stored on our servers</span>
+          <span>{isArabic ? "الدفع عبر PayPal — ولا نخزن بيانات البطاقة على خوادمنا" : "Payments via PayPal — no card stored on our servers"}</span>
           <span className="hidden sm:block text-border">|</span>
-          <span>Cancel anytime, no cancellation fee</span>
+          <span>{isArabic ? "يمكنك الإيقاف في أي وقت بدون رسوم إلغاء" : "Cancel anytime, no cancellation fee"}</span>
           <span className="hidden sm:block text-border">|</span>
-          <span>Upgrades take effect immediately</span>
+          <span>{isArabic ? "الترقية تُفعّل مباشرة" : "Upgrades take effect immediately"}</span>
         </footer>
 
         {/* FAQ */}
         <section className="mt-24">
           <div className="mb-12 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">Everything you need to know</p>
-            <h2 className="mt-3 text-2xl font-semibold text-foreground md:text-3xl">Frequently Asked Questions</h2>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{isArabic ? "كل ما تحتاج معرفته" : "Everything you need to know"}</p>
+            <h2 className="mt-3 text-2xl font-semibold text-foreground md:text-3xl">{isArabic ? "أسئلة متكررة" : "Frequently Asked Questions"}</h2>
             <p className="mt-3 text-sm text-muted-foreground max-w-lg mx-auto">
-              From how the scoring engine works to what each plan includes — answered in plain language.
+              {isArabic
+                ? "إجابات مباشرة على أهم ما تحتاجه قبل الاشتراك: كيف تعمل المنصة، وماذا تضيف كل باقة، ومتى تحتاج كل مستوى."
+                : "From how the scoring engine works to what each plan includes — answered in plain language."}
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-            {FAQ_GROUPS.map((faqGroup) => (
+            {localizedFaqGroups.map((faqGroup) => (
               <FaqGroup key={faqGroup.group} group={faqGroup.group} items={faqGroup.items} />
             ))}
           </div>
 
           <div className="mt-14 rounded-2xl border border-border/60 bg-card/60 px-8 py-10 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">Still have questions?</p>
-            <h3 className="mt-3 text-xl font-semibold text-foreground">Talk to the team</h3>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{isArabic ? "هل لديك سؤال خاص؟" : "Still have questions?"}</p>
+            <h3 className="mt-3 text-xl font-semibold text-foreground">{isArabic ? "تواصل مع الفريق" : "Talk to the team"}</h3>
             <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-              For institutional inquiries, API integration, or custom enterprise pricing — reach us directly.
+              {isArabic
+                ? "إذا كنت تبحث عن تسعير مؤسسي، أو تكامل API، أو تهيئة خاصة لفريقك، تواصل معنا مباشرة."
+                : "For institutional inquiries, API integration, or custom enterprise pricing — reach us directly."}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Button asChild variant="default">
-                <Link href="/chat">Open AI Copilot</Link>
+                <Link href={prefixLocalePath("/chat", locale)}>{isArabic ? "افتح مساعد القرار" : "Open AI Copilot"}</Link>
               </Button>
               <Button asChild variant="outline">
-                <a href="mailto:hello@entrestate.com">Email us</a>
+                <a href="mailto:hello@entrestate.com">{isArabic ? "راسلنا" : "Email us"}</a>
               </Button>
             </div>
           </div>

@@ -5,19 +5,34 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useLocale } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { GridBackground } from "@/components/grid-background"
 import { Calendar, Clock, Video, CheckCircle2, Building2, Users, Globe } from "lucide-react"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 const timeSlots = ["9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"]
+const arabicWeekDays = ["ح", "ن", "ث", "ر", "خ", "ج", "س"]
+const englishWeekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
 
-const benefits = [
-  { icon: Building2, text: "Custom market coverage" },
-  { icon: Users, text: "Dedicated market team" },
-  { icon: Globe, text: "Regional focus" },
-]
+function getBenefits(locale: AppLocale) {
+  return locale === "ar"
+    ? [
+        { icon: Building2, text: "تغطية سوقية تناسب احتياجك" },
+        { icon: Users, text: "فريق مختص يتابع معك" },
+        { icon: Globe, text: "تركيز إقليمي على الخليج والإمارات" },
+      ]
+    : [
+        { icon: Building2, text: "Custom market coverage" },
+        { icon: Users, text: "Dedicated market team" },
+        { icon: Globe, text: "Regional focus" },
+      ]
+}
 
 export default function ContactPage() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
+  const benefits = getBenefits(locale)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -33,7 +48,7 @@ export default function ContactPage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
 
   const today = new Date()
-  const currentMonth = today.toLocaleString("default", { month: "long" })
+  const currentMonth = today.toLocaleString(isArabic ? "ar-AE" : "en-AE", { month: "long" })
   const currentYear = today.getFullYear()
   const daysInMonth = new Date(currentYear, today.getMonth() + 1, 0).getDate()
   const firstDayOfMonth = new Date(currentYear, today.getMonth(), 1).getDay()
@@ -66,13 +81,16 @@ export default function ContactPage() {
           <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-10 h-10 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-4">Walkthrough Request Received</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-4">
+            {isArabic ? "تم استلام طلب الجولة" : "Walkthrough Request Received"}
+          </h1>
           <p className="text-muted-foreground max-w-md mx-auto mb-8">
-            Thank you for your interest in Entrestate Enterprise. Our team will reach out within 24 hours to confirm your
-            walkthrough{selectedDate && selectedTime ? ` on ${currentMonth} ${selectedDate} at ${selectedTime}` : ""}.
+            {isArabic
+              ? `وصلنا طلبك، وسيتواصل معك فريق Entrestate خلال 24 ساعة لتأكيد الجولة${selectedDate && selectedTime ? ` يوم ${selectedDate} ${currentMonth} الساعة ${selectedTime}` : ""}.`
+              : `Thank you for your interest in Entrestate Enterprise. Our team will reach out within 24 hours to confirm your walkthrough${selectedDate && selectedTime ? ` on ${currentMonth} ${selectedDate} at ${selectedTime}` : ""}.`}
           </p>
           <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link href="/">Back to Home</Link>
+            <Link href={prefixLocalePath("/", locale)}>{isArabic ? "العودة للرئيسية" : "Back to Home"}</Link>
           </Button>
         </div>
       </div>
@@ -92,14 +110,18 @@ export default function ContactPage() {
 
       {/* Left side - Value props */}
       <div className="hidden lg:flex lg:w-2/5 relative z-10 flex-col justify-between p-12">
-        <Link href="/" className="flex items-center">
+        <Link href={prefixLocalePath("/", locale)} className="flex items-center">
           <Image src="/entrestate-logo.svg" alt="Entrestate" width={138} height={32} priority />
         </Link>
 
         <div className="max-w-sm">
-          <h1 className="text-3xl font-bold text-foreground mb-4">Plan your real estate data stack with confidence</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-4">
+            {isArabic ? "رتّب قرارك العقاري المؤسسي بثقة" : "Plan your real estate data stack with confidence"}
+          </h1>
           <p className="text-muted-foreground mb-8">
-            Get a personalized walkthrough of Entrestate Enterprise and see how your team can use it daily.
+            {isArabic
+              ? "نأخذك في جولة عملية على Entrestate Enterprise ونوضح كيف يستخدمه فريقك يوميًا في الفرز والمقارنة واتخاذ القرار."
+              : "Get a personalized walkthrough of Entrestate Enterprise and see how your team can use it daily."}
           </p>
 
           <ul className="space-y-4">
@@ -126,7 +148,15 @@ export default function ContactPage() {
             ))}
           </div>
           <p className="text-sm text-muted-foreground">
-            Join <span className="text-foreground font-medium">500+</span> real estate teams
+            {isArabic ? (
+              <>
+                تعتمد عليه <span className="text-foreground font-medium">+500</span> جهة تعمل في السوق العقاري
+              </>
+            ) : (
+              <>
+                Join <span className="text-foreground font-medium">500+</span> real estate teams
+              </>
+            )}
           </p>
         </div>
       </div>
@@ -136,16 +166,16 @@ export default function ContactPage() {
         <div className="w-full max-w-2xl">
           {/* Mobile logo */}
           <div className="lg:hidden mb-8">
-            <Link href="/" className="flex items-center justify-center">
+            <Link href={prefixLocalePath("/", locale)} className="flex items-center justify-center">
               <Image src="/entrestate-logo.svg" alt="Entrestate" width={138} height={32} priority />
             </Link>
           </div>
 
           <div className="bg-card/50 backdrop-blur-sm border border-white/5 rounded-xl p-8">
             <div className="text-center mb-8 lg:text-left">
-              <h2 className="text-2xl font-semibold text-foreground">Request a walkthrough</h2>
+              <h2 className="text-2xl font-semibold text-foreground">{isArabic ? "احجز جولة" : "Request a walkthrough"}</h2>
               <p className="text-muted-foreground mt-2 text-sm">
-                Fill out the form and select a time that works for you
+                {isArabic ? "املأ البيانات واختر الوقت المناسب لك" : "Fill out the form and select a time that works for you"}
               </p>
             </div>
 
@@ -154,7 +184,7 @@ export default function ContactPage() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="firstName" className="block text-sm font-medium text-foreground mb-2">
-                    First name
+                    {isArabic ? "الاسم الأول" : "First name"}
                   </label>
                   <input
                     id="firstName"
@@ -162,14 +192,14 @@ export default function ContactPage() {
                     type="text"
                     value={formData.firstName}
                     onChange={handleInputChange}
-                    placeholder="John"
+                    placeholder={isArabic ? "محمد" : "John"}
                     required
                     className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                   />
                 </div>
                 <div>
                   <label htmlFor="lastName" className="block text-sm font-medium text-foreground mb-2">
-                    Last name
+                    {isArabic ? "اسم العائلة" : "Last name"}
                   </label>
                   <input
                     id="lastName"
@@ -177,7 +207,7 @@ export default function ContactPage() {
                     type="text"
                     value={formData.lastName}
                     onChange={handleInputChange}
-                    placeholder="Doe"
+                    placeholder={isArabic ? "العتيبي" : "Doe"}
                     required
                     className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                   />
@@ -188,7 +218,7 @@ export default function ContactPage() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                    Work email
+                    {isArabic ? "البريد المهني" : "Work email"}
                   </label>
                   <input
                     id="email"
@@ -203,7 +233,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <label htmlFor="company" className="block text-sm font-medium text-foreground mb-2">
-                    Company
+                    {isArabic ? "الشركة" : "Company"}
                   </label>
                   <input
                     id="company"
@@ -211,7 +241,7 @@ export default function ContactPage() {
                     type="text"
                     value={formData.company}
                     onChange={handleInputChange}
-                    placeholder="Acme Inc."
+                    placeholder={isArabic ? "اسم الشركة" : "Acme Inc."}
                     required
                     className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                   />
@@ -222,7 +252,7 @@ export default function ContactPage() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="jobTitle" className="block text-sm font-medium text-foreground mb-2">
-                    Job title
+                    {isArabic ? "المسمى الوظيفي" : "Job title"}
                   </label>
                   <input
                     id="jobTitle"
@@ -230,14 +260,14 @@ export default function ContactPage() {
                     type="text"
                     value={formData.jobTitle}
                     onChange={handleInputChange}
-                    placeholder="CTO"
+                    placeholder={isArabic ? "مدير الاستثمار" : "CTO"}
                     required
                     className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                   />
                 </div>
                 <div>
                   <label htmlFor="teamSize" className="block text-sm font-medium text-foreground mb-2">
-                    Team size
+                    {isArabic ? "حجم الفريق" : "Team size"}
                   </label>
                   <select
                     id="teamSize"
@@ -248,13 +278,13 @@ export default function ContactPage() {
                     className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all appearance-none"
                   >
                     <option value="" disabled>
-                      Select team size
+                      {isArabic ? "اختر حجم الفريق" : "Select team size"}
                     </option>
-                    <option value="1-10">1-10 employees</option>
-                    <option value="11-50">11-50 employees</option>
-                    <option value="51-200">51-200 employees</option>
-                    <option value="201-500">201-500 employees</option>
-                    <option value="500+">500+ employees</option>
+                    <option value="1-10">{isArabic ? "من 1 إلى 10" : "1-10 employees"}</option>
+                    <option value="11-50">{isArabic ? "من 11 إلى 50" : "11-50 employees"}</option>
+                    <option value="51-200">{isArabic ? "من 51 إلى 200" : "51-200 employees"}</option>
+                    <option value="201-500">{isArabic ? "من 201 إلى 500" : "201-500 employees"}</option>
+                    <option value="500+">{isArabic ? "+500" : "500+ employees"}</option>
                   </select>
                 </div>
               </div>
@@ -263,7 +293,7 @@ export default function ContactPage() {
               <div className="border-t border-white/10 pt-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Calendar className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Select a date & time</span>
+                  <span className="text-sm font-medium text-foreground">{isArabic ? "اختر اليوم والوقت المناسب" : "Select a date & time"}</span>
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-6">
@@ -275,7 +305,7 @@ export default function ContactPage() {
                       </span>
                     </div>
                     <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2">
-                      {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+                      {(isArabic ? arabicWeekDays : englishWeekDays).map((day) => (
                         <span key={day} className="text-muted-foreground py-1">
                           {day}
                         </span>
@@ -314,7 +344,7 @@ export default function ContactPage() {
                   <div>
                     <div className="flex items-center gap-2 mb-3">
                       <Clock className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Available times (EST)</span>
+                      <span className="text-xs text-muted-foreground">{isArabic ? "الأوقات المتاحة" : "Available times (EST)"}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       {timeSlots.map((time) => (
@@ -338,7 +368,7 @@ export default function ContactPage() {
                     {selectedDate && selectedTime && (
                       <div className="mt-4 flex items-center gap-2 text-sm text-primary">
                         <Video className="w-4 h-4" />
-                        <span>30 min video call</span>
+                        <span>{isArabic ? "مكالمة فيديو لمدة 30 دقيقة" : "30 min video call"}</span>
                       </div>
                     )}
                   </div>
@@ -348,14 +378,14 @@ export default function ContactPage() {
               {/* Message */}
               <div>
                 <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
-                  Anything else we should know? (optional)
+                  {isArabic ? "هل هناك شيء مهم نعرفه؟ (اختياري)" : "Anything else we should know? (optional)"}
                 </label>
                 <textarea
                   id="message"
                   name="message"
                   value={formData.message}
                   onChange={handleInputChange}
-                  placeholder="Tell us about your use case..."
+                  placeholder={isArabic ? "اكتب باختصار ما الذي تريد مناقشته..." : "Tell us about your use case..."}
                   rows={3}
                   className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
                 />
@@ -384,19 +414,19 @@ export default function ContactPage() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    Scheduling...
+                    {isArabic ? "جارٍ تثبيت الموعد..." : "Scheduling..."}
                   </span>
                 ) : (
-                  "Schedule Demo"
+                  isArabic ? "احجز الموعد" : "Schedule Demo"
                 )}
               </Button>
             </form>
           </div>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Not ready for a demo?{" "}
-            <Link href="/signup" className="text-primary hover:underline font-medium">
-              Start with Developer plan
+            {isArabic ? "إذا لم تكن جاهزًا للجولة" : "Not ready for a demo?"}{" "}
+            <Link href={prefixLocalePath("/signup", locale)} className="text-primary hover:underline font-medium">
+              {isArabic ? "ابدأ بالخطة الفردية" : "Start with Developer plan"}
             </Link>
           </p>
         </div>

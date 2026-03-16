@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import Link from "next/link"
@@ -20,15 +21,25 @@ import { libraryArticles, type LibraryCategory } from "@/lib/library-data"
 import { ReadingControls } from "@/components/reading-controls"
 import { ExplainWithChat } from "@/components/explain-with-chat"
 import type { InventoryRow, MarketScoreInventoryResponse } from "@/lib/market-score/types"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type Category = "all" | LibraryCategory
 
-const categories = [
-  { key: "all" as Category, label: "All" },
-  { key: "reports" as Category, label: "Market Reports" },
-  { key: "insights" as Category, label: "Insights" },
-  { key: "contracts" as Category, label: "Contracts Explained" },
-]
+function getCategories(locale: AppLocale) {
+  return locale === "ar"
+    ? [
+        { key: "all" as Category, label: "الكل" },
+        { key: "reports" as Category, label: "تقارير السوق" },
+        { key: "insights" as Category, label: "قراءات السوق" },
+        { key: "contracts" as Category, label: "شروحات العقود" },
+      ]
+    : [
+        { key: "all" as Category, label: "All" },
+        { key: "reports" as Category, label: "Market Reports" },
+        { key: "insights" as Category, label: "Insights" },
+        { key: "contracts" as Category, label: "Contracts Explained" },
+      ]
+}
 
 const categoryIcons: Record<LibraryCategory, typeof TrendingUp> = {
   reports: TrendingUp,
@@ -36,42 +47,86 @@ const categoryIcons: Record<LibraryCategory, typeof TrendingUp> = {
   contracts: Scale,
 }
 
-const coverageStats = [
-  { label: "Projects tracked", value: "7,000+", note: "Active and historical inventory" },
-  { label: "Areas indexed", value: "200+", note: "City + district coverage" },
-  { label: "Developers profiled", value: "120+", note: "Track record and delivery mix" },
-  { label: "Update cadence", value: "Monthly", note: "With weekly signal reviews" },
-]
+function getCoverageStats(locale: AppLocale) {
+  return locale === "ar"
+    ? [
+        { label: "المشاريع تحت المتابعة", value: "2,813", note: "مخزون نشط ومُقيَّم" },
+        { label: "المناطق المفهرسة", value: "246", note: "تغطية على مستوى المدينة والمنطقة" },
+        { label: "المطورون محل القراءة", value: "75", note: "سجل التنفيذ وتوزيع المخاطر" },
+        { label: "وتيرة التحديث", value: "مستمر", note: "مع مراجعات متكررة للإشارات" },
+      ]
+    : [
+        { label: "Projects tracked", value: "2,813", note: "Active scored inventory" },
+        { label: "Areas indexed", value: "246", note: "City + district coverage" },
+        { label: "Developers profiled", value: "75", note: "Track record and delivery mix" },
+        { label: "Update cadence", value: "Continuous", note: "With repeated signal reviews" },
+      ]
+}
 
-const tableLegend = [
-  {
-    title: "Price (AED)",
-    description: "Latest observed starting price per project.",
-    icon: BarChart3,
-  },
-  {
-    title: "Safety band",
-    description: "Institutional Safe, Capital Safe, Opportunistic, Speculative.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Liquidity",
-    description: "How quickly units trade in the secondary market.",
-    icon: Gauge,
-  },
-  {
-    title: "Delivery band",
-    description: "Completed, 2025, 2026, and future delivery windows.",
-    icon: Layers,
-  },
-  {
-    title: "Investor class",
-    description: "Conservative, Balanced, or Aggressive fit.",
-    icon: FileText,
-  },
-]
+function getTableLegend(locale: AppLocale) {
+  return locale === "ar"
+    ? [
+        {
+          title: "السعر (AED)",
+          description: "أحدث سعر دخول مرصود للمشروع.",
+          icon: BarChart3,
+        },
+        {
+          title: "شريحة الأمان",
+          description: "آمن مؤسسيًا، آمن رأسماليًا، فرصة محسوبة، أو مرتفع المخاطر.",
+          icon: ShieldCheck,
+        },
+        {
+          title: "السيولة",
+          description: "مدى سرعة تحرك الوحدات في السوق الثانوي.",
+          icon: Gauge,
+        },
+        {
+          title: "نافذة التسليم",
+          description: "جاهز، 2025، 2026، أو مراحل تسليم لاحقة.",
+          icon: Layers,
+        },
+        {
+          title: "فئة المستثمر",
+          description: "ملاءمة أعلى للمتحفظ أو المتوازن أو الجريء.",
+          icon: FileText,
+        },
+      ]
+    : [
+        {
+          title: "Price (AED)",
+          description: "Latest observed starting price per project.",
+          icon: BarChart3,
+        },
+        {
+          title: "Safety band",
+          description: "Institutional Safe, Capital Safe, Opportunistic, Speculative.",
+          icon: ShieldCheck,
+        },
+        {
+          title: "Liquidity",
+          description: "How quickly units trade in the secondary market.",
+          icon: Gauge,
+        },
+        {
+          title: "Delivery band",
+          description: "Completed, 2025, 2026, and future delivery windows.",
+          icon: Layers,
+        },
+        {
+          title: "Investor class",
+          description: "Conservative, Balanced, or Aggressive fit.",
+          icon: FileText,
+        },
+      ]
+}
 
 export default function LibraryPage() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
+  const categories = getCategories(locale)
+  const coverageStats = getCoverageStats(locale)
+  const tableLegend = getTableLegend(locale)
   const [activeCategory, setActiveCategory] = useState<Category>("all")
   const [sampleRows, setSampleRows] = useState<InventoryRow[]>([])
   const [sampleLoading, setSampleLoading] = useState(true)
@@ -112,12 +167,12 @@ export default function LibraryPage() {
         <div className="container mx-auto px-6">
           {/* Header */}
           <div className="max-w-2xl mb-12">
-            <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">Library</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">{isArabic ? "المكتبة" : "Library"}</p>
             <h1 className="text-3xl md:text-5xl font-serif text-foreground leading-tight text-balance">
-              What we learned from the market
+              {isArabic ? "ما الذي يقوله السوق فعلًا" : "What we learned from the market"}
             </h1>
             <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-              Reports, pricing behavior, transaction patterns, and contract explanations. Signed, sourced, and maintained.
+              {isArabic ? "تقارير وقراءات وشروحات عقدية تساعدك على فهم الحركة الفعلية للسوق، لا مجرد متابعة العناوين." : "Reports, pricing behavior, transaction patterns, and contract explanations. Signed, sourced, and maintained."}
             </p>
           </div>
 
@@ -149,7 +204,7 @@ export default function LibraryPage() {
               </div>
               <div className="relative">
                 <span className="inline-block px-2.5 py-1 text-xs font-medium bg-muted/50 text-muted-foreground rounded-full mb-4">
-                  Featured report
+                  {isArabic ? "تقرير مختار" : "Featured report"}
                 </span>
                 <h2 className="text-2xl md:text-3xl font-serif text-foreground leading-tight mb-3">
                   {featuredArticle.title}
@@ -159,15 +214,15 @@ export default function LibraryPage() {
                 </p>
                 <div className="flex items-center gap-4">
                   <Link
-                    href={`/library/${featuredArticle.slug}`}
+                    href={prefixLocalePath(`/library/${featuredArticle.slug}`, locale)}
                     className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                   >
-                    Read brief
+                    {isArabic ? "اقرأ الملخص" : "Read brief"}
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                   <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5" />
-                    {featuredArticle.readTime} read
+                    {isArabic ? `${featuredArticle.readTime} قراءة` : `${featuredArticle.readTime} read`}
                   </span>
                 </div>
               </div>
@@ -177,24 +232,24 @@ export default function LibraryPage() {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <BookOpen className="w-5 h-5 text-accent" />
-                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">About the Library</span>
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{isArabic ? "عن المكتبة" : "About the Library"}</span>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Every piece in the Library is researched, written, and signed by Entrestate analysts. We translate signals into plain market language and explain how to read the numbers without pushing buy or sell decisions.
+                  {isArabic ? "كل مادة في هذه المكتبة تمر بقراءة وتحليل وصياغة داخل Entrestate. هدفنا أن نحول الإشارة السوقية إلى معنى مفهوم يمكن الرجوع إليه، من دون دفعك إلى قرار شراء أو بيع." : "Every piece in the Library is researched, written, and signed by Entrestate analysts. We translate signals into plain market language and explain how to read the numbers without pushing buy or sell decisions."}
                 </p>
               </div>
               <div className="mt-8 grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-2xl font-serif text-foreground">7,000+</p>
-                  <p className="text-xs text-muted-foreground mt-1">Projects tracked</p>
+                  <p className="text-2xl font-serif text-foreground">2,813</p>
+                  <p className="text-xs text-muted-foreground mt-1">{isArabic ? "مشروع مُقيَّم" : "Projects tracked"}</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-serif text-foreground">200+</p>
-                  <p className="text-xs text-muted-foreground mt-1">Areas indexed</p>
+                  <p className="text-2xl font-serif text-foreground">246</p>
+                  <p className="text-xs text-muted-foreground mt-1">{isArabic ? "منطقة مفهرسة" : "Areas indexed"}</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-serif text-foreground">Monthly</p>
-                  <p className="text-xs text-muted-foreground mt-1">Signal refresh</p>
+                  <p className="text-2xl font-serif text-foreground">{isArabic ? "مستمر" : "Continuous"}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{isArabic ? "تحديث الإشارات" : "Signal refresh"}</p>
                 </div>
               </div>
             </div>
@@ -214,7 +269,7 @@ export default function LibraryPage() {
           <div className="rounded-2xl border border-border/70 bg-card/60 p-6 mb-12">
             <ReadingControls />
             <p className="mt-3 text-xs text-muted-foreground">
-              Tip: Use Day mode for long reads, Night mode for late sessions, and toggle Reading mode for calmer spacing.
+              {isArabic ? "للقراءة الطويلة استخدم الوضع النهاري، وللجلسات المتأخرة الوضع الليلي، وفعّل وضع القراءة لتجربة أهدأ." : "Tip: Use Day mode for long reads, Night mode for late sessions, and toggle Reading mode for calmer spacing."}
             </p>
           </div>
 
@@ -224,13 +279,12 @@ export default function LibraryPage() {
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
                 <Layers className="w-5 h-5 text-accent" />
-                <h2 className="text-lg font-medium text-foreground">How to read our tables</h2>
+                <h2 className="text-lg font-medium text-foreground">{isArabic ? "كيف تقرأ جداولنا" : "How to read our tables"}</h2>
                 </div>
-                <ExplainWithChat prompt="Explain how to read Entrestate library tables and what each signal means." />
+                <ExplainWithChat prompt={isArabic ? "اشرح لي كيف أقرأ جداول Entrestate وما معنى كل إشارة فيها." : "Explain how to read Entrestate library tables and what each signal means."} />
               </div>
               <p className="text-sm text-muted-foreground mb-6">
-                Every table follows the same logic so brokers can move quickly: price, safety band, liquidity,
-                delivery band, and investor class. Use it to read the story behind each project or area.
+                {isArabic ? "كل جدول هنا مبني على نفس المنطق حتى تستطيع قراءة المشروع أو المنطقة بسرعة: السعر، شريحة الأمان، السيولة، نافذة التسليم، ونوع المستثمر الأنسب." : "Every table follows the same logic so brokers can move quickly: price, safety band, liquidity, delivery band, and investor class. Use it to read the story behind each project or area."}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {tableLegend.map((item) => (
@@ -251,45 +305,45 @@ export default function LibraryPage() {
               <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-accent" />
-                <h2 className="text-lg font-medium text-foreground">Sample table</h2>
+                <h2 className="text-lg font-medium text-foreground">{isArabic ? "عينة مباشرة" : "Sample table"}</h2>
                 </div>
-                <ExplainWithChat prompt="Explain the sample project table fields in clear real estate language." />
+                <ExplainWithChat prompt={isArabic ? "اشرح لي الحقول الموجودة في هذه العينة بلغة عقارية واضحة." : "Explain the sample project table fields in clear real estate language."} />
               </div>
               <p className="text-xs text-muted-foreground mb-4">
-                Live rows to show how signals read together.
+                {isArabic ? "صفوف حية توضّح كيف تُقرأ الإشارات معًا." : "Live rows to show how signals read together."}
               </p>
               {sampleLoading ? (
-                <div className="text-sm text-muted-foreground">Loading live sample…</div>
+                <div className="text-sm text-muted-foreground">{isArabic ? "جارٍ تحميل العينة الحية…" : "Loading live sample…"}</div>
               ) : sampleRows.length > 0 ? (
                 <div className="space-y-3">
                   {sampleRows.map((row) => (
                     <div key={String(row.asset_id)} className="border border-border rounded-lg p-4 bg-background/60">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-foreground">{row.name ?? row.asset_id}</p>
-                        <span className="text-xs text-muted-foreground">{row.safety_band ?? "Safety —"}</span>
+                        <span className="text-xs text-muted-foreground">{row.safety_band ?? (isArabic ? "الأمان —" : "Safety —")}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mt-2">
                         <span>
-                          Price:{" "}
+                          {isArabic ? "السعر:" : "Price:"}{" "}
                           <span className="text-foreground">
                             {row.price_aed ? `AED ${row.price_aed.toLocaleString()}` : "—"}
                           </span>
                         </span>
                         <span>
-                          Delivery: <span className="text-foreground">{row.status_band ?? "—"}</span>
+                          {isArabic ? "التسليم:" : "Delivery:"} <span className="text-foreground">{row.status_band ?? "—"}</span>
                         </span>
                         <span>
-                          Liquidity: <span className="text-foreground">{row.liquidity_band ?? "—"}</span>
+                          {isArabic ? "السيولة:" : "Liquidity:"} <span className="text-foreground">{row.liquidity_band ?? "—"}</span>
                         </span>
                         <span>
-                          Investor class: <span className="text-foreground">{row.classification ?? "—"}</span>
+                          {isArabic ? "فئة المستثمر:" : "Investor class:"} <span className="text-foreground">{row.classification ?? "—"}</span>
                         </span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground">{sampleError ?? "Live sample unavailable."}</div>
+                <div className="text-sm text-muted-foreground">{sampleError ?? (isArabic ? "العينة الحية غير متاحة الآن." : "Live sample unavailable.")}</div>
               )}
             </div>
           </div>
@@ -301,7 +355,7 @@ export default function LibraryPage() {
               return (
               <Link
                 key={article.slug}
-                href={`/library/${article.slug}`}
+                href={prefixLocalePath(`/library/${article.slug}`, locale)}
                 className="group p-6 bg-card border border-border rounded-lg hover:border-accent/30 transition-colors"
               >
                 <div className="flex items-center justify-between mb-4">
@@ -324,7 +378,7 @@ export default function LibraryPage() {
                   {article.description}
                 </p>
                 <div className="text-xs text-muted-foreground inline-flex items-center gap-2">
-                  Read brief
+                  {isArabic ? "اقرأ الملخص" : "Read brief"}
                   <ArrowRight className="w-3 h-3" />
                 </div>
               </Link>

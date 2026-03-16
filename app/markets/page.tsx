@@ -1,6 +1,7 @@
 "use client"
 
 import React, { Suspense, useEffect, useMemo, useRef, useState } from "react"
+import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ExplorerChat } from "@/components/explorer-chat"
@@ -21,6 +22,7 @@ import {
   Layers,
   Info,
 } from "lucide-react"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 /* ================================================================
    SCRIPTS — short labels, full detail only on expand
@@ -375,7 +377,185 @@ const laneOptions = [
   },
 ]
 
+const arabicLaneCopy: Record<string, { title: string; summary: string; note: string }> = {
+  discover: {
+    title: "استكشاف الفرص",
+    summary: "ابحث عن مشاريع تناسب الميزانية والعائد والتسليم خلال دقائق.",
+    note: "أفضل استخدام: ميزانية + عائد + توقيت تسليم",
+  },
+  compare: {
+    title: "المقارنة",
+    summary: "ضع منطقتين أو مطورين أو خيارين استثماريين جنبًا إلى جنب.",
+    note: "أفضل استخدام: منطقة مقابل منطقة أو مطور مقابل مطور",
+  },
+  invest: {
+    title: "تحليل الاستثمار",
+    summary: "راجع العائد ونقطة التعادل وأثر القرار على المحفظة بسرعة.",
+    note: "أفضل استخدام: العائد والتخطيط للمحفظة",
+  },
+}
+
+const arabicScriptCopy: Record<string, { label: string; detail: string }> = {
+  "Under budget + proven yield": { label: "ضمن الميزانية بعائد مثبت", detail: "اعثر على شقق ضمن ميزانيتك بعائد مثبت فعليًا" },
+  "By feature + delivery year": { label: "بالمواصفات وسنة التسليم", detail: "ابحث عن وحدات بمواصفات محددة وتسليم قريب" },
+  "Below area median": { label: "أقل من متوسط المنطقة", detail: "وحدات أقل من متوسط السعر في المنطقة حسب نوع الوحدة" },
+  "Villa match under budget": { label: "فلل ضمن الميزانية", detail: "اعثر على فلل تطابق شروطك ضمن ميزانية واضحة" },
+  "Area vs Area": { label: "منطقة مقابل منطقة", detail: "قارن بين منطقتين من زاوية استثمارية" },
+  "Listing-to-trade gap": { label: "فجوة العرض مقابل التنفيذ", detail: "قارن فجوة الأسعار بين المعروض والتنفيذ الفعلي" },
+  "Developer vs Developer": { label: "مطور مقابل مطور", detail: "قارن بين مطورين في التسليم والتسعير والموثوقية" },
+  "Off-plan vs ready yields": { label: "عائد الجاهز مقابل الأوف بلان", detail: "قارن العائد بين المشاريع الجاهزة والأوف بلان في المنطقة" },
+  "Best yield under budget": { label: "أفضل عائد ضمن الميزانية", detail: "أفضل فرص العائد المثبت ضمن ميزانية محددة في الإمارات" },
+  "Cash-on-cash with payment plan": { label: "عائد النقد مع خطة السداد", detail: "احسب العائد النقدي لمشروع أوف بلان مع خطة سداد" },
+  "Yield above threshold (DLD backed)": { label: "عائد أعلى من الحد", detail: "مناطق يتجاوز فيها العائد الحد المطلوب ببيانات مدعومة من DLD" },
+  "Portfolio builder": { label: "بناء محفظة", detail: "ركّب محفظة موزعة على أكثر من منطقة لتحقيق أفضل عائد" },
+  "If I wait X months?": { label: "ماذا لو انتظرت عدة أشهر؟", detail: "إذا انتظرت، كيف قد تتحرك الأسعار وفق الوتيرة الحالية؟" },
+  "If rates go up?": { label: "ماذا لو ارتفعت الفائدة؟", detail: "ما المناطق التي تتأثر أولًا إذا ارتفعت الفائدة؟" },
+  "Off-plan now vs ready": { label: "أوف بلان الآن أم جاهز؟", detail: "قارن الكلفة الكاملة بين الأوف بلان والجاهز عبر السنوات" },
+  "Metro impact radius": { label: "أثر المترو على المنطقة", detail: "ما نطاق الأثر السعري المتوقع مع افتتاح المترو؟" },
+  "Widest price gap areas": { label: "أكبر فجوات سعرية", detail: "مناطق يظهر فيها أكبر فرق بين سعر المنصات وواقع التنفيذ" },
+  "Listings growing > transactions": { label: "المعروض يرتفع أسرع من التنفيذ", detail: "أين يرتفع المعروض بوتيرة أسرع من الصفقات المنفذة؟" },
+  "Negative momentum areas": { label: "مناطق فقدت الزخم", detail: "مناطق بدأ فيها الزخم السعري يتراجع" },
+  "On-time delivery ranking": { label: "ترتيب المطورين في الالتزام بالتسليم", detail: "رتّب المطورين الأعلى التزامًا في التسليم" },
+  "Tightest asking-to-trade gap": { label: "أضيق فجوة بين المطلوب والمنفذ", detail: "مطوّرون أسعارهم أقرب لواقع السوق المنفذ" },
+  "DLD yield vs advertised yield": { label: "العائد الفعلي مقابل المعلن", detail: "افهم الفرق بين العائد المدعوم من DLD والعائد التسويقي" },
+  "Listing-to-supply ratio": { label: "نسبة المعروض إلى المخزون", detail: "ماذا تعني هذه النسبة وكيف تُقرأ فعليًا؟" },
+  "Registration process": { label: "خطوات التسجيل", detail: "شرح مبسط لخطوات تسجيل العقار في دبي" },
+  "Proximity discount": { label: "خصم الموقع", detail: "ما أثر القرب من المعالم على السعر والعائد؟" },
+  "Off-plan payment plans": { label: "خطط السداد في الأوف بلان", detail: "كيف تعمل خطط السداد في مشاريع الأوف بلان؟" },
+  "Service charge explained": { label: "شرح رسوم الخدمات", detail: "كيف تتحدد رسوم الخدمات ومن يضعها؟" },
+  "Rate change + budget filter": { label: "الفائدة مع الميزانية", detail: "إذا تغيّرت الفائدة، ما المشاريع التي ما زالت منطقية ضمن الميزانية؟" },
+  "Yield + metro + rising area": { label: "عائد + مترو + منطقة صاعدة", detail: "ابحث عن مشاريع تجمع العائد والقرب من المترو وزخم المنطقة" },
+  "Best developer + lowest gap + liquidity": { label: "أفضل مطور + أقل فجوة + أعلى سيولة", detail: "امزج بين المطور الأفضل والفجوة الأقل والسيولة الأعلى" },
+  "Smart money signal": { label: "إشارة المال الذكي", detail: "أماكن ينخفض فيها السعر بينما ترتفع الصفقات" },
+  "Distressed sale indicators": { label: "إشارات البيع المضغوط", detail: "إشارات ضغط سعر مع طول مدة بقاء الوحدة في السوق" },
+  "Supply squeeze areas": { label: "مناطق شح المعروض", detail: "صفقات ترتفع ومعروض يتراجع — أين يظهر الشح؟" },
+}
+
+const arabicInputLabels: Record<string, string> = {
+  "Max Budget": "الميزانية القصوى",
+  "Min Yield": "الحد الأدنى للعائد",
+  Area: "المنطقة",
+  Feature: "المواصفة",
+  "Delivered within": "تم التسليم خلال",
+  Bedrooms: "عدد الغرف",
+  "Min Bedrooms": "الحد الأدنى للغرف",
+  "Max Price Gap": "أقصى فجوة سعرية",
+  Developer: "المطور",
+  "Delivery Year": "سنة التسليم",
+  Near: "بالقرب من",
+  Radius: "النطاق",
+  "Max Vacancy": "أقصى شغور",
+  "Min Drop": "أقل هبوط",
+  Period: "الفترة",
+  "Min Floor": "أقل طابق",
+  "Launched in": "تم الإطلاق في",
+  "Max Price": "السعر الأقصى",
+  "Area A": "المنطقة الأولى",
+  "Area B": "المنطقة الثانية",
+  "Unit Type": "نوع الوحدة",
+  "Developer A": "المطور الأول",
+  "Developer B": "المطور الثاني",
+  "How many": "العدد",
+  "Emirate A": "الإمارة الأولى",
+  "Emirate B": "الإمارة الثانية",
+  "Top per emirate": "عدد المشاريع لكل إمارة",
+  "Payment Split": "خطة السداد",
+  "Total Budget": "إجمالي الميزانية",
+  "Number of Areas": "عدد المناطق",
+  Wait: "مدة الانتظار",
+  "Rate Increase": "ارتفاع الفائدة",
+  Location: "الموقع",
+  Discount: "نسبة الخصم",
+  "New Units": "وحدات جديدة",
+  Increase: "نسبة الزيادة",
+  Type: "النوع",
+  "Min Days": "أدنى عدد أيام",
+  "Min Ratio": "أقل نسبة",
+  "Max Gap": "أقصى فجوة",
+  Over: "خلال",
+  Year: "السنة",
+  "Rate Change": "تغيّر الفائدة",
+  "Min Delivery": "أقل نسبة تسليم",
+  "Cash Available": "السيولة المتاحة",
+  Layout: "التقسيمة",
+}
+
+const arabicInputPlaceholders: Record<string, string> = {
+  "Any area": "أي منطقة",
+  "e.g. balcony, sea view": "مثل: بلكونة، إطلالة",
+  "e.g. JVC, Marina": "مثل: JVC أو مارينا",
+  "e.g. Business Bay": "مثل: الخليج التجاري",
+  "e.g. Dubai Hills": "مثل: دبي هيلز",
+  "e.g. JLT": "مثل: JLT",
+  "e.g. Emaar": "مثل: إعمار",
+  "e.g. Dubailand": "مثل: دبي لاند",
+  "e.g. Dubai Metro": "مثل: مترو دبي",
+  "6 months": "6 أشهر",
+  "Q4 2024": "الربع الرابع 2024",
+  Studio: "استوديو",
+  "e.g. Downtown": "مثل: داون تاون",
+  "e.g. Marina": "مثل: مارينا",
+  "e.g. DAMAC": "مثل: داماك",
+  Any: "أي قيمة",
+  "e.g. MBR City": "مثل: مدينة محمد بن راشد",
+  "e.g. Dubai South": "مثل: دبي الجنوب",
+}
+
+const arabicInputOptions: Record<string, string> = {
+  Studio: "استوديو",
+  Apartment: "شقة",
+  Villa: "فيلا",
+  Townhouse: "تاون هاوس",
+  "Last month": "الشهر الماضي",
+  "Last quarter": "الربع الماضي",
+  "Last 6 months": "آخر 6 أشهر",
+  "6 months": "6 أشهر",
+  "12 months": "12 شهرًا",
+  "24 months": "24 شهرًا",
+}
+
+const arabicActionLabels: Record<string, string> = {
+  "Narrow this down further": "ضيّق النتائج أكثر",
+  "Compare top results": "قارن أفضل النتائج",
+  "Show the calculation": "أظهر طريقة الحساب",
+  "Save to saved searches": "احفظها في البحث المحفوظ",
+}
+
+function getLocalizedLane(lane: (typeof laneOptions)[number], locale: AppLocale) {
+  if (locale !== "ar") return lane
+  return { ...lane, ...(arabicLaneCopy[lane.id] ?? {}) }
+}
+
+function getLocalizedInput(input: ScriptInput, locale: AppLocale): ScriptInput {
+  if (locale !== "ar") return input
+  return {
+    ...input,
+    label: arabicInputLabels[input.label] ?? input.label,
+    placeholder: arabicInputPlaceholders[input.placeholder] ?? input.placeholder,
+    options: input.options?.map((option) => arabicInputOptions[option] ?? option),
+    suffix: input.suffix === "years" ? "سنة" : input.suffix,
+  }
+}
+
+function getLocalizedScript(script: Script, locale: AppLocale) {
+  if (locale !== "ar") return script
+  const mapped = arabicScriptCopy[script.label]
+  return {
+    ...script,
+    label: mapped?.label ?? script.label,
+    detail: mapped?.detail ?? script.detail,
+    inputs: script.inputs?.map((input) => getLocalizedInput(input, locale)),
+  }
+}
+
+function getActionLabel(action: string, locale: AppLocale) {
+  if (locale !== "ar") return action
+  return arabicActionLabels[action] ?? action
+}
+
 function MarketsContent() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
   const [query, setQuery] = useState("")
   const [activeScript, setActiveScript] = useState<{ cat: string; script: Script } | null>(null)
   const [inputValues, setInputValues] = useState<Record<string, string>>({})
@@ -418,7 +598,8 @@ function MarketsContent() {
     .slice(0, 3) ?? []
   const hasResults = resultRows.length > 0
   const resultTones = ["bg-card/60", "bg-muted/30", "bg-secondary/30"]
-  const activeLaneConfig = laneOptions.find((lane) => lane.id === activeLane) ?? laneOptions[0]
+  const localizedLaneOptions = laneOptions.map((lane) => getLocalizedLane(lane, locale))
+  const activeLaneConfig = localizedLaneOptions.find((lane) => lane.id === activeLane) ?? localizedLaneOptions[0]
   const activeCategory = categoryMap[activeLaneConfig?.id ?? "discover"]
   const laneScripts = activeCategory?.scripts.slice(0, 4) ?? []
 
@@ -469,12 +650,12 @@ function MarketsContent() {
       setSnapshotError(null)
       try {
         const res = await fetch("/api/market-score/summary", { signal: controller.signal })
-        if (!res.ok) throw new Error("Live snapshot unavailable")
+        if (!res.ok) throw new Error(isArabic ? "لقطة السوق غير متاحة الآن" : "Live snapshot unavailable")
         const data = await res.json()
         setSnapshot(data)
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return
-        setSnapshotError(error instanceof Error ? error.message : "Live snapshot unavailable")
+        setSnapshotError(error instanceof Error ? error.message : isArabic ? "لقطة السوق غير متاحة الآن" : "Live snapshot unavailable")
       } finally {
         setSnapshotLoading(false)
       }
@@ -526,8 +707,16 @@ function MarketsContent() {
       return
     }
 
-    const label = activeScript?.script.label || query.trim() || "Explorer search"
-    const detail = activeScript?.script.detail || (query.trim() ? "Custom Explorer query" : "Saved Explorer view")
+    const label = activeScript ? getLocalizedScript(activeScript.script, locale).label : query.trim() || (isArabic ? "بحث السوق" : "Explorer search")
+    const detail = activeScript
+      ? getLocalizedScript(activeScript.script, locale).detail
+      : query.trim()
+        ? isArabic
+          ? "طلب مخصص داخل المستكشف"
+          : "Custom Explorer query"
+        : isArabic
+          ? "عرض محفوظ داخل المستكشف"
+          : "Saved Explorer view"
     const trimmedInputs = Object.fromEntries(
       Object.entries(inputValues).filter(([, value]) => String(value ?? "").trim().length > 0),
     )
@@ -547,16 +736,18 @@ function MarketsContent() {
   }
 
   const buildResultsSummary = () => {
-    const headline = `Explorer results: ${resultCount ?? resultRows.length} matches`
-    const requestLabel = activeScript?.script.label || query.trim() || "Explorer request"
-    const requestLine = `Request: ${requestLabel}`
+    const headline = isArabic
+      ? `نتائج المستكشف: ${resultCount ?? resultRows.length} نتيجة`
+      : `Explorer results: ${resultCount ?? resultRows.length} matches`
+    const requestLabel = activeScript ? getLocalizedScript(activeScript.script, locale).label : query.trim() || (isArabic ? "طلب المستكشف" : "Explorer request")
+    const requestLine = isArabic ? `الطلب: ${requestLabel}` : `Request: ${requestLabel}`
     const inputSummary = Object.entries(inputValues)
       .filter(([, value]) => String(value ?? "").trim().length > 0)
       .map(([key, value]) => `${key}: ${value}`)
       .join(", ")
-    const inputsLine = inputSummary ? `Inputs: ${inputSummary}` : null
+    const inputsLine = inputSummary ? (isArabic ? `المدخلات: ${inputSummary}` : `Inputs: ${inputSummary}`) : null
     const topRows = resultRows.slice(0, 6).map((row, index) => {
-      const price = row.price_aed ? `AED ${Number(row.price_aed).toLocaleString()}` : "Price on request"
+      const price = row.price_aed ? `AED ${Number(row.price_aed).toLocaleString()}` : isArabic ? "السعر عند الطلب" : "Price on request"
       const location = [row.area, row.city].filter(Boolean).join(", ") || "UAE"
       const status = row.status_band ?? "—"
       return `${index + 1}. ${row.name || row.asset_id} — ${location} — ${price} — ${status}`
@@ -651,7 +842,7 @@ function MarketsContent() {
       if (top?.city) params.set("city", top.city)
       if (top?.area) params.set("area", top.area)
       const target = params.toString()
-      router.push(target ? `/market-score?${target}` : "/market-score")
+      router.push(prefixLocalePath(target ? `/market-score?${target}` : "/market-score", locale))
       return
     }
 
@@ -659,7 +850,7 @@ function MarketsContent() {
       if (!saved) {
         handleSaveToggle()
       }
-      router.push("/workspace/saved-searches")
+      router.push(prefixLocalePath("/workspace/saved-searches", locale))
     }
   }
 
@@ -705,14 +896,14 @@ function MarketsContent() {
   const formatStatusBand = (value?: string | null) => {
     if (!value) return "—"
     const normalized = value.toLowerCase()
-    if (normalized.includes("completed")) return "Ready / completed"
-    if (normalized.includes("handover2025") || normalized === "2025") return "2025 delivery"
-    if (normalized.includes("handover2026") || normalized === "2026") return "2026 delivery"
-    if (normalized.includes("handover2027") || normalized === "2027") return "2027 delivery"
+    if (normalized.includes("completed")) return isArabic ? "جاهز / مكتمل" : "Ready / completed"
+    if (normalized.includes("handover2025") || normalized === "2025") return isArabic ? "تسليم 2025" : "2025 delivery"
+    if (normalized.includes("handover2026") || normalized === "2026") return isArabic ? "تسليم 2026" : "2026 delivery"
+    if (normalized.includes("handover2027") || normalized === "2027") return isArabic ? "تسليم 2027" : "2027 delivery"
     if (normalized.includes("handover2028_29") || normalized.includes("2028") || normalized.includes("2029")) {
-      return "2028-29 delivery"
+      return isArabic ? "تسليم 2028-29" : "2028-29 delivery"
     }
-    if (normalized.includes("handover2030plus") || normalized.includes("2030")) return "2030+ delivery"
+    if (normalized.includes("handover2030plus") || normalized.includes("2030")) return isArabic ? "تسليم +2030" : "2030+ delivery"
     return value
   }
 
@@ -761,7 +952,7 @@ function MarketsContent() {
       const emirateRight = values.e2?.trim()
 
       if (areaLeft && areaRight) {
-        router.push(`/workspace/comparisons?left=${encodeURIComponent(areaLeft)}&right=${encodeURIComponent(areaRight)}`)
+        router.push(prefixLocalePath(`/workspace/comparisons?left=${encodeURIComponent(areaLeft)}&right=${encodeURIComponent(areaRight)}`, locale))
         setRunning(false)
         return
       }
@@ -846,7 +1037,7 @@ function MarketsContent() {
             <div className="flex items-center justify-end">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
                 <Info className="h-3 w-3" />
-                Rental & transaction data updated
+                {isArabic ? "تم تحديث بيانات السوق والصفقات" : "Rental & transaction data updated"}
               </div>
             </div>
 
@@ -854,13 +1045,13 @@ function MarketsContent() {
             <div className="mt-10">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Sparkles className="h-4 w-4 text-accent/80" />
-                Explorer
+                {isArabic ? "المستكشف" : "Explorer"}
               </div>
               <h1 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-semibold text-foreground">
-                Where should we explore first?
+                {isArabic ? "من أين تريد أن نبدأ القراءة؟" : "Where should we explore first?"}
               </h1>
               <p className="mt-3 text-sm text-muted-foreground">
-                Ask a question, then use the packs below to go deeper.
+                {isArabic ? "ابدأ بسؤال واضح، ثم استخدم المسارات الجاهزة للتوسع في القرار." : "Ask a question, then use the packs below to go deeper."}
               </p>
             </div>
           )}
@@ -869,7 +1060,7 @@ function MarketsContent() {
             <form onSubmit={handleSubmit} className={`${running ? "mt-6" : "mt-8"}`}>
               <div className="rounded-3xl border border-border/60 bg-card/60 backdrop-blur-lg shadow-[0_24px_80px_-50px_rgba(15,23,42,0.45)]">
                 <div className="px-6 pt-5 text-sm text-muted-foreground">
-                  Discover what&apos;s possible
+                  {isArabic ? "ابدأ من السؤال الذي يشغلك" : "Discover what&apos;s possible"}
                 </div>
                 <div className="px-6 pb-4">
                   <input
@@ -881,7 +1072,7 @@ function MarketsContent() {
                     }}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setTimeout(() => setIsFocused(false), 150)}
-                    placeholder="Ask about pricing, yield, timing, or supply pressure"
+                    placeholder={isArabic ? "اسأل عن السعر، أو العائد، أو التوقيت، أو ضغط المعروض" : "Ask about pricing, yield, timing, or supply pressure"}
                     className="w-full bg-transparent text-base sm:text-lg text-foreground placeholder:text-muted-foreground focus:outline-none"
                     ref={heroInputRef}
                     autoFocus
@@ -891,18 +1082,18 @@ function MarketsContent() {
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                       <Layers className="h-4 w-4" />
-                      <span>13 packs ready</span>
+                      <span>{isArabic ? "13 مسارًا جاهزًا" : "13 packs ready"}</span>
                     </div>
-                    <span className="text-muted-foreground/70">Live market data</span>
+                    <span className="text-muted-foreground/70">{isArabic ? "بيانات سوقية مباشرة" : "Live market data"}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <button type="button" className="flex items-center gap-2 rounded-full border border-border/60 bg-background/40 px-3 py-2 text-muted-foreground hover:text-foreground">
-                      UAE focus
+                      {isArabic ? "تركيز الإمارات" : "UAE focus"}
                       <ChevronDown className="h-4 w-4" />
                     </button>
                     {activeScript ? (
                       <button type="button" onClick={clearScript} className="rounded-full border border-border/60 bg-background/40 px-4 py-2 text-muted-foreground hover:text-foreground">
-                        Clear
+                        {isArabic ? "مسح" : "Clear"}
                       </button>
                     ) : (
                       <button type="submit" className="rounded-full border border-border/60 bg-secondary/60 px-4 py-2 text-foreground hover:bg-secondary/80">
@@ -917,9 +1108,9 @@ function MarketsContent() {
             <div className={`${running ? "mt-6" : "mt-8"} rounded-3xl border border-border/60 bg-card/60 backdrop-blur-lg px-6 py-5`}>
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Continue your Explorer conversation</p>
+                  <p className="text-sm text-muted-foreground">{isArabic ? "أكمل حديثك مع المستكشف" : "Continue your Explorer conversation"}</p>
                   {lastUserMessage && (
-                    <p className="text-xs text-muted-foreground/70 mt-2">Last request: {lastUserMessage}</p>
+                    <p className="text-xs text-muted-foreground/70 mt-2">{isArabic ? "آخر طلب:" : "Last request:"} {lastUserMessage}</p>
                   )}
                 </div>
                 <button
@@ -927,36 +1118,42 @@ function MarketsContent() {
                   onClick={() => setExplorerChatState({ isOpen: true, isMinimized: false })}
                   className="rounded-full border border-border/60 bg-secondary/60 px-4 py-2 text-foreground hover:bg-secondary/80"
                 >
-                  Open chat
+                  {isArabic ? "افتح المحادثة" : "Open chat"}
                 </button>
               </div>
             </div>
           )}
 
           <div className="mt-6 flex flex-wrap gap-2">
-            {quickShortcuts.map((shortcut) => (
-              <button
-                key={shortcut.script.label}
-                onClick={() => selectScript(shortcut.catId, shortcut.script)}
-                className="rounded-full border border-border/60 bg-secondary/40 px-4 py-2 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20"
-              >
-                {shortcut.script.label}
-              </button>
-            ))}
+            {quickShortcuts.map((shortcut) => {
+              const displayScript = getLocalizedScript(shortcut.script, locale)
+              return (
+                <button
+                  key={shortcut.script.label}
+                  onClick={() => selectScript(shortcut.catId, shortcut.script)}
+                  className="rounded-full border border-border/60 bg-secondary/40 px-4 py-2 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20"
+                >
+                  {displayScript.label}
+                </button>
+              )
+            })}
           </div>
 
             {isFocused && !activeScript && !hasConversation && (
               <div className="mt-4 rounded-2xl border border-border/60 bg-card/80">
-                {suggestionItems.map((item) => (
-                  <button
-                    key={item.script.label}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => selectScript(item.catId, item.script)}
-                    className="w-full text-left px-5 py-4 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 border-b border-border/40 last:border-b-0"
-                  >
-                    {item.script.detail}
-                  </button>
-                ))}
+                {suggestionItems.map((item) => {
+                  const displayScript = getLocalizedScript(item.script, locale)
+                  return (
+                    <button
+                      key={item.script.label}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => selectScript(item.catId, item.script)}
+                      className="w-full text-left px-5 py-4 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 border-b border-border/40 last:border-b-0"
+                    >
+                      {displayScript.detail}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -968,54 +1165,54 @@ function MarketsContent() {
               <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-slate-500/10 via-background/50 to-background/80 p-7">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Live market snapshot</p>
-                    <h2 className="text-xl font-semibold text-foreground mt-2">Today&apos;s inventory posture</h2>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "لقطة السوق الآن" : "Live market snapshot"}</p>
+                    <h2 className="text-xl font-semibold text-foreground mt-2">{isArabic ? "شكل المعروض اليوم" : "Today&apos;s inventory posture"}</h2>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {snapshot ? "Live feed connected" : snapshotLoading ? "Connecting…" : "Feed not ready"}
+                    {snapshot ? (isArabic ? "الاتصال المباشر جاهز" : "Live feed connected") : snapshotLoading ? (isArabic ? "جارٍ الاتصال..." : "Connecting…") : isArabic ? "التغذية ليست جاهزة بعد" : "Feed not ready"}
                   </span>
                 </div>
 
                 {snapshotLoading ? (
-                  <div className="mt-6 text-sm text-muted-foreground">Loading live snapshot…</div>
+                  <div className="mt-6 text-sm text-muted-foreground">{isArabic ? "جارٍ تحميل لقطة السوق..." : "Loading live snapshot…"}</div>
                 ) : snapshotError ? (
                   <div className="mt-6 text-sm text-amber-200">{snapshotError}</div>
                 ) : snapshot ? (
                   <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="rounded-xl border border-border/60 bg-card/60 p-4">
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground">Assets scored</p>
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "أصول تم تقييمها" : "Assets scored"}</p>
                       <p className="text-lg font-semibold text-foreground mt-2">
                         {formatSnapshotNumber(snapshot.totalAssets)}
                       </p>
                     </div>
                     <div className="rounded-xl border border-border/60 bg-card/60 p-4">
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground">Average score</p>
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "متوسط النتيجة" : "Average score"}</p>
                       <p className="text-lg font-semibold text-foreground mt-2">
                         {Number.isFinite(snapshot.avgScore) ? snapshot.avgScore.toFixed(1) : "—"}
                       </p>
                     </div>
                     <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground">Top safety band</p>
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "أعلى شريحة أمان" : "Top safety band"}</p>
                       <p className="text-sm font-medium text-foreground mt-2">{topSafetyBand ?? "—"}</p>
                     </div>
                     <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground">Conservative-ready</p>
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "جاهز للمستثمر المحافظ" : "Conservative-ready"}</p>
                       <p className="text-sm font-medium text-foreground mt-2">
                         {formatSnapshotNumber(snapshot.conservativeReadyPool)}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-6 text-sm text-muted-foreground">Live snapshot will appear here.</div>
+                  <div className="mt-6 text-sm text-muted-foreground">{isArabic ? "ستظهر هنا لقطة السوق المباشرة." : "Live snapshot will appear here."}</div>
                 )}
               </div>
 
               <div className="rounded-2xl border border-border/70 bg-card/60 p-7">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">Safety mix</p>
-                <h3 className="text-lg font-semibold text-foreground mt-2">Where inventory sits right now</h3>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "توزيع الأمان" : "Safety mix"}</p>
+                <h3 className="text-lg font-semibold text-foreground mt-2">{isArabic ? "كيف يتوزع المعروض الآن" : "Where inventory sits right now"}</h3>
                 <div className="mt-5 space-y-3">
                   {snapshotLoading ? (
-                    <p className="text-sm text-muted-foreground">Loading safety mix…</p>
+                    <p className="text-sm text-muted-foreground">{isArabic ? "جارٍ تحميل توزيع الأمان..." : "Loading safety mix…"}</p>
                   ) : snapshotError ? (
                     <p className="text-sm text-amber-200">{snapshotError}</p>
                   ) : safetyMix.length > 0 ? (
@@ -1023,7 +1220,7 @@ function MarketsContent() {
                       <div key={item.label} className="space-y-2">
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{item.label}</span>
-                          <span>{item.count.toLocaleString()} assets</span>
+                          <span>{item.count.toLocaleString()} {isArabic ? "أصل" : "assets"}</span>
                         </div>
                         <div className="h-2 w-full rounded-full bg-muted/40">
                           <div
@@ -1034,13 +1231,13 @@ function MarketsContent() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">Safety mix will appear once live feed is ready.</p>
+                    <p className="text-sm text-muted-foreground">{isArabic ? "سيظهر توزيع الأمان فور جاهزية التغذية المباشرة." : "Safety mix will appear once live feed is ready."}</p>
                   )}
                 </div>
 
                 {statusHighlights.length > 0 && (
                   <div className="mt-6 rounded-xl border border-border/60 bg-background/40 p-4">
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Best scoring delivery bands</p>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "شرائح التسليم الأعلى تقييمًا" : "Best scoring delivery bands"}</p>
                     <div className="mt-3 space-y-2 text-sm text-muted-foreground">
                       {statusHighlights.map((item) => (
                         <div key={item.label} className="flex items-center justify-between">
@@ -1060,19 +1257,21 @@ function MarketsContent() {
         {activeScript && activeScript.script.inputs && activeScript.script.inputs.length > 0 && !running && (
           <div ref={inputsRef} className="px-6 sm:px-10 lg:px-16 max-w-[1440px] mx-auto mt-8">
             <div className="rounded-2xl border border-border bg-card/80 p-6 sm:p-8">
-              <p className="text-lg text-foreground font-medium mb-6">{activeScript.script.detail}</p>
+              <p className="text-lg text-foreground font-medium mb-6">{getLocalizedScript(activeScript.script, locale).detail}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {activeScript.script.inputs.map(inp => (
+                {activeScript.script.inputs.map(inp => {
+                  const displayInput = getLocalizedInput(inp, locale)
+                  return (
                   <div key={inp.id}>
-                    <label className="text-base text-muted-foreground mb-2 block">{inp.label}</label>
-                    {inp.type === "select" && inp.options ? (
+                    <label className="text-base text-muted-foreground mb-2 block">{displayInput.label}</label>
+                    {inp.type === "select" && displayInput.options ? (
                       <select
                         value={inputValues[inp.id] || ""}
                         onChange={e => setInputValues({ ...inputValues, [inp.id]: e.target.value })}
                         className="w-full rounded-lg border border-border bg-background px-4 py-3 text-base text-foreground focus:outline-none focus:border-primary"
                       >
-                        <option value="">{inp.placeholder}</option>
-                        {inp.options.map(o => <option key={o} value={o}>{o}</option>)}
+                        <option value="">{displayInput.placeholder}</option>
+                        {displayInput.options.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     ) : (
                       <div className="relative">
@@ -1081,24 +1280,24 @@ function MarketsContent() {
                           inputMode={inp.type === "number" ? "numeric" : "text"}
                           value={inputValues[inp.id] || ""}
                           onChange={e => setInputValues({ ...inputValues, [inp.id]: e.target.value })}
-                          placeholder={inp.placeholder}
-                          className={`w-full rounded-lg border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary ${inp.suffix ? "pr-16" : ""}`}
+                          placeholder={displayInput.placeholder}
+                          className={`w-full rounded-lg border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary ${displayInput.suffix ? "pr-16" : ""}`}
                         />
-                        {inp.suffix && (
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-base text-muted-foreground">{inp.suffix}</span>
+                        {displayInput.suffix && (
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-base text-muted-foreground">{displayInput.suffix}</span>
                         )}
                       </div>
                     )}
                   </div>
-                ))}
+                  )})}
               </div>
               <div className="mt-6 flex items-center gap-4">
                 <button onClick={runScript} className="flex items-center gap-2 px-8 py-3 rounded-lg bg-primary text-primary-foreground text-base font-semibold hover:bg-primary/90 transition-colors">
                   <Play className="w-4 h-4" />
-                  Run
+                  {isArabic ? "شغّل" : "Run"}
                 </button>
                 <button onClick={clearScript} className="px-5 py-3 text-base text-muted-foreground hover:text-foreground transition-colors">
-                  Cancel
+                  {isArabic ? "إلغاء" : "Cancel"}
                 </button>
               </div>
             </div>
@@ -1122,8 +1321,8 @@ function MarketsContent() {
                 className={`p-2 rounded-lg transition-colors ${
                   copied ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 } ${!hasResults ? "opacity-50 cursor-not-allowed" : ""}`}
-                aria-label="Copy results summary"
-                title={copied ? "Copied" : "Copy results summary"}
+                aria-label={isArabic ? "انسخ ملخص النتائج" : "Copy results summary"}
+                title={copied ? (isArabic ? "تم النسخ" : "Copied") : isArabic ? "انسخ ملخص النتائج" : "Copy results summary"}
               >
                 <Copy className="w-5 h-5" />
               </button>
@@ -1134,8 +1333,8 @@ function MarketsContent() {
                 className={`p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors ${
                   !hasResults ? "opacity-50 cursor-not-allowed" : ""
                 }`}
-                aria-label="Download results CSV"
-                title="Download results CSV"
+                aria-label={isArabic ? "نزّل النتائج CSV" : "Download results CSV"}
+                title={isArabic ? "نزّل النتائج CSV" : "Download results CSV"}
               >
                 <Download className="w-5 h-5" />
               </button>
@@ -1147,7 +1346,7 @@ function MarketsContent() {
                   {activeScript.script.inputs.map(inp => (
                     inputValues[inp.id] ? (
                       <span key={inp.id} className="text-base text-foreground px-4 py-2 border border-border rounded-lg">
-                        {inp.label}: <strong>{inputValues[inp.id]}{inp.suffix ? ` ${inp.suffix}` : ""}</strong>
+                        {getLocalizedInput(inp, locale).label}: <strong>{inputValues[inp.id]}{getLocalizedInput(inp, locale).suffix ? ` ${getLocalizedInput(inp, locale).suffix}` : ""}</strong>
                       </span>
                     ) : null
                   ))}
@@ -1157,24 +1356,24 @@ function MarketsContent() {
               <div className="rounded-2xl border border-border bg-card/80 p-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Results</p>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "النتائج" : "Results"}</p>
                     <p className="text-lg font-medium text-foreground">
-                      {resultCount !== null ? `${resultCount.toLocaleString()} matches` : "Results"}
+                      {resultCount !== null ? (isArabic ? `${resultCount.toLocaleString()} نتيجة` : `${resultCount.toLocaleString()} matches`) : isArabic ? "النتائج" : "Results"}
                     </p>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Live inventory filtered by your request.
+                    {isArabic ? "المعروض المباشر بعد تصفية طلبك." : "Live inventory filtered by your request."}
                   </p>
                 </div>
 
                 {resultLoading && (
-                  <div className="mt-6 text-sm text-muted-foreground">Loading results...</div>
+                  <div className="mt-6 text-sm text-muted-foreground">{isArabic ? "جارٍ تحميل النتائج..." : "Loading results..."}</div>
                 )}
                 {resultError && (
                   <div className="mt-6 text-sm text-amber-200">{resultError}</div>
                 )}
                 {!resultLoading && !resultError && resultRows.length === 0 && (
-                  <div className="mt-6 text-sm text-muted-foreground">No matching projects found yet.</div>
+                  <div className="mt-6 text-sm text-muted-foreground">{isArabic ? "لا توجد مشاريع مطابقة حتى الآن." : "No matching projects found yet."}</div>
                 )}
 
                 {!resultLoading && !resultError && resultRows.length > 0 && (
@@ -1189,12 +1388,12 @@ function MarketsContent() {
                           {[row.area, row.city].filter(Boolean).join(", ")}
                         </p>
                         <div className="mt-3 text-xs text-muted-foreground space-y-1">
-                          <p>Delivery: {formatStatusBand(row.status_band)}</p>
-                          <p>Safety: {row.safety_band ?? "—"}</p>
-                          <p>Score: {row.score_0_100 ?? "—"}</p>
+                          <p>{isArabic ? "التسليم" : "Delivery"}: {formatStatusBand(row.status_band)}</p>
+                          <p>{isArabic ? "الأمان" : "Safety"}: {row.safety_band ?? "—"}</p>
+                          <p>{isArabic ? "النتيجة" : "Score"}: {row.score_0_100 ?? "—"}</p>
                         </div>
                         <div className="mt-3 text-sm text-foreground font-medium">
-                          {row.price_aed ? `AED ${Number(row.price_aed).toLocaleString()}` : "Price on request"}
+                          {row.price_aed ? `AED ${Number(row.price_aed).toLocaleString()}` : isArabic ? "السعر عند الطلب" : "Price on request"}
                         </div>
                       </div>
                     ))}
@@ -1203,7 +1402,7 @@ function MarketsContent() {
               </div>
 
               <div className="text-xs text-muted-foreground">
-                Sources: DLD Transactions, Bayut, Property Finder, Rental Registry, Unit Records
+                {isArabic ? "المصادر: صفقات DLD، بيوت، بروبرتي فايندر، سجل الإيجارات، وسجلات الوحدات" : "Sources: DLD Transactions, Bayut, Property Finder, Rental Registry, Unit Records"}
               </div>
 
               <div className="pt-6 space-y-1">
@@ -1215,7 +1414,7 @@ function MarketsContent() {
                     className="flex items-center gap-3 text-base text-muted-foreground hover:text-foreground py-3 transition-colors group"
                   >
                     <CornerDownRight className="w-4 h-4 group-hover:text-primary" />
-                    {action}
+                    {getActionLabel(action, locale)}
                   </button>
                 ))}
               </div>
@@ -1229,14 +1428,14 @@ function MarketsContent() {
           <section className="rounded-2xl border border-border/70 bg-card/60 p-7">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">Pick a lane</p>
-                <h2 className="text-xl font-semibold text-foreground">Start with a clear decision path</h2>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "اختر المسار" : "Pick a lane"}</p>
+                <h2 className="text-xl font-semibold text-foreground">{isArabic ? "ابدأ من مسار واضح" : "Start with a clear decision path"}</h2>
               </div>
-              <p className="text-xs text-muted-foreground">Short requests, no long forms.</p>
+              <p className="text-xs text-muted-foreground">{isArabic ? "طلبات قصيرة بدل النماذج الطويلة." : "Short requests, no long forms."}</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-[0.45fr_0.55fr] gap-6">
               <div className="rounded-2xl border border-border/60 bg-background/40 p-4 space-y-2">
-                {laneOptions.map((lane) => (
+                {localizedLaneOptions.map((lane) => (
                   <button
                     key={lane.id}
                     type="button"
@@ -1259,28 +1458,31 @@ function MarketsContent() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Selected lane</p>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "المسار المختار" : "Selected lane"}</p>
                     <h3 className="text-lg font-semibold text-foreground mt-2">
-                      {activeLaneConfig?.title ?? "Decision path"}
+                      {activeLaneConfig?.title ?? (isArabic ? "مسار القرار" : "Decision path")}
                     </h3>
                     <p className="text-sm text-muted-foreground mt-2">
-                      {activeLaneConfig?.summary ?? "Choose a request to begin."}
+                      {activeLaneConfig?.summary ?? (isArabic ? "اختر طلبًا لنبدأ منه." : "Choose a request to begin.")}
                     </p>
                   </div>
                   <span className="text-[11px] text-muted-foreground">{activeLaneConfig?.note}</span>
                 </div>
 
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {laneScripts.map((script) => (
-                    <button
-                      key={script.label}
-                      onClick={() => selectScript(activeLaneConfig?.id ?? "discover", script)}
-                      className="rounded-xl border border-border/60 bg-card/70 p-4 text-left hover:border-primary/30 transition-colors"
-                    >
-                      <p className="text-sm font-medium text-foreground">{script.label}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{script.detail}</p>
-                    </button>
-                  ))}
+                  {laneScripts.map((script) => {
+                    const displayScript = getLocalizedScript(script, locale)
+                    return (
+                      <button
+                        key={script.label}
+                        onClick={() => selectScript(activeLaneConfig?.id ?? "discover", script)}
+                        className="rounded-xl border border-border/60 bg-card/70 p-4 text-left hover:border-primary/30 transition-colors"
+                      >
+                        <p className="text-sm font-medium text-foreground">{displayScript.label}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{displayScript.detail}</p>
+                      </button>
+                    )
+                  })}
                 </div>
 
                 {laneScripts[0] && (
@@ -1288,7 +1490,7 @@ function MarketsContent() {
                     onClick={() => selectScript(activeLaneConfig?.id ?? "discover", laneScripts[0])}
                     className="mt-5 inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80"
                   >
-                    Start with the top request
+                    {isArabic ? "ابدأ بأقوى طلب" : "Start with the top request"}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 )}
@@ -1300,50 +1502,59 @@ function MarketsContent() {
             <div className="rounded-2xl border border-border/70 bg-background/40 p-7">
               <div className="flex items-center justify-between flex-wrap gap-4 mb-5">
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">What-if room</p>
-                  <h2 className="text-xl font-semibold text-foreground">Pressure test the market</h2>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "غرفة ماذا لو" : "What-if room"}</p>
+                  <h2 className="text-xl font-semibold text-foreground">{isArabic ? "اختبر ضغط السوق" : "Pressure test the market"}</h2>
                 </div>
-                <p className="text-xs text-muted-foreground">Fast scenarios with short inputs.</p>
+                <p className="text-xs text-muted-foreground">{isArabic ? "سيناريوهات سريعة بمدخلات قليلة." : "Fast scenarios with short inputs."}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(categoryMap.whatif?.scripts ?? []).slice(0, 4).map((script) => (
-                  <button
-                    key={script.label}
-                    onClick={() => selectScript("whatif", script)}
-                    className="rounded-xl border border-border/60 bg-card/70 p-4 text-left hover:border-accent/40 transition-colors"
-                  >
-                    <p className="text-sm font-medium text-foreground">{script.label}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{script.detail}</p>
-                  </button>
-                ))}
+                {(categoryMap.whatif?.scripts ?? []).slice(0, 4).map((script) => {
+                  const displayScript = getLocalizedScript(script, locale)
+                  return (
+                    <button
+                      key={script.label}
+                      onClick={() => selectScript("whatif", script)}
+                      className="rounded-xl border border-border/60 bg-card/70 p-4 text-left hover:border-accent/40 transition-colors"
+                    >
+                      <p className="text-sm font-medium text-foreground">{displayScript.label}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{displayScript.detail}</p>
+                    </button>
+                  )
+                })}
               </div>
             </div>
             <div className="rounded-2xl border border-border/70 bg-card/70 p-7">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">Signal desks</p>
-              <h2 className="text-xl font-semibold text-foreground mt-2">Market + developer signals</h2>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "مكاتب الإشارات" : "Signal desks"}</p>
+              <h2 className="text-xl font-semibold text-foreground mt-2">{isArabic ? "إشارات السوق والمطورين" : "Market + developer signals"}</h2>
               <div className="mt-5 space-y-3">
-                {(categoryMap.market?.scripts ?? []).slice(0, 3).map((script) => (
-                  <button
-                    key={script.label}
-                    onClick={() => selectScript("market", script)}
-                    className="w-full flex items-center justify-between rounded-lg border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground hover:border-accent/40 transition-colors"
-                  >
-                    <span>{script.label}</span>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                ))}
+                {(categoryMap.market?.scripts ?? []).slice(0, 3).map((script) => {
+                  const displayScript = getLocalizedScript(script, locale)
+                  return (
+                    <button
+                      key={script.label}
+                      onClick={() => selectScript("market", script)}
+                      className="w-full flex items-center justify-between rounded-lg border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground hover:border-accent/40 transition-colors"
+                    >
+                      <span>{displayScript.label}</span>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  )
+                })}
               </div>
               <div className="mt-6 space-y-3">
-                {(categoryMap.developer?.scripts ?? []).slice(0, 2).map((script) => (
-                  <button
-                    key={script.label}
-                    onClick={() => selectScript("developer", script)}
-                    className="w-full flex items-center justify-between rounded-lg border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground hover:border-accent/40 transition-colors"
-                  >
-                    <span>{script.label}</span>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                ))}
+                {(categoryMap.developer?.scripts ?? []).slice(0, 2).map((script) => {
+                  const displayScript = getLocalizedScript(script, locale)
+                  return (
+                    <button
+                      key={script.label}
+                      onClick={() => selectScript("developer", script)}
+                      className="w-full flex items-center justify-between rounded-lg border border-border/60 bg-background/40 px-4 py-3 text-sm text-foreground hover:border-accent/40 transition-colors"
+                    >
+                      <span>{displayScript.label}</span>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </section>
@@ -1351,46 +1562,52 @@ function MarketsContent() {
           <section className="rounded-2xl border border-primary/20 bg-primary/5 p-7">
             <div className="flex items-center gap-2 mb-4 text-primary">
               <Sparkles className="h-4 w-4" />
-              <p className="text-xs uppercase tracking-wider">Smart combinations</p>
+              <p className="text-xs uppercase tracking-wider">{isArabic ? "تركيبات ذكية" : "Smart combinations"}</p>
             </div>
-            <h2 className="text-xl font-semibold text-foreground">High-signal combinations</h2>
+            <h2 className="text-xl font-semibold text-foreground">{isArabic ? "تركيبات عالية الإشارة" : "High-signal combinations"}</h2>
             <p className="text-sm text-muted-foreground mt-2">
-              Pre-built blends of pricing, yield, timing, and supply signals.
+              {isArabic ? "مزج جاهز بين السعر والعائد والتوقيت وضغط المعروض." : "Pre-built blends of pricing, yield, timing, and supply signals."}
             </p>
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(categoryMap.combo?.scripts ?? []).slice(0, 4).map((script) => (
-                <button
-                  key={script.label}
-                  onClick={() => selectScript("combo", script)}
-                  className="text-left rounded-xl border border-primary/20 bg-background/40 hover:bg-primary/10 p-5 transition-colors"
-                >
-                  <p className="text-sm font-medium text-foreground">{script.label}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{script.detail}</p>
-                </button>
-              ))}
+              {(categoryMap.combo?.scripts ?? []).slice(0, 4).map((script) => {
+                const displayScript = getLocalizedScript(script, locale)
+                return (
+                  <button
+                    key={script.label}
+                    onClick={() => selectScript("combo", script)}
+                    className="text-left rounded-xl border border-primary/20 bg-background/40 hover:bg-primary/10 p-5 transition-colors"
+                  >
+                    <p className="text-sm font-medium text-foreground">{displayScript.label}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{displayScript.detail}</p>
+                  </button>
+                )
+              })}
             </div>
           </section>
 
           <section className="rounded-2xl border border-border/70 bg-card/60 p-7">
             <div className="flex items-center justify-between flex-wrap gap-4 mb-5">
               <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">Learn & understand</p>
-                <h2 className="text-xl font-semibold text-foreground">Get answers without the jargon</h2>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "افهم السوق" : "Learn & understand"}</p>
+                <h2 className="text-xl font-semibold text-foreground">{isArabic ? "إجابات واضحة بدون تعقيد" : "Get answers without the jargon"}</h2>
               </div>
-              <Link href="/top-data" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                View Top Data findings
+              <Link href={prefixLocalePath("/top-data", locale)} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                {isArabic ? "اعرض مؤشرات السوق" : "View Top Data findings"}
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(categoryMap.learn?.scripts ?? []).slice(0, 6).map((script) => (
-                <button
-                  key={script.label}
-                  onClick={() => selectScript("learn", script)}
-                  className="text-left rounded-lg border border-border/60 bg-background/40 px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:border-accent/40 transition-colors"
-                >
-                  {script.label}
-                </button>
-              ))}
+              {(categoryMap.learn?.scripts ?? []).slice(0, 6).map((script) => {
+                const displayScript = getLocalizedScript(script, locale)
+                return (
+                  <button
+                    key={script.label}
+                    onClick={() => selectScript("learn", script)}
+                    className="text-left rounded-lg border border-border/60 bg-background/40 px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:border-accent/40 transition-colors"
+                  >
+                    {displayScript.label}
+                  </button>
+                )
+              })}
             </div>
           </section>
         </div>
@@ -1407,6 +1624,8 @@ function MarketsContent() {
 }
 
 export default function MarketsPage() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
   return (
     <Suspense
       fallback={
@@ -1415,12 +1634,12 @@ export default function MarketsPage() {
           <div className="pt-24 pb-20 md:pt-32 md:pb-32">
             <div className="container mx-auto px-6">
               <div className="max-w-2xl">
-                <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">Explorer</p>
+                <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">{isArabic ? "المستكشف" : "Explorer"}</p>
                 <h1 className="text-3xl md:text-5xl font-serif text-foreground leading-tight text-balance">
-                  Markets
+                  {isArabic ? "السوق" : "Markets"}
                 </h1>
                 <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-                  Loading market explorer…
+                  {isArabic ? "جارٍ تحميل مستكشف السوق..." : "Loading market explorer…"}
                 </p>
               </div>
             </div>
