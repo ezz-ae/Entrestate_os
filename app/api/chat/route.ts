@@ -482,6 +482,19 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
 }
 
 async function buildDeterministicFallback(message: string, context?: { city?: string; area?: string }) {
+  if (message.trim().toUpperCase().includes("PULSE")) {
+    const pulse = await executeDldMarketPulse()
+    const pulseContent = buildPulseContentFromToolResults([pulse])
+    return {
+      content: pulseContent ?? "Dubai Market Pulse is temporarily unavailable.",
+      dataCards: undefined,
+      evidence: {
+        sources_used: ["dld_market_pulse"],
+      },
+      data_as_of: pulse.data_as_of,
+    }
+  }
+
   const budgetMax = parseBudgetAed(message)
   const beds = parseBedsFromMessage(message)
   const timingLabel = parseTimingSignal(message)
@@ -711,10 +724,15 @@ export async function POST(request: Request) {
       const confidenceWarnings = collectToolWarnings(toolResults)
       const pulseContent = buildPulseContentFromToolResults(toolResults)
       const toolSummary = toolResults.length > 0 ? JSON.stringify(toolResults[toolResults.length - 1]).slice(0, 1200) : ""
+      const deterministic = text.length === 0 && rows.length === 0 && !pulseContent
+        ? await buildDeterministicFallback(message, parsed.data.context)
+        : null
       const content = text.length > 0
         ? text
         : pulseContent && message.trim().toUpperCase().includes("PULSE")
           ? pulseContent
+        : deterministic?.content
+          ? deterministic.content
         : toolSummary.length > 0
           ? `The data shows: ${toolSummary}`
           : "No matching projects found."
@@ -722,14 +740,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           content,
-          dataCards,
+          dataCards: dataCards ?? deterministic?.dataCards,
           notifications: notifications.length > 0 ? notifications : undefined,
           suggestions: defaultSuggestions,
           evidence: {
-            sources_used: collectSources(toolResults),
+            sources_used: deterministic?.evidence?.sources_used ?? collectSources(toolResults),
             warnings: confidenceWarnings,
           },
-          data_as_of: resolveDataAsOf(toolResults),
+          data_as_of: deterministic?.data_as_of ?? resolveDataAsOf(toolResults),
           compiler_output: buildCompilerOutput(message),
           requestId,
           request_id: requestId,
