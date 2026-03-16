@@ -83,10 +83,45 @@ function normalizeIncomingMessages(messages: UIMessage[]) {
   })
 }
 
+function sanitizeForAi<T>(value: T): T {
+  if (typeof value === "bigint") {
+    const asNumber = Number(value)
+    return (Number.isSafeInteger(asNumber) ? asNumber : value.toString()) as T
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString() as T
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => sanitizeForAi(entry)) as T
+  }
+
+  if (value && typeof value === "object") {
+    const candidate = value as { toNumber?: unknown }
+    if (typeof candidate.toNumber === "function") {
+      try {
+        return candidate.toNumber() as T
+      } catch {
+        return String(value) as T
+      }
+    }
+
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, entry]) => typeof entry !== "function")
+        .map(([key, entry]) => [key, sanitizeForAi(entry)]),
+    ) as T
+  }
+
+  return value
+}
+
 function withGuardrails<T extends Record<string, unknown>>(output: T): T & { guardrail_warnings: string[] } {
-  const warnings = collectGuardrailWarnings(output)
+  const sanitized = sanitizeForAi(output)
+  const warnings = collectGuardrailWarnings(sanitized)
   return {
-    ...output,
+    ...sanitized,
     guardrail_warnings: warnings,
   }
 }
@@ -167,7 +202,7 @@ export async function POST(request: Request) {
       execute: (input: TInput) => Promise<Record<string, unknown>>,
     ) => async (input: TInput) => {
       try {
-        return await execute(input)
+        return sanitizeForAi(await execute(input))
       } catch (error) {
         console.error("Copilot tool failed:", { requestId, source, error })
         return {

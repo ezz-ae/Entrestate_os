@@ -110,10 +110,45 @@ type DldNotification = {
   is_notable: boolean
 }
 
+function sanitizeForAi<T>(value: T): T {
+  if (typeof value === "bigint") {
+    const asNumber = Number(value)
+    return (Number.isSafeInteger(asNumber) ? asNumber : value.toString()) as T
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString() as T
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => sanitizeForAi(entry)) as T
+  }
+
+  if (value && typeof value === "object") {
+    const candidate = value as { toNumber?: unknown }
+    if (typeof candidate.toNumber === "function") {
+      try {
+        return candidate.toNumber() as T
+      } catch {
+        return String(value) as T
+      }
+    }
+
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, entry]) => typeof entry !== "function")
+        .map(([key, entry]) => [key, sanitizeForAi(entry)]),
+    ) as T
+  }
+
+  return value
+}
+
 function withGuardrails<T extends Record<string, unknown>>(output: T): T & { guardrail_warnings: string[] } {
-  const warnings = collectGuardrailWarnings(output)
+  const sanitized = sanitizeForAi(output)
+  const warnings = collectGuardrailWarnings(sanitized)
   return {
-    ...output,
+    ...sanitized,
     guardrail_warnings: warnings,
   }
 }
@@ -250,14 +285,16 @@ function buildDataCardsFromRows(rows: Record<string, unknown>[]): ChatCard[] {
   }
 
   const prices = rows
-    .map((row) => toFiniteNumber(row.l1_canonical_price))
+    .map((row) => toFiniteNumber(row.price_from ?? row.l1_canonical_price))
     .filter((value): value is number => value !== null && value > 0)
 
   const areaFrequency = new Map<string, number>()
   for (const row of rows) {
-    const areaValue = typeof row.final_area === "string" && row.final_area.trim().length > 0
-      ? row.final_area
-      : typeof row.area === "string"
+    const areaValue = typeof row.area === "string" && row.area.trim().length > 0
+      ? row.area
+      : typeof row.final_area === "string" && row.final_area.trim().length > 0
+        ? row.final_area
+        : typeof row.area === "string"
         ? row.area
         : ""
     const key = areaValue.trim()
@@ -505,7 +542,7 @@ export async function POST(request: Request) {
       execute: (input: TInput) => Promise<Record<string, unknown>>,
     ) => async (input: TInput) => {
       try {
-        return await execute(input)
+        return sanitizeForAi(await execute(input))
       } catch (error) {
         console.error("Chat tool failed:", { requestId, source, error })
         return {

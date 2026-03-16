@@ -123,9 +123,11 @@ function buildQualityClauses(options: QualityOptions = {}): Prisma.Sql[] {
   }
 
   if (options.onlyUae) {
-    clauses.push(
-      Prisma.sql`LOWER(COALESCE(NULLIF(TRIM(final_city), ''), NULLIF(TRIM(city), ''), '')) IN (${toSqlList([...UAE_CITIES])})`,
-    )
+    if (COPILOT_INVENTORY_TABLE !== "inventory_clean") {
+      clauses.push(
+        Prisma.sql`LOWER(COALESCE(NULLIF(TRIM(city), ''), NULLIF(TRIM(emirate), ''), '')) IN (${toSqlList([...UAE_CITIES])})`,
+      )
+    }
   }
 
   if (options.excludeGarbageDeveloper) {
@@ -986,10 +988,10 @@ export async function executeDldTransactionSearch(input: DldTransactionSearchInp
     LIMIT ${limit}
   `
 
-  const rows = (await withStatementTimeout(
+  const rows = normalizeRows((await withStatementTimeout(
     (tx) => tx.$queryRawUnsafe<DbRow[]>(rowsSql, ...params),
     STATEMENT_TIMEOUT_MS,
-  )) as DbRow[]
+  )) as DbRow[])
 
   const statsSql = `
     SELECT COUNT(*) as total_txns,
@@ -1000,10 +1002,10 @@ export async function executeDldTransactionSearch(input: DldTransactionSearchInp
     ${whereClause}
   `
 
-  const statsRows = (await withStatementTimeout(
+  const statsRows = normalizeRows((await withStatementTimeout(
     (tx) => tx.$queryRawUnsafe<DbRow[]>(statsSql, ...params),
     STATEMENT_TIMEOUT_MS,
-  )) as DbRow[]
+  )) as DbRow[])
 
   return {
     source: "dld_transactions_arvo",
@@ -1015,7 +1017,7 @@ export async function executeDldTransactionSearch(input: DldTransactionSearchInp
 }
 
 export async function executeDldAreaBenchmark(input: DldAreaBenchmarkInput) {
-  const rows = (await withStatementTimeout(
+  const rows = normalizeRows((await withStatementTimeout(
     (tx) =>
       tx.$queryRaw<DbRow[]>`
         SELECT * FROM dld_area_benchmarks_live
@@ -1026,7 +1028,7 @@ export async function executeDldAreaBenchmark(input: DldAreaBenchmarkInput) {
         LIMIT 1
       `,
     STATEMENT_TIMEOUT_MS,
-  )) as DbRow[]
+  )) as DbRow[])
 
   if (rows.length === 0) {
     return {
@@ -1046,7 +1048,7 @@ export async function executeDldAreaBenchmark(input: DldAreaBenchmarkInput) {
 }
 
 export async function executeDldMarketPulse() {
-  const overviewRows = (await withStatementTimeout(
+  const overviewRows = normalizeRows((await withStatementTimeout(
     (tx) =>
       tx.$queryRaw<DbRow[]>`
         SELECT
@@ -1066,9 +1068,9 @@ export async function executeDldMarketPulse() {
         FROM dld_transactions_arvo
       `,
     STATEMENT_TIMEOUT_MS,
-  )) as DbRow[]
+  )) as DbRow[])
 
-  const topAreasByVolume = (await withStatementTimeout(
+  const topAreasByVolume = normalizeRows((await withStatementTimeout(
     (tx) =>
       tx.$queryRaw<DbRow[]>`
         SELECT area,
@@ -1081,9 +1083,9 @@ export async function executeDldMarketPulse() {
         LIMIT 10
       `,
     STATEMENT_TIMEOUT_MS,
-  )) as DbRow[]
+  )) as DbRow[])
 
-  const topAreasByVelocity = (await withStatementTimeout(
+  const topAreasByVelocity = normalizeRows((await withStatementTimeout(
     (tx) =>
       tx.$queryRaw<DbRow[]>`
         SELECT area, daily_velocity, total_transactions, median_price
@@ -1092,7 +1094,7 @@ export async function executeDldMarketPulse() {
         LIMIT 10
       `,
     STATEMENT_TIMEOUT_MS,
-  )) as DbRow[]
+  )) as DbRow[])
 
   return {
     source: "dld_transactions_arvo + dld_area_benchmarks_live",
@@ -1128,10 +1130,10 @@ export async function executeDldNotableDeals(input: DldNotableDealsInput) {
     LIMIT ${limit}
   `
 
-  const rows = (await withStatementTimeout(
+  const rows = normalizeRows((await withStatementTimeout(
     (tx) => tx.$queryRawUnsafe<DbRow[]>(sql, ...params),
     STATEMENT_TIMEOUT_MS,
-  )) as DbRow[]
+  )) as DbRow[])
 
   return {
     source: "dld_transaction_feed",
