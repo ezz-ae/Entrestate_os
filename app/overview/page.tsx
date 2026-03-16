@@ -171,7 +171,7 @@ export default async function OverviewPage() {
               <Button variant="intelligent" size="sm" asChild className="h-9 shadow-lg">
                 <Link href={prefixLocalePath("/chat", locale)}>
                   <Sparkles className="h-3.5 w-3.5 mr-1" />
-                  {isArabic ? "اسأل الذكاء" : "Ask AI"}
+                  {isArabic ? "اسأل المساعد" : "Ask AI"}
                 </Link>
               </Button>
             </div>
@@ -331,7 +331,7 @@ export default async function OverviewPage() {
           </Link>
           <Link href={prefixLocalePath("/top-data", locale)} className="group flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)]">
             <div>
-              <p className="text-sm font-semibold text-foreground">{isArabic ? "لوحة ذكاء السوق" : "Market Intelligence Board"}</p>
+              <p className="text-sm font-semibold text-foreground">{isArabic ? "لوحة السوق" : "Market Intelligence Board"}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "نبض السوق · التوقيت · الضغط · عمق المناطق · موثوقية المطورين" : "Pulse · Timing · Stress · Area depth · Developer reliability"}</p>
             </div>
             <div className="ml-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40 transition group-hover:bg-muted/70">

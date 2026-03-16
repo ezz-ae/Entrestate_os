@@ -2,9 +2,11 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
+import { useLocale } from "next-intl"
 import { Archive, Menu, ChevronRight } from "lucide-react"
 import { ReportReader } from "./report-reader"
 import type { ReportCard } from "./report-reader"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 const cards: ReportCard[] = [
   {
@@ -792,6 +794,17 @@ function deriveCardTopics(card: ReportCard): string[] {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function TimeMachineRolodex() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
+  const copy = {
+    back: isArabic ? "العودة" : "Back",
+    research: isArabic ? "الأبحاث" : "Research",
+    byEngine: isArabic ? "من قراءة Entrestate" : "by Entrestate Decision Engine",
+    openReport: isArabic ? "افتح التقرير" : "Open report",
+    topics: isArabic ? "المحاور" : "Topics",
+    now: isArabic ? "الآن" : "Now",
+    timelineHint: isArabic ? "مرّر أو اختر من الخط الزمني للتنقّل" : "Scroll or click timeline to navigate",
+  }
 
   const [position, setPosition] = useState(0)
   const [viewMode, setViewMode] = useState<"stack" | "list">("stack")
@@ -886,18 +899,18 @@ export function TimeMachineRolodex() {
         {/* Entrestate wordmark */}
         <div className="absolute left-6 top-6 z-50 flex items-center gap-3">
           <a
-            href="/"
+            href={prefixLocalePath("/", locale)}
             className="text-[10px] font-medium text-muted-foreground/50 transition-colors hover:text-muted-foreground flex items-center gap-1"
           >
             <ChevronRight className="h-3 w-3 rotate-180" />
-            Back
+            {copy.back}
           </a>
           <span className="text-border/50">|</span>
           <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             entrestate
           </span>
           <span className="text-border">/</span>
-          <span className="text-xs text-muted-foreground">Research</span>
+          <span className="text-xs text-muted-foreground">{copy.research}</span>
         </div>
 
         {viewMode === "stack" ? (
@@ -962,7 +975,7 @@ export function TimeMachineRolodex() {
                               {/* Masthead row */}
                               <div className="flex items-center justify-between">
                                 <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/30">
-                                  Entrestate Research
+                                  {isArabic ? "أبحاث Entrestate" : "Entrestate Research"}
                                 </p>
                                 {card.category && (
                                   <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold text-primary">
@@ -983,7 +996,7 @@ export function TimeMachineRolodex() {
                                   {card.subtitle}
                                 </p>
                                 <p className="mt-5 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/30">
-                                  by Entrestate Decision Engine
+                                  {copy.byEngine}
                                 </p>
                               </div>
 
@@ -992,7 +1005,7 @@ export function TimeMachineRolodex() {
                                 <p className="text-sm text-muted-foreground/60">{card.date}</p>
                                 {isActive && (
                                   <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
-                                    Open report <ChevronRight className="h-4 w-4" />
+                                    {copy.openReport} <ChevronRight className="h-4 w-4" />
                                   </span>
                                 )}
                               </div>
@@ -1001,7 +1014,7 @@ export function TimeMachineRolodex() {
                             {/* ── Right rail — topics ── */}
                             <div className="hidden md:flex w-[148px] shrink-0 flex-col border-l border-border/30 bg-card/20 p-5 pt-8">
                               <p className="mb-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/25">
-                                Topics
+                                {copy.topics}
                               </p>
                               <div className="flex flex-col gap-2">
                                 {topics.map((topic) => (
@@ -1039,7 +1052,7 @@ export function TimeMachineRolodex() {
                 return (
                   <button key={card.id} className="group flex items-center gap-2 transition-all duration-300" onClick={() => setPosition(index)}>
                     <span className={`text-sm font-medium transition-all duration-300 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`}>
-                      {index === 0 ? "Now" : card.dateLabel}
+                      {index === 0 ? copy.now : card.dateLabel}
                     </span>
                     <div className="relative flex items-center">
                       <div className={`h-0.5 transition-all duration-300 ${isActive ? "w-8 bg-primary" : "w-4 bg-border group-hover:w-6 group-hover:bg-muted-foreground"}`} />
@@ -1070,7 +1083,7 @@ export function TimeMachineRolodex() {
             </div>
 
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-sm text-muted-foreground hidden md:block">
-              Scroll or click timeline to navigate
+              {copy.timelineHint}
             </div>
           </>
         ) : (
@@ -1095,7 +1108,7 @@ export function TimeMachineRolodex() {
                     <p className="font-serif text-lg font-medium leading-snug text-foreground">{card.title}</p>
                     <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground line-clamp-2">{card.subtitle}</p>
                     <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary">
-                      Open report <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                      {copy.openReport} <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                     </div>
                   </button>
                 ))}
@@ -1147,7 +1160,7 @@ export function TimeMachineRolodex() {
                     </div>
                     <div className="flex items-center justify-between">
                       <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/30">
-                        Entrestate Research
+                        {isArabic ? "أبحاث Entrestate" : "Entrestate Research"}
                       </p>
                       {hc.category && (
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-medium text-primary">

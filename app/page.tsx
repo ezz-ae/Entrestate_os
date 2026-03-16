@@ -321,11 +321,11 @@ export default async function HomePage({
           <div className="mb-8 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{isArabic ? "المنصة" : "The platform"}</p>
             <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
-              {isArabic ? "ست واجهات للذكاء" : "Six intelligence surfaces"}
+              {isArabic ? "ست واجهات تخدم القرار" : "Six intelligence surfaces"}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
               {isArabic
-                ? "كل واجهة تمثل مدخلاً مختلفاً إلى نفس قاعدة البيانات المقيّمة في الخلفية."
+                ? "كل واجهة تقرّبك من نفس البيانات المقيّمة، لكن من زاوية مختلفة تناسب طريقة عملك."
                 : "Each surface is a different entry point into the same underlying scored dataset."}
             </p>
           </div>
@@ -376,7 +376,7 @@ export default async function HomePage({
           <div className="flex flex-col gap-5 md:flex-row md:items-center">
             <ShieldCheck className="h-8 w-8 shrink-0 text-primary/60" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">{isArabic ? "مكدس أدلة من 5 طبقات — تعرف دائماً مدى موثوقية كل رقم" : "5-Layer Evidence Stack — you always know how reliable a number is"}</p>
+              <p className="text-sm font-semibold text-foreground">{isArabic ? "طبقات الثقة الخمس — كل رقم أمامك ومعه مستوى موثوقيته" : "5-Layer Evidence Stack — you always know how reliable a number is"}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {[
                   { tag: "L1 Canonical", color: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" },

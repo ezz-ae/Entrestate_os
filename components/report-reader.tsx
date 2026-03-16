@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect, useCallback } from "react"
+import { useLocale } from "next-intl"
 import {
   ArrowLeft,
   Clock,
@@ -42,6 +43,7 @@ import {
   Hash,
   Building2,
 } from "lucide-react"
+import type { AppLocale } from "@/i18n/locale"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -78,6 +80,60 @@ type ReadingTheme = "light" | "sepia" | "dark"
 type ScrollMode = "off" | "teleprompter" | "focus" | "presentation"
 type ViewMode = "portal" | "media" | "executive"
 type ColumnWidth = "narrow" | "standard" | "wide"
+
+function getReaderCopy(locale: AppLocale) {
+  return locale === "ar"
+    ? {
+        evidence: "الأدلة",
+        references: (count: number) => `${count} مرجع`,
+        evidenceItems: (count: number) => `${count} عنصر دليل`,
+        data: "بيانات",
+        calculation: "حساب",
+        source: "مصدر",
+        share: "مشاركة",
+        reports: "التقارير",
+        portal: "منصات العقار",
+        media: "إعلام / صحافة",
+        executive: "الخلاصة التنفيذية",
+        mediaBannerTitle: "نسخة إعلامية — أبحاث Entrestate",
+        mediaBannerDescription: "هذه النسخة مهيأة للنشر والتحرير الإعلامي. أما الهوامش البيانية والحسابات الداخلية فتظهر في نسخة المنصة الكاملة.",
+        portalBannerTitle: "تقرير المنصات",
+        portalBannerDescription: "تقرير كامل بالأدلة والحسابات الداخلية بصياغة مناسبة للعرض داخل المنصة.",
+        verified: "موثّق",
+        disclaimerTitle: "تنويه قانوني",
+        dataAnalysisLabel: "تحليل موضوعي قائم على البيانات:",
+        dataAnalysisText: "المعلومات والمؤشرات والرؤى الواردة في هذا التقرير ناتجة عن تحليل خوارزمي وقراءة سوقية داخل نظام Entrestate. المحتوى يعكس قراءة موضوعية مبنية على البيانات ولا يُعد رأيًا شخصيًا أو استشارة مالية مباشرة.",
+        independenceLabel: "الاستقلالية التحليلية:",
+        independenceText: "تحافظ Entrestate على استقلالية كاملة في التقارير التحليلية. لم يُطلب هذا التقرير أو يُموَّل أو يُعتمد من أي مطور أو طرف ثالث، وهو يُنشر فقط لخدمة الشفافية السوقية ورفع جودة القرار.",
+        previous: "السابق",
+        next: "التالي",
+      }
+    : {
+        evidence: "Evidence",
+        references: (count: number) => `${count} references`,
+        evidenceItems: (count: number) => `${count} evidence items`,
+        data: "Data",
+        calculation: "Calculation",
+        source: "Source",
+        share: "Share",
+        reports: "Reports",
+        portal: "Real Estate Portal",
+        media: "Media / Press",
+        executive: "Executive Summary",
+        mediaBannerTitle: "Media Version — Entrestate Research",
+        mediaBannerDescription: "This version is formatted for editorial use by Gulf News, Khaleej Times, The National, and regional media. Evidence footnotes and proprietary data calculations are included in the full portal version.",
+        portalBannerTitle: "Portal Intelligence Report",
+        portalBannerDescription: "Full data report with evidence and proprietary calculations. Approved for portal syndication.",
+        verified: "Verified",
+        disclaimerTitle: "Disclaimer & Legal Notice",
+        dataAnalysisLabel: "Data-Driven Objective Analysis:",
+        dataAnalysisText: "The information, metrics, and insights contained in this report are generated exclusively through algorithmic data analysis and market intelligence modeling by the Entrestate.com operating system. This report reflects objective, data-driven market conditions and does not constitute subjective opinions, personal estimations, or financial advisory services.",
+        independenceLabel: "Statement of Independence:",
+        independenceText: "Entrestate.com maintains strict analytical independence. This intelligence report has not been commissioned, requested, sponsored, endorsed, or financially compensated by any real estate developer, project stakeholder, or third-party entity. The intelligence provided herein is executed solely for the purpose of objective market transparency and institutional-grade data dissemination.",
+        previous: "Previous",
+        next: "Next",
+      }
+}
 
 // ─── Content Parser ───────────────────────────────────────────────────────────
 
@@ -249,6 +305,8 @@ function EvidencePanel({
   activeId: string | null
   onClose: () => void
 }) {
+  const locale = useLocale() as AppLocale
+  const copy = getReaderCopy(locale)
   const activeRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -288,10 +346,10 @@ function EvidencePanel({
           </div>
           <div>
             <p className="text-sm font-semibold" style={{ color: "var(--reader-text)" }}>
-              Evidence
+              {copy.evidence}
             </p>
             <p className="text-xs" style={{ color: "var(--reader-muted)" }}>
-              {evidence.length} references
+              {copy.references(evidence.length)}
             </p>
           </div>
         </div>
@@ -333,7 +391,7 @@ function EvidencePanel({
                     style={{ background: bg, color: text }}
                   >
                     {iconFor(ev.type)}
-                    {ev.type.charAt(0).toUpperCase() + ev.type.slice(1)}
+                    {ev.type === "data" ? copy.data : ev.type === "calculation" ? copy.calculation : copy.source}
                   </span>
                 </div>
               </div>
@@ -817,6 +875,8 @@ function ReadingToolbar({
   setViewMode: (v: ViewMode) => void
   report: ReportCard
 }) {
+  const locale = useLocale() as AppLocale
+  const copy = getReaderCopy(locale)
   const [showFontMenu, setShowFontMenu] = useState(false)
   const [showScrollMenu, setShowScrollMenu] = useState(false)
   const [showViewMenu, setShowViewMenu] = useState(false)
@@ -848,7 +908,7 @@ function ReadingToolbar({
       }}
     >
       {/* Theme */}
-      <button className={btnBase} style={btnStyle} onClick={cycleTheme} title="Toggle theme">
+      <button className={btnBase} style={btnStyle} onClick={cycleTheme} title={locale === "ar" ? "بدّل النمط" : "Toggle theme"}>
         {themeIcon}
         <span className="hidden sm:inline capitalize">{theme}</span>
       </button>
@@ -880,7 +940,7 @@ function ReadingToolbar({
       </div>
 
       {/* Column width */}
-      <button className={btnBase} style={btnStyle} onClick={cycleWidth} title="Cycle column width">
+      <button className={btnBase} style={btnStyle} onClick={cycleWidth} title={locale === "ar" ? "بدّل عرض العمود" : "Cycle column width"}>
         {widthIcon}
         <span className="hidden sm:inline capitalize">{columnWidth}</span>
       </button>
@@ -893,7 +953,7 @@ function ReadingToolbar({
           onClick={() => { setShowScrollMenu(!showScrollMenu); setShowFontMenu(false); setShowViewMenu(false) }}
         >
           <Play className="h-4 w-4" />
-          <span className="hidden sm:inline">{scrollMode === "off" ? "Read mode" : scrollMode}</span>
+          <span className="hidden sm:inline">{scrollMode === "off" ? (locale === "ar" ? "وضع القراءة" : "Read mode") : scrollMode}</span>
           <ChevronDown className="h-3 w-3" />
         </button>
         {showScrollMenu && (
@@ -908,7 +968,7 @@ function ReadingToolbar({
                 className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm capitalize"
                 style={{ background: scrollMode === m ? "var(--reader-gold-light)" : "transparent", color: "var(--reader-text)" }}
               >
-                {m === "off" ? "Off" : m}
+                {m === "off" ? (locale === "ar" ? "إيقاف" : "Off") : m}
                 {scrollMode === m && <Check className="h-3 w-3" style={{ color: "var(--reader-gold)" }} />}
               </button>
             ))}
@@ -977,7 +1037,7 @@ function ReadingToolbar({
                 style={{ background: viewMode === v ? "var(--reader-gold-light)" : "transparent", color: "var(--reader-text)" }}
               >
                 {viewIcons[v]}
-                {v === "portal" ? "Real Estate Portal" : v === "media" ? "Media / Press" : "Executive Summary"}
+                {v === "portal" ? copy.portal : v === "media" ? copy.media : copy.executive}
                 {viewMode === v && <Check className="ml-auto h-3 w-3" style={{ color: "var(--reader-gold)" }} />}
               </button>
             ))}
@@ -993,7 +1053,7 @@ function ReadingToolbar({
           onClick={() => setEvidenceOpen(!evidenceOpen)}
         >
           <Database className="h-4 w-4" />
-          <span className="hidden sm:inline">Evidence</span>
+          <span className="hidden sm:inline">{copy.evidence}</span>
           <span
             className="rounded-full px-1.5 py-0.5 text-xs font-bold"
             style={{ background: evidenceOpen ? "rgba(255,255,255,0.3)" : "var(--reader-gold)", color: "white" }}
@@ -1006,7 +1066,7 @@ function ReadingToolbar({
       {/* Share */}
       <button className={`${btnBase} ml-auto`} style={activeBtnStyle} onClick={onShare}>
         <Share2 className="h-4 w-4" />
-        <span className="hidden sm:inline">Share</span>
+        <span className="hidden sm:inline">{copy.share}</span>
       </button>
     </div>
   )
@@ -1015,6 +1075,8 @@ function ReadingToolbar({
 // ─── View Mode Wrappers ───────────────────────────────────────────────────────
 
 function MediaBanner({ report }: { report: ReportCard }) {
+  const locale = useLocale() as AppLocale
+  const copy = getReaderCopy(locale)
   return (
     <div
       className="mb-6 rounded-2xl overflow-hidden"
@@ -1027,14 +1089,14 @@ function MediaBanner({ report }: { report: ReportCard }) {
         <div className="flex items-center gap-2">
           <Newspaper className="h-4 w-4 text-white/70" />
           <span className="text-xs font-semibold text-white/70 uppercase tracking-widest">
-            Media Version — Entrestate Research
+            {copy.mediaBannerTitle}
           </span>
         </div>
         <span className="text-xs text-white/50">{report.date}</span>
       </div>
       <div className="px-6 py-4" style={{ background: "var(--reader-gold-light)" }}>
         <p className="text-sm" style={{ color: "var(--reader-navy)" }}>
-          This version is formatted for editorial use by Gulf News, Khaleej Times, The National, and regional media. Evidence footnotes and proprietary data calculations are included in the full portal version.
+          {copy.mediaBannerDescription}
         </p>
       </div>
     </div>
@@ -1042,6 +1104,8 @@ function MediaBanner({ report }: { report: ReportCard }) {
 }
 
 function PortalBanner({ report }: { report: ReportCard }) {
+  const locale = useLocale() as AppLocale
+  const copy = getReaderCopy(locale)
   return (
     <div
       className="mb-6 rounded-2xl overflow-hidden"
@@ -1054,7 +1118,7 @@ function PortalBanner({ report }: { report: ReportCard }) {
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4 text-white/70" />
           <span className="text-xs font-semibold text-white/70 uppercase tracking-widest">
-            Portal Intelligence Report
+            {copy.portalBannerTitle}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -1063,13 +1127,13 @@ function PortalBanner({ report }: { report: ReportCard }) {
       </div>
       <div className="px-6 py-4 flex items-center justify-between" style={{ background: "var(--reader-gold-light)" }}>
         <p className="text-sm" style={{ color: "var(--reader-navy)" }}>
-          Full data report with evidence and proprietary calculations. Approved for portal syndication.
+          {copy.portalBannerDescription}
         </p>
         <span
           className="ml-4 shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
           style={{ background: "var(--reader-gold)", color: "white" }}
         >
-          Verified
+          {copy.verified}
         </span>
       </div>
     </div>
@@ -1077,6 +1141,8 @@ function PortalBanner({ report }: { report: ReportCard }) {
 }
 
 function ExecutiveSummary({ report }: { report: ReportCard }) {
+  const locale = useLocale() as AppLocale
+  const copy = getReaderCopy(locale)
   const bullets = report.content
     .split("\n\n")
     .filter((p) => p.startsWith("- "))
@@ -1096,7 +1162,7 @@ function ExecutiveSummary({ report }: { report: ReportCard }) {
       >
         <Presentation className="h-4 w-4 text-white" />
         <span className="text-xs font-semibold text-white uppercase tracking-widest">
-          Executive Summary
+          {copy.executive}
         </span>
       </div>
       <div className="px-6 py-5" style={{ background: "var(--reader-evidence-bg)" }}>
@@ -1136,6 +1202,8 @@ export function ReportReader({
   onClose: () => void
   onNavigate: (report: ReportCard) => void
 }) {
+  const locale = useLocale() as AppLocale
+  const copy = getReaderCopy(locale)
   const [theme, setTheme] = useState<ReadingTheme>("sepia")
   const [fontSize, setFontSize] = useState(18)
   const [columnWidth, setColumnWidth] = useState<ColumnWidth>("standard")
@@ -1300,7 +1368,7 @@ export function ReportReader({
           style={{ color: "var(--reader-muted)" }}
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Reports</span>
+          <span>{copy.reports}</span>
         </button>
 
         {/* Breadcrumb */}
@@ -1402,7 +1470,7 @@ export function ReportReader({
                   className="text-[9px] font-semibold uppercase tracking-[0.2em]"
                   style={{ color: "var(--reader-muted)", opacity: 0.5 }}
                 >
-                  by Entrestate Decision Engine
+                  {locale === "ar" ? "من قراءة Entrestate" : "by Entrestate Decision Engine"}
                 </span>
               </div>
 
@@ -1452,7 +1520,7 @@ export function ReportReader({
                     {report.author}
                   </p>
                   <p className="text-xs" style={{ color: "var(--reader-muted)" }}>
-                    Entrestate Research
+                    {locale === "ar" ? "أبحاث Entrestate" : "Entrestate Research"}
                   </p>
                 </div>
               </div>
@@ -1467,7 +1535,7 @@ export function ReportReader({
                   onClick={() => setEvidenceOpen(true)}
                 >
                   <Database className="h-3.5 w-3.5" />
-                  {evidence.length} evidence items
+                  {copy.evidenceItems(evidence.length)}
                 </div>
               )}
             </div>
@@ -1499,18 +1567,18 @@ export function ReportReader({
             >
               <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: "var(--reader-border)" }}>
                 <span className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ opacity: 0.6 }}>
-                  Disclaimer &amp; Legal Notice
+                  {copy.disclaimerTitle}
                 </span>
                 <div className="h-px flex-1" style={{ background: "var(--reader-border)" }} />
                 <span style={{ opacity: 0.5 }}>© {new Date().getFullYear()} Entrestate.com</span>
               </div>
               <p>
-                <span className="font-semibold" style={{ color: "var(--reader-text)", opacity: 0.7 }}>Data-Driven Objective Analysis: </span>
-                The information, metrics, and insights contained in this report are generated exclusively through algorithmic data analysis and market intelligence modeling by the Entrestate.com operating system. This report reflects objective, data-driven market conditions and does not constitute subjective opinions, personal estimations, or financial advisory services.
+                <span className="font-semibold" style={{ color: "var(--reader-text)", opacity: 0.7 }}>{copy.dataAnalysisLabel} </span>
+                {copy.dataAnalysisText}
               </p>
               <p>
-                <span className="font-semibold" style={{ color: "var(--reader-text)", opacity: 0.7 }}>Statement of Independence: </span>
-                Entrestate.com maintains strict analytical independence. This intelligence report has not been commissioned, requested, sponsored, endorsed, or financially compensated by any real estate developer, project stakeholder, or third-party entity. The intelligence provided herein is executed solely for the purpose of objective market transparency and institutional-grade data dissemination.
+                <span className="font-semibold" style={{ color: "var(--reader-text)", opacity: 0.7 }}>{copy.independenceLabel} </span>
+                {copy.independenceText}
               </p>
             </div>
           </div>
@@ -1528,7 +1596,7 @@ export function ReportReader({
                 >
                   <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" style={{ color: "var(--reader-muted)" }} />
                   <div className="text-left">
-                    <p className="text-xs" style={{ color: "var(--reader-muted)" }}>Previous</p>
+                    <p className="text-xs" style={{ color: "var(--reader-muted)" }}>{copy.previous}</p>
                     <p className="text-sm font-medium" style={{ color: "var(--reader-text)" }}>
                       {allReports[currentIdx + 1].title}
                     </p>
@@ -1541,7 +1609,7 @@ export function ReportReader({
                   className="group ml-auto flex items-center gap-3 rounded-xl p-3 text-right transition-colors hover:opacity-70"
                 >
                   <div>
-                    <p className="text-xs" style={{ color: "var(--reader-muted)" }}>Next</p>
+                    <p className="text-xs" style={{ color: "var(--reader-muted)" }}>{copy.next}</p>
                     <p className="text-sm font-medium" style={{ color: "var(--reader-text)" }}>
                       {allReports[currentIdx - 1].title}
                     </p>

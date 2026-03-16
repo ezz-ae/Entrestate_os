@@ -2,8 +2,13 @@
 
 import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
+import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { formatAed } from "@/lib/format/currency"
+import { pickLocalizedText } from "@/lib/format/entities"
+import { formatDecimal, formatInteger } from "@/lib/format/number"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import {
   Search,
   SlidersHorizontal,
@@ -26,59 +31,100 @@ type Project = Record<string, unknown>
 
 // ── Preset shortcuts ──────────────────────────────────────────────────────────
 
-const PRESETS = [
-  {
-    label: "All projects",
-    icon: Sparkles,
-    filters: { timing: "", stress: "", minPrice: "", maxPrice: "" },
-    sort: "god_metric",
-  },
-  {
-    label: "BUY signals",
-    icon: TrendingUp,
-    filters: { timing: "BUY", stress: "", minPrice: "", maxPrice: "" },
-    sort: "god_metric",
-  },
-  {
-    label: "High yield",
-    icon: TrendingUp,
-    filters: { timing: "", stress: "", minPrice: "", maxPrice: "" },
-    sort: "yield",
-  },
-  {
-    label: "Grade A only",
-    icon: ShieldCheck,
-    filters: { timing: "", stress: "A", minPrice: "", maxPrice: "" },
-    sort: "god_metric",
-  },
-  {
-    label: "Golden Visa",
-    icon: Building2,
-    filters: { timing: "", stress: "", minPrice: "2000000", maxPrice: "" },
-    sort: "price",
-  },
-]
+function getPresets(locale: AppLocale) {
+  return locale === "ar"
+    ? [
+        {
+          label: "كل المشاريع",
+          icon: Sparkles,
+          filters: { timing: "", stress: "", minPrice: "", maxPrice: "" },
+          sort: "god_metric",
+        },
+        {
+          label: "إشارات BUY",
+          icon: TrendingUp,
+          filters: { timing: "BUY", stress: "", minPrice: "", maxPrice: "" },
+          sort: "god_metric",
+        },
+        {
+          label: "أعلى عائد",
+          icon: TrendingUp,
+          filters: { timing: "", stress: "", minPrice: "", maxPrice: "" },
+          sort: "yield",
+        },
+        {
+          label: "الدرجة A فقط",
+          icon: ShieldCheck,
+          filters: { timing: "", stress: "A", minPrice: "", maxPrice: "" },
+          sort: "god_metric",
+        },
+        {
+          label: "الإقامة الذهبية",
+          icon: Building2,
+          filters: { timing: "", stress: "", minPrice: "2000000", maxPrice: "" },
+          sort: "price",
+        },
+      ]
+    : [
+        {
+          label: "All projects",
+          icon: Sparkles,
+          filters: { timing: "", stress: "", minPrice: "", maxPrice: "" },
+          sort: "god_metric",
+        },
+        {
+          label: "BUY signals",
+          icon: TrendingUp,
+          filters: { timing: "BUY", stress: "", minPrice: "", maxPrice: "" },
+          sort: "god_metric",
+        },
+        {
+          label: "High yield",
+          icon: TrendingUp,
+          filters: { timing: "", stress: "", minPrice: "", maxPrice: "" },
+          sort: "yield",
+        },
+        {
+          label: "Grade A only",
+          icon: ShieldCheck,
+          filters: { timing: "", stress: "A", minPrice: "", maxPrice: "" },
+          sort: "god_metric",
+        },
+        {
+          label: "Golden Visa",
+          icon: Building2,
+          filters: { timing: "", stress: "", minPrice: "2000000", maxPrice: "" },
+          sort: "price",
+        },
+      ]
+}
 
-const TIMING_OPTIONS = [
-  { value: "", label: "Any signal" },
-  { value: "BUY", label: "BUY", color: "text-emerald-400" },
-  { value: "HOLD", label: "HOLD", color: "text-amber-400" },
-  { value: "WAIT", label: "WAIT", color: "text-red-400" },
-]
+function getTimingOptions(locale: AppLocale) {
+  return [
+    { value: "", label: locale === "ar" ? "كل الإشارات" : "Any signal" },
+    { value: "BUY", label: "BUY", color: "text-emerald-400" },
+    { value: "HOLD", label: "HOLD", color: "text-amber-400" },
+    { value: "WAIT", label: "WAIT", color: "text-red-400" },
+  ]
+}
 
-const GRADE_OPTIONS = [
-  { value: "", label: "Any grade" },
-  { value: "A", label: "Grade A" },
-  { value: "B", label: "Grade B" },
-  { value: "C", label: "Grade C" },
-]
+function getGradeOptions(locale: AppLocale) {
+  return [
+    { value: "", label: locale === "ar" ? "كل الدرجات" : "Any grade" },
+    { value: "A", label: locale === "ar" ? "الدرجة A" : "Grade A" },
+    { value: "B", label: locale === "ar" ? "الدرجة B" : "Grade B" },
+    { value: "C", label: locale === "ar" ? "الدرجة C" : "Grade C" },
+  ]
+}
 
-const SORT_OPTIONS = [
-  { value: "god_metric", label: "Score" },
-  { value: "yield", label: "Yield" },
-  { value: "price", label: "Price" },
-  { value: "reliability", label: "Reliability" },
-]
+function getSortOptions(locale: AppLocale) {
+  return [
+    { value: "god_metric", label: locale === "ar" ? "النتيجة" : "Score" },
+    { value: "yield", label: locale === "ar" ? "العائد" : "Yield" },
+    { value: "price", label: locale === "ar" ? "السعر" : "Price" },
+    { value: "reliability", label: locale === "ar" ? "الموثوقية" : "Reliability" },
+  ]
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -163,6 +209,48 @@ function FilterChip({
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function SearchPage() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
+  const presets = getPresets(locale)
+  const timingOptions = getTimingOptions(locale)
+  const gradeOptions = getGradeOptions(locale)
+  const sortOptions = getSortOptions(locale)
+  const copy = {
+    eyebrow: isArabic ? "السوق" : "Market Intelligence",
+    title: isArabic ? "استكشاف المشاريع" : "Project Search",
+    intro: isArabic
+      ? `ابحث داخل ${formatInteger(2813, locale)} مشروعًا مُقيَّمًا. افتح أي نتيجة لترى القراءة الكاملة.`
+      : `Filter across ${(2813).toLocaleString()} scored projects. Click any result to go deeper.`,
+    searchPlaceholder: isArabic ? "ابحث باسم المشروع أو المطور أو المنطقة" : "Search by project name, developer, area…",
+    searchButton: isArabic ? "ابحث" : "Search",
+    filters: isArabic ? "تصفية" : "Filters",
+    area: isArabic ? "المنطقة" : "Area",
+    developer: isArabic ? "المطور" : "Developer",
+    timing: isArabic ? "الإشارة" : "Timing",
+    grade: isArabic ? "الدرجة" : "Grade",
+    min: isArabic ? "من" : "Min",
+    max: isArabic ? "إلى" : "Max",
+    sort: isArabic ? "ترتيب" : "Sort",
+    clearAll: isArabic ? "مسح الكل" : "Clear all",
+    emptyEyebrow: isArabic ? "Entrestate · السوق" : "Entrestate · Market Intelligence",
+    emptyDescription: isArabic
+      ? "اختر سيناريو جاهزًا بالأعلى أو اكتب ما تبحث عنه لعرض النتائج."
+      : "Choose a preset above or enter a search to load results.",
+    noResults: isArabic ? "لا توجد مشاريع مطابقة لهذه المعايير." : "No projects match these filters.",
+    resetFilters: isArabic ? "إعادة ضبط المعايير" : "Reset filters",
+    results: isArabic ? "نتيجة" : "results",
+    sortedBy: isArabic ? "مرتبة حسب" : "sorted by",
+    clickCard: isArabic ? "افتح أي بطاقة للتفاصيل" : "Click a card to go deeper",
+    price: isArabic ? "السعر" : "Price",
+    yield: isArabic ? "العائد" : "Yield",
+    score: isArabic ? "النتيجة" : "Score",
+    openProject: isArabic ? "افتح المشروع" : "View project",
+    previous: isArabic ? "السابق" : "Previous",
+    next: isArabic ? "التالي" : "Next",
+    of: isArabic ? "من" : "of",
+    unnamedProject: isArabic ? "مشروع بدون اسم" : "Unnamed project",
+  }
+
   const [query, setQuery] = useState("")
   const [area, setArea] = useState("")
   const [developer, setDeveloper] = useState("")
@@ -212,7 +300,7 @@ export default function SearchPage() {
   }
 
   function applyPreset(i: number) {
-    const p = PRESETS[i]
+    const p = presets[i]
     setActivePreset(i)
     setQuery("")
     setArea("")
@@ -251,13 +339,13 @@ export default function SearchPage() {
         {/* ── Page header ── */}
         <div className="mb-10">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/40">
-            Market Intelligence
+            {copy.eyebrow}
           </p>
           <h1 className="mt-2 font-serif text-4xl font-medium text-foreground md:text-5xl">
-            Project Search
+            {copy.title}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Filter across {(2813).toLocaleString()} scored projects. Click any result to go deeper.
+            {copy.intro}
           </p>
         </div>
 
@@ -273,7 +361,7 @@ export default function SearchPage() {
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setActivePreset(null) }}
                 onKeyDown={(e) => e.key === "Enter" && runQuery(1)}
-                placeholder="Search by project name, developer, area…"
+                placeholder={copy.searchPlaceholder}
                 className="h-12 w-full rounded-xl border border-border/60 bg-card/60 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground/40 backdrop-blur-sm transition focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/10"
               />
             </div>
@@ -282,13 +370,13 @@ export default function SearchPage() {
               disabled={loading}
               className="flex h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-60"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Search <ArrowRight className="h-4 w-4" /></>}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>{copy.searchButton} <ArrowRight className="h-4 w-4" /></>}
             </button>
           </div>
 
           {/* Preset pills */}
           <div className="flex flex-wrap gap-2">
-            {PRESETS.map((p, i) => {
+            {presets.map((p, i) => {
               const Icon = p.icon
               return (
                 <button
@@ -316,7 +404,7 @@ export default function SearchPage() {
                 }`}
               >
                 <SlidersHorizontal className="h-3 w-3" />
-                Filters
+                {copy.filters}
                 {activeFilterCount > 0 && (
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
                     {activeFilterCount}
@@ -337,7 +425,7 @@ export default function SearchPage() {
                   type="text"
                   value={area}
                   onChange={(e) => setArea(e.target.value)}
-                  placeholder="Area"
+                  placeholder={copy.area}
                   className="w-24 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
                 />
                 {area && <X className="h-3 w-3 cursor-pointer text-muted-foreground/40 hover:text-foreground" onClick={() => setArea("")} />}
@@ -349,14 +437,14 @@ export default function SearchPage() {
                   type="text"
                   value={developer}
                   onChange={(e) => setDeveloper(e.target.value)}
-                  placeholder="Developer"
+                  placeholder={copy.developer}
                   className="w-28 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
                 />
                 {developer && <X className="h-3 w-3 cursor-pointer text-muted-foreground/40 hover:text-foreground" onClick={() => setDeveloper("")} />}
               </div>
 
-              <FilterChip label="Timing" value={timing} options={TIMING_OPTIONS} onChange={setTiming} />
-              <FilterChip label="Grade" value={stress} options={GRADE_OPTIONS} onChange={setStress} />
+              <FilterChip label={copy.timing} value={timing} options={timingOptions} onChange={setTiming} />
+              <FilterChip label={copy.grade} value={stress} options={gradeOptions} onChange={setStress} />
 
               {/* Price range */}
               <div className="flex items-center gap-1 rounded-full border border-border/50 bg-background/60 px-3 py-1.5 text-xs text-muted-foreground">
@@ -365,7 +453,7 @@ export default function SearchPage() {
                   type="number"
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
-                  placeholder="Min"
+                  placeholder={copy.min}
                   className="w-16 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/30 focus:outline-none"
                 />
                 <span className="text-muted-foreground/30">—</span>
@@ -373,15 +461,15 @@ export default function SearchPage() {
                   type="number"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
-                  placeholder="Max"
+                  placeholder={copy.max}
                   className="w-16 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/30 focus:outline-none"
                 />
               </div>
 
               {/* Sort */}
               <div className="flex items-center gap-1.5 ml-auto">
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">Sort</span>
-                {SORT_OPTIONS.map((opt) => (
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">{copy.sort}</span>
+                {sortOptions.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => setSortBy(opt.value)}
@@ -402,7 +490,7 @@ export default function SearchPage() {
                   onClick={() => { setTiming(""); setStress(""); setArea(""); setDeveloper(""); setMinPrice(""); setMaxPrice(""); setActivePreset(null) }}
                   className="ml-auto text-[11px] text-muted-foreground/40 underline underline-offset-2 hover:text-muted-foreground transition-colors"
                 >
-                  Clear all
+                  {copy.clearAll}
                 </button>
               )}
             </div>
@@ -421,10 +509,10 @@ export default function SearchPage() {
               ∅
             </div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/30 mb-3">
-              Entrestate · Market Intelligence
+              {copy.emptyEyebrow}
             </p>
             <p className="text-sm text-muted-foreground">
-              Choose a preset above or enter a search to load results.
+              {copy.emptyDescription}
             </p>
           </div>
         ) : loading ? (
@@ -449,12 +537,12 @@ export default function SearchPage() {
           </div>
         ) : results.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <p className="text-sm text-muted-foreground">No projects match these filters.</p>
+            <p className="text-sm text-muted-foreground">{copy.noResults}</p>
             <button
               onClick={() => { setTiming(""); setStress(""); setArea(""); setDeveloper(""); setMinPrice(""); setMaxPrice(""); setActivePreset(0); applyPreset(0) }}
               className="mt-4 text-xs text-primary underline underline-offset-2"
             >
-              Reset filters
+              {copy.resetFilters}
             </button>
           </div>
         ) : (
@@ -462,36 +550,30 @@ export default function SearchPage() {
             {/* Results count */}
             <div className="mb-4 flex items-center justify-between">
               <p className="text-xs text-muted-foreground/50">
-                <span className="font-semibold tabular-nums text-foreground">{total.toLocaleString()}</span> results
+                <span className="font-semibold tabular-nums text-foreground">{formatInteger(total, locale)}</span> {copy.results}
                 {sortBy !== "god_metric" && (
-                  <span className="ml-2">· sorted by {SORT_OPTIONS.find(s => s.value === sortBy)?.label.toLowerCase()}</span>
+                  <span className="ml-2">· {copy.sortedBy} {sortOptions.find((s) => s.value === sortBy)?.label.toLowerCase()}</span>
                 )}
               </p>
-              <p className="text-[10px] text-muted-foreground/30 uppercase tracking-wider">Click a card to go deeper</p>
+              <p className="text-[10px] text-muted-foreground/30 uppercase tracking-wider">{copy.clickCard}</p>
             </div>
 
             {/* Cards grid */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               {results.map((project, i) => {
-                const name = String(project.name ?? "Unnamed project")
-                const devName = String(project.developer ?? "")
-                const areaName = String(project.final_area ?? project.area ?? "")
+                const name = String(project.name ?? copy.unnamedProject)
+                const devName = pickLocalizedText(locale, project.developer_ar, project.developer, "")
+                const areaName = pickLocalizedText(locale, project.area_ar, project.final_area ?? project.area, "")
                 const priceValue = typeof project.price_from === "number"
                   ? project.price_from
                   : typeof project.l1_canonical_price === "number"
                     ? project.l1_canonical_price
                     : null
-                const price = typeof priceValue === "number"
-                  ? `${(priceValue / 1_000_000).toFixed(2)}M`
-                  : null
                 const yieldValue = typeof project.rental_yield === "number"
                   ? project.rental_yield
                   : typeof project.l1_canonical_yield === "number"
                     ? project.l1_canonical_yield
                     : null
-                const yieldVal = typeof yieldValue === "number"
-                  ? `${Number(yieldValue).toFixed(1)}%`
-                  : null
                 const scoreValue = typeof project.investor_score_v1 === "number"
                   ? project.investor_score_v1
                   : typeof project.investor_score === "number"
@@ -516,11 +598,14 @@ export default function SearchPage() {
                     : null
                 const slug = String(project.slug ?? "")
                 const styles = signal ? signalStyle(signal) : null
+                const yieldLabel = typeof yieldValue === "number"
+                  ? `${formatDecimal(yieldValue, locale, 2, 2)}%`
+                  : "—"
 
                 return (
                   <Link
                     key={i}
-                    href={slug ? `/properties/${slug}` : "/properties"}
+                    href={slug ? prefixLocalePath(`/properties/${slug}`, locale) : prefixLocalePath("/properties", locale)}
                     className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/60 transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-lg hover:shadow-black/10"
                   >
                     {/* Signal accent bar */}
@@ -564,28 +649,28 @@ export default function SearchPage() {
                       {/* Metrics strip */}
                       <div className="grid grid-cols-3 gap-2">
                         <div className="rounded-lg border border-border/30 bg-background/40 px-3 py-2 text-center">
-                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">Price</p>
+                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">{copy.price}</p>
                           <p className="mt-0.5 text-xs font-semibold tabular-nums text-foreground">
-                            {price ? `AED ${price}` : "—"}
+                            {formatAed(priceValue, locale, { compact: true, fallback: "—" })}
                           </p>
                         </div>
                         <div className="rounded-lg border border-border/30 bg-background/40 px-3 py-2 text-center">
-                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">Yield</p>
-                          <p className={`mt-0.5 text-xs font-semibold tabular-nums ${yieldVal ? "text-emerald-400" : "text-foreground"}`}>
-                            {yieldVal ?? "—"}
+                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">{copy.yield}</p>
+                          <p className={`mt-0.5 text-xs font-semibold tabular-nums ${typeof yieldValue === "number" ? "text-emerald-400" : "text-foreground"}`}>
+                            {yieldLabel}
                           </p>
                         </div>
                         <div className="rounded-lg border border-border/30 bg-background/40 px-3 py-2 text-center">
-                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">Score</p>
+                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">{copy.score}</p>
                           <p className={`mt-0.5 text-xs font-semibold tabular-nums ${score && score >= 70 ? "text-primary" : "text-foreground"}`}>
-                            {score ?? "—"}
+                            {formatInteger(scoreValue, locale)}
                           </p>
                         </div>
                       </div>
 
                       {/* CTA */}
                       <div className="mt-4 flex items-center justify-end gap-1 text-[11px] font-medium text-muted-foreground/40 transition-colors group-hover:text-primary">
-                        View project
+                        {copy.openProject}
                         <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                       </div>
                     </div>
@@ -602,17 +687,17 @@ export default function SearchPage() {
                   disabled={page <= 1}
                   className="flex items-center gap-1.5 rounded-xl border border-border/60 px-4 py-2 text-xs text-muted-foreground transition hover:border-border hover:text-foreground disabled:opacity-30"
                 >
-                  <ChevronLeft className="h-3.5 w-3.5" /> Previous
+                  <ChevronLeft className="h-3.5 w-3.5" /> {copy.previous}
                 </button>
                 <span className="text-xs text-muted-foreground/50">
-                  {page} <span className="text-muted-foreground/30">of</span> {totalPages}
+                  {formatInteger(page, locale)} <span className="text-muted-foreground/30">{copy.of}</span> {formatInteger(totalPages, locale)}
                 </span>
                 <button
                   onClick={() => runQuery(page + 1)}
                   disabled={page >= totalPages}
                   className="flex items-center gap-1.5 rounded-xl border border-border/60 px-4 py-2 text-xs text-muted-foreground transition hover:border-border hover:text-foreground disabled:opacity-30"
                 >
-                  Next <ChevronRight className="h-3.5 w-3.5" />
+                  {copy.next} <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
             )}

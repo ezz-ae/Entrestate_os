@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
-export default function ReportsPage() {
-  redirect("/reports/library")
+export default async function ReportsPage() {
+  const locale = await getRequestLocale()
+  redirect(prefixLocalePath("/reports/library", locale))
 }
-

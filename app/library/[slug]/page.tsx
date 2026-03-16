@@ -8,18 +8,22 @@ import { getLibraryArticle, libraryArticles } from "@/lib/library-data"
 import { ReadingControls } from "@/components/reading-controls"
 import { ExplainWithChat } from "@/components/explain-with-chat"
 import { SEO, absoluteUrl } from "@/lib/seo"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
 export async function generateStaticParams() {
   return libraryArticles.map((article) => ({ slug: article.slug }))
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
   const { slug } = await params
   const article = getLibraryArticle(slug)
 
   if (!article) {
     return {
-      title: "Library Article Not Found",
+      title: isArabic ? "المقال غير موجود" : "Library Article Not Found",
       robots: {
         index: false,
         follow: false,
@@ -51,6 +55,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function LibraryArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
   const { slug } = await params
   const article = getLibraryArticle(slug)
 
@@ -89,11 +95,11 @@ export default async function LibraryArticlePage({ params }: { params: Promise<{
       <div className="pt-28 pb-20 md:pt-36 md:pb-32">
         <div className="container mx-auto px-6">
           <Link
-            href="/library"
+            href={prefixLocalePath("/library", locale)}
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Library
+            {isArabic ? "العودة إلى المكتبة" : "Back to Library"}
           </Link>
 
           <div className="max-w-3xl reading-container">
@@ -118,10 +124,10 @@ export default async function LibraryArticlePage({ params }: { params: Promise<{
             <div className="rounded-2xl border border-border/70 bg-card/60 p-5 mb-8">
               <ReadingControls />
               <div className="mt-3 flex flex-wrap gap-2">
-                <ExplainWithChat prompt={`Explain the report "${article.title}" and the key takeaways.`} />
+                <ExplainWithChat prompt={isArabic ? `اشرح التقرير "${article.title}" وما أهم النقاط التي يجب فهمها قبل اتخاذ القرار.` : `Explain the report "${article.title}" and the key takeaways.`} />
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                Use Reading mode for calmer spacing. Switch Day/Night for eye comfort.
+                {isArabic ? "فعّل وضع القراءة لعرض أهدأ، وبدّل بين النهاري والليلي لراحة العين." : "Use Reading mode for calmer spacing. Switch Day/Night for eye comfort."}
               </p>
             </div>
 
@@ -135,10 +141,10 @@ export default async function LibraryArticlePage({ params }: { params: Promise<{
 
             <div className="mt-12">
               <Link
-                href="/workspace"
+                href={prefixLocalePath("/workspace", locale)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
               >
-                Open Workspace
+                {isArabic ? "افتح مساحة العمل" : "Open Workspace"}
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
