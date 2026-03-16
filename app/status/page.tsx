@@ -1,71 +1,147 @@
+import Link from "next/link"
+import { CheckCircle2, Clock, Database, AlertCircle, Server, Shield, Zap, BarChart3 } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { CheckCircle2, Clock, Database, AlertCircle, Server, Shield, Zap, BarChart3 } from "lucide-react"
 import { getDataFreshnessStatus, getMarketPulse } from "@/lib/decision-infrastructure"
-import Link from "next/link"
+import { getNumberLocale, getDateLocale } from "@/lib/format/locale"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 export const dynamic = "force-dynamic"
 
-const services = [
-  {
-    name: "AI Copilot",
-    status: "Operational",
-    detail: "Streaming responses live · Claude Sonnet 4.6",
-    icon: Zap,
-  },
-  {
-    name: "Market data feed",
-    status: "Operational",
-    detail: "10-phase pipeline · Last cycle completed on schedule",
-    icon: Database,
-  },
-  {
-    name: "Decision engine",
-    status: "Operational",
-    detail: "Properties, Areas, Developers scoring active",
-    icon: BarChart3,
-  },
-  {
-    name: "Authentication",
-    status: "Operational",
-    detail: "Clerk · Session issuance normal",
-    icon: Shield,
-  },
-  {
-    name: "Report generation",
-    status: "Operational",
-    detail: "Artifact persistence to Neon active",
-    icon: Server,
-  },
-  {
-    name: "Investor desk",
-    status: "Operational",
-    detail: "Market views and briefs available",
-    icon: BarChart3,
-  },
-]
+function getServices(locale: AppLocale) {
+  if (locale === "ar") {
+    return [
+      {
+        name: "مساعد القرار",
+        status: "يعمل",
+        detail: "إجابات مباشرة وبث حي عبر Claude Sonnet 4.6",
+        icon: Zap,
+      },
+      {
+        name: "تغذية بيانات السوق",
+        status: "يعمل",
+        detail: "خط معالجة من عشر مراحل والدورات تُغلق في موعدها",
+        icon: Database,
+      },
+      {
+        name: "محرك القرار",
+        status: "يعمل",
+        detail: "قراءة المشاريع والمناطق والمطورين متاحة الآن",
+        icon: BarChart3,
+      },
+      {
+        name: "الدخول والصلاحيات",
+        status: "يعمل",
+        detail: "جلسات المستخدمين تصدر بشكل طبيعي عبر Clerk",
+        icon: Shield,
+      },
+      {
+        name: "التقارير والمخرجات",
+        status: "يعمل",
+        detail: "حفظ الملفات والنتائج داخل Neon يعمل بدون انقطاع",
+        icon: Server,
+      },
+      {
+        name: "مكتب المستثمر",
+        status: "يعمل",
+        detail: "لوحات السوق والمذكرات السريعة متاحة للفِرق",
+        icon: BarChart3,
+      },
+    ]
+  }
 
-const sloTargets = [
-  { metric: "Platform uptime", target: "99.5%", period: "Monthly" },
-  { metric: "API p95 response", target: "< 800 ms", period: "Continuous" },
-  { metric: "Data freshness", target: "< 24 h", period: "Per pipeline cycle" },
-  { metric: "Rollback RTO", target: "< 60 s", period: "Per incident" },
-]
+  return [
+    {
+      name: "AI Copilot",
+      status: "Operational",
+      detail: "Streaming responses live · Claude Sonnet 4.6",
+      icon: Zap,
+    },
+    {
+      name: "Market data feed",
+      status: "Operational",
+      detail: "10-phase pipeline · Last cycle completed on schedule",
+      icon: Database,
+    },
+    {
+      name: "Decision engine",
+      status: "Operational",
+      detail: "Properties, Areas, Developers scoring active",
+      icon: BarChart3,
+    },
+    {
+      name: "Authentication",
+      status: "Operational",
+      detail: "Clerk · Session issuance normal",
+      icon: Shield,
+    },
+    {
+      name: "Report generation",
+      status: "Operational",
+      detail: "Artifact persistence to Neon active",
+      icon: Server,
+    },
+    {
+      name: "Investor desk",
+      status: "Operational",
+      detail: "Market views and briefs available",
+      icon: BarChart3,
+    },
+  ]
+}
 
-const incidents = [
-  {
-    date: "Feb 18, 2026",
-    title: "Historic data refresh",
-    summary: "Large market refresh completed. Coverage is back to normal.",
-    resolved: true,
-  },
-  {
-    date: "Feb 11, 2026",
-    title: "Media export delay",
-    summary: "Video export slowed briefly. Resolved after pipeline adjustment.",
-    resolved: true,
-  },
-]
+function getSloTargets(locale: AppLocale) {
+  if (locale === "ar") {
+    return [
+      { metric: "استقرار المنصة", target: "99.5%", period: "شهريًا" },
+      { metric: "زمن استجابة API p95", target: "< 800 ms", period: "بشكل مستمر" },
+      { metric: "حداثة البيانات", target: "< 24 h", period: "مع كل دورة تشغيل" },
+      { metric: "زمن الرجوع الآمن", target: "< 60 s", period: "عند الحاجة" },
+    ]
+  }
+
+  return [
+    { metric: "Platform uptime", target: "99.5%", period: "Monthly" },
+    { metric: "API p95 response", target: "< 800 ms", period: "Continuous" },
+    { metric: "Data freshness", target: "< 24 h", period: "Per pipeline cycle" },
+    { metric: "Rollback RTO", target: "< 60 s", period: "Per incident" },
+  ]
+}
+
+function getIncidents(locale: AppLocale) {
+  if (locale === "ar") {
+    return [
+      {
+        date: "2026-02-18",
+        title: "تحديث تاريخي واسع للبيانات",
+        summary: "أُغلقت دورة التحديث الكبيرة بنجاح، وعادت التغطية إلى مستواها المعتاد.",
+        resolved: true,
+      },
+      {
+        date: "2026-02-11",
+        title: "بطء مؤقت في تصدير الوسائط",
+        summary: "ظهر تباطؤ قصير في التصدير المرئي وتمت معالجته بعد ضبط خط المعالجة.",
+        resolved: true,
+      },
+    ]
+  }
+
+  return [
+    {
+      date: "2026-02-18",
+      title: "Historic data refresh",
+      summary: "Large market refresh completed. Coverage is back to normal.",
+      resolved: true,
+    },
+    {
+      date: "2026-02-11",
+      title: "Media export delay",
+      summary: "Video export slowed briefly. Resolved after pipeline adjustment.",
+      resolved: true,
+    },
+  ]
+}
 
 async function getSnapshotSummary() {
   try {
@@ -93,48 +169,61 @@ async function getSnapshotSummary() {
   }
 }
 
-function formatTs(value: string | null | undefined) {
-  if (!value) return "Not available"
+function formatTs(value: string | null | undefined, locale: AppLocale) {
+  if (!value) return locale === "ar" ? "غير متاح" : "Not available"
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleString(undefined, { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+  return d.toLocaleString(getDateLocale(locale), { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+}
+
+function formatIncidentDate(value: string, locale: AppLocale) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString(getDateLocale(locale), { year: "numeric", month: "short", day: "2-digit" })
 }
 
 export default async function StatusPage() {
+  const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
+  const services = getServices(locale)
+  const sloTargets = getSloTargets(locale)
+  const incidents = getIncidents(locale)
   const snapshot = await getSnapshotSummary()
-  const allOperational = services.every((s) => s.status === "Operational")
+  const numberLocale = getNumberLocale(locale)
+  const allOperational = services.every((service) => service.status === (isArabic ? "يعمل" : "Operational"))
 
   return (
     <main id="main-content">
       <Navbar />
       <div className="mx-auto max-w-[1200px] px-6 pb-20 pt-28 md:pt-36">
-
-        {/* Page header */}
         <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Status</p>
-            <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">System Health</h1>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "الحالة" : "Status"}</p>
+            <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">
+              {isArabic ? "صحة المنصة" : "System Health"}
+            </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Live availability across AI, data pipeline, decision engine, and platform services.
+              {isArabic
+                ? "قراءة مباشرة لحالة المساعد، البيانات، محرك القرار، وباقي خدمات التشغيل."
+                : "Live availability across AI, data pipeline, decision engine, and platform services."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              href="/docs/deployment-architecture"
+              href={prefixLocalePath("/docs/deployment-architecture", locale)}
               className="rounded-xl border border-border/60 bg-card/60 px-4 py-2 text-xs text-muted-foreground transition hover:border-primary/30 hover:text-foreground"
             >
-              Architecture docs →
+              {isArabic ? "بنية النشر" : "Architecture docs"} →
             </Link>
             <Link
-              href="/docs/cto-deployment-review"
+              href={prefixLocalePath("/docs/cto-deployment-review", locale)}
               className="rounded-xl border border-border/60 bg-card/60 px-4 py-2 text-xs text-muted-foreground transition hover:border-primary/30 hover:text-foreground"
             >
-              CTO review →
+              {isArabic ? "مراجعة تقنية" : "CTO review"} →
             </Link>
           </div>
         </header>
 
-        {/* Overall status banner */}
         <div className={`mb-8 flex items-center gap-3 rounded-2xl border px-5 py-4 ${
           allOperational
             ? "border-emerald-500/30 bg-emerald-500/[0.06]"
@@ -147,19 +236,27 @@ export default async function StatusPage() {
           )}
           <div>
             <p className={`text-sm font-semibold ${allOperational ? "text-emerald-300" : "text-amber-300"}`}>
-              {allOperational ? "All systems operational" : "Partial service disruption"}
+              {allOperational
+                ? isArabic
+                  ? "المنصة تعمل بشكل طبيعي"
+                  : "All systems operational"
+                : isArabic
+                  ? "هناك جزء يحتاج متابعة"
+                  : "Partial service disruption"}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {services.length} services monitored · Last checked {formatTs(snapshot.generated)}
+              {isArabic
+                ? `${services.length.toLocaleString(numberLocale)} خدمات تحت المراقبة · آخر فحص ${formatTs(snapshot.generated, locale)}`
+                : `${services.length} services monitored · Last checked ${formatTs(snapshot.generated, locale)}`}
             </p>
           </div>
         </div>
 
-        {/* Services grid */}
         <section className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {services.map((service) => {
-            const isOk = service.status === "Operational"
+            const isOk = service.status === (isArabic ? "يعمل" : "Operational")
             const Icon = service.icon
+
             return (
               <div
                 key={service.name}
@@ -187,21 +284,34 @@ export default async function StatusPage() {
           })}
         </section>
 
-        {/* Data snapshot */}
         <section className="mb-8 overflow-hidden rounded-2xl border border-border/60 bg-card/75">
           <div className="flex items-center gap-2.5 border-b border-border/50 px-5 py-4">
             <Database className="h-4 w-4 text-sky-400" />
-            <h2 className="text-sm font-semibold text-foreground">Market data snapshot</h2>
+            <h2 className="text-sm font-semibold text-foreground">
+              {isArabic ? "لقطة سريعة من البيانات" : "Market data snapshot"}
+            </h2>
             <span className="ml-auto text-xs text-muted-foreground">
               <Clock className="mr-1 inline h-3 w-3" />
-              {formatTs(snapshot.generated)}
+              {formatTs(snapshot.generated, locale)}
             </span>
           </div>
           <div className="grid grid-cols-1 divide-x divide-border/50 md:grid-cols-3">
             {[
-              { label: "Projects in master", value: snapshot.masterCount?.toLocaleString() ?? "—", color: "text-sky-300" },
-              { label: "High confidence rows", value: snapshot.scoredCount?.toLocaleString() ?? "—", color: "text-emerald-300" },
-              { label: "BUY timing signals", value: snapshot.mediaCount?.toLocaleString() ?? "—", color: "text-emerald-300" },
+              {
+                label: isArabic ? "المشاريع في المستودع" : "Projects in master",
+                value: snapshot.masterCount?.toLocaleString(numberLocale) ?? "—",
+                color: "text-sky-300",
+              },
+              {
+                label: isArabic ? "صفوف الثقة العالية" : "High confidence rows",
+                value: snapshot.scoredCount?.toLocaleString(numberLocale) ?? "—",
+                color: "text-emerald-300",
+              },
+              {
+                label: isArabic ? "إشارات BUY" : "BUY timing signals",
+                value: snapshot.mediaCount?.toLocaleString(numberLocale) ?? "—",
+                color: "text-emerald-300",
+              },
             ].map((item) => (
               <div key={item.label} className="px-5 py-5">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{item.label}</p>
@@ -211,11 +321,12 @@ export default async function StatusPage() {
           </div>
         </section>
 
-        {/* SLO targets */}
         <section className="mb-8 max-w-3xl">
           <div className="mb-4 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold text-foreground">Service level objectives</h2>
+            <h2 className="text-sm font-semibold text-foreground">
+              {isArabic ? "مستهدفات التشغيل" : "Service level objectives"}
+            </h2>
           </div>
           <div className="overflow-hidden rounded-2xl border border-border/60">
             <div className="divide-y divide-border/40">
@@ -232,11 +343,12 @@ export default async function StatusPage() {
           </div>
         </section>
 
-        {/* Incidents */}
         <section className="max-w-3xl">
           <div className="mb-4 flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold text-foreground">Recent incidents</h2>
+            <h2 className="text-sm font-semibold text-foreground">
+              {isArabic ? "آخر الملاحظات التشغيلية" : "Recent incidents"}
+            </h2>
           </div>
           <div className="space-y-3">
             {incidents.map((incident) => (
@@ -244,13 +356,19 @@ export default async function StatusPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm font-medium text-foreground">{incident.title}</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{incident.date}</span>
+                    <span className="text-xs text-muted-foreground">{formatIncidentDate(incident.date, locale)}</span>
                     <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
                       incident.resolved
                         ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
                         : "border-amber-500/40 bg-amber-500/10 text-amber-300"
                     }`}>
-                      {incident.resolved ? "Resolved" : "Monitoring"}
+                      {incident.resolved
+                        ? isArabic
+                          ? "مغلقة"
+                          : "Resolved"
+                        : isArabic
+                          ? "قيد المتابعة"
+                          : "Monitoring"}
                     </span>
                   </div>
                 </div>
