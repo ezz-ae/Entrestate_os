@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { MarqueePrompts } from "@/components/marketing/marquee-prompts"
@@ -44,6 +45,27 @@ const itemVariants = {
 }
 
 export default function ChatLandingPage() {
+  const locale = useLocale()
+  const isArabic = locale === "ar"
+  const copy = isArabic
+    ? {
+        engine: "محرك القرار العقاري 4.2",
+        optimize: "مصمم للعمل بالعربية والإنجليزية",
+        headline1: "اسأل السوق",
+        headline2: "قبل القرار.",
+        subtitle: "ادخل مباشرة إلى قراءة المشاريع والمناطق والمخاطر والتوقيت من مكان واحد.",
+        start: "ابدأ جلسة التحليل",
+        enterprise: "استعرض حلول المؤسسات",
+      }
+    : {
+        engine: "ENTRESTATE INTELLIGENCE V4.2",
+        optimize: "GPT-4o OPTIMIZED",
+        headline1: "The future of real estate",
+        headline2: "is intelligent.",
+        subtitle: "Move beyond data. Access professional-grade market intelligence, automated risk benchmarks, and verified execution.",
+        start: "Start Intelligence Session",
+        enterprise: "Explore Enterprise Solutions",
+      }
   return (
     <div className="min-h-screen bg-background flex flex-col selection:bg-primary/20">
       {/* Dynamic Background */}
@@ -91,31 +113,30 @@ export default function ChatLandingPage() {
           <motion.div variants={itemVariants} className="mb-10">
             <div className="inline-flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-primary bg-primary/5 rounded-full border border-primary/10 backdrop-blur-sm shadow-inner cursor-default group">
               <Activity className="w-3.5 h-3.5 animate-pulse" />
-              <span className="tracking-wide">ENTRESTATE INTELLIGENCE V4.2</span>
+              <span className="tracking-wide">{copy.engine}</span>
               <div className="h-3 w-px bg-primary/20 mx-1" />
-              <span className="text-primary/60 font-medium">GPT-4o OPTIMIZED</span>
+              <span className="text-primary/60 font-medium">{copy.optimize}</span>
             </div>
           </motion.div>
 
           {/* Headline */}
           <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl lg:text-8xl font-serif text-foreground leading-[1.05] tracking-tight mb-8">
-            The future of real estate
+            {copy.headline1}
             <br />
-            <span className="text-muted-foreground/40 italic">is intelligent.</span>
+            <span className="text-muted-foreground/40 italic">{copy.headline2}</span>
           </motion.h1>
 
           <motion.p variants={itemVariants} className="text-lg md:text-2xl text-muted-foreground/80 max-w-3xl mb-12 font-medium leading-relaxed">
-            Move beyond data. Access professional-grade market intelligence, 
-            automated risk benchmarks, and verified execution.
+            {copy.subtitle}
           </motion.p>
 
           <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-6 mb-24">
             <Button size="lg" className="h-14 rounded-full px-10 gap-3 text-lg bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02]">
-              Start Intelligence Session
+              {copy.start}
               <ArrowRight className="w-5 h-5" />
             </Button>
             <Link href="#" className="group text-sm font-semibold flex items-center gap-2.5 hover:text-primary transition-colors">
-              Explore Enterprise Solutions
+              {copy.enterprise}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>

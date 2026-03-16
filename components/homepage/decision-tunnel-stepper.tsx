@@ -1,10 +1,29 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useLocale } from "next-intl"
 import { Zap, BarChart3, ShieldCheck, FileText, ArrowRight, ChevronRight } from "lucide-react"
 import Link from "next/link"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
-const STEPS = [
+type StepConfig = {
+  step: string
+  label: string
+  tagline: string
+  detail: string
+  icon: typeof Zap
+  accent: string
+  accentClass: string
+  borderClass: string
+  bgClass: string
+  glowClass: string
+  badgeClass: string
+  barClass: string
+  example: string
+}
+
+const STEP_COPY: Record<AppLocale, StepConfig[]> = {
+  en: [
   {
     step: "01",
     label: "Intent",
@@ -69,18 +88,88 @@ const STEPS = [
     barClass: "bg-amber-400",
     example: "Investor memo · PDF export · Shared shortlist · Evidence log",
   },
-]
+  ],
+  ar: [
+    {
+      step: "01",
+      label: "الهدف",
+      tagline: "حدد ما تبحث عنه بدقة",
+      detail:
+        "ابدأ بالميزانية ونوع الأصل والعائد المستهدف وحدّ المخاطرة المقبول. بهذه الطريقة تتحول الفكرة العامة إلى طلب واضح يمكن تقييمه فعلياً.",
+      icon: Zap,
+      accent: "blue",
+      accentClass: "text-blue-400",
+      borderClass: "border-blue-500/30",
+      bgClass: "bg-blue-500/8",
+      glowClass: "shadow-blue-500/10",
+      badgeClass: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+      barClass: "bg-blue-400",
+      example: '"أبحث عن شقة تحت 2 مليون في دبي بعائد جيد ومطور موثوق."',
+    },
+    {
+      step: "02",
+      label: "البيانات",
+      tagline: "نجمع الإشارات المؤثرة",
+      detail:
+        "كل مشروع يمر عبر طبقات متتابعة من البيانات: السجلات الرسمية، مؤشرات السعر والعائد، حركة السوق، الإشارات الخارجية، وسجل الصفقات الخام. النتيجة لا تعتمد على نقطة واحدة فقط.",
+      icon: BarChart3,
+      accent: "violet",
+      accentClass: "text-violet-400",
+      borderClass: "border-violet-500/30",
+      bgClass: "bg-violet-500/8",
+      glowClass: "shadow-violet-500/10",
+      badgeClass: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+      barClass: "bg-violet-400",
+      example: "L1 → L2 → L3 → L4 → L5 — كل طبقة تؤكد أو تصحح ما قبلها.",
+    },
+    {
+      step: "03",
+      label: "القراءة",
+      tagline: "إشارة واضحة بدل الانطباع",
+      detail:
+        "بدلاً من الاعتماد على الحدس، يحصل كل مشروع على إشارة BUY أو HOLD أو WAIT، مع قراءة للضغط وموثوقية المطور وسرعة البيع. هكذا ترى الصورة كما هي، لا كما تُسوَّق لك.",
+      icon: ShieldCheck,
+      accent: "emerald",
+      accentClass: "text-emerald-400",
+      borderClass: "border-emerald-500/30",
+      bgClass: "bg-emerald-500/8",
+      glowClass: "shadow-emerald-500/10",
+      badgeClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+      barClass: "bg-emerald-400",
+      example: "BUY · تصنيف المطور A · الضغط 82 · وتيرة البيع 94%",
+    },
+    {
+      step: "04",
+      label: "المخرجات",
+      tagline: "نتيجة جاهزة للمراجعة والمشاركة",
+      detail:
+        "بعد القراءة، يمكنك استخراج مذكرة استثمار أو قائمة مختصرة أو تقرير منظم يمكن الرجوع إليه ومشاركته مع الفريق أو العميل أو الشريك.",
+      icon: FileText,
+      accent: "amber",
+      accentClass: "text-amber-400",
+      borderClass: "border-amber-500/30",
+      bgClass: "bg-amber-500/8",
+      glowClass: "shadow-amber-500/10",
+      badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+      barClass: "bg-amber-400",
+      example: "مذكرة استثمار · PDF · قائمة مختصرة · سجل الأدلة",
+    },
+  ],
+}
 
 const AUTO_INTERVAL = 4000
 
 export function DecisionTunnelStepper() {
+  const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
+  const steps = STEP_COPY[locale] ?? STEP_COPY.en
   const [active, setActive] = useState(0)
   const [progress, setProgress] = useState(0)
   const [paused, setPaused] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const step = STEPS[active]
+  const step = steps[active]
 
   const startCycle = () => {
     if (intervalRef.current) clearInterval(intervalRef.current)
@@ -95,7 +184,7 @@ export function DecisionTunnelStepper() {
     }, 30)
 
     intervalRef.current = setInterval(() => {
-      setActive((prev) => (prev + 1) % STEPS.length)
+      setActive((prev) => (prev + 1) % steps.length)
     }, AUTO_INTERVAL)
   }
 
@@ -125,7 +214,7 @@ export function DecisionTunnelStepper() {
     <div className="w-full">
       {/* ── Step tabs ── */}
       <div className="relative mb-6 flex items-center justify-between gap-0">
-        {STEPS.map((s, i) => {
+        {steps.map((s, i) => {
           const SIcon = s.icon
           const isActive = i === active
           const isPast = i < active
@@ -166,7 +255,7 @@ export function DecisionTunnelStepper() {
               </button>
 
               {/* Arrow connector */}
-              {i < STEPS.length - 1 && (
+              {i < steps.length - 1 && (
                 <div className={`flex shrink-0 items-center transition-colors duration-500 ${i < active ? "text-muted-foreground/40" : "text-border/40"}`}>
                   <ChevronRight className="h-4 w-4" />
                 </div>
@@ -198,7 +287,7 @@ export function DecisionTunnelStepper() {
               <Icon className={`h-7 w-7 ${step.accentClass}`} />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">{step.step} of 04</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">{isArabic ? `${step.step} من 04` : `${step.step} of 04`}</p>
               <p className={`mt-0.5 font-serif text-2xl font-medium ${step.accentClass}`}>{step.label}</p>
               <p className="mt-0.5 text-xs text-muted-foreground/60">{step.tagline}</p>
             </div>
@@ -212,7 +301,7 @@ export function DecisionTunnelStepper() {
 
             {/* Example callout */}
             <div className={`mt-5 rounded-xl border ${step.borderClass} bg-background/40 px-4 py-3`}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 mb-1">Example</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 mb-1">{isArabic ? "مثال" : "Example"}</p>
               <p className={`text-xs font-mono leading-relaxed ${step.accentClass} opacity-80`}>{step.example}</p>
             </div>
           </div>
@@ -221,7 +310,7 @@ export function DecisionTunnelStepper() {
         {/* Bottom nav */}
         <div className="mt-6 flex items-center justify-between border-t border-border/20 pt-4">
           <div className="flex items-center gap-1.5">
-            {STEPS.map((_, i) => (
+            {steps.map((_, i) => (
               <button
                 key={i}
                 onClick={() => handleStepClick(i)}
@@ -232,25 +321,25 @@ export function DecisionTunnelStepper() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => handleStepClick((active - 1 + STEPS.length) % STEPS.length)}
+              onClick={() => handleStepClick((active - 1 + steps.length) % steps.length)}
               className="text-[11px] text-muted-foreground/40 hover:text-muted-foreground transition-colors"
             >
-              ← Prev
+              {isArabic ? "السابق ←" : "← Prev"}
             </button>
-            {active < STEPS.length - 1 ? (
+            {active < steps.length - 1 ? (
               <button
                 onClick={() => handleStepClick(active + 1)}
                 className={`flex items-center gap-1.5 rounded-lg border ${step.borderClass} px-4 py-1.5 text-xs font-medium ${step.accentClass} transition-colors hover:bg-background/50`}
               >
-                Next stage
+                {isArabic ? "الخطوة التالية" : "Next stage"}
                 <ArrowRight className="h-3 w-3" />
               </button>
             ) : (
               <Link
-                href="/chat"
+                href={prefixLocalePath("/chat", locale)}
                 className={`flex items-center gap-1.5 rounded-lg border ${step.borderClass} px-4 py-1.5 text-xs font-medium ${step.accentClass} transition-colors hover:bg-background/50`}
               >
-                Try it now
+                {isArabic ? "جرّبه الآن" : "Try it now"}
                 <ArrowRight className="h-3 w-3" />
               </Link>
             )}

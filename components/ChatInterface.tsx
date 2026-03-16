@@ -543,59 +543,115 @@ function resolveDataFreshness(toolOutputs: Record<string, unknown>[]) {
   return null
 }
 
-const capabilityCards = [
-  {
-    label: "Screen Properties",
-    description: "Find ranked projects by budget, area, and return profile using live scoring data.",
-    example: "2BR under AED 2M, BUY signal, Grade A risk",
-    prompt: "Find 2BR projects under AED 2M with BUY timing label and stress grade A or B. Rank by investor_score_v1 and show yield for each.",
-    icon: Search,
-  },
-  {
-    label: "Compare Markets",
-    description: "Side-by-side analysis of areas or projects across price, yield, and risk metrics.",
-    example: "Dubai Marina vs JBR: yield, risk, and timing",
-    prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing label. Which is the better entry point right now and why?",
-    icon: Scale,
-  },
-  {
-    label: "Stress Test",
-    description: "Review real V1 stress grades, scores, and resilience sub-scores for live projects.",
-    example: "Show Marina Vista V1 stress grade and sub-scores",
-    prompt: "Show the real V1 stress profile for Marina Vista. Return stress_score, stress_grade_v1, developer_reliability_score, supply_resilience_score, liquidity_resilience_score, pricing_discipline_score, handover_reliability_score, area_stability_score, and payment_plan_score.",
-    icon: SlidersHorizontal,
-  },
-  {
-    label: "Investor Memo",
-    description: "Generate a structured due diligence brief with price reality, developer track record, and risk verdict.",
-    example: "Full memo: Marina Vista — pricing, risk, verdict",
-    prompt: "Generate a full investor memo for Marina Vista. Include: price reality check versus area average, developer reliability score, stress grade assessment, timing label context, and final investment verdict.",
-    icon: FileText,
-  },
-]
+const CAPABILITY_CARDS: Record<AppLocale, Array<{ label: string; description: string; example: string; prompt: string; icon: LucideIcon }>> = {
+  en: [
+    {
+      label: "Screen Properties",
+      description: "Find ranked projects by budget, area, and return profile using live scoring data.",
+      example: "2BR under AED 2M, BUY signal, Grade A risk",
+      prompt: "Find 2BR projects under AED 2M with BUY timing label and stress grade A or B. Rank by investor_score_v1 and show yield for each.",
+      icon: Search,
+    },
+    {
+      label: "Compare Markets",
+      description: "Side-by-side analysis of areas or projects across price, yield, and risk metrics.",
+      example: "Dubai Marina vs JBR: yield, risk, and timing",
+      prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing label. Which is the better entry point right now and why?",
+      icon: Scale,
+    },
+    {
+      label: "Stress Test",
+      description: "Review real V1 stress grades, scores, and resilience sub-scores for live projects.",
+      example: "Show Marina Vista V1 stress grade and sub-scores",
+      prompt: "Show the real V1 stress profile for Marina Vista. Return stress_score, stress_grade_v1, developer_reliability_score, supply_resilience_score, liquidity_resilience_score, pricing_discipline_score, handover_reliability_score, area_stability_score, and payment_plan_score.",
+      icon: SlidersHorizontal,
+    },
+    {
+      label: "Investor Memo",
+      description: "Generate a structured due diligence brief with price reality, developer track record, and risk verdict.",
+      example: "Full memo: Marina Vista — pricing, risk, verdict",
+      prompt: "Generate a full investor memo for Marina Vista. Include: price reality check versus area average, developer reliability score, stress grade assessment, timing label context, and final investment verdict.",
+      icon: FileText,
+    },
+  ],
+  ar: [
+    {
+      label: "فرز المشاريع",
+      description: "اعثر على المشاريع الأنسب حسب الميزانية والمنطقة والعائد باستخدام البيانات المباشرة.",
+      example: "شقق غرفتين تحت 2 مليون مع BUY ومخاطر A",
+      prompt: "اعرض شقق غرفتين تحت 2 مليون درهم بإشارة BUY ودرجة ضغط A أو B، ورتّبها حسب investor_score_v1 مع العائد.",
+      icon: Search,
+    },
+    {
+      label: "مقارنة المناطق",
+      description: "قارن بين منطقتين أو مشروعين في السعر والعائد والمخاطر والتوقيت.",
+      example: "دبي مارينا مقابل JBR: العائد والمخاطر والتوقيت",
+      prompt: "قارن دبي مارينا وJBR في السعر والعائد ودرجة الضغط وإشارة التوقيت. أيهما أفضل للدخول الآن ولماذا؟",
+      icon: Scale,
+    },
+    {
+      label: "اختبار الضغط",
+      description: "اعرض درجات الضغط الفعلية ودرجات المرونة الفرعية للمشاريع الحية.",
+      example: "اعرض ملف الضغط V1 لمارينا فيستا",
+      prompt: "اعرض ملف الضغط V1 الحقيقي لمارينا فيستا متضمناً stress_score وstress_grade_v1 وجميع درجات المرونة الفرعية.",
+      icon: SlidersHorizontal,
+    },
+    {
+      label: "مذكرة استثمار",
+      description: "أنشئ مذكرة واضحة تشمل واقعية السعر وسجل المطور والمخاطر والقرار النهائي.",
+      example: "مذكرة كاملة عن مارينا فيستا",
+      prompt: "أنشئ مذكرة استثمار كاملة لمارينا فيستا تشمل فحص واقعية السعر مقابل المنطقة، وموثوقية المطور، وقراءة الضغط، وسياق التوقيت، والحكم النهائي.",
+      icon: FileText,
+    },
+  ],
+}
 
-const commandPrompts = [
-  {
-    label: "Screen",
-    prompt: "Find 2BR projects under AED 2M with BUY timing label and stress grade A or B. Rank by investor_score_v1.",
-    icon: Search,
-  },
-  {
-    label: "Compare",
-    prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing label. Which is the better entry point?",
-    icon: Scale,
-  },
-  {
-    label: "Stress test",
-    prompt: "Show Marina Vista stress_score, stress_grade_v1, timing_label, investor_score_v1, and all real V1 resilience sub-scores.",
-    icon: Radar,
-  },
-  {
-    label: "Investor memo",
-    prompt: "Generate a full investor memo for Marina Vista: price reality, area risk, developer diligence, stress test, and verdict.",
-    icon: FileText,
-  },
-]
+const COMMAND_PROMPTS: Record<AppLocale, Array<{ label: string; prompt: string; icon: LucideIcon }>> = {
+  en: [
+    {
+      label: "Screen",
+      prompt: "Find 2BR projects under AED 2M with BUY timing label and stress grade A or B. Rank by investor_score_v1.",
+      icon: Search,
+    },
+    {
+      label: "Compare",
+      prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing label. Which is the better entry point?",
+      icon: Scale,
+    },
+    {
+      label: "Stress test",
+      prompt: "Show Marina Vista stress_score, stress_grade_v1, timing_label, investor_score_v1, and all real V1 resilience sub-scores.",
+      icon: Radar,
+    },
+    {
+      label: "Investor memo",
+      prompt: "Generate a full investor memo for Marina Vista: price reality, area risk, developer diligence, stress test, and verdict.",
+      icon: FileText,
+    },
+  ],
+  ar: [
+    {
+      label: "فرز",
+      prompt: "اعرض شقق غرفتين تحت 2 مليون درهم بإشارة BUY ودرجة ضغط A أو B، ورتّبها حسب investor_score_v1.",
+      icon: Search,
+    },
+    {
+      label: "مقارنة",
+      prompt: "قارن دبي مارينا وJBR في السعر والعائد ودرجة الضغط وإشارة التوقيت. أيهما أفضل للدخول؟",
+      icon: Scale,
+    },
+    {
+      label: "الضغط",
+      prompt: "اعرض stress_score وstress_grade_v1 وtiming_label وinvestor_score_v1 وكل درجات المرونة الحقيقية لمارينا فيستا.",
+      icon: Radar,
+    },
+    {
+      label: "مذكرة",
+      prompt: "أنشئ مذكرة استثمار كاملة لمارينا فيستا تشمل السعر والمنطقة والمطور واختبار الضغط والحكم النهائي.",
+      icon: FileText,
+    },
+  ],
+}
 
 const slashCommands: SlashCommand[] = [
   {
@@ -648,6 +704,7 @@ export function ChatInterface({
   initialCooldownSecondsRemaining = null,
 }: ChatInterfaceProps) {
   const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
   const t = useTranslations("chat")
   const { data: session } = authClient.useSession()
   const canUpload = Boolean(session?.user)
@@ -683,6 +740,36 @@ export function ChatInterface({
   const initialPromptRef = useRef<string | null>(null)
 
   const { messages, sendMessage, status, error, stop } = useCopilot()
+
+  const capabilityCards = CAPABILITY_CARDS[locale] ?? CAPABILITY_CARDS.en
+  const commandPrompts = COMMAND_PROMPTS[locale] ?? COMMAND_PROMPTS.en
+  const heroCopy = isArabic
+    ? {
+        engine: "محرك القرار العقاري 4.2",
+        feed: "بيانات الإمارات مباشرة",
+        titleLineOne: "اسأل السوق",
+        titleLineTwo: "قبل القرار.",
+        subtitle: "حلّل المشاريع، قارن المناطق، وراجع الإشارات الفعلية قبل الشراء أو الاستثمار.",
+        dataLabel: "البيانات",
+        analysing: "جارٍ التحليل",
+        ready: "جاهز",
+        showCanvas: "إظهار اللوحة",
+        hideCanvas: "إخفاء اللوحة",
+        emptyState: "اسأل عن مشروع أو منطقة أو مطور، أو اطلب مقارنة أو مذكرة استثمار أو اختبار ضغط.",
+      }
+    : {
+        engine: "Neural Decision Engine v4.2",
+        feed: "Live UAE Data Feed",
+        titleLineOne: "The future of real estate",
+        titleLineTwo: "is intelligent.",
+        subtitle: "Screen properties, compare markets, and review real V1 stress signals with institutional-grade intelligence.",
+        dataLabel: "Data",
+        analysing: "Analysing",
+        ready: "Ready",
+        showCanvas: "Show canvas",
+        hideCanvas: "Hide canvas",
+        emptyState: "Ask for anything real estate. Compare projects, simulate scenarios, draft reports, and run live intelligence from one chat.",
+      }
 
   useEffect(() => {
     if (!mounted) return;
@@ -1242,20 +1329,20 @@ export function ChatInterface({
           <div className="mb-10">
             <div className="inline-flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-primary bg-primary/5 rounded-full border border-primary/10 backdrop-blur-sm shadow-inner cursor-default group">
               <Activity className="w-3.5 h-3.5 animate-pulse" />
-              <span className="tracking-wide uppercase">Neural Decision Engine v4.2</span>
+              <span className="tracking-wide uppercase">{heroCopy.engine}</span>
               <div className="h-3 w-px bg-primary/20 mx-1" />
-              <span className="text-primary/60 font-medium italic">Live UAE Data Feed</span>
+              <span className="text-primary/60 font-medium italic">{heroCopy.feed}</span>
             </div>
           </div>
 
           {/* ── Headline ── */}
           <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-medium text-foreground leading-[1.1] tracking-tight mb-8">
-            The future of real estate<br />
-            <span className="text-muted-foreground/40 italic">is intelligent.</span>
+            {heroCopy.titleLineOne}<br />
+            <span className="text-muted-foreground/40 italic">{heroCopy.titleLineTwo}</span>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground/80 max-w-2xl mb-12 font-medium leading-relaxed">
-            Screen properties, compare markets, and review real V1 stress signals with institutional-grade intelligence.
+            {heroCopy.subtitle}
           </p>
 
           {/* ── Marquee ── */}
@@ -1389,14 +1476,14 @@ export function ChatInterface({
             <p className="text-sm font-semibold text-foreground">AI Chat</p>
             {dataFreshness ? (
               <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] text-muted-foreground">
-                Data: {new Date(dataFreshness).toLocaleDateString()}
+                {heroCopy.dataLabel}: {new Date(dataFreshness).toLocaleDateString()}
               </span>
             ) : null}
           </div>
           <div className="flex items-center gap-2">
             <span className={`flex items-center gap-1.5 text-xs ${status === "streaming" ? "text-primary" : "text-muted-foreground"}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${status === "streaming" ? "animate-pulse bg-primary" : "bg-emerald-400"}`} />
-              {status === "streaming" ? "Analysing" : "Ready"}
+              {status === "streaming" ? heroCopy.analysing : heroCopy.ready}
             </span>
             <Button
               type="button"
@@ -1405,7 +1492,7 @@ export function ChatInterface({
               onClick={() => setCanvasOpen((current) => !current)}
               className="h-7 px-2.5 text-xs lg:hidden"
             >
-              {canvasOpen ? "Hide canvas" : "Show canvas"}
+              {canvasOpen ? heroCopy.hideCanvas : heroCopy.showCanvas}
             </Button>
           </div>
         </div>
@@ -1444,7 +1531,7 @@ export function ChatInterface({
         <div id="chat-container" className="relative z-10 h-[58vh] space-y-3 overflow-y-auto rounded-xl border border-border/60 bg-background/55 p-3 backdrop-blur-sm md:h-[60vh] lg:h-[65vh]">
           {(messages as any[]).length === 0 ? (
             <div className="rounded-xl border border-dashed border-border/60 bg-background/75 p-4 text-sm text-muted-foreground">
-              Ask for anything real estate. Compare projects, simulate scenarios, draft reports, and run live intelligence from one chat.
+              {heroCopy.emptyState}
             </div>
           ) : null}
 
