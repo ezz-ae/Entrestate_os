@@ -186,31 +186,31 @@ function MessageBubble({ message }: { message: any }) {
 
   return (
     <div
-      className={`flex items-start gap-3 animate-in slide-in-from-bottom-3 fade-in-0 duration-500 ${
+      className={`flex items-start gap-2.5 ${
         isUser ? "flex-row-reverse" : ""
       }`}
     >
-      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl shadow-sm ${
-        isUser ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"
+      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+        isUser ? "bg-primary/15 text-primary" : "bg-muted text-primary"
       } mt-0.5`}>
-        {isUser ? <UserIcon className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+        {isUser ? <UserIcon className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
       </div>
       <div
-        className={`relative max-w-[82%] rounded-[1.25rem] px-4 py-3 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all ${
+        className={`relative max-w-[85%] rounded-2xl px-3.5 py-2.5 ${
           isUser
-            ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground rounded-tr-none"
-            : "bg-card/80 backdrop-blur-md text-foreground rounded-tl-none border border-border/40"
+            ? "bg-primary text-primary-foreground rounded-tr-sm"
+            : "bg-card text-foreground rounded-tl-sm border border-border/50"
         }`}
       >
         {isUser ? (
           <>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed font-medium">
+            <p className="whitespace-pre-wrap text-[13px] leading-relaxed">
               {isLong && !isExpanded ? `${content.substring(0, 300)}…` : content}
             </p>
             {isLong && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="mt-2 text-[11px] font-bold text-primary-foreground/80 hover:text-primary-foreground underline underline-offset-4"
+                className="mt-1.5 text-[11px] font-bold text-primary-foreground/80 hover:text-primary-foreground underline underline-offset-4"
               >
                 {isExpanded ? "Show less" : "Read more"}
               </button>
@@ -257,8 +257,12 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const [localError, setLocalError] = useState<string | null>(null)
   const [historyItems, setHistoryItems] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [keyboardHeight, setKeyboardHeight] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const initialPromptRef = useRef<string | null>(null)
+  const prevMessageCountRef = useRef(0)
+  const inputContainerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const hasOpenChatQuery = searchParams?.get("openChat") === "true"
@@ -353,12 +357,41 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
     openSidebar()
   }
 
-  // Auto-scroll to bottom of chat
+  // Auto-scroll only when new messages arrive (not on every re-render)
   useEffect(() => {
-    if (isSidebarOpen && messagesEndRef.current) {
+    const count = messages.length
+    if (count > prevMessageCountRef.current && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
     }
-  }, [messages, isSidebarOpen])
+    prevMessageCountRef.current = count
+  }, [messages.length])
+
+  // Also scroll when streaming starts
+  useEffect(() => {
+    if (isBusy && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [isBusy])
+
+  // Mobile keyboard detection via visualViewport API — prevents layout jumping
+  useEffect(() => {
+    if (isDesktopViewport) return
+
+    const vv = window.visualViewport
+    if (!vv) return
+
+    const onResize = () => {
+      const kbHeight = window.innerHeight - vv.height
+      setKeyboardHeight(kbHeight > 50 ? kbHeight : 0)
+    }
+
+    vv.addEventListener("resize", onResize)
+    vv.addEventListener("scroll", onResize)
+    return () => {
+      vv.removeEventListener("resize", onResize)
+      vv.removeEventListener("scroll", onResize)
+    }
+  }, [isDesktopViewport])
 
   const handlePanelChange = (panel: string) => {
     setOpenPanel(panel)
@@ -592,10 +625,10 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
 
           {/* Chat Panel */}
           {effectiveOpenPanel === "chat" ? (
-            <div className="flex flex-col h-full animate-in slide-in-from-left-5 duration-300">
+            <div className="flex flex-col h-full">
 
-              {/* Chat header */}
-              <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
+              {/* Chat header — compact on mobile */}
+              <div className="flex items-center justify-between border-b border-border px-4 py-2.5 md:py-3 shrink-0">
                 <div className="flex items-center gap-2.5">
                   {authenticated ? (
                     <Image src={avatar} alt={displayName} width={24} height={24} className="h-6 w-6 rounded-full object-cover" />
@@ -614,41 +647,40 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                 </Button>
               </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 pb-2">
+              {/* Messages area */}
+              <div className="flex-1 overflow-y-auto overscroll-contain px-3 md:px-4 py-3 md:py-4">
                 {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center px-4 -mt-4 animate-in fade-in-5 duration-500">
-                    <div className="relative mb-5">
-                      <div className="bg-primary/10 p-4 rounded-full shadow-inner">
-                        <Sparkles className="h-7 w-7 text-primary" />
+                  <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-in fade-in-5 duration-500">
+                    <div className="relative mb-4">
+                      <div className="bg-primary/10 p-3.5 rounded-full">
+                        <Sparkles className="h-6 w-6 text-primary" />
                       </div>
-                      <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl" />
                     </div>
                     <p className="text-base font-semibold text-foreground tracking-tight">{t("decisionIntelligence")}</p>
-                    <p className="text-xs text-muted-foreground mt-1.5 max-w-[220px]">{t("decisionSubtitle")}</p>
-                    <div className="mt-5 grid grid-cols-2 gap-2 w-full max-w-xs">
+                    <p className="text-xs text-muted-foreground mt-1 max-w-[220px]">{t("decisionSubtitle")}</p>
+                    <div className="mt-4 grid grid-cols-2 gap-2 w-full max-w-xs">
                       {starterCards.map(({ label, prompt }) => (
                         <button
                           key={label}
                           onClick={() => { void sendPrompt(prompt) }}
-                          className="p-3 rounded-xl bg-muted/40 border border-border/50 text-left text-xs text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:border-border active:scale-[0.97] transition-all duration-150"
+                          className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-left text-xs text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:border-border active:scale-[0.97] transition-all duration-150"
                         >
-                          <span className="block font-semibold text-foreground/80 mb-0.5">{label}</span>
-                          <span className="text-[10px] text-muted-foreground/55 line-clamp-2">{prompt.substring(0, 55)}…</span>
+                          <span className="block font-semibold text-foreground/80 mb-0.5 text-[11px]">{label}</span>
+                          <span className="text-[10px] text-muted-foreground/55 line-clamp-2">{prompt.substring(0, 50)}…</span>
                         </button>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-5">
+                  <div className="space-y-4 md:space-y-5">
                     {messages.map((m) => <MessageBubble key={m.id} message={m} />)}
                     {isBusy && (
                       <div className="flex justify-start">
-                        <div className="bg-muted/60 rounded-2xl rounded-tl-md px-4 py-2.5 shadow-sm">
+                        <div className="bg-muted/60 rounded-2xl rounded-tl-md px-4 py-2.5">
                           <div className="flex gap-1.5 items-center">
-                            <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            <span className="w-1.5 h-1.5 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1.5 h-1.5 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1.5 h-1.5 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                           </div>
                         </div>
                       </div>
@@ -658,15 +690,20 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                 )}
               </div>
 
-              {/* Input + quick replies */}
-              <div className="shrink-0 p-3 border-t border-border/40 bg-card/40 backdrop-blur-xl pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-                {messages.length > 0 && messages[messages.length - 1].role !== "user" && !isBusy && (
-                  <div className="flex flex-wrap gap-1.5 mb-3">
+              {/* Input area — simplified for mobile stability */}
+              <div
+                ref={inputContainerRef}
+                className="shrink-0 border-t border-border/40 bg-background"
+                style={keyboardHeight > 0 ? { paddingBottom: 4 } : { paddingBottom: `max(0.5rem, env(safe-area-inset-bottom))` }}
+              >
+                {/* Quick replies — horizontal scroll, no wrap */}
+                {messages.length > 0 && messages[messages.length - 1].role !== "user" && !isBusy && keyboardHeight === 0 && (
+                  <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-3 pt-2 pb-1">
                     {[t("quickReplies.more"), t("quickReplies.risks"), t("quickReplies.summarize"), t("quickReplies.report")].map((prompt) => (
                       <button
                         key={prompt}
                         onClick={() => { void sendPrompt(prompt) }}
-                        className="rounded-full border border-border/60 bg-background/50 px-3 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all active:scale-95 shadow-sm"
+                        className="shrink-0 rounded-full border border-border/60 bg-muted/30 px-3 py-1 text-[11px] font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary active:scale-95 transition-all"
                       >
                         {prompt}
                       </button>
@@ -675,15 +712,16 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                 )}
                 <form
                   onSubmit={(event) => { void submitMessage(event) }}
-                  className="relative group"
+                  className="flex items-end gap-2 px-3 py-2"
                 >
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
-                  <div className="relative flex items-end gap-2 bg-background/80 border border-border/60 rounded-2xl p-2 shadow-inner focus-within:border-primary/40 focus-within:bg-background transition-all">
+                  <div className="relative flex-1 min-w-0">
                     <Textarea
+                      ref={inputRef}
                       value={input}
                       onChange={(event) => setInput(event.target.value)}
                       placeholder={t("placeholder")}
-                      className="min-h-[44px] max-h-28 w-full resize-none bg-transparent border-0 focus-visible:ring-0 shadow-none py-2.5 px-3 text-sm leading-relaxed"
+                      rows={1}
+                      className="min-h-[40px] max-h-24 w-full resize-none rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 text-sm leading-snug focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40 shadow-none transition-colors"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault()
@@ -691,45 +729,45 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                         }
                       }}
                     />
-                    <Button
-                      type="submit"
-                      size="icon"
-                      disabled={!input.trim()}
-                      className="h-10 w-10 shrink-0 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20 bg-primary disabled:opacity-40"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
                   </div>
+                  <Button
+                    type="submit"
+                    size="icon"
+                    disabled={!input.trim()}
+                    className="h-10 w-10 shrink-0 rounded-xl bg-primary disabled:opacity-30 active:scale-95 transition-transform"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
                 </form>
                 {localError || error ? (
-                  <p className="mt-1.5 text-xs text-amber-600 px-2 font-medium">
+                  <p className="px-3 pb-1 text-xs text-amber-600 font-medium">
                     {localError ?? error?.message}
                   </p>
                 ) : null}
               </div>
 
-              {/* Mobile bottom tab bar */}
-              {authenticated && !isDesktopViewport && (
-                <div className="shrink-0 flex border-t border-border/50 bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+              {/* Mobile bottom tab bar — hidden when keyboard is open */}
+              {authenticated && !isDesktopViewport && keyboardHeight === 0 && (
+                <div className="shrink-0 flex border-t border-border/50 bg-background pb-[env(safe-area-inset-bottom)]">
                   {mobilePanels.map(({ id, icon: Icon, label }) => (
                     <button
                       key={id}
                       onClick={() => handlePanelChange(id)}
-                      className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors ${
+                      className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-colors ${
                         effectiveOpenPanel === id
                           ? "text-primary"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-4.5 w-4.5" />
                       {label}
                     </button>
                   ))}
                   <button
                     onClick={handleCloseSidebar}
-                    className="flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-4.5 w-4.5" />
                     Close
                   </button>
                 </div>
@@ -864,28 +902,28 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                 </div>
               )}
 
-              {/* Mobile bottom tab bar for non-chat panels */}
-              {authenticated && !isDesktopViewport && (
-                <div className="shrink-0 flex border-t border-border/50 bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+              {/* Mobile bottom tab bar for non-chat panels — hidden when keyboard is open */}
+              {authenticated && !isDesktopViewport && keyboardHeight === 0 && (
+                <div className="shrink-0 flex border-t border-border/50 bg-background pb-[env(safe-area-inset-bottom)]">
                   {mobilePanels.map(({ id, icon: Icon, label }) => (
                     <button
                       key={id}
                       onClick={() => handlePanelChange(id)}
-                      className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors ${
+                      className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-colors ${
                         effectiveOpenPanel === id
                           ? "text-primary"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-4.5 w-4.5" />
                       {label}
                     </button>
                   ))}
                   <button
                     onClick={handleCloseSidebar}
-                    className="flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-4.5 w-4.5" />
                     Close
                   </button>
                 </div>
