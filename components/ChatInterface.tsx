@@ -1496,12 +1496,15 @@ export function ChatInterface({
             </span>
             <Button
               type="button"
-              variant="outline"
+              variant={canvasOpen ? "default" : "outline"}
               size="sm"
               onClick={() => setCanvasOpen((current) => !current)}
-              className="h-7 px-2.5 text-xs lg:hidden"
+              className={`h-8 px-3 text-xs lg:hidden rounded-lg transition-all flex items-center gap-1.5 ${
+                canvasOpen ? "bg-primary shadow-lg shadow-primary/20 border-primary" : "hover:bg-primary/5"
+              }`}
             >
-              {canvasOpen ? heroCopy.hideCanvas : heroCopy.showCanvas}
+              <Activity className={`h-3.5 w-3.5 ${canvasOpen ? "animate-pulse" : ""}`} />
+              <span className="font-bold">{canvasOpen ? heroCopy.hideCanvas : heroCopy.showCanvas}</span>
             </Button>
           </div>
         </div>
@@ -1555,15 +1558,18 @@ export function ChatInterface({
                 className={`animate-msg-in ${message.role === "user" ? "ml-auto max-w-[85%]" : "mr-auto max-w-[95%]"}`}
               >
                 {message.role === "user" ? (
-                  <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/85 px-4 py-3 text-sm text-primary-foreground shadow-[0_12px_24px_-14px_rgba(37,99,235,0.5)]">
+                  <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/85 px-4 py-3 text-sm text-primary-foreground shadow-[0_4px_12px_rgba(37,99,235,0.15)] rounded-tr-sm">
                     {cleanMessage || "..."}
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-background/95 via-card/90 to-background/85 px-4 py-3.5 text-sm text-foreground shadow-[0_16px_28px_-18px_rgba(56,189,248,0.3)]">
-                    <p className="mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                      <Sparkles className="h-2.5 w-2.5" />
-                      AI
-                    </p>
+                  <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-md px-5 py-4 text-sm text-foreground shadow-sm rounded-tl-sm relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-primary/20" />
+                    <div className="mb-3 flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Decision Engine</span>
+                    </div>
                     <ChatMarkdown text={cleanMessage || "Running analysis..."} />
                   </div>
                 )}
@@ -1585,56 +1591,73 @@ export function ChatInterface({
           ) : null}
         </div>
 
-        <form onSubmit={submitMessage} className="relative z-10 mt-4 space-y-3">
-          <div className="relative">
-            <Textarea
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              onKeyDown={(event) => {
-                void onInputKeyDown(event)
-              }}
-              placeholder={t("composerPlaceholder")}
-              className="min-h-20 resize-y text-base"
-            />
+        <form onSubmit={submitMessage} className="relative z-10 mt-6">
+          <div className="relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
+            <div className="relative bg-background/60 backdrop-blur-xl border border-border/80 rounded-2xl p-2 shadow-inner focus-within:border-primary/40 transition-all">
+              <Textarea
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => {
+                  void onInputKeyDown(event)
+                }}
+                placeholder={t("composerPlaceholder")}
+                className="min-h-[100px] w-full resize-none bg-transparent border-0 focus-visible:ring-0 shadow-none py-3 px-4 text-base leading-relaxed"
+              />
 
-            {isSlashPaletteOpen ? (
-              <div className="absolute bottom-[100%] left-0 right-0 mb-2 rounded-xl border border-border/70 bg-card/95 p-2 shadow-xl backdrop-blur">
-                {filteredSlashCommands.length === 0 ? (
-                  <p className="px-2 py-1 text-xs text-muted-foreground">{t("noMatchingCommands")}</p>
-                ) : (
-                  filteredSlashCommands.map((command, index) => {
-                    const Icon = command.icon
-                    const isActive = index === slashActiveIndex
-                    return (
-                      <button
-                        key={command.id}
-                        type="button"
-                        onClick={() => void activateSlashCommand(command)}
-                        className={`flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left transition ${
-                          isActive ? "bg-primary/12" : "hover:bg-background"
-                        }`}
-                      >
-                        <Icon className="mt-0.5 h-3.5 w-3.5 text-primary" />
-                        <span>
-                          <span className="block text-xs font-medium text-foreground">{command.title}</span>
-                          <span className="block text-[11px] text-muted-foreground">{command.description}</span>
-                        </span>
-                      </button>
-                    )
-                  })
-                )}
+              {isSlashPaletteOpen ? (
+                <div className="absolute bottom-[100%] left-0 right-0 mb-3 rounded-2xl border border-border/70 bg-card/95 p-3 shadow-2xl backdrop-blur-xl z-50">
+                  {filteredSlashCommands.length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-muted-foreground">{t("noMatchingCommands")}</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                      {filteredSlashCommands.map((command, index) => {
+                        const Icon = command.icon
+                        const isActive = index === slashActiveIndex
+                        return (
+                          <button
+                            key={command.id}
+                            type="button"
+                            onClick={() => void activateSlashCommand(command)}
+                            className={`flex w-full items-start gap-3 rounded-xl px-4 py-3 text-left transition-all ${
+                              isActive ? "bg-primary/12 border-primary/20" : "hover:bg-background border-transparent"
+                            } border`}
+                          >
+                            <div className={`p-2 rounded-lg ${isActive ? "bg-primary/20" : "bg-muted/50"}`}>
+                              <Icon className="h-4 w-4 text-primary" />
+                            </div>
+                            <span>
+                              <span className="block text-xs font-bold text-foreground">{command.title}</span>
+                              <span className="block text-[11px] text-muted-foreground line-clamp-1">{command.description}</span>
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              <div className="flex items-center justify-between p-2 mt-2 border-t border-border/10">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-2">
+                  {usageStatusLabel}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    type="submit" 
+                    disabled={submitBlocked} 
+                    className="gap-2 rounded-xl h-10 px-5 bg-primary shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
+                  >
+                    {status === "streaming" ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    <span className="font-bold">{status === "streaming" ? "Analysing…" : "Send"}</span>
+                  </Button>
+                </div>
               </div>
-            ) : null}
-          </div>
-
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground">
-              {usageStatusLabel}
-            </p>
-            <Button type="submit" disabled={submitBlocked} className="gap-1.5">
-              <Send className="h-3.5 w-3.5" />
-              {status === "streaming" ? "Analysing…" : "Send"}
-            </Button>
+            </div>
           </div>
         </form>
 
@@ -1653,7 +1676,9 @@ export function ChatInterface({
         {error && !isLimitError ? <p className="mt-3 text-sm text-red-500">{error.message}</p> : null}
       </section>
 
-      <aside className={`overflow-hidden rounded-2xl border border-border bg-card p-4 md:p-5 lg:sticky lg:top-28 lg:max-h-[calc(100vh-160px)] lg:overflow-y-auto lg:block ${canvasOpen ? "block" : "hidden"}`}>
+      <aside className={`overflow-hidden rounded-2xl border border-border bg-card/90 backdrop-blur-xl p-4 md:p-6 lg:sticky lg:top-28 lg:max-h-[calc(100vh-160px)] lg:overflow-y-auto lg:block transition-all duration-500 ${
+        canvasOpen ? "block ring-2 ring-primary/20 shadow-2xl" : "hidden"
+      }`}>
 
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
