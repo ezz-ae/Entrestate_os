@@ -485,19 +485,22 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
     }
   }, [isDesktopViewport])
 
+  // Mobile bottom nav panels
+  const mobilePanels = [
+    { id: "chat",      icon: MessageSquare, label: "Chat" },
+    { id: "history",   icon: Clock,         label: "History" },
+    { id: "workspace", icon: LayoutGrid,     label: "Workspace" },
+  ] as const
+
   const sidebarContent = (
     <div
       className={`flex h-full bg-background transition-all duration-300 ease-in-out md:border-r md:border-border ${sidebarWidthClass}`}
       onMouseLeave={() => {
-        if (!isDesktopViewport) {
-          return
-        }
-        if (!pinnedPanel && !isSidebarOpen) {
-          setOpenPanel(null)
-        }
+        if (!isDesktopViewport) return
+        if (!pinnedPanel && !isSidebarOpen) setOpenPanel(null)
       }}
     >
-      {/* Navigation Rail */}
+      {/* ── Desktop Navigation Rail ── */}
       <div className={`${authenticated ? "hidden md:flex" : "hidden"} flex-col h-full w-[72px] shrink-0 items-center border-r border-border bg-card/50`}>
         <Button variant="ghost" size="icon" className="my-4 h-12 w-12 shrink-0">
           <div className="flex h-9 w-9 items-center justify-center">
@@ -567,98 +570,38 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
         </div>
       </div>
 
-      {/* Panel Content */}
+      {/* ── Panel Content ── */}
       {effectiveOpenPanel && (
-        <div className="flex flex-1 flex-col h-full bg-background min-w-0">
-          
+        <div className="flex flex-1 flex-col h-full bg-background min-w-0 overflow-hidden">
+
           {/* Chat Panel */}
           {effectiveOpenPanel === "chat" ? (
             <div className="flex flex-col h-full animate-in slide-in-from-left-5 duration-300">
-              <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <div className="flex items-center gap-2">
-                  {!isDesktopViewport && authenticated ? (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-                      aria-label="Toggle chat menu"
-                    >
-                      <Menu className="h-4 w-4" />
-                    </Button>
-                  ) : null}
+
+              {/* Chat header */}
+              <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
+                <div className="flex items-center gap-2.5">
                   {authenticated ? (
-                    <Image src={avatar} alt={displayName} width={20} height={20} className="h-5 w-5 rounded-full object-cover" />
+                    <Image src={avatar} alt={displayName} width={24} height={24} className="h-6 w-6 rounded-full object-cover" />
                   ) : (
                     <Sparkles className="h-4 w-4 text-primary" />
                   )}
-                  <h2 className="text-sm font-semibold">Chat</h2>
+                  <div className="flex flex-col">
+                    <h2 className="text-sm font-semibold leading-none">Chat</h2>
+                    {authenticated && (
+                      <span className="text-[10px] text-muted-foreground leading-none mt-0.5 truncate max-w-[160px]">{displayName}</span>
+                    )}
+                  </div>
                 </div>
-                <Button variant="ghost" size="icon" className="h-10 w-10 md:h-8 md:w-8" onClick={handleCloseSidebar}>
+                <Button variant="ghost" size="icon" className="h-9 w-9 md:h-8 md:w-8 rounded-xl" onClick={handleCloseSidebar}>
                   <X className="h-5 w-5 md:h-4 md:w-4" />
                 </Button>
               </div>
 
-              {!isDesktopViewport && authenticated ? (
-                <div
-                  className={`overflow-hidden transition-all duration-300 ${
-                    isMobileMenuOpen ? "max-h-64 border-b border-border" : "max-h-0"
-                  }`}
-                >
-                  <div className="space-y-2 bg-card/30 p-3">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Workspace</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant={effectiveOpenPanel === "chat" ? "default" : "secondary"}
-                        onClick={() => handlePanelChange("chat")}
-                        className="justify-start"
-                      >
-                        <MessageSquare className="mr-1.5 h-4 w-4" />
-                        Chat
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={effectiveOpenPanel === "history" ? "default" : "secondary"}
-                        onClick={() => handlePanelChange("history")}
-                        className="justify-start"
-                      >
-                        <Clock className="mr-1.5 h-4 w-4" />
-                        History
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={effectiveOpenPanel === "workspace" ? "default" : "secondary"}
-                        onClick={() => handlePanelChange("workspace")}
-                        className="justify-start"
-                      >
-                        <LayoutGrid className="mr-1.5 h-4 w-4" />
-                        Workspace
-                      </Button>
-                    </div>
-                    <div className="space-y-1">
-                      {workspaceLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={handleCloseSidebar}
-                          className="flex items-center justify-between rounded-md border border-border/60 bg-background/80 px-3 py-2 text-xs text-foreground hover:bg-accent/50"
-                        >
-                          <span className="flex items-center gap-2">
-                            <link.icon className="h-3.5 w-3.5 text-muted-foreground" />
-                            {link.label}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">{link.description}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="flex-1 overflow-y-auto px-4 py-4">
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 pb-2">
                 {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center px-4 -mt-8 animate-in fade-in-5 duration-500">
+                  <div className="flex flex-col items-center justify-center h-full text-center px-4 -mt-4 animate-in fade-in-5 duration-500">
                     <div className="relative mb-5">
                       <div className="bg-primary/10 p-4 rounded-full shadow-inner">
                         <Sparkles className="h-7 w-7 text-primary" />
@@ -666,22 +609,22 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                       <div className="absolute inset-0 rounded-full bg-primary/5 blur-xl" />
                     </div>
                     <p className="text-base font-semibold text-foreground tracking-tight">{t("decisionIntelligence")}</p>
-                    <p className="text-xs text-muted-foreground mt-1.5 max-w-[200px]">{t("decisionSubtitle")}</p>
-                    <div className="mt-5 grid grid-cols-2 gap-2 w-full">
+                    <p className="text-xs text-muted-foreground mt-1.5 max-w-[220px]">{t("decisionSubtitle")}</p>
+                    <div className="mt-5 grid grid-cols-2 gap-2 w-full max-w-xs">
                       {starterCards.map(({ label, prompt }) => (
                         <button
                           key={label}
                           onClick={() => { void sendPrompt(prompt) }}
-                          className="p-3 rounded-xl bg-muted/40 border border-border/50 text-left text-xs text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:border-border transition-all duration-150"
+                          className="p-3 rounded-xl bg-muted/40 border border-border/50 text-left text-xs text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:border-border active:scale-[0.97] transition-all duration-150"
                         >
-                          <span className="block font-medium text-foreground/80 mb-0.5">{label}</span>
-                          <span className="text-[10px] text-muted-foreground/60 line-clamp-2">{prompt.substring(0, 55)}…</span>
+                          <span className="block font-semibold text-foreground/80 mb-0.5">{label}</span>
+                          <span className="text-[10px] text-muted-foreground/55 line-clamp-2">{prompt.substring(0, 55)}…</span>
                         </button>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-5">
                     {messages.map((m) => <MessageBubble key={m.id} message={m} />)}
                     {isBusy && (
                       <div className="flex justify-start">
@@ -699,14 +642,15 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                 )}
               </div>
 
-              <div className="p-4 border-t border-border/40 bg-card/40 backdrop-blur-xl pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              {/* Input + quick replies */}
+              <div className="shrink-0 p-3 border-t border-border/40 bg-card/40 backdrop-blur-xl pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                 {messages.length > 0 && messages[messages.length - 1].role !== "user" && !isBusy && (
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex flex-wrap gap-1.5 mb-3">
                     {[t("quickReplies.more"), t("quickReplies.risks"), t("quickReplies.summarize"), t("quickReplies.report")].map((prompt) => (
                       <button
                         key={prompt}
                         onClick={() => { void sendPrompt(prompt) }}
-                        className="rounded-full border border-border/60 bg-background/50 px-4 py-1.5 text-[11px] font-bold text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all active:scale-95 shadow-sm"
+                        className="rounded-full border border-border/60 bg-background/50 px-3 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all active:scale-95 shadow-sm"
                       >
                         {prompt}
                       </button>
@@ -714,9 +658,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                   </div>
                 )}
                 <form
-                  onSubmit={(event) => {
-                    void submitMessage(event)
-                  }}
+                  onSubmit={(event) => { void submitMessage(event) }}
                   className="relative group"
                 >
                   <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
@@ -725,7 +667,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                       value={input}
                       onChange={(event) => setInput(event.target.value)}
                       placeholder={t("placeholder")}
-                      className="min-h-[44px] max-h-32 w-full resize-none bg-transparent border-0 focus-visible:ring-0 shadow-none py-2.5 px-3 text-sm leading-relaxed"
+                      className="min-h-[44px] max-h-28 w-full resize-none bg-transparent border-0 focus-visible:ring-0 shadow-none py-2.5 px-3 text-sm leading-relaxed"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault()
@@ -737,76 +679,111 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                       type="submit"
                       size="icon"
                       disabled={!input.trim()}
-                      className="h-10 w-10 shrink-0 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20 bg-primary"
+                      className="h-10 w-10 shrink-0 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20 bg-primary disabled:opacity-40"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
                 </form>
                 {localError || error ? (
-                  <p className="mt-2 text-xs text-amber-600 px-2 font-medium">
+                  <p className="mt-1.5 text-xs text-amber-600 px-2 font-medium">
                     {localError ?? error?.message}
                   </p>
                 ) : null}
               </div>
+
+              {/* Mobile bottom tab bar */}
+              {authenticated && !isDesktopViewport && (
+                <div className="shrink-0 flex border-t border-border/50 bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+                  {mobilePanels.map(({ id, icon: Icon, label }) => (
+                    <button
+                      key={id}
+                      onClick={() => handlePanelChange(id)}
+                      className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors ${
+                        effectiveOpenPanel === id
+                          ? "text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      {label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={handleCloseSidebar}
+                    className="flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                    Close
+                  </button>
+                </div>
+              )}
             </div>
+
           ) : (
-            /* Other Panels (History, Workspace) */
+            /* History / Workspace Panels */
             <div className="flex flex-col h-full animate-in fade-in duration-300">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+
+              {/* Panel header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
                 <h2 className="text-sm font-semibold capitalize">{effectiveOpenPanel}</h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-8 w-8 transition-colors ${pinnedPanel === effectiveOpenPanel ? "text-primary" : ""}`}
-                  onClick={() => handlePinToggle(effectiveOpenPanel)}
-                >
-                  <Pin className={`h-4 w-4 transition-transform ${pinnedPanel === effectiveOpenPanel ? "rotate-45" : ""}`} />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`hidden md:flex h-8 w-8 transition-colors ${pinnedPanel === effectiveOpenPanel ? "text-primary" : ""}`}
+                    onClick={() => handlePinToggle(effectiveOpenPanel)}
+                  >
+                    <Pin className={`h-4 w-4 transition-transform ${pinnedPanel === effectiveOpenPanel ? "rotate-45" : ""}`} />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="md:hidden h-9 w-9 rounded-xl" onClick={handleCloseSidebar}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
-              
+
+              {/* Workspace panel */}
               {effectiveOpenPanel === "workspace" && (
                 <div className="flex-1 overflow-y-auto p-4 space-y-5">
                   <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/60 p-3">
-                    <Image src={avatar} alt={displayName} width={40} height={40} className="rounded-full object-cover" />
-                    <div className="min-w-0">
+                    <Image src={avatar} alt={displayName} width={40} height={40} className="h-10 w-10 rounded-full object-cover shrink-0" />
+                    <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>
                       <p className="truncate text-xs text-muted-foreground">{displayEmail}</p>
                     </div>
                     <Link
-                      href={prefixLocalePath("/account/profile", locale)}
+                      href={prefixLocalePath("/account", locale)}
                       locale={false}
                       onClick={handleCloseSidebar}
-                      className="ml-auto inline-flex items-center rounded-lg border border-border/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                      className="shrink-0 inline-flex items-center rounded-lg border border-border/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {t("view")}
                     </Link>
                   </div>
 
-                  <div className="space-y-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Workspace</p>
-                    <div className="space-y-1">
-                      {workspaceLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={handleCloseSidebar}
-                          className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/80 px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-accent/50"
-                        >
-                          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
-                            <link.icon className="h-4 w-4" />
-                          </span>
-                          <span className="flex flex-col">
-                            <span className="text-sm font-medium">{link.label}</span>
-                            <span className="text-xs text-muted-foreground">{link.description}</span>
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 px-1">Workspace</p>
+                    {workspaceLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={handleCloseSidebar}
+                        className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-accent/50 active:scale-[0.98]"
+                      >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
+                          <link.icon className="h-4 w-4" />
+                        </span>
+                        <span className="flex flex-col min-w-0">
+                          <span className="text-sm font-medium truncate">{link.label}</span>
+                          <span className="text-[11px] text-muted-foreground truncate">{link.description}</span>
+                        </span>
+                      </Link>
+                    ))}
                   </div>
                 </div>
               )}
 
+              {/* History panel */}
               {effectiveOpenPanel === "history" && (
                 <div className="flex-1 flex flex-col min-h-0">
                   {loadingHistory ? (
@@ -814,22 +791,25 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                       <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                     </div>
                   ) : historyItems.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-muted-foreground">
-                      No recent sessions found.
+                    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                      <Clock className="h-8 w-8 text-muted-foreground/30 mb-3" />
+                      <p className="text-sm text-muted-foreground/70">No recent sessions found.</p>
                     </div>
                   ) : (
                     <div className="flex-1 overflow-y-auto p-2">
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         {historyItems.map((item) => (
                           <button
                             key={item.id}
                             onClick={() => loadSession(item.id)}
-                            className={`group w-full text-left px-3 py-2.5 text-[13px] hover:bg-accent rounded-lg truncate transition-colors ${
-                              currentId === item.id ? 'bg-accent font-semibold text-foreground' : 'text-muted-foreground'
+                            className={`group w-full text-left px-3 py-2.5 rounded-xl transition-colors hover:bg-accent active:scale-[0.98] ${
+                              currentId === item.id ? 'bg-accent' : ''
                             }`}
                           >
-                            <p className="truncate mb-1">{item.title || "Untitled Session"}</p>
-                            <p className="text-[10px] text-muted-foreground/70 group-hover:text-foreground/80">
+                            <p className={`truncate text-[13px] mb-0.5 ${currentId === item.id ? 'font-semibold text-foreground' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                              {item.title || "Untitled Session"}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground/60 group-hover:text-muted-foreground/80 transition-colors">
                               {new Date(item.updatedAt).toLocaleDateString()}
                             </p>
                           </button>
@@ -837,6 +817,33 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Mobile bottom tab bar for non-chat panels */}
+              {authenticated && !isDesktopViewport && (
+                <div className="shrink-0 flex border-t border-border/50 bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+                  {mobilePanels.map(({ id, icon: Icon, label }) => (
+                    <button
+                      key={id}
+                      onClick={() => handlePanelChange(id)}
+                      className={`flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors ${
+                        effectiveOpenPanel === id
+                          ? "text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      {label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={handleCloseSidebar}
+                    className="flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                    Close
+                  </button>
                 </div>
               )}
             </div>

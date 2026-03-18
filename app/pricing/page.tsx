@@ -3,461 +3,287 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useLocale } from "next-intl"
-import { Check, Minus, ChevronDown, ChevronUp, Tag } from "lucide-react"
+import { Check, ChevronDown, ChevronUp, Building2, User, Briefcase, ArrowRight, Zap, Shield, Globe, BarChart3, FileText, Users } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
-function CouponBanner({
-  coupon,
-  onClear,
-  locale,
-}: {
-  coupon: { code: string; discount_pct: number } | null
-  onClear: () => void
-  locale: AppLocale
-}) {
-  if (!coupon) return null
-  const isArabic = locale === "ar"
-  return (
-    <div className="mb-6 flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
-      <div className="flex items-center gap-2 text-sm text-emerald-600">
-        <Tag className="h-4 w-4" />
-        <span>
-          {isArabic ? (
-            <>
-              تم تفعيل الكود <strong>{coupon.code.toUpperCase()}</strong> — خصم {coupon.discount_pct}% على أول شهر
-            </>
-          ) : (
-            <>
-              Coupon <strong>{coupon.code.toUpperCase()}</strong> applied — {coupon.discount_pct}% off your first month
-            </>
-          )}
-        </span>
-      </div>
-      <button onClick={onClear} className="text-xs text-emerald-500 hover:text-emerald-400 underline">
-        {isArabic ? "إزالة" : "Remove"}
-      </button>
-    </div>
-  )
+// ── User type cards ────────────────────────────────────────────────────────────
+
+const USER_TYPES = {
+  en: [
+    {
+      id: "investor",
+      icon: User,
+      title: "Individual Investor",
+      badge: "Free",
+      badgeColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+      description: "Full access to the decision engine, market intelligence, AI copilot, and file generation — branded with Entrestate.",
+      features: [
+        "AI Decision Copilot (unlimited sessions)",
+        "Deal screener, area risk briefs, developer scores",
+        "BUY / HOLD / WAIT timing signals",
+        "Investor memo generation",
+        "DLD transaction data & area benchmarks",
+        "File outputs branded with Entrestate",
+      ],
+      cta: "Get started free",
+      href: "/signup",
+    },
+    {
+      id: "realtor",
+      icon: Briefcase,
+      title: "Individual Realtor",
+      badge: "Free",
+      badgeColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+      description: "Everything investors get, plus outputs carrying your personal branding alongside Entrestate — ready to send to clients.",
+      features: [
+        "Everything in Individual Investor",
+        "File generation with personal + Entrestate branding",
+        "Client-ready investor memos & reports",
+        "Developer due diligence reports",
+        "AI-powered lead briefings",
+        "Market comparison exports",
+      ],
+      cta: "Get started free",
+      href: "/signup",
+    },
+    {
+      id: "org",
+      icon: Building2,
+      title: "Organisation Terminal",
+      badge: "Paid",
+      badgeColor: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+      description: "A branded execution dashboard for companies and professional firms. Multi-user, company-branded outputs, team intelligence.",
+      features: [
+        "Full company-branded workspace & outputs",
+        "Multiple user seats under one account",
+        "Shared watchlists, portfolios & audit trail",
+        "Supply pressure heatmaps & advanced signals",
+        "API access with dual-schema security",
+        "Dedicated onboarding & account support",
+      ],
+      cta: "Contact us",
+      href: "mailto:hello@entrestate.com",
+      isExternal: true,
+      highlight: true,
+    },
+  ],
+  ar: [
+    {
+      id: "investor",
+      icon: User,
+      title: "مستثمر فردي",
+      badge: "مجاني",
+      badgeColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+      description: "وصول كامل لمحرك القرار، رؤية السوق، مساعد القرار، وإنشاء الملفات — بعلامة Entrestate.",
+      features: [
+        "مساعد القرار بالذكاء الاصطناعي (جلسات غير محدودة)",
+        "فرز الفرص، مخاطر المناطق، درجات المطورين",
+        "إشارات التوقيت: شراء / انتظار / تريّث",
+        "إنشاء مذكرات الاستثمار",
+        "بيانات DLD ومعايير المناطق",
+        "ملفات مخرجة بعلامة Entrestate",
+      ],
+      cta: "ابدأ مجاناً",
+      href: "/signup",
+    },
+    {
+      id: "realtor",
+      icon: Briefcase,
+      title: "وسيط عقاري",
+      badge: "مجاني",
+      badgeColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+      description: "كل ما يحصل عليه المستثمر، مع إضافة علامتك التجارية الشخصية على المخرجات — جاهزة للإرسال للعملاء.",
+      features: [
+        "كل مميزات حساب المستثمر",
+        "مخرجات بعلامتك + علامة Entrestate",
+        "مذكرات وتقارير جاهزة للعملاء",
+        "تقارير فحص المطورين",
+        "ملخصات العملاء بالذكاء الاصطناعي",
+        "تصدير المقارنات السوقية",
+      ],
+      cta: "ابدأ مجاناً",
+      href: "/signup",
+    },
+    {
+      id: "org",
+      icon: Building2,
+      title: "منصة المؤسسات",
+      badge: "مدفوع",
+      badgeColor: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+      description: "لوحة تنفيذ بعلامة الشركة للشركات والمكاتب المحترفة. متعدد المستخدمين، مخرجات بعلامة الشركة، ذكاء الفريق.",
+      features: [
+        "مساحة عمل كاملة بعلامة الشركة",
+        "مقاعد متعددة تحت حساب واحد",
+        "قوائم مشتركة، محافظ، وسجل متابعة",
+        "خرائط ضغط المعروض وإشارات متقدمة",
+        "وصول API مع أمان ثنائي المخطط",
+        "تهيئة مخصصة ودعم مخصص",
+      ],
+      cta: "تواصل معنا",
+      href: "mailto:hello@entrestate.com",
+      isExternal: true,
+      highlight: true,
+    },
+  ],
 }
 
-function CouponInput({
-  onApplied,
-  locale,
-}: {
-  onApplied: (coupon: { code: string; discount_pct: number }) => void
-  locale: AppLocale
-}) {
-  const [code, setCode] = useState("")
-  const [state, setState] = useState<"idle" | "loading" | "error">("idle")
-  const [errorMsg, setErrorMsg] = useState("")
-  const isArabic = locale === "ar"
+// ── Organisation Terminal feature highlights ──────────────────────────────────
 
-  async function handleApply(e: React.FormEvent) {
-    e.preventDefault()
-    if (!code.trim()) return
-    setState("loading")
-    setErrorMsg("")
-    try {
-      const res = await fetch("/api/billing/coupon/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim() }),
-      })
-      const data = await res.json()
-      if (data.valid) {
-        onApplied({ code: data.code, discount_pct: data.discount_pct })
-        setCode("")
-        setState("idle")
-      } else {
-        setErrorMsg(data.reason ?? (isArabic ? "الكود غير صالح." : "Invalid coupon code."))
-        setState("error")
-      }
-    } catch {
-      setErrorMsg(isArabic ? "تعذر التحقق من الكود. حاول مرة أخرى." : "Could not validate coupon. Try again.")
-      setState("error")
-    }
-  }
-
-  return (
-    <form onSubmit={handleApply} className="flex items-center gap-2">
-      <div className="relative flex-1 max-w-xs">
-        <Tag className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={code}
-          onChange={(e) => { setCode(e.target.value); setState("idle"); setErrorMsg("") }}
-          placeholder={isArabic ? "أدخل الكود" : "Coupon code"}
-          className="w-full rounded-lg border border-border bg-card pl-9 pr-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
-        />
-      </div>
-      <Button type="submit" variant="outline" size="sm" disabled={state === "loading" || !code.trim()}>
-        {state === "loading" ? "…" : isArabic ? "تفعيل" : "Apply"}
-      </Button>
-      {state === "error" && errorMsg && (
-        <span className="text-xs text-red-500">{errorMsg}</span>
-      )}
-    </form>
-  )
+const ORG_FEATURES = {
+  en: [
+    { icon: Building2, title: "Company-Branded Outputs", desc: "Every memo, report, and export carries your firm's identity — not Entrestate's." },
+    { icon: Users, title: "Multi-User Team Workspace", desc: "Manage your team's intelligence in one place. Shared watchlists, portfolios, and audit trails." },
+    { icon: Shield, title: "Dual-Schema API Security", desc: "Every API response is validated, encrypted per recipient, and multi-node safe. No leaks, no race conditions." },
+    { icon: BarChart3, title: "Advanced Market Signals", desc: "Supply pressure heatmaps, portfolio-level monitoring, and institutional risk oversight tools." },
+    { icon: Globe, title: "API Integration", desc: "Annual license for third-party platform integration with encrypted, schema-verified responses." },
+    { icon: FileText, title: "Dedicated Onboarding", desc: "A real person walks your team through setup, custom workflows, and ongoing support." },
+  ],
+  ar: [
+    { icon: Building2, title: "مخرجات بعلامة الشركة", desc: "كل مذكرة وتقرير وملف يحمل هوية شركتك — لا هوية Entrestate." },
+    { icon: Users, title: "مساحة عمل الفريق", desc: "أدر ذكاء فريقك في مكان واحد: قوائم مشتركة، محافظ، وسجل متابعة." },
+    { icon: Shield, title: "أمان API ثنائي المخطط", desc: "كل استجابة API مُتحقق منها ومُشفرة لكل مستلم — آمنة متعددة العقد." },
+    { icon: BarChart3, title: "إشارات سوقية متقدمة", desc: "خرائط ضغط المعروض، متابعة المحافظ، وأدوات رقابة مخاطر المؤسسات." },
+    { icon: Globe, title: "تكامل API", desc: "ترخيص سنوي لتكامل المنصات الخارجية باستجابات مُشفرة ومُتحقق منها." },
+    { icon: FileText, title: "تهيئة مخصصة", desc: "شخص حقيقي يأخذ فريقك عبر الإعداد وسير العمل المخصص والدعم المستمر." },
+  ],
 }
 
-const tiers = [
-  {
-    name: "Starter",
-    price: "Free",
-    sub: "Always free",
-    blurb: "Start exploring. 3 AI sessions per day, core market data.",
-    cta: "Get started",
-    checkoutTier: null,
-    popular: false,
-  },
-  {
-    name: "Pro",
-    price: "$299",
-    sub: "per month",
-    blurb: "Unlimited AI sessions, full deal screener, CSV exports.",
-    cta: "Subscribe with PayPal",
-    checkoutTier: "pro",
-    popular: true,
-  },
-  {
-    name: "Team",
-    price: "$999",
-    sub: "per month",
-    blurb: "Team seats, shared watchlists, report generation, audit trail.",
-    cta: "Subscribe with PayPal",
-    checkoutTier: "team",
-    popular: false,
-  },
-  {
-    name: "Institutional",
-    price: "$4,000",
-    sub: "per month",
-    blurb: "Portfolio monitoring, risk oversight, enterprise-grade support.",
-    cta: "Subscribe with PayPal",
-    checkoutTier: "institutional",
-    popular: false,
-  },
-]
+// ── FAQ ────────────────────────────────────────────────────────────────────────
 
-type FeatureValue = boolean | string
-
-const FEATURE_GROUPS: {
-  group: string
-  rows: { label: string; values: [FeatureValue, FeatureValue, FeatureValue, FeatureValue] }[]
-}[] = [
-  {
-    group: "AI Chat",
-    rows: [
-      { label: "AI messages", values: ["Free window + cooldown", "Unlimited", "Unlimited", "Unlimited"] },
-      { label: "Deal screener", values: [false, true, true, true] },
-      { label: "Price reality check", values: [false, true, true, true] },
-      { label: "Area risk brief", values: [false, true, true, true] },
-      { label: "Developer due diligence", values: [false, true, true, true] },
-      { label: "Investor memo generation", values: [false, true, true, true] },
-    ],
-  },
-  {
-    group: "Market Intelligence",
-    rows: [
-      { label: "Market pulse overview", values: [true, true, true, true] },
-      { label: "Top-data tables", values: ["Read-only", true, true, true] },
-      { label: "Area trust map", values: [true, true, true, true] },
-      { label: "Developer reliability scores", values: [true, true, true, true] },
-      { label: "Timing signals (BUY / HOLD / WAIT)", values: [false, true, true, true] },
-      { label: "Supply pressure heatmaps", values: [false, false, true, true] },
-    ],
-  },
-  {
-    group: "Data & Exports",
-    rows: [
-      { label: "CSV export", values: [false, true, true, true] },
-      { label: "PDF investor memo", values: [false, true, true, true] },
-      { label: "Saved watchlists", values: ["1", "10", "Unlimited", "Unlimited"] },
-      { label: "Shared team watchlists", values: [false, false, true, true] },
-      { label: "Audit trail", values: [false, false, true, true] },
-      { label: "API access", values: [false, false, false, true] },
-    ],
-  },
-  {
-    group: "Account",
-    rows: [
-      { label: "Team seats", values: ["1", "1", "5", "25+"] },
-      { label: "Priority support", values: [false, false, true, true] },
-      { label: "Dedicated account manager", values: [false, false, false, true] },
-      { label: "Custom onboarding", values: [false, false, false, true] },
-    ],
-  },
-]
-
-const FAQ_GROUPS = [
-  {
-    group: "The Platform",
-    items: [
-      {
-        q: "What is Entrestate, exactly?",
-        a: "Entrestate is a real estate intelligence operating system — not a listing portal. It takes raw UAE property data and transforms it into institutional-grade investment intelligence through a ten-phase data pipeline and five-layer evidence stack. Think of it as a decision engine: it tells you not just what exists, but what to do and why.",
-      },
-      {
-        q: "How is this different from Property Finder or Bayut?",
-        a: "Property Finder and Bayut are listing portals — they show you what's available. Entrestate scores every project against timing labels, stress resilience, yield benchmarks, and data confidence, then matches them to your specific investor profile. External portals are treated as 'sensors' in our architecture — data inputs we validate, not sources we trust blindly.",
-      },
-      {
-        q: "What is the Decision Tunnel?",
-        a: "The Decision Tunnel is Entrestate's four-stage intelligence pipeline: Intent (parsing your natural language goals), Evidence (collecting high-integrity verified records), Judgment (ranking candidates via a 65/35 Market Score + Personal Match weighting), and Action (generating defensible outputs like investor memos and reports). It transforms a question into a deployable decision.",
-      },
-      {
-        q: "What is the 5-Layer Evidence Stack?",
-        a: "Every data point in the system is tagged by reliability tier — from L1 Canonical (audited static truths: verified locations, cleaned developer names, official launch dates) down to L5 Raw (unverified, unprocessed). This means every metric comes with a known confidence level. If a number hasn't reached L1 or L2, the system flags it rather than hiding the uncertainty.",
-      },
-    ],
-  },
-  {
-    group: "Signals & Scoring",
-    items: [
-      {
-        q: "What does a BUY signal mean?",
-        a: "A BUY signal means a project has passed through the full Decision Tunnel and scored high enough on both the 65% Market Score (timing, stress resilience, yield, data confidence) and the 35% Personal Match (your risk profile and time horizon). Out of 2,813 active UAE projects, 136 currently hold a BUY or STRONG_BUY signal — roughly 5% of total inventory.",
-      },
-      {
-        q: "How is the 65% Market Score calculated?",
-        a: "The Market Score evaluates four objective signals: (1) Timing Signal — identifying the optimal investment window based on price momentum, lifecycle state, and secondary market flow; (2) Stress Resilience — measuring delivery risk, developer track record, and volatility resistance; (3) Yield — comparing gross yield against the UAE market average (currently ~6.6%); (4) Data Confidence — scoring how verified the underlying data is using the 5-Layer Evidence Stack.",
-      },
-      {
-        q: "What is the Stress Resilience grade and how is it determined?",
-        a: "The Stress Resilience grade measures a project's ability to withstand market volatility, delivery risk, and execution pressure. It is driven by developer reliability, supply resilience, liquidity resilience, pricing discipline, handover reliability, area stability, and payment plan strength. A poor developer track record directly lowers a project's stress grade even if its yield is attractive.",
-      },
-      {
-        q: "How does my investor profile change what I see?",
-        a: "Your profile acts as a Decision Lens applied to the 35% Personal Match component. A Conservative investor sees only the 99 projects that prioritize capital preservation and low volatility. A Balanced investor gets yield-optimized results. A Speculative investor can explore the 71% of market inventory flagged as higher-risk. Two people asking the same question receive fundamentally different ranked results — this prevents what we call 'intent collapse'.",
-      },
-      {
-        q: "What is a Timing Signal?",
-        a: "The Timing Signal identifies the optimal entry or exit window for a project by treating it as a dynamic lifecycle state rather than a static listing. It analyzes price momentum tiers (from Deep Discount to High Premium), secondary market resale rates, flip patterns, supply-demand dynamics, and handover timelines. This tells you not just if a project is good — but if now is the right time.",
-      },
-    ],
-  },
-  {
-    group: "AI & Reports",
-    items: [
-      {
-        q: "What can the AI Copilot actually do?",
-        a: "The AI Copilot screens properties by budget, area, and risk profile using live scored data; compares markets side-by-side on price, yield, stress grade, and timing label; returns real V1 stress metrics and resilience sub-scores; generates full investor memos with price reality checks, developer due diligence, and final verdicts; and saves structured reports to your account. It answers from live UAE market data, not generic knowledge.",
-      },
-      {
-        q: "What are slash commands?",
-        a: "Slash commands are quick shortcuts inside the AI chat. Type /screen to run a deal screener, /compare for a market comparison, /memo for an investor memo, /risk to return real V1 stress metrics, or /price for a price reality check. They auto-complete as you type and execute pre-built intelligence workflows instantly.",
-      },
-      {
-        q: "What is a Decision Canvas?",
-        a: "The Decision Canvas is a live workspace panel alongside the AI chat. It surfaces workspace cards (matched projects, avg price, decision label, data confidence), performance sparkline charts (investor score and gross yield curves across results), a project comparison table with bar charts, and a V1 risk breakdown panel with live stress grade, stress score, and resilience sub-scores.",
-      },
-      {
-        q: "Can I export reports?",
-        a: "Yes. Pro and above tiers can save AI sessions as structured investor reports (PDF or branded format), download via direct link, and share via the built-in Share modal which supports direct links, social media (X/Twitter, LinkedIn, WhatsApp, Telegram), AI-generated social posts for each platform, portal embed codes, and press release formatting.",
-      },
-    ],
-  },
-  {
-    group: "Broker & Team Features",
-    items: [
-      {
-        q: "What does the Broker Dashboard include?",
-        a: "The Broker Dashboard is built for sales teams and includes: CRM Intelligence (AI-powered lead scoring categorizing leads as hot, warm, or cold based on engagement depth, budget alignment, and conversion probability), Brochure-to-Listing Automation (drag and drop a PDF brochure; Gemini 1.5 extracts payment plans, coordinates, unit specs, and handover dates to create a complete listing in minutes), competitive analysis, and a Sales Communication Coach for objection handling and buyer persona customization.",
-      },
-      {
-        q: "How does AI lead scoring work?",
-        a: "The system automatically calculates a priority score for each lead based on: pages viewed and time on site (engagement depth), how specific their inquiry is, response time to broker communications, budget match against available inventory, historical conversion patterns, and lead source quality (website vs. social vs. referral). High-scoring hot leads surface in a dedicated alert widget with the AI's reasoning for the prioritization.",
-      },
-      {
-        q: "What is Brochure-to-Listing Automation?",
-        a: "A broker drags and drops a developer PDF brochure into the Add New Project interface. Gemini 1.5 parses the document and extracts payment plan structures, unit specifications, coordinates, handover dates, and pricing data — auto-populating a structured listing form. Missing fields are highlighted for human review before the project is published as a standalone SEO-optimized landing page. What used to take hours takes minutes.",
-      },
-    ],
-  },
-  {
-    group: "Pricing & Billing",
-    items: [
-      {
-        q: "How does billing work?",
-        a: "All plans are monthly subscriptions processed via PayPal. There are no contracts, no cancellation fees, and no card details stored on our servers. You can upgrade or cancel at any time — upgrades take effect immediately.",
-      },
-      {
-        q: "What is the free tier?",
-        a: "The Starter tier is always free. It includes a free message window with cooldown (a set number of AI sessions per day before a cooldown period), read-only access to top data tables, area trust maps, developer reliability scores, and 1 saved watchlist. It's designed to let you explore the platform's intelligence before committing.",
-      },
-      {
-        q: "What does Pro add over Starter?",
-        a: "Pro ($299/mo) unlocks unlimited AI messages, the full deal screener, price reality checks, area risk briefs, developer due diligence, investor memo generation, timing labels (BUY/HOLD/WAIT), CSV exports, PDF investor memos, up to 10 saved watchlists, and 1 user seat.",
-      },
-      {
-        q: "When does Team tier make sense?",
-        a: "Team ($999/mo) is for brokerage firms and analyst teams. It adds 5 seats, shared team watchlists, supply pressure heatmaps, report generation, audit trails, and priority support. It's the minimum tier required for report export via the API and for Broker Dashboard features.",
-      },
-      {
-        q: "What is included in Institutional?",
-        a: "Institutional ($4,000/mo) is for funds, family offices, and enterprise real estate operators. It includes 25+ seats, full API access for integration with internal systems, portfolio monitoring and risk oversight tooling, a dedicated account manager, and custom onboarding.",
-      },
-    ],
-  },
-]
-
-function getLocalizedTiers(locale: AppLocale) {
-  if (locale !== "ar") return tiers
-  return [
+const FAQ_GROUPS = {
+  en: [
     {
-      name: "الأساس",
-      price: "مجاني",
-      sub: "دائمًا بدون رسوم",
-      blurb: "ابدأ بهدوء. 3 جلسات يوميًا مع مؤشرات السوق الأساسية.",
-      cta: "ابدأ الآن",
-      checkoutTier: null,
-      popular: false,
-    },
-    {
-      name: "احترافي",
-      price: "$299",
-      sub: "شهريًا",
-      blurb: "جلسات غير محدودة، فرز كامل للفرص، وتصدير البيانات بنقرة واحدة.",
-      cta: "اشترك عبر PayPal",
-      checkoutTier: "pro",
-      popular: true,
-    },
-    {
-      name: "فرق",
-      price: "$999",
-      sub: "شهريًا",
-      blurb: "مقاعد للفريق، قوائم مشتركة، تقارير جاهزة، وسجل واضح للقرارات.",
-      cta: "اشترك عبر PayPal",
-      checkoutTier: "team",
-      popular: false,
-    },
-    {
-      name: "مؤسسي",
-      price: "$4,000",
-      sub: "شهريًا",
-      blurb: "متابعة المحافظ، رقابة المخاطر، تكاملات، ودعم على مستوى المؤسسة.",
-      cta: "اشترك عبر PayPal",
-      checkoutTier: "institutional",
-      popular: false,
-    },
-  ]
-}
-
-function getLocalizedFeatureGroups(locale: AppLocale) {
-  if (locale !== "ar") return FEATURE_GROUPS
-  return [
-    {
-      group: "مساعد القرار",
-      rows: [
-        { label: "جلسات المساعد", values: ["نافذة مجانية + انتظار", "غير محدود", "غير محدود", "غير محدود"] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "فرز الفرص", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "فحص السعر", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "ملخص مخاطر المنطقة", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "فحص المطور", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "مذكرة استثمار", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+      group: "Access & Accounts",
+      items: [
+        {
+          q: "Is Entrestate really free for individuals?",
+          a: "Yes — completely. Individual investors and realtors get full access to the decision engine, AI copilot, market intelligence, timing signals, DLD data, and file generation at no cost. There are no hidden limits, no trial periods, and no credit card required.",
+        },
+        {
+          q: "What's the difference between an investor and a realtor account?",
+          a: "Both get identical platform access. The only difference is branding: investor accounts generate files with Entrestate branding, while realtor accounts can add their personal branding alongside Entrestate on client-ready outputs like memos and reports.",
+        },
+        {
+          q: "Can I use the platform without signing up?",
+          a: "You can explore limited features without an account. To unlock the full AI copilot, file generation, and saved sessions, you'll need to create a free account.",
+        },
       ],
     },
     {
-      group: "رؤية السوق",
-      rows: [
-        { label: "نبض السوق", values: [true, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "جداول المؤشرات", values: ["قراءة فقط", true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "خريطة السوق", values: [true, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "موثوقية المطور", values: [true, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "إشارات التوقيت (BUY / HOLD / WAIT)", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "خرائط ضغط المعروض", values: [false, false, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+      group: "Organisation Terminal",
+      items: [
+        {
+          q: "What is the Organisation Terminal?",
+          a: "The Organisation Terminal is Entrestate's branded execution dashboard for companies and professional firms. It's a multi-user workspace where your team operates under your company's identity — company-branded outputs, shared portfolios, API access, and institutional-grade risk oversight. It's not a subscription plan; it's a company-level product.",
+        },
+        {
+          q: "How is it different from a free individual account?",
+          a: "Individual accounts are single-user and output Entrestate or personal branding. The Organisation Terminal is multi-user, outputs your company brand exclusively, adds team features (shared watchlists, audit trails, portfolio monitoring), unlocks the dual-schema API, and comes with a dedicated onboarding and support setup.",
+        },
+        {
+          q: "How is the Organisation Terminal priced?",
+          a: "Pricing is set per company based on team size, API needs, and integration scope. Contact us at hello@entrestate.com for a tailored quote.",
+        },
+        {
+          q: "What is Dual-Schema API Security?",
+          a: "Every API response is validated against two schemas: an identity schema (who is requesting) and a permission schema (what they can receive). Responses are then encrypted specifically for the intended recipient. Multi-hop request chains (A → B → C) only succeed if every node's schema aligns. This prevents unauthorized access, race conditions, and data leakage — even under heavy parallel load.",
+        },
       ],
     },
     {
-      group: "البيانات والتصدير",
-      rows: [
-        { label: "تصدير CSV", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "مذكرة PDF", values: [false, true, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "قوائم محفوظة", values: ["1", "10", "غير محدود", "غير محدود"] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "قوائم مشتركة", values: [false, false, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "سجل التتبع", values: [false, false, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "وصول API", values: [false, false, false, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+      group: "The Platform",
+      items: [
+        {
+          q: "What is Entrestate, exactly?",
+          a: "Entrestate is a real estate intelligence operating system — not a listing portal. It takes raw UAE property data and transforms it into institutional-grade investment intelligence through a multi-phase data pipeline and five-layer evidence stack. Think of it as a decision engine: it tells you not just what exists, but what to do and why.",
+        },
+        {
+          q: "What does a BUY signal mean?",
+          a: "A BUY signal means a project has passed through the full Decision Tunnel and scored high on timing, stress resilience, yield, and data confidence. Out of all UAE projects in the database, only a small percentage hold an active BUY or STRONG_BUY signal at any given time.",
+        },
+        {
+          q: "What can the AI Copilot actually do?",
+          a: "The AI Copilot screens properties by budget, area, and risk profile using live scored data; compares markets side-by-side; returns real V1 stress metrics; generates full investor memos with price reality checks and developer due diligence; and saves structured reports to your account.",
+        },
+        {
+          q: "What are slash commands?",
+          a: "Slash commands are quick shortcuts inside the AI chat: /screen runs a deal screener, /compare runs a market comparison, /memo generates an investor memo, /risk returns V1 stress metrics, /price runs a price reality check, /pulse shows the DLD market pulse, /bench runs an area benchmark, and /history searches DLD transactions.",
+        },
+      ],
+    },
+  ],
+  ar: [
+    {
+      group: "الوصول والحسابات",
+      items: [
+        {
+          q: "هل Entrestate مجاني حقاً للأفراد؟",
+          a: "نعم — بالكامل. المستثمرون الأفراد والوسطاء يحصلون على وصول كامل لمحرك القرار، مساعد القرار، رؤية السوق، إشارات التوقيت، بيانات DLD، وإنشاء الملفات — بدون أي تكلفة.",
+        },
+        {
+          q: "ما الفرق بين حساب المستثمر وحساب الوسيط؟",
+          a: "كلاهما يحصل على نفس وصول المنصة. الفرق الوحيد في العلامة التجارية: حسابات المستثمرين تنشئ ملفات بعلامة Entrestate، بينما يمكن للوسطاء إضافة علامتهم الشخصية إلى المخرجات الجاهزة للعملاء.",
+        },
+        {
+          q: "هل يمكنني استخدام المنصة بدون تسجيل؟",
+          a: "يمكنك استكشاف ميزات محدودة بدون حساب. للحصول على وصول كامل لمساعد القرار وإنشاء الملفات والجلسات المحفوظة، ستحتاج إلى إنشاء حساب مجاني.",
+        },
       ],
     },
     {
-      group: "الحساب",
-      rows: [
-        { label: "مقاعد الفريق", values: ["1", "1", "5", "25+"] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "دعم أولوية", values: [false, false, true, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "مدير حساب", values: [false, false, false, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
-        { label: "تهيئة مخصصة", values: [false, false, false, true] as [FeatureValue, FeatureValue, FeatureValue, FeatureValue] },
+      group: "منصة المؤسسات",
+      items: [
+        {
+          q: "ما هي منصة المؤسسات؟",
+          a: "منصة المؤسسات هي لوحة تنفيذ بعلامة الشركة للشركات والمكاتب المحترفة. مساحة عمل متعددة المستخدمين حيث يعمل فريقك تحت هوية شركتك — مخرجات بعلامة الشركة، محافظ مشتركة، وصول API، ورقابة مخاطر.",
+        },
+        {
+          q: "ما الفرق عن الحساب الفردي المجاني؟",
+          a: "الحسابات الفردية لمستخدم واحد وتخرج علامة Entrestate أو العلامة الشخصية. منصة المؤسسات متعددة المستخدمين، تخرج علامة شركتك حصراً، وتضيف ميزات الفريق والوصول لـ API وتهيئة مخصصة.",
+        },
+        {
+          q: "كيف يتم تسعير منصة المؤسسات؟",
+          a: "السعر محدد لكل شركة بحسب حجم الفريق، احتياجات API، ونطاق التكامل. تواصل معنا على hello@entrestate.com للحصول على عرض مخصص.",
+        },
+        {
+          q: "ما هو أمان API ثنائي المخطط؟",
+          a: "كل استجابة API تُتحقق من مخططين: مخطط الهوية (من يطلب) ومخطط الصلاحية (ما يمكن الوصول إليه). الاستجابات تُشفر خصيصاً للمستلم المقصود، مما يمنع الوصول غير المصرح والتسريبات.",
+        },
       ],
     },
-  ]
-}
-
-function getLocalizedFaqGroups(locale: AppLocale) {
-  if (locale !== "ar") return FAQ_GROUPS
-  return [
     {
       group: "المنصة",
       items: [
-        { q: "ما هو Entrestate بالضبط؟", a: "Entrestate منصة قرار عقاري، وليست بوابة إعلانات. نجمع بيانات السوق، ننظفها، ثم نحولها إلى قراءة واضحة تساعدك على اختيار المشروع المناسب وتوقيت الدخول الصحيح." },
-        { q: "ما الفرق بينه وبين Property Finder أو Bayut؟", a: "تلك المنصات تعرض المعروض. أما Entrestate فيقيّم المعروض نفسه: السعر، التوقيت، الضغط، العائد، وثقة البيانات، ثم يربطه بهدف المستثمر لا بمجرد قائمة مشاريع." },
-        { q: "ما المقصود بمسار القرار؟", a: "هو الطريقة التي يعمل بها المنتج: نفهم طلبك، نجمع الأدلة، نرتّب الخيارات، ثم نعطيك مخرجًا عمليًا مثل قائمة فرص أو مذكرة استثمار." },
-        { q: "ما هي طبقات الثقة الخمس؟", a: "كل رقم في المنصة له درجة ثقة واضحة، من بيانات موثقة بالكامل إلى بيانات أولية ما زالت تحت التحقق. لهذا لا نخفي الشك، بل نظهره لك بوضوح." },
+        {
+          q: "ما هو Entrestate بالضبط؟",
+          a: "Entrestate منصة قرار عقاري، وليست بوابة إعلانات. نجمع بيانات السوق، ننظفها، ثم نحولها إلى قراءة واضحة تساعدك على اختيار المشروع المناسب وتوقيت الدخول الصحيح.",
+        },
+        {
+          q: "ماذا يعني BUY؟",
+          a: "يعني أن المشروع اجتاز طبقات التقييم وحقق مستوى قويًا في التوقيت والمرونة والعائد وثقة البيانات. فقط نسبة صغيرة من المشاريع تحمل إشارة BUY أو STRONG_BUY في أي وقت.",
+        },
+        {
+          q: "ماذا يقدم مساعد القرار؟",
+          a: "يفرز المشاريع بحسب الميزانية والهدف، يقارن المناطق والمطورين، يعرض مؤشرات V1 الفعلية، ويكتب مذكرات الاستثمار والتقارير الجاهزة.",
+        },
       ],
     },
-    {
-      group: "الإشارات والتقييم",
-      items: [
-        { q: "ماذا يعني BUY؟", a: "يعني أن المشروع اجتاز طبقات التقييم وحقق مستوى قويًا في التوقيت والمرونة والعائد وثقة البيانات، بما يناسب هدف المستثمر." },
-        { q: "كيف يُحسب Market Score؟", a: "النتيجة تعتمد على أربعة أعمدة: التوقيت، والمرونة تحت الضغط، والعائد، وثقة البيانات. هذه الأعمدة تعمل معًا لتكوين قراءة سوقية قابلة للدفاع عنها." },
-        { q: "ما معنى درجة الضغط؟", a: "درجة الضغط تقيس قدرة المشروع على تحمل تقلب السوق والتنفيذ والتسليم. يدخل فيها تاريخ المطور، سيولة السوق، استقرار المنطقة، وخطة السداد." },
-        { q: "كيف يغيّر ملف المستثمر النتائج؟", a: "نفس المشروع قد يبدو مناسبًا لمستثمر وغير مناسب لآخر. لذلك نعيد ترتيب النتائج بحسب أسلوبك: محافظ، متوازن، أو أعلى مخاطرة." },
-        { q: "ما المقصود بإشارة التوقيت؟", a: "هي قراءة تقول لك هل الآن هو الوقت المناسب للدخول، أم الأفضل الانتظار، أو الاكتفاء بالمراقبة. ليست حكمًا على المشروع فقط، بل على اللحظة أيضًا." },
-      ],
-    },
-    {
-      group: "المساعد والتقارير",
-      items: [
-        { q: "ما الذي يقدمه مساعد القرار؟", a: "يفرز المشاريع بحسب الميزانية والهدف، يقارن بين المناطق والمطورين، يعرض مؤشرات V1 الفعلية، ويكتب لك مخرجات جاهزة مثل مذكرات الاستثمار والتقارير." },
-        { q: "ما هي أوامر الشرطة المائلة؟", a: "هي اختصارات سريعة داخل المحادثة مثل /screen و /compare و /memo و /risk. تسرّع الوصول للمهمة بدل كتابة الطلب من الصفر." },
-        { q: "ما هي Decision Canvas؟", a: "هي مساحة عمل حيّة بجانب المحادثة تعرض البطاقات، المؤشرات، والجداول المقارنة حتى ترى الصورة كاملة أثناء التقييم." },
-        { q: "هل أستطيع تصدير التقارير؟", a: "نعم. في الباقات الأعلى يمكنك حفظ الجلسات كمذكرات وتقارير قابلة للمشاركة أو التنزيل بروابط مباشرة وصيغ جاهزة." },
-      ],
-    },
-    {
-      group: "الوسطاء والفرق",
-      items: [
-        { q: "ماذا تتضمن لوحة الوسطاء؟", a: "تضم قراءة العملاء المحتملين، أتمتة تحويل البروشور إلى مشروع، مقارنة المنافسين، وأدوات تساعد فريق المبيعات في متابعة الاعتراضات والفرص." },
-        { q: "كيف يعمل تقييم العملاء المحتملين؟", a: "يعتمد على التفاعل، دقة الطلب، ملاءمة الميزانية، سرعة الاستجابة، ومصدر العميل. ثم يرفع لك الأولويات بدل التساوي بين الجميع." },
-        { q: "ما هي أتمتة البروشور إلى مشروع؟", a: "ترفع ملف المطور، فتستخرج المنصة منه خطة السداد والمواصفات والموقع والتسليم، ثم تبني لك مشروعًا جاهزًا للمراجعة بسرعة كبيرة." },
-      ],
-    },
-    {
-      group: "الأسعار والفوترة",
-      items: [
-        { q: "كيف تعمل الفوترة؟", a: "كل الباقات شهرية عبر PayPal. يمكنك الترقية أو الإيقاف في أي وقت، ولا نخزن بيانات البطاقة على خوادمنا." },
-        { q: "ما هي الباقة المجانية؟", a: "الباقة الأساسية تتيح لك تجربة المنصة، مع جلسات يومية محدودة وبعض الجداول والخرائط وقائمة متابعة واحدة." },
-        { q: "ماذا تضيف باقة Pro؟", a: "تفتح لك الجلسات غير المحدودة، والفرز الكامل، وفحص السعر، وتقارير المستثمر، وتصدير CSV وPDF، مع أدوات أعمق لاتخاذ القرار." },
-        { q: "متى أحتاج باقة Team؟", a: "إذا كان القرار يتم داخل فريق، فهذه الباقة هي الأنسب. تضيف مقاعد متعددة، قوائم مشتركة، تقارير، وسجل متابعة للعمل الجماعي." },
-        { q: "ماذا تتضمن الباقة المؤسسية؟", a: "الباقة المؤسسية موجهة للصناديق والمكاتب العائلية والجهات الكبيرة، وتشمل مقاعد موسعة، API، متابعة محافظ، ودعم خاص." },
-      ],
-    },
-  ]
+  ],
 }
 
 function FaqGroup({ group, items }: { group: string; items: { q: string; a: string }[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   return (
     <div>
-      <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{group}</p>
+      <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">{group}</p>
       <div className="space-y-2">
         {items.map((item, i) => {
           const isOpen = openIndex === i
           return (
-            <div
-              key={i}
-              className="overflow-hidden rounded-xl border border-border/60 bg-card/60 transition-colors hover:border-border"
-            >
+            <div key={i} className="overflow-hidden rounded-xl border border-border/60 bg-card/60 transition-colors hover:border-border">
               <button
                 className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
                 onClick={() => setOpenIndex(isOpen ? null : i)}
@@ -480,199 +306,193 @@ function FaqGroup({ group, items }: { group: string; items: { q: string; a: stri
   )
 }
 
-function FeatureCell({ value }: { value: FeatureValue }) {
-  if (value === true)
-    return (
-      <span className="flex justify-center">
-        <Check className="h-4 w-4 text-emerald-500" />
-      </span>
-    )
-  if (value === false)
-    return (
-      <span className="flex justify-center">
-        <Minus className="h-4 w-4 text-muted-foreground/40" />
-      </span>
-    )
-  return <span className="block text-center text-xs text-muted-foreground">{value}</span>
-}
-
 export default function PricingPage() {
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
-  const [activeCoupon, setActiveCoupon] = useState<{ code: string; discount_pct: number } | null>(null)
-  const localizedTiers = getLocalizedTiers(locale)
-  const localizedFeatureGroups = getLocalizedFeatureGroups(locale)
-  const localizedFaqGroups = getLocalizedFaqGroups(locale)
-
-  function buildCheckoutUrl(checkoutTier: string) {
-    const base = `/api/billing/paypal/checkout?tier=${checkoutTier}`
-    return activeCoupon ? `${base}&coupon=${encodeURIComponent(activeCoupon.code)}` : base
-  }
-
-  function getDisplayPrice(tier: typeof tiers[0]) {
-    if (!activeCoupon || !tier.checkoutTier) return tier.price
-    const base = { pro: 299, team: 999, institutional: 4000 }[tier.checkoutTier as string]
-    if (!base) return tier.price
-    const discounted = (base * (1 - activeCoupon.discount_pct / 100)).toFixed(2)
-    return `$${discounted}`
-  }
+  const userTypes = USER_TYPES[locale] ?? USER_TYPES.en
+  const orgFeatures = ORG_FEATURES[locale] ?? ORG_FEATURES.en
+  const faqGroups = FAQ_GROUPS[locale] ?? FAQ_GROUPS.en
 
   return (
     <main id="main-content">
       <Navbar />
-      <div className="mx-auto max-w-[1100px] px-6 pb-24 pt-28 md:pt-36">
-        {/* Header */}
-        <header className="mb-12 text-center">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "الأسعار" : "Pricing"}</p>
-          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-4xl">
-            {isArabic ? "باقات تناسب كل مرحلة من رحلة القرار" : "Plans for every stage"}
+
+      <div className="mx-auto max-w-[1100px] px-4 sm:px-6 pb-24 pt-28 md:pt-36">
+
+        {/* ── Header ── */}
+        <header className="mb-16 text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
+            {isArabic ? "الوصول" : "Access"}
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold text-foreground md:text-5xl leading-tight">
+            {isArabic ? "مجاني للجميع.\nمؤسسي للشركات." : "Free for everyone.\nOrganisation Terminal for companies."}
           </h1>
-          <p className="mt-3 text-sm text-muted-foreground max-w-lg mx-auto">
+          <p className="mt-4 text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
             {isArabic
-              ? "باقات شهرية عبر PayPal. يمكنك الإيقاف أو الترقية في أي وقت بدون التزام طويل."
-              : "Monthly PayPal subscriptions. Cancel anytime. No contracts."}
+              ? "مستثمرون، وسطاء، شركات — الجميع يحصل على وصول كامل لمحرك القرار. الشركات تحصل على لوحة تنفيذ بعلامتها التجارية."
+              : "Investors, realtors, companies — everyone gets full access to the decision engine. Companies get a branded execution dashboard on top."}
           </p>
         </header>
 
-        {/* Coupon */}
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <CouponBanner coupon={activeCoupon} onClear={() => setActiveCoupon(null)} locale={locale} />
-          {!activeCoupon && (
-            <CouponInput onApplied={setActiveCoupon} locale={locale} />
-          )}
-        </div>
-
-        {/* Tier cards */}
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 mb-16">
-          {localizedTiers.map((tier) => (
-            <article
-              key={tier.name}
-              className={`relative rounded-2xl border p-5 flex flex-col ${
-                tier.popular
-                  ? "border-foreground/30 bg-card shadow-md"
-                  : "border-border/70 bg-card/70"
-              }`}
-            >
-              {tier.popular && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-foreground px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background">
-                  {isArabic ? "الأكثر طلبًا" : "Most popular"}
-                </span>
-              )}
-              <p className="text-sm font-semibold text-foreground">{tier.name}</p>
-              <div className="mt-3 flex items-baseline gap-1">
-                {activeCoupon && tier.checkoutTier ? (
-                  <>
-                    <span className="text-2xl font-bold text-emerald-500">{getDisplayPrice(tier)}</span>
-                    <span className="text-xs text-muted-foreground line-through ml-1">{tier.price}</span>
-                    <span className="text-xs text-muted-foreground">{isArabic ? "للشهر الأول" : "first month"}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-2xl font-bold text-foreground">{tier.price}</span>
-                    <span className="text-xs text-muted-foreground">{tier.sub}</span>
-                  </>
-                )}
-              </div>
-              <p className="mt-3 text-sm text-muted-foreground flex-1">{tier.blurb}</p>
-              {tier.checkoutTier ? (
-                <Button className="mt-5 w-full" variant={tier.popular ? "default" : "outline"} asChild>
-                  <Link href={buildCheckoutUrl(tier.checkoutTier)}>
-                    {tier.cta}
-                  </Link>
-                </Button>
-              ) : (
-                <Button className="mt-5 w-full" variant="outline">
-                  {tier.cta}
-                </Button>
-              )}
-            </article>
-          ))}
-        </section>
-
-        {/* Feature comparison table */}
-        <section>
-          <h2 className="mb-6 text-sm font-semibold text-foreground">{isArabic ? "مقارنة المزايا" : "Full feature comparison"}</h2>
-          <div className="rounded-2xl border border-border/70 bg-card/70 overflow-hidden">
-            {/* Column headers */}
-            <div className="grid grid-cols-5 border-b border-border/70 bg-muted/20">
-              <div className="col-span-1 px-4 py-3" />
-              {localizedTiers.map((t) => (
-                <div key={t.name} className="px-2 py-3 text-center">
-                  <p className="text-xs font-semibold text-foreground">{t.name}</p>
-                </div>
-              ))}
-            </div>
-
-            {localizedFeatureGroups.map((group, gi) => (
-              <div key={group.group} className={gi > 0 ? "border-t border-border/50" : ""}>
-                {/* Group label */}
-                <div className="grid grid-cols-5 bg-muted/10 px-4 py-2">
-                  <p className="col-span-5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                    {group.group}
-                  </p>
-                </div>
-                {/* Rows */}
-                {group.rows.map((row, ri) => (
-                  <div
-                    key={row.label}
-                    className={`grid grid-cols-5 items-center px-4 py-2.5 ${
-                      ri % 2 === 0 ? "" : "bg-muted/5"
-                    }`}
-                  >
-                    <p className="col-span-1 text-xs text-muted-foreground pr-4">{row.label}</p>
-                    {row.values.map((val, vi) => (
-                      <div key={vi} className="px-2">
-                        <FeatureCell value={val} />
-                      </div>
-                    ))}
+        {/* ── User type cards ── */}
+        <section className="grid grid-cols-1 gap-5 md:grid-cols-3 mb-20">
+          {userTypes.map((type) => {
+            const Icon = type.icon
+            return (
+              <article
+                key={type.id}
+                className={`relative flex flex-col rounded-2xl border p-6 transition-all ${
+                  type.highlight
+                    ? "border-amber-500/30 bg-card shadow-xl shadow-amber-500/5"
+                    : "border-border/60 bg-card/70"
+                }`}
+              >
+                {type.highlight && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-background shadow-lg">
+                    {isArabic ? "مدفوع" : "Paid"}
                   </div>
-                ))}
-              </div>
-            ))}
-          </div>
+                )}
+
+                <div className="mb-5 flex items-start justify-between gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted/60">
+                    <Icon className="h-5 w-5 text-foreground/70" />
+                  </div>
+                  <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${type.badgeColor}`}>
+                    {type.badge}
+                  </span>
+                </div>
+
+                <h2 className="text-base font-semibold text-foreground mb-2">{type.title}</h2>
+                <p className="text-sm text-muted-foreground/80 leading-relaxed mb-6 flex-1">{type.description}</p>
+
+                <ul className="space-y-2.5 mb-7">
+                  {type.features.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                      <Check className="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                {type.isExternal ? (
+                  <Button
+                    asChild
+                    variant={type.highlight ? "default" : "outline"}
+                    className="w-full gap-2"
+                  >
+                    <a href={type.href}>
+                      {type.cta}
+                      <ArrowRight className="h-4 w-4" />
+                    </a>
+                  </Button>
+                ) : (
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Link href={prefixLocalePath(type.href, locale)}>
+                      {type.cta}
+                    </Link>
+                  </Button>
+                )}
+              </article>
+            )
+          })}
         </section>
 
-        {/* Trust strip */}
-        <footer className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
-          <span>{isArabic ? "الدفع عبر PayPal — ولا نخزن بيانات البطاقة على خوادمنا" : "Payments via PayPal — no card stored on our servers"}</span>
-          <span className="hidden sm:block text-border">|</span>
-          <span>{isArabic ? "يمكنك الإيقاف في أي وقت بدون رسوم إلغاء" : "Cancel anytime, no cancellation fee"}</span>
-          <span className="hidden sm:block text-border">|</span>
-          <span>{isArabic ? "الترقية تُفعّل مباشرة" : "Upgrades take effect immediately"}</span>
-        </footer>
-
-        {/* FAQ */}
-        <section className="mt-24">
-          <div className="mb-12 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{isArabic ? "كل ما تحتاج معرفته" : "Everything you need to know"}</p>
-            <h2 className="mt-3 text-2xl font-semibold text-foreground md:text-3xl">{isArabic ? "أسئلة متكررة" : "Frequently Asked Questions"}</h2>
-            <p className="mt-3 text-sm text-muted-foreground max-w-lg mx-auto">
+        {/* ── Organisation Terminal deep-dive ── */}
+        <section className="mb-24 rounded-3xl border border-amber-500/20 bg-card/60 overflow-hidden">
+          <div className="px-6 md:px-10 py-10 border-b border-border/50">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+                <Building2 className="h-5 w-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
+                  {isArabic ? "المنتج المدفوع الوحيد" : "The only paid product"}
+                </p>
+                <h2 className="text-xl font-semibold text-foreground">
+                  {isArabic ? "منصة المؤسسات" : "Organisation Terminal"}
+                </h2>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
               {isArabic
-                ? "إجابات مباشرة على أهم ما تحتاجه قبل الاشتراك: كيف تعمل المنصة، وماذا تضيف كل باقة، ومتى تحتاج كل مستوى."
-                : "From how the scoring engine works to what each plan includes — answered in plain language."}
+                ? "لوحة تنفيذ مخصصة للشركات والمكاتب المحترفة. تعمل تحت علامتك التجارية الكاملة، مع بنية متعددة المستخدمين، API آمن، وذكاء جماعي متكامل."
+                : "A fully branded execution dashboard for companies and professional firms. Your team operates under your identity, with multi-user infrastructure, secure API access, and institutional-grade intelligence built in."}
             </p>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
+            {orgFeatures.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="p-6 md:p-7">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/50 mb-4">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <h3 className="text-sm font-semibold text-foreground mb-1.5">{title}</h3>
+                <p className="text-xs text-muted-foreground/70 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="px-6 md:px-10 py-7 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border/50">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {isArabic ? "سعر مخصص لكل شركة" : "Custom pricing per company"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isArabic ? "بحسب حجم الفريق، واحتياجات API، ونطاق التكامل." : "Based on team size, API needs, and integration scope."}
+              </p>
+            </div>
+            <Button asChild variant="default" className="gap-2 shrink-0">
+              <a href="mailto:hello@entrestate.com">
+                <Zap className="h-4 w-4" />
+                {isArabic ? "تواصل معنا" : "Contact us"}
+              </a>
+            </Button>
+          </div>
+        </section>
+
+        {/* ── FAQ ── */}
+        <section>
+          <div className="mb-12 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
+              {isArabic ? "كل ما تحتاج معرفته" : "Everything you need to know"}
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold text-foreground md:text-3xl">
+              {isArabic ? "أسئلة متكررة" : "Frequently Asked Questions"}
+            </h2>
+          </div>
+
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-            {localizedFaqGroups.map((faqGroup) => (
-              <FaqGroup key={faqGroup.group} group={faqGroup.group} items={faqGroup.items} />
+            {faqGroups.map((group) => (
+              <FaqGroup key={group.group} group={group.group} items={group.items} />
             ))}
           </div>
 
           <div className="mt-14 rounded-2xl border border-border/60 bg-card/60 px-8 py-10 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{isArabic ? "هل لديك سؤال خاص؟" : "Still have questions?"}</p>
-            <h3 className="mt-3 text-xl font-semibold text-foreground">{isArabic ? "تواصل مع الفريق" : "Talk to the team"}</h3>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
+              {isArabic ? "هل لديك سؤال خاص؟" : "Still have questions?"}
+            </p>
+            <h3 className="mt-3 text-xl font-semibold text-foreground">
+              {isArabic ? "تواصل مع الفريق" : "Talk to the team"}
+            </h3>
             <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
               {isArabic
-                ? "إذا كنت تبحث عن تسعير مؤسسي، أو تكامل API، أو تهيئة خاصة لفريقك، تواصل معنا مباشرة."
-                : "For institutional inquiries, API integration, or custom enterprise pricing — reach us directly."}
+                ? "للاستفسارات المؤسسية أو تكامل API أو تهيئة مخصصة لفريقك — تواصل معنا مباشرة."
+                : "For Organisation Terminal inquiries, API integration, or custom enterprise setup — reach us directly."}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Button asChild variant="default">
-                <Link href={prefixLocalePath("/chat", locale)}>{isArabic ? "افتح مساعد القرار" : "Open AI Copilot"}</Link>
+                <Link href={prefixLocalePath("/chat", locale)}>
+                  {isArabic ? "افتح مساعد القرار" : "Open AI Copilot"}
+                </Link>
               </Button>
               <Button asChild variant="outline">
-                <a href="mailto:hello@entrestate.com">{isArabic ? "راسلنا" : "Email us"}</a>
+                <a href="mailto:hello@entrestate.com">
+                  {isArabic ? "راسلنا" : "Email us"}
+                </a>
               </Button>
             </div>
           </div>

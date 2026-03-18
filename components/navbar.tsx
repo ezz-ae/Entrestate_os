@@ -166,44 +166,67 @@ export function Navbar() {
 
       {/* Mobile menu */}
       <div
-        className={`fixed inset-0 z-40 lg:hidden transition-all duration-400 ease-out ${
+        className={`fixed inset-0 z-40 lg:hidden transition-all duration-300 ease-out ${
           isMobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"
         }`}
       >
+        {/* Backdrop */}
         <div
-          className={`absolute inset-0 bg-background transition-opacity duration-400 ${
-            isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          className={`absolute inset-0 bg-background/95 backdrop-blur-xl transition-opacity duration-300 ${
+            isMobileMenuOpen ? "opacity-100" : "opacity-0"
           }`}
         />
-        <div className={`relative h-full flex flex-col justify-center items-center px-6 ${isMobileMenuOpen ? "" : "pointer-events-none"}`}>
-          <nav className="flex flex-col items-center gap-1">
-            {navLinks.map((link, i) => (
-              <Link
-                key={link.label}
-                href={prefixLocalePath(link.href, locale)}
-                locale={false}
-                onClick={(e) => handleNavClick(e, link.href)}
-                className={`text-3xl font-medium text-foreground hover:text-accent transition-all duration-500 py-2 ${
-                  isMobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-                }`}
-                style={{ transitionDelay: isMobileMenuOpen ? `${120 + i * 60}ms` : "0ms" }}
-              >
-                {link.label}
-              </Link>
-            ))}
+
+        <div className={`relative h-full flex flex-col ${isMobileMenuOpen ? "" : "pointer-events-none"}`}>
+
+          {/* Top spacer for header */}
+          <div className="h-16 shrink-0" />
+
+          {/* Nav links — left-aligned, staggered */}
+          <nav className="flex-1 flex flex-col justify-center px-8 gap-0.5">
+            {navLinks.map((link, i) => {
+              const isActive = link.href === "/" ? normalizedPathname === "/" : normalizedPathname.startsWith(link.href)
+              return (
+                <Link
+                  key={link.label}
+                  href={prefixLocalePath(link.href, locale)}
+                  locale={false}
+                  onClick={(e) => handleNavClick(e, link.href)}
+                  className={`text-[2rem] font-semibold tracking-tight transition-all duration-400 py-1.5 ${
+                    isActive ? "text-primary" : "text-foreground hover:text-primary"
+                  } ${
+                    isMobileMenuOpen ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-6"
+                  }`}
+                  style={{ transitionDelay: isMobileMenuOpen ? `${80 + i * 50}ms` : "0ms" }}
+                >
+                  {link.label}
+                </Link>
+              )
+            })}
           </nav>
+
+          {/* Bottom section */}
           <div
-            className={`mt-10 flex flex-col items-center gap-4 transition-all duration-500 ${
-              isMobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+            className={`px-8 pb-10 pt-6 border-t border-border/30 flex items-center justify-between transition-all duration-400 ${
+              isMobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
-            style={{ transitionDelay: isMobileMenuOpen ? "400ms" : "0ms" }}
+            style={{ transitionDelay: isMobileMenuOpen ? "380ms" : "0ms" }}
           >
-            <LocaleSwitcher />
+            <div className="flex items-center gap-3">
+              <LocaleSwitcher />
+              <button
+                onClick={() => { handleCopilotClick(); setIsMobileMenuOpen(false) }}
+                className="flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary/80 transition-colors"
+              >
+                <MessageSquare className="h-4 w-4" />
+                {t("openAssistant")}
+              </button>
+            </div>
             <Link
               href={prefixLocalePath("/account", locale)}
               locale={false}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="text-base text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               {t("account")}
             </Link>

@@ -1,80 +1,122 @@
 "use client"
 
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, useScroll, useTransform } from "framer-motion"
 import { useLocale } from "next-intl"
-import { Navbar } from "@/components/navbar"
+import { useRef } from "react"
 import { Footer } from "@/components/footer"
 import { MarqueePrompts } from "@/components/marketing/marquee-prompts"
 import { MarketingLLMInput } from "@/components/marketing/marketing-llm-input"
-import { Sparkles, ArrowRight, Command, Scale, Search, FileText, SlidersHorizontal, Gauge, ShieldAlert, BarChart3, Database, History, Activity } from "lucide-react"
+import { ArrowRight, Command, Scale, Search, FileText, SlidersHorizontal, Gauge, ShieldAlert, BarChart3, Database, History, Activity, TrendingUp, MapPin, Building2, Users, Zap, Brain } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
+const NAV_LINKS = [
+  { label: "Platform", href: "/overview" },
+  { label: "Intelligence", href: "/ai" },
+  { label: "Enterprise", href: "/plans" },
+  { label: "Pricing", href: "/pricing" },
+]
+
 const commands = [
-  { id: "screen", title: "/screen", desc: "Find ranked projects with constraints", icon: Search },
-  { id: "compare", title: "/compare", desc: "Direct area or project comparison", icon: Scale },
-  { id: "memo", title: "/memo", desc: "Generate full investor memo", icon: FileText },
-  { id: "risk", title: "/risk", desc: "Real V1 stress breakdown", icon: SlidersHorizontal },
-  { id: "price", title: "/price", desc: "Price reality check", icon: Gauge },
-  { id: "risk", title: "/risk", desc: "Area-level risk brief", icon: ShieldAlert },
-  { id: "pulse", title: "/pulse", desc: "Live DLD market pulse", icon: BarChart3 },
-  { id: "bench", title: "/bench", desc: "DLD area benchmark", icon: Database },
-  { id: "history", title: "/history", desc: "DLD transaction search", icon: History },
+  { id: "screen",  title: "/screen",  desc: "Find ranked projects with constraints", icon: Search },
+  { id: "compare", title: "/compare", desc: "Direct area or project comparison",     icon: Scale },
+  { id: "memo",    title: "/memo",    desc: "Generate full investor memo",            icon: FileText },
+  { id: "risk",    title: "/risk",    desc: "Real V1 stress breakdown",              icon: SlidersHorizontal },
+  { id: "price",   title: "/price",   desc: "Price reality check",                   icon: Gauge },
+  { id: "area",    title: "/area",    desc: "Area-level risk brief",                 icon: ShieldAlert },
+  { id: "pulse",   title: "/pulse",   desc: "Live DLD market pulse",                icon: BarChart3 },
+  { id: "bench",   title: "/bench",   desc: "DLD area benchmark",                   icon: Database },
+  { id: "history", title: "/history", desc: "DLD transaction search",               icon: History },
+]
+
+const stats = [
+  { value: "1,216", label: "Scored Projects", icon: Building2 },
+  { value: "183",   label: "Areas Covered",   icon: MapPin },
+  { value: "36K+",  label: "DLD Transactions",icon: TrendingUp },
+  { value: "481",   label: "Developers Rated",icon: Users },
+]
+
+const features = [
+  {
+    icon: Brain,
+    title: "Decision Engine V1",
+    desc: "Every project scored on timing, stress resilience, yield, and investor grade — not guesses.",
+  },
+  {
+    icon: Zap,
+    title: "Real-Time DLD Data",
+    desc: "Live transaction feed from Dubai Land Department. Prices anchored to verified deals.",
+  },
+  {
+    icon: Building2,
+    title: "Developer Intelligence",
+    desc: "481 developers rated by delivery reliability, track record, and market positioning.",
+  },
 ]
 
 const examples = [
-  "Find 2BR projects under AED 2M with BUY timing label",
-  "Compare Dubai Marina vs JBR on price and yield",
-  "What are the top 5 emerging areas for investment?",
-  "Show the V1 stress profile for a Dubai Marina project",
+  "Find 2BR under AED 2M with BUY timing label",
+  "Compare Dubai Marina vs JBR on yield",
+  "Top 5 emerging areas for investment",
+  "V1 stress profile for a Dubai Harbour project",
 ]
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
+  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] } },
 }
 
 export default function ChatLandingPage() {
-  const locale = useLocale()
+  const locale   = useLocale()
   const isArabic = locale === "ar"
+  const heroRef  = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] })
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0])
+  const heroY       = useTransform(scrollYProgress, [0, 0.6], [0, -60])
+
   const copy = isArabic
     ? {
-        engine: "محرك القرار العقاري 4.2",
-        optimize: "مصمم للعمل بالعربية والإنجليزية",
+        engine:    "محرك القرار العقاري 4.2",
+        optimize:  "مصمم للعمل بالعربية والإنجليزية",
         headline1: "اسأل السوق",
         headline2: "قبل القرار.",
-        subtitle: "ادخل مباشرة إلى قراءة المشاريع والمناطق والمخاطر والتوقيت من مكان واحد.",
-        start: "ابدأ جلسة التحليل",
-        enterprise: "استعرض حلول المؤسسات",
+        subtitle:  "ادخل مباشرة إلى قراءة المشاريع والمناطق والمخاطر والتوقيت من مكان واحد.",
+        start:     "ابدأ جلسة التحليل",
+        enterprise:"استعرض خطط المؤسسات",
+        sectionTitle: "ذكاء يتفكر معك.",
+        sectionBody: "المنصة لا تعيد صفوفاً فحسب — بل تحلل السياق وتقيس المخاطر وتصيغ تقارير احترافية.",
+        sectionLink: "استكشف محرك المعرفة",
       }
     : {
-        engine: "ENTRESTATE INTELLIGENCE V4.2",
-        optimize: "GPT-4o OPTIMIZED",
+        engine:    "ENTRESTATE INTELLIGENCE V4.2",
+        optimize:  "GEMINI POWERED",
         headline1: "The future of real estate",
         headline2: "is intelligent.",
-        subtitle: "Move beyond data. Access professional-grade market intelligence, automated risk benchmarks, and verified execution.",
-        start: "Start Intelligence Session",
-        enterprise: "Explore Enterprise Solutions",
+        subtitle:  "Move beyond data. Access professional-grade market intelligence, automated risk benchmarks, and verified execution.",
+        start:     "Start Intelligence Session",
+        enterprise:"Explore Enterprise Plans",
+        sectionTitle: "Intelligence that thinks with you.",
+        sectionBody: "The platform doesn't just return rows. It analyzes context, benchmarks risks, and drafts professional insights using the same logic as the world's top real estate analysts.",
+        sectionLink: "Explore the Knowledge Engine",
       }
+
   return (
     <div className="min-h-screen bg-background flex flex-col selection:bg-primary/20">
-      {/* Dynamic Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full animate-pulse-subtle" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/5 blur-[120px] rounded-full animate-pulse-subtle" style={{ animationDelay: '2s' }} />
+
+      {/* ── Ambient background ── */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+        <div className="absolute top-[-15%] left-[-5%] w-[50%] h-[50%] bg-primary/4 blur-[140px] rounded-full animate-pulse" style={{ animationDuration: "8s" }} />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[45%] h-[45%] bg-accent/4 blur-[140px] rounded-full animate-pulse" style={{ animationDuration: "11s", animationDelay: "3s" }} />
+        <div className="absolute top-[40%] left-[50%] w-[30%] h-[30%] bg-primary/3 blur-[100px] rounded-full animate-pulse" style={{ animationDuration: "14s", animationDelay: "6s" }} />
       </div>
 
-      <header className="fixed top-0 w-full z-50 border-b border-border/40 bg-background/60 backdrop-blur-xl transition-all">
+      {/* ── Header ── */}
+      <header className="fixed top-0 w-full z-50 border-b border-border/30 bg-background/70 backdrop-blur-2xl transition-all">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-10">
             <Link href="/" className="font-serif text-2xl font-bold tracking-tight text-foreground/90 hover:text-foreground transition-colors">
@@ -85,9 +127,9 @@ export default function ChatLandingPage() {
                 Chat
                 <span className="absolute -bottom-1 left-0 w-full h-px bg-primary" />
               </Link>
-              {["Platform", "Intelligence", "Enterprise", "Pricing"].map((item) => (
-                <Link key={item} href="#" className="text-sm font-medium text-muted-foreground/70 hover:text-foreground transition-colors relative group">
-                  {item}
+              {NAV_LINKS.map(({ label, href }) => (
+                <Link key={label} href={href} className="text-sm font-medium text-muted-foreground/70 hover:text-foreground transition-colors relative group">
+                  {label}
                   <span className="absolute -bottom-1 left-0 w-0 h-px bg-primary transition-all group-hover:w-full" />
                 </Link>
               ))}
@@ -95,115 +137,181 @@ export default function ChatLandingPage() {
           </div>
           <div className="flex items-center gap-4">
             <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Log in</Link>
-            <Button size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90 px-6 font-medium shadow-xl shadow-foreground/10">
-              Get Started
+            <Button asChild size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90 px-6 font-medium shadow-xl shadow-foreground/10">
+              <Link href="/signup">Get Started</Link>
             </Button>
           </div>
         </div>
       </header>
-      
-      <main className="flex-1 flex flex-col items-center pt-32 pb-32 relative z-10">
-        <motion.div 
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-          className="container max-w-6xl mx-auto px-6 flex flex-col items-center text-center"
+
+      <main className="flex-1 flex flex-col items-center relative z-10">
+
+        {/* ── Hero ── */}
+        <motion.section
+          ref={heroRef}
+          style={{ opacity: heroOpacity, y: heroY }}
+          className="w-full pt-36 pb-20 flex flex-col items-center text-center px-6"
         >
-          {/* Badge */}
-          <motion.div variants={itemVariants} className="mb-10">
-            <div className="inline-flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-primary bg-primary/5 rounded-full border border-primary/10 backdrop-blur-sm shadow-inner cursor-default group">
-              <Activity className="w-3.5 h-3.5 animate-pulse" />
-              <span className="tracking-wide">{copy.engine}</span>
-              <div className="h-3 w-px bg-primary/20 mx-1" />
-              <span className="text-primary/60 font-medium">{copy.optimize}</span>
+          <motion.div initial="hidden" animate="visible" variants={containerVariants} className="container max-w-5xl mx-auto flex flex-col items-center">
+
+            {/* Badge */}
+            <motion.div variants={itemVariants} className="mb-10">
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-primary bg-primary/6 rounded-full border border-primary/15 backdrop-blur-sm shadow-inner cursor-default">
+                <Activity className="w-3.5 h-3.5 animate-pulse" />
+                <span className="tracking-wide">{copy.engine}</span>
+                <div className="h-3 w-px bg-primary/20 mx-1" />
+                <span className="text-primary/60 font-medium">{copy.optimize}</span>
+              </div>
+            </motion.div>
+
+            {/* Headline */}
+            <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl lg:text-[88px] font-serif text-foreground leading-[1.04] tracking-tight mb-8">
+              {copy.headline1}
+              <br />
+              <span className="text-muted-foreground/35 italic">{copy.headline2}</span>
+            </motion.h1>
+
+            <motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground/75 max-w-2xl mb-14 font-medium leading-relaxed">
+              {copy.subtitle}
+            </motion.p>
+
+            {/* CTAs */}
+            <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-5 mb-20">
+              <Button asChild size="lg" className="h-14 rounded-full px-10 gap-3 text-base bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <Link href="/chat">
+                  {copy.start}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Button>
+              <Link href="/plans" className="group text-sm font-semibold flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                {copy.enterprise}
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
+
+            {/* Stats row */}
+            <motion.div variants={itemVariants} className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-3xl mb-24">
+              {stats.map(({ value, label, icon: Icon }) => (
+                <div key={label} className="flex flex-col items-center gap-1.5 p-4 rounded-2xl bg-card/30 border border-border/30 backdrop-blur-sm">
+                  <Icon className="w-4 h-4 text-primary/60 mb-0.5" />
+                  <span className="text-2xl font-bold text-foreground tracking-tight">{value}</span>
+                  <span className="text-[11px] text-muted-foreground/60 font-medium text-center">{label}</span>
+                </div>
+              ))}
+            </motion.div>
+
+          </motion.div>
+        </motion.section>
+
+        {/* ── Marquee (Moving Blocks) ── */}
+        <section className="w-full mb-0 select-none overflow-hidden">
+          <MarqueePrompts />
+        </section>
+
+        {/* ── LLM Input ── */}
+        <section className="w-full max-w-4xl mx-auto px-6 py-20">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {/* Example chips */}
+            <div className="flex flex-wrap justify-center gap-2.5 mb-8">
+              {examples.map((ex, i) => (
+                <button key={i} className="px-4 py-2 bg-card/40 hover:bg-card border border-border/40 hover:border-primary/30 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-all shadow-sm hover:shadow-md hover:scale-[1.02]">
+                  {ex}
+                </button>
+              ))}
             </div>
-          </motion.div>
-
-          {/* Headline */}
-          <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl lg:text-8xl font-serif text-foreground leading-[1.05] tracking-tight mb-8">
-            {copy.headline1}
-            <br />
-            <span className="text-muted-foreground/40 italic">{copy.headline2}</span>
-          </motion.h1>
-
-          <motion.p variants={itemVariants} className="text-lg md:text-2xl text-muted-foreground/80 max-w-3xl mb-12 font-medium leading-relaxed">
-            {copy.subtitle}
-          </motion.p>
-
-          <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-6 mb-24">
-            <Button size="lg" className="h-14 rounded-full px-10 gap-3 text-lg bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02]">
-              {copy.start}
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-            <Link href="#" className="group text-sm font-semibold flex items-center gap-2.5 hover:text-primary transition-colors">
-              {copy.enterprise}
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </motion.div>
-
-          {/* Moving Blocks - "Amazing Motion" */}
-          <motion.div variants={itemVariants} className="w-full mb-16 select-none">
-            <MarqueePrompts />
-          </motion.div>
-
-          {/* Example Questions Section */}
-          <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-3 mb-24 max-w-4xl">
-            {examples.map((example, i) => (
-              <button key={i} className="px-5 py-2.5 bg-card/40 hover:bg-card border border-border/40 hover:border-primary/30 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground transition-all shadow-sm hover:shadow-md hover:scale-[1.02]">
-                {example}
-              </button>
-            ))}
-          </motion.div>
-
-          {/* LLM Input */}
-          <motion.div variants={itemVariants} className="w-full mb-32">
             <MarketingLLMInput />
           </motion.div>
+        </section>
 
-          {/* Available Commands Section */}
-          <motion.div variants={itemVariants} className="w-full max-w-6xl">
+        {/* ── Features ── */}
+        <section className="w-full max-w-5xl mx-auto px-6 py-16">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ staggerChildren: 0.1 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-5"
+          >
+            {features.map(({ icon: Icon, title, desc }) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="group p-7 bg-card/25 backdrop-blur-sm border border-border/30 rounded-3xl hover:border-primary/30 transition-all hover:bg-card/40"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                  <Icon className="w-5 h-5 text-primary/70 group-hover:text-primary transition-colors" />
+                </div>
+                <h3 className="text-base font-semibold text-foreground mb-2">{title}</h3>
+                <p className="text-sm text-muted-foreground/70 leading-relaxed">{desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </section>
+
+        {/* ── Commands Grid ── */}
+        <section className="w-full max-w-6xl mx-auto px-6 py-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
             <div className="flex items-center gap-3 mb-12 justify-center text-muted-foreground/40">
               <div className="h-px w-12 bg-border/40" />
               <Command className="w-4 h-4" />
               <span className="text-xs font-bold uppercase tracking-[0.3em]">Advanced Neural Commands</span>
               <div className="h-px w-12 bg-border/40" />
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-4">
               {commands.map((cmd) => (
-                <motion.div 
-                  key={cmd.id} 
-                  whileHover={{ y: -5, scale: 1.02 }}
-                  className="group p-5 bg-card/30 backdrop-blur-sm border border-border/40 rounded-2xl hover:border-primary/40 transition-all text-center flex flex-col items-center justify-between min-h-[160px] shadow-sm hover:shadow-xl hover:shadow-primary/5"
+                <motion.div
+                  key={cmd.id}
+                  whileHover={{ y: -4, scale: 1.03 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  className="group p-4 bg-card/25 backdrop-blur-sm border border-border/30 rounded-2xl hover:border-primary/40 transition-colors text-center flex flex-col items-center justify-between min-h-[140px] shadow-sm hover:shadow-xl hover:shadow-primary/5 cursor-default"
                 >
-                  <div className="mx-auto w-12 h-12 rounded-xl bg-secondary/50 flex items-center justify-center mb-4 group-hover:bg-primary/10 transition-colors">
-                    <cmd.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <div className="w-10 h-10 rounded-xl bg-secondary/40 flex items-center justify-center mb-3 group-hover:bg-primary/10 transition-colors">
+                    <cmd.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
                   <div>
-                    <div className="font-mono text-[11px] font-bold mb-1.5 text-primary/80 group-hover:text-primary transition-colors tracking-tight">{cmd.title}</div>
-                    <div className="text-[10px] text-muted-foreground/60 font-medium leading-snug px-1 group-hover:text-muted-foreground transition-colors">{cmd.desc}</div>
+                    <div className="font-mono text-[10px] font-bold mb-1 text-primary/70 group-hover:text-primary transition-colors tracking-tight">{cmd.title}</div>
+                    <div className="text-[9px] text-muted-foreground/55 font-medium leading-snug group-hover:text-muted-foreground/80 transition-colors">{cmd.desc}</div>
                   </div>
                 </motion.div>
               ))}
             </div>
           </motion.div>
+        </section>
 
-          {/* Writes, brainstorms... text */}
-          <motion.div 
-            variants={itemVariants}
-            className="mt-40 max-w-3xl"
+        {/* ── Bottom CTA ── */}
+        <section className="w-full max-w-3xl mx-auto px-6 py-24 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
-            <h2 className="text-4xl md:text-5xl font-serif text-foreground/90 leading-tight mb-8">
-              Intelligence that <span className="text-primary italic">thinks</span> with you.
+            <h2 className="text-4xl md:text-5xl font-serif text-foreground/90 leading-tight mb-6">
+              {copy.sectionTitle}
             </h2>
-            <p className="text-lg text-muted-foreground leading-relaxed mb-10">
-              The platform doesn't just return rows. It analyzes context, benchmarks risks, and drafts professional insights using the same logic as the world's top real estate analysts.
+            <p className="text-base text-muted-foreground/70 leading-relaxed mb-10 max-w-xl mx-auto">
+              {copy.sectionBody}
             </p>
-            <Link href="#" className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline underline-offset-4">
-              Explore the Knowledge Engine
+            <Link href="/overview" className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline underline-offset-4 transition-all">
+              {copy.sectionLink}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
-        </motion.div>
+        </section>
+
       </main>
 
       <Footer />
