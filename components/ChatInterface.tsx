@@ -22,6 +22,7 @@ import {
   Scale,
   Search,
   Send,
+  ShieldCheck,
   SlidersHorizontal,
   Sparkles,
   TrendingUp,
