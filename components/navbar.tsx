@@ -25,6 +25,7 @@ export function Navbar() {
   const navLinks = [
     { label: t("chat"), href: "/chat" },
     { label: t("overview"), href: "/overview" },
+    { label: t("workspace"), href: "/workspace" },
     { label: t("areas"), href: "/areas" },
     { label: t("developers"), href: "/developers" },
     { label: t("properties"), href: "/properties" },

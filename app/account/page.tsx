@@ -17,6 +17,7 @@ import {
   Download,
   Share2,
   PenLine,
+  LayoutGrid,
 } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -84,6 +85,13 @@ export default async function AccountPage() {
       description: t("quickAccess.chatDesc"),
       href: "/chat",
       icon: MessageSquareText,
+      tiers: ["free", "pro", "team", "institutional"] as const,
+    },
+    {
+      label: isArabic ? "مساحة العمل" : "Investor Workspace",
+      description: isArabic ? "أدوات البحث والتحليل والحاسبات" : "Research tools, analysis desks & calculators",
+      href: "/workspace",
+      icon: LayoutGrid,
       tiers: ["free", "pro", "team", "institutional"] as const,
     },
     {

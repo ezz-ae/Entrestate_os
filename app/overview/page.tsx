@@ -15,6 +15,10 @@ import {
   Filter,
   Database,
   Bot,
+  LayoutGrid,
+  FileText,
+  PenLine,
+  Eye,
 } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -45,15 +49,21 @@ const INTENT_META: Record<string, { label: string; description: string }> = {
   conservative:     { label: "Conservative",        description: "Grade A, low-stress, long hold" },
 }
 
-const NAV_MODULES = [
-  { label: "AI Chat", description: "Get scored answers instantly", href: "/chat", icon: Sparkles, accent: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10", border: "border-blue-200/60 dark:border-blue-500/20", tag: "Decision engine" },
-  { label: "AI Scientist", description: "Advanced data modeling & EDA", href: "/workspace/data-scientist", icon: Database, accent: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-50 dark:bg-cyan-500/10", border: "border-cyan-200/60 dark:border-cyan-500/20", tag: "Analysis" },
-  { label: "Agent Builder", description: "Design automated execution agents", href: "/apps/agent-builder", icon: Bot, accent: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-500/10", border: "border-rose-200/60 dark:border-rose-500/20", tag: "Automation" },
-  { label: "Properties", description: "Every project, fully scored", href: "/properties", icon: Building2, accent: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-500/10", border: "border-indigo-200/60 dark:border-indigo-500/20", tag: "Inventory" },
-  { label: "Areas", description: "Yield & supply by location", href: "/areas", icon: MapIcon, accent: "text-teal-600 dark:text-teal-400", bg: "bg-teal-50 dark:bg-teal-500/10", border: "border-teal-200/60 dark:border-teal-500/20", tag: "Geography" },
-  { label: "Developers", description: "Reliability index & track record", href: "/developers", icon: Users2, accent: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10", border: "border-violet-200/60 dark:border-violet-500/20", tag: "Counterparty" },
-  { label: "Market Data", description: "Pulse, timing, stress, supply", href: "/top-data", icon: BarChart3, accent: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10", border: "border-amber-200/60 dark:border-amber-500/20", tag: "Intelligence" },
-  { label: "System Status", description: "Data freshness & pipeline", href: "/status", icon: Activity, accent: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10", border: "border-emerald-200/60 dark:border-emerald-500/20", tag: "Health" },
+const INPUT_MODULES = [
+  { label: "AI Chat", labelAr: "الدردشة الذكية", description: "Get scored answers instantly", descAr: "احصل على إجابات مصنّفة فوراً", href: "/chat", icon: Sparkles, accent: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10", border: "border-blue-200/60 dark:border-blue-500/20", tag: "Decision engine", tagAr: "محرك القرار" },
+  { label: "Workspace", labelAr: "مساحة العمل", description: "All tools, research desks & builders", descAr: "جميع الأدوات ومسارات البحث والبناء", href: "/workspace", icon: LayoutGrid, accent: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-50 dark:bg-cyan-500/10", border: "border-cyan-200/60 dark:border-cyan-500/20", tag: "Tools hub", tagAr: "مركز الأدوات" },
+  { label: "Market Research", labelAr: "أبحاث السوق", description: "Advanced data modeling & EDA", descAr: "نمذجة بيانات متقدمة واستكشاف", href: "/workspace/data-scientist", icon: Database, accent: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-500/10", border: "border-purple-200/60 dark:border-purple-500/20", tag: "Analysis", tagAr: "تحليل" },
+  { label: "Agent Builder", labelAr: "بناء الوكلاء", description: "Design automated execution agents", descAr: "صمّم وكلاء تنفيذ آليين", href: "/apps/agent-builder", icon: Bot, accent: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-500/10", border: "border-rose-200/60 dark:border-rose-500/20", tag: "Automation", tagAr: "أتمتة" },
+]
+
+const OUTPUT_MODULES = [
+  { label: "Properties", labelAr: "المشاريع", description: "Every project, fully scored", descAr: "كل مشروع، مصنّف بالكامل", href: "/properties", icon: Building2, accent: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-500/10", border: "border-indigo-200/60 dark:border-indigo-500/20", tag: "Inventory", tagAr: "المخزون" },
+  { label: "Areas", labelAr: "المناطق", description: "Yield & supply by location", descAr: "العائد والعرض حسب الموقع", href: "/areas", icon: MapIcon, accent: "text-teal-600 dark:text-teal-400", bg: "bg-teal-50 dark:bg-teal-500/10", border: "border-teal-200/60 dark:border-teal-500/20", tag: "Geography", tagAr: "الجغرافيا" },
+  { label: "Developers", labelAr: "المطورون", description: "Reliability index & track record", descAr: "مؤشر الموثوقية وسجل الأداء", href: "/developers", icon: Users2, accent: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10", border: "border-violet-200/60 dark:border-violet-500/20", tag: "Counterparty", tagAr: "الطرف المقابل" },
+  { label: "Market Data", labelAr: "بيانات السوق", description: "Pulse, timing, stress, supply", descAr: "نبض · توقيت · ضغط · عرض", href: "/top-data", icon: BarChart3, accent: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10", border: "border-amber-200/60 dark:border-amber-500/20", tag: "Intelligence", tagAr: "استخبارات" },
+  { label: "Market Score", labelAr: "قراءة السوق", description: "Score validation & match checks", descAr: "تحقق من الدرجة والملاءمة", href: "/market-score", icon: ShieldCheck, accent: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10", border: "border-emerald-200/60 dark:border-emerald-500/20", tag: "Validation", tagAr: "تحقق" },
+  { label: "Reports", labelAr: "التقارير", description: "Generated memos & research", descAr: "المذكرات والأبحاث المُنشأة", href: "/reports/library", icon: FileText, accent: "text-sky-600 dark:text-sky-400", bg: "bg-sky-50 dark:bg-sky-500/10", border: "border-sky-200/60 dark:border-sky-500/20", tag: "Output", tagAr: "المخرجات" },
+  { label: "System Status", labelAr: "حالة النظام", description: "Data freshness & pipeline", descAr: "حداثة البيانات والأنابيب", href: "/status", icon: Activity, accent: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-500/10", border: "border-gray-200/60 dark:border-gray-500/20", tag: "Health", tagAr: "الحالة" },
 ]
 
 const QUICK_FILTERS = [
@@ -150,7 +160,7 @@ export default async function OverviewPage() {
   ]
 
   return (
-    <main id="main-content">
+    <main id="main-content" dir={isArabic ? "rtl" : "ltr"}>
       <Navbar />
       <div className="mx-auto max-w-[1400px] px-6 pb-20 pt-28 md:pt-32">
         <header className="mb-5">
@@ -170,7 +180,7 @@ export default async function OverviewPage() {
               </span>
               <Button variant="intelligent" size="sm" asChild className="h-9 shadow-lg">
                 <Link href={prefixLocalePath("/chat", locale)}>
-                  <Sparkles className="h-3.5 w-3.5 mr-1" />
+                  <Sparkles className="h-3.5 w-3.5 me-1" />
                   {isArabic ? "اسأل المساعد" : "Ask AI"}
                 </Link>
               </Button>
@@ -226,7 +236,7 @@ export default async function OverviewPage() {
                       </div>
                       <div className="text-right">
                         <span className="text-xs font-semibold tabular-nums text-foreground">{t.count.toLocaleString()}</span>
-                        <span className="ml-1 text-[10px] text-muted-foreground">({t.pct.toFixed(0)}%)</span>
+                        <span className="ms-1 text-[10px] text-muted-foreground">({t.pct.toFixed(0)}%)</span>
                       </div>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted/50">
@@ -258,25 +268,62 @@ export default async function OverviewPage() {
             </article>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 content-start">
-            {NAV_MODULES.map((mod) => {
-              const Icon = mod.icon
-              return (
-                <Link key={mod.label} href={mod.href} className={`group flex flex-col justify-between rounded-2xl border ${mod.border} ${mod.bg} p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)] dark:hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]`}>
-                  <div className="flex items-start justify-between">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-xl border ${mod.border} bg-white/60 dark:bg-black/20`}>
-                      <Icon className={`h-4 w-4 ${mod.accent}`} />
-                    </div>
-                    <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
-                  </div>
-                  <div className="mt-6">
-                    <span className={`mb-1 inline-block rounded-full border ${mod.border} px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider ${mod.accent} opacity-70`}>{mod.tag}</span>
-                    <p className="text-sm font-semibold text-foreground">{mod.label}</p>
-                    <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{mod.description}</p>
-                  </div>
-                </Link>
-              )
-            })}
+          <div className="flex flex-col gap-4">
+            {/* INPUT — Ask & Create */}
+            <div>
+              <div className="mb-2.5 flex items-center gap-2">
+                <PenLine className="h-3.5 w-3.5 text-primary" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{isArabic ? "اسأل وأنشئ" : "Ask & Create"}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {INPUT_MODULES.map((mod) => {
+                  const Icon = mod.icon
+                  return (
+                    <Link key={mod.label} href={prefixLocalePath(mod.href, locale)} className={`group flex flex-col justify-between rounded-2xl border ${mod.border} ${mod.bg} p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)] dark:hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]`}>
+                      <div className="flex items-start justify-between">
+                        <div className={`flex h-8 w-8 items-center justify-center rounded-xl border ${mod.border} bg-white/60 dark:bg-black/20`}>
+                          <Icon className={`h-4 w-4 ${mod.accent}`} />
+                        </div>
+                        <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </div>
+                      <div className="mt-6">
+                        <span className={`mb-1 inline-block rounded-full border ${mod.border} px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider ${mod.accent} opacity-70`}>{isArabic ? mod.tagAr : mod.tag}</span>
+                        <p className="text-sm font-semibold text-foreground">{isArabic ? mod.labelAr : mod.label}</p>
+                        <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{isArabic ? mod.descAr : mod.description}</p>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* OUTPUT — View & Analyze */}
+            <div>
+              <div className="mb-2.5 flex items-center gap-2">
+                <Eye className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">{isArabic ? "عرض وتحليل" : "View & Analyze"}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {OUTPUT_MODULES.map((mod) => {
+                  const Icon = mod.icon
+                  return (
+                    <Link key={mod.label} href={prefixLocalePath(mod.href, locale)} className={`group flex flex-col justify-between rounded-2xl border ${mod.border} ${mod.bg} p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)] dark:hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]`}>
+                      <div className="flex items-start justify-between">
+                        <div className={`flex h-8 w-8 items-center justify-center rounded-xl border ${mod.border} bg-white/60 dark:bg-black/20`}>
+                          <Icon className={`h-4 w-4 ${mod.accent}`} />
+                        </div>
+                        <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </div>
+                      <div className="mt-6">
+                        <span className={`mb-1 inline-block rounded-full border ${mod.border} px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider ${mod.accent} opacity-70`}>{isArabic ? mod.tagAr : mod.tag}</span>
+                        <p className="text-sm font-semibold text-foreground">{isArabic ? mod.labelAr : mod.label}</p>
+                        <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{isArabic ? mod.descAr : mod.description}</p>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
           </div>
 
           <article className="rounded-2xl border border-border bg-card p-5">
@@ -319,22 +366,31 @@ export default async function OverviewPage() {
           </article>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Link href={prefixLocalePath("/chat", locale)} className="group flex items-center justify-between rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 transition-all hover:bg-primary/10 hover:-translate-y-0.5">
             <div>
               <p className="text-sm font-semibold text-foreground">{isArabic ? "دردشة القرار الذكية" : "AI Decision Chat"}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "قائمة مختصرة للمشاريع · مقارنة المناطق · مراجعة إشارات الضغط V1" : "Shortlist projects · Compare areas · Review V1 stress signals"}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "قائمة مختصرة · مقارنة · مراجعة V1" : "Shortlist · Compare · Review V1"}</p>
             </div>
-            <div className="ml-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md transition group-hover:scale-105">
+            <div className="ms-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md transition group-hover:scale-105">
               <Sparkles className="h-4 w-4" />
+            </div>
+          </Link>
+          <Link href={prefixLocalePath("/workspace", locale)} className="group flex items-center justify-between rounded-2xl border border-cyan-500/25 bg-cyan-500/5 px-5 py-4 transition-all hover:bg-cyan-500/10 hover:-translate-y-0.5">
+            <div>
+              <p className="text-sm font-semibold text-foreground">{isArabic ? "مساحة العمل" : "Investor Workspace"}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "أبحاث · أدوات · حاسبات · مصادر" : "Research · Tools · Calculators · Sources"}</p>
+            </div>
+            <div className="ms-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 transition group-hover:bg-cyan-500/20">
+              <LayoutGrid className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
             </div>
           </Link>
           <Link href={prefixLocalePath("/top-data", locale)} className="group flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)]">
             <div>
-              <p className="text-sm font-semibold text-foreground">{isArabic ? "لوحة السوق" : "Market Intelligence Board"}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "نبض السوق · التوقيت · الضغط · عمق المناطق · موثوقية المطورين" : "Pulse · Timing · Stress · Area depth · Developer reliability"}</p>
+              <p className="text-sm font-semibold text-foreground">{isArabic ? "لوحة السوق" : "Market Intelligence"}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "نبض · توقيت · ضغط · عمق" : "Pulse · Timing · Stress · Depth"}</p>
             </div>
-            <div className="ml-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40 transition group-hover:bg-muted/70">
+            <div className="ms-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40 transition group-hover:bg-muted/70">
               <BarChart3 className="h-4 w-4 text-foreground" />
             </div>
           </Link>

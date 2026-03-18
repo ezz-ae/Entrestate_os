@@ -264,7 +264,7 @@ export function Footer() {
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20"
                 >
                   {t("Open Copilot", "افتح المساعد")}
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
                 </Link>
                 <Link
                   href={toHref("/plans")}
@@ -469,7 +469,7 @@ export function Footer() {
             <div className="mt-5 flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_2px_rgba(52,211,153,0.4)]" />
               <span className="text-[11px] text-muted-foreground/60">{t("All systems operational", "جميع الأنظمة تعمل")}</span>
-              <Link href={toHref("/status")} locale={false} className="ml-1 text-[11px] text-muted-foreground/40 underline underline-offset-2 hover:text-muted-foreground">
+              <Link href={toHref("/status")} locale={false} className="ms-1 text-[11px] text-muted-foreground/40 underline underline-offset-2 hover:text-muted-foreground">
                 {t("Status", "الحالة")}
               </Link>
             </div>

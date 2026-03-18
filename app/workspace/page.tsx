@@ -22,6 +22,7 @@ import {
   Import,
   Calculator,
   ArrowRight,
+  ArrowUpRight,
   TrendingUp,
   ChevronRight,
   Activity,
@@ -30,6 +31,12 @@ import {
   Layers,
   ShieldCheck,
   Menu,
+  Eye,
+  Building2,
+  MapPin,
+  Users2,
+  FileText,
+  Sparkles,
 } from "lucide-react"
 import type { MarketScoreCharts, MarketScoreSummary } from "@/lib/market-score/types"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
@@ -39,17 +46,17 @@ function getWorkspaceTools(locale: AppLocale) {
   const isArabic = locale === "ar"
 
   return [
-    { icon: BarChart3, label: isArabic ? "لوحة السوق" : "Dashboards", description: isArabic ? "قراءات مركبة لحركة السوق" : "Layered market views", href: "/workspace/dashboards" },
-    { icon: Database, label: isArabic ? "أبحاث السوق" : "Market Research Desk", description: isArabic ? "استكشف الإشارات وابنِ ملخصاتك" : "Explore market signals and build briefs", href: "/workspace/data-scientist" },
-    { icon: ShieldCheck, label: isArabic ? "قراءة المشروع" : "Market Score", description: isArabic ? "تحقق من الدرجة والملاءمة قبل القرار" : "Score validation and match checks", href: "/market-score" },
-    { icon: TrendingUp, label: isArabic ? "مطابقة المستثمر" : "Investor Match Desk", description: isArabic ? "اربط ملف العميل بالمخزون الأنسب" : "Match client profiles to the right inventory", href: "/agent-runtime" },
-    { icon: Layers, label: isArabic ? "حزم البيانات" : "Market Data Packs", description: isArabic ? "منتجات بيانات وحزم جاهزة للتحميل" : "Data products and download packs", href: "/workspace/daas" },
-    { icon: Bot, label: isArabic ? "مسار العملاء" : "Lead Flow Builder", description: isArabic ? "ابنِ مسارات الاستقبال والتحويل" : "Set up client intake and routing flows", href: "/workspace/agent-creator" },
-    { icon: Search, label: isArabic ? "البحث" : "Search", description: isArabic ? "ابحث في المدن والمناطق والمشاريع" : "City, area, project search", href: "/workspace/search" },
-    { icon: Bookmark, label: isArabic ? "المحفوظات" : "Saved Searches", description: isArabic ? "عمليات البحث التي رجعت إليها" : "Your bookmarked queries", href: "/workspace/saved-searches" },
-    { icon: GitCompare, label: isArabic ? "المقارنات" : "Comparisons", description: isArabic ? "ضع سيناريوهين جنبًا إلى جنب" : "Side-by-side scenarios", href: "/workspace/comparisons" },
-    { icon: Import, label: isArabic ? "مصادر البيانات" : "Data Sources", description: isArabic ? "إدارة الإدخال والحوكمة" : "Managed ingestion and governance", href: "/workspace/imports" },
-    { icon: Calculator, label: isArabic ? "حاسبات سريعة" : "Math Tools", description: isArabic ? "حسابات سريعة وبناة مساعدة" : "Calculators and builders", href: "/workspace/math-tools" },
+    { icon: BarChart3, label: isArabic ? "لوحة السوق" : "Dashboards", description: isArabic ? "قراءات مركبة لحركة السوق" : "Layered market views", href: "/workspace/dashboards", outputs: [{ label: isArabic ? "بيانات السوق" : "Market Data", href: "/top-data" }] },
+    { icon: Database, label: isArabic ? "أبحاث السوق" : "Market Research Desk", description: isArabic ? "استكشف الإشارات وابنِ ملخصاتك" : "Explore market signals and build briefs", href: "/workspace/data-scientist", outputs: [{ label: isArabic ? "التقارير" : "Reports", href: "/reports/library" }, { label: isArabic ? "بيانات السوق" : "Market Data", href: "/top-data" }] },
+    { icon: ShieldCheck, label: isArabic ? "قراءة المشروع" : "Market Score", description: isArabic ? "تحقق من الدرجة والملاءمة قبل القرار" : "Score validation and match checks", href: "/market-score", outputs: [{ label: isArabic ? "المشاريع" : "Properties", href: "/properties" }] },
+    { icon: TrendingUp, label: isArabic ? "مطابقة المستثمر" : "Investor Match Desk", description: isArabic ? "اربط ملف العميل بالمخزون الأنسب" : "Match client profiles to the right inventory", href: "/agent-runtime", outputs: [{ label: isArabic ? "المشاريع" : "Properties", href: "/properties" }, { label: isArabic ? "المناطق" : "Areas", href: "/areas" }] },
+    { icon: Layers, label: isArabic ? "حزم البيانات" : "Market Data Packs", description: isArabic ? "منتجات بيانات وحزم جاهزة للتحميل" : "Data products and download packs", href: "/workspace/daas", outputs: [] },
+    { icon: Bot, label: isArabic ? "مسار العملاء" : "Lead Flow Builder", description: isArabic ? "ابنِ مسارات الاستقبال والتحويل" : "Set up client intake and routing flows", href: "/workspace/agent-creator", outputs: [] },
+    { icon: Search, label: isArabic ? "البحث" : "Search", description: isArabic ? "ابحث في المدن والمناطق والمشاريع" : "City, area, project search", href: "/workspace/search", outputs: [{ label: isArabic ? "المشاريع" : "Properties", href: "/properties" }, { label: isArabic ? "المناطق" : "Areas", href: "/areas" }, { label: isArabic ? "المطورون" : "Developers", href: "/developers" }] },
+    { icon: Bookmark, label: isArabic ? "المحفوظات" : "Saved Searches", description: isArabic ? "عمليات البحث التي رجعت إليها" : "Your bookmarked queries", href: "/workspace/saved-searches", outputs: [] },
+    { icon: GitCompare, label: isArabic ? "المقارنات" : "Comparisons", description: isArabic ? "ضع سيناريوهين جنبًا إلى جنب" : "Side-by-side scenarios", href: "/workspace/comparisons", outputs: [{ label: isArabic ? "المشاريع" : "Properties", href: "/properties" }] },
+    { icon: Import, label: isArabic ? "مصادر البيانات" : "Data Sources", description: isArabic ? "إدارة الإدخال والحوكمة" : "Managed ingestion and governance", href: "/workspace/imports", outputs: [] },
+    { icon: Calculator, label: isArabic ? "حاسبات سريعة" : "Math Tools", description: isArabic ? "حسابات سريعة وبناة مساعدة" : "Calculators and builders", href: "/workspace/math-tools", outputs: [] },
   ]
 }
 
@@ -225,7 +232,7 @@ export default function WorkspacePage() {
   }, [isArabic])
 
   return (
-    <main id="main-content">
+    <main id="main-content" dir={isArabic ? "rtl" : "ltr"}>
       <Navbar />
       <div className="pt-28 pb-20 md:pt-36 md:pb-32">
         <div className="mx-auto w-full max-w-[1440px] px-6">
@@ -339,43 +346,62 @@ export default function WorkspacePage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                   {featuredTool && (
-                    <Link
-                      key={featuredTool.label}
-                      href={prefixLocalePath(featuredTool.href, locale)}
-                      className="group md:col-span-2 xl:col-span-2 flex items-start gap-4 p-7 border border-primary/30 rounded-2xl bg-gradient-to-br from-primary/15 via-background/40 to-background/60 hover:border-primary/50 transition-colors"
-                    >
-                      <div className="p-3 bg-primary/20 rounded-md">
-                        <featuredTool.icon className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-semibold text-foreground">{featuredTool.label}</h3>
-                          <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div key={featuredTool.label} className="md:col-span-2 xl:col-span-2 border border-primary/30 rounded-2xl bg-gradient-to-br from-primary/15 via-background/40 to-background/60">
+                      <Link
+                        href={prefixLocalePath(featuredTool.href, locale)}
+                        className="group flex items-start gap-4 p-7 hover:bg-primary/5 transition-colors rounded-t-2xl"
+                      >
+                        <div className="p-3 bg-primary/20 rounded-md">
+                          <featuredTool.icon className="w-6 h-6 text-primary" />
                         </div>
-                        <p className="text-sm text-muted-foreground mt-2">{featuredTool.description}</p>
-                        <p className="text-xs text-muted-foreground mt-3">
-                          {isArabic ? "هذا هو المسار الأنسب لبداية يومك." : "Best starting point for daily market work."}
-                        </p>
-                      </div>
-                    </Link>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-foreground">{featuredTool.label}</h3>
+                            <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-2">{featuredTool.description}</p>
+                          <p className="text-xs text-muted-foreground mt-3">
+                            {isArabic ? "هذا هو المسار الأنسب لبداية يومك." : "Best starting point for daily market work."}
+                          </p>
+                        </div>
+                      </Link>
+                      {featuredTool.outputs.length > 0 && (
+                        <div className="flex items-center gap-2 border-t border-primary/15 px-7 py-2.5">
+                          <Eye className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                          <span className="text-[10px] text-muted-foreground/60">{isArabic ? "المخرجات →" : "Outputs →"}</span>
+                          {featuredTool.outputs.map((o) => (
+                            <Link key={o.href} href={prefixLocalePath(o.href, locale)} className="text-[10px] font-medium text-primary/70 hover:text-primary transition-colors">{o.label}</Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                   {primaryTools.map((tool) => (
-                    <Link
-                      key={tool.label}
-                      href={prefixLocalePath(tool.href, locale)}
-                      className="group flex items-start gap-4 p-6 bg-background/40 border border-border rounded-xl hover:border-accent/40 transition-colors"
-                    >
-                      <div className="p-3 bg-secondary rounded-md">
-                        <tool.icon className="w-5 h-5 text-foreground" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium text-foreground">{tool.label}</h3>
-                          <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div key={tool.label} className="bg-background/40 border border-border rounded-xl overflow-hidden">
+                      <Link
+                        href={prefixLocalePath(tool.href, locale)}
+                        className="group flex items-start gap-4 p-6 hover:bg-accent/20 transition-colors"
+                      >
+                        <div className="p-3 bg-secondary rounded-md">
+                          <tool.icon className="w-5 h-5 text-foreground" />
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{tool.description}</p>
-                      </div>
-                    </Link>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium text-foreground">{tool.label}</h3>
+                            <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">{tool.description}</p>
+                        </div>
+                      </Link>
+                      {tool.outputs.length > 0 && (
+                        <div className="flex items-center gap-2 border-t border-border/50 px-6 py-2">
+                          <Eye className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                          {tool.outputs.map((o) => (
+                            <Link key={o.href} href={prefixLocalePath(o.href, locale)} className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors">{o.label}</Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </section>
@@ -398,24 +424,62 @@ export default function WorkspacePage() {
                 <div className="rounded-2xl border border-border/70 bg-background/40 p-6">
                   <div className="divide-y divide-border/60">
                     {supportTools.map((tool) => (
-                      <Link
-                        key={tool.label}
-                        href={prefixLocalePath(tool.href, locale)}
-                        className="group flex items-center gap-4 py-4 first:pt-0 last:pb-0"
-                      >
-                        <div className="p-2.5 bg-secondary rounded-md">
-                          <tool.icon className="w-5 h-5 text-foreground" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-medium text-foreground">{tool.label}</h3>
-                            <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div key={tool.label} className="py-4 first:pt-0 last:pb-0">
+                        <Link
+                          href={prefixLocalePath(tool.href, locale)}
+                          className="group flex items-center gap-4"
+                        >
+                          <div className="p-2.5 bg-secondary rounded-md">
+                            <tool.icon className="w-5 h-5 text-foreground" />
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">{tool.description}</p>
-                        </div>
-                      </Link>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-sm font-medium text-foreground">{tool.label}</h3>
+                              <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{tool.description}</p>
+                          </div>
+                        </Link>
+                        {tool.outputs.length > 0 && (
+                          <div className="flex items-center gap-2 mt-2 ps-[52px]">
+                            <Eye className="h-2.5 w-2.5 text-muted-foreground/40 shrink-0" />
+                            {tool.outputs.map((o) => (
+                              <Link key={o.href} href={prefixLocalePath(o.href, locale)} className="text-[10px] font-medium text-muted-foreground/60 hover:text-foreground transition-colors">{o.label}</Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
+                </div>
+              </section>
+
+              {/* Quick Outputs — direct links to output dashboards */}
+              <section className="mb-6 rounded-2xl border border-border/70 bg-card/40 p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Eye className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <h3 className="text-sm font-semibold text-foreground">{isArabic ? "الوصول السريع للمخرجات" : "Quick Output Access"}</h3>
+                  <span className="ms-auto text-[10px] text-muted-foreground">{isArabic ? "عرض النتائج والبيانات" : "View results & data"}</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                  {[
+                    { icon: Building2, label: isArabic ? "المشاريع" : "Properties", href: "/properties" },
+                    { icon: MapPin, label: isArabic ? "المناطق" : "Areas", href: "/areas" },
+                    { icon: Users2, label: isArabic ? "المطورون" : "Developers", href: "/developers" },
+                    { icon: BarChart3, label: isArabic ? "بيانات السوق" : "Market Data", href: "/top-data" },
+                    { icon: FileText, label: isArabic ? "التقارير" : "Reports", href: "/reports/library" },
+                    { icon: Sparkles, label: isArabic ? "الدردشة الذكية" : "AI Chat", href: "/chat" },
+                  ].map((item) => (
+                    <Link
+                      key={item.href}
+                      href={prefixLocalePath(item.href, locale)}
+                      className="group flex items-center gap-2.5 rounded-xl border border-border/50 bg-background/60 px-3 py-2.5 text-sm transition-all hover:border-primary/30 hover:bg-primary/5 active:scale-[0.97]"
+                    >
+                      <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                      <span className="text-xs font-medium text-foreground truncate">{item.label}</span>
+                      <ArrowUpRight className="h-3 w-3 text-muted-foreground/30 ms-auto opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                    </Link>
+                  ))}
                 </div>
               </section>
 

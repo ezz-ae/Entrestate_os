@@ -823,7 +823,7 @@ export default function MarketScorePage() {
   ]
 
   return (
-    <main id="main-content">
+    <main id="main-content" dir={isArabic ? "rtl" : "ltr"}>
       <Navbar />
       <div className="pt-28 pb-20 md:pt-36 md:pb-32">
         <div className="mx-auto w-full max-w-[1440px] px-6">
@@ -1022,7 +1022,7 @@ export default function MarketScorePage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                 <div className="space-y-3">
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">{copy.areas}</p>
-                  <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                  <div className="space-y-2 max-h-40 overflow-y-auto pe-2">
                     {availableAreas.map((area) => (
                       <label key={area} className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Checkbox
@@ -1494,7 +1494,7 @@ export default function MarketScorePage() {
                       className="inline-flex items-center gap-2 text-primary hover:text-primary/80"
                     >
                       {copy.openInExplorer}
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
                     </Link>
                   </div>
                 ) : null}

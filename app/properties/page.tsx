@@ -209,25 +209,25 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
             {params.timing && (
               <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
                 {t("signalChip")}: {params.timing}
-                <Link href={prefixLocalePath(buildFilterHref(baseParams, { timing: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { timing: undefined, page: undefined }), locale)} locale={false} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.stress && (
               <span className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-foreground">
                 {t("riskChip")}: {params.stress}
-                <Link href={prefixLocalePath(buildFilterHref(baseParams, { stress: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { stress: undefined, page: undefined }), locale)} locale={false} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.area && (
               <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
                 {t("areaChip")}: {params.area}
-                <Link href={prefixLocalePath(buildFilterHref(baseParams, { area: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { area: undefined, page: undefined }), locale)} locale={false} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.developer && (
               <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
                 {t("developerChip")}: {params.developer}
-                <Link href={prefixLocalePath(buildFilterHref(baseParams, { developer: undefined, page: undefined }), locale)} locale={false} className="ml-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { developer: undefined, page: undefined }), locale)} locale={false} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
           </div>

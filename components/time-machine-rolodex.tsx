@@ -881,7 +881,7 @@ export function TimeMachineRolodex() {
         onTouchEnd={handleTouchEnd}
       >
         {/* Header nav */}
-        <div className="absolute right-6 top-6 z-50 flex items-center gap-1 rounded-lg border border-border/70 bg-card/80 p-1 shadow-sm backdrop-blur-sm">
+        <div className="absolute end-6 top-6 z-50 flex items-center gap-1 rounded-lg border border-border/70 bg-card/80 p-1 shadow-sm backdrop-blur-sm">
           <button
             className={`rounded-md p-2 transition-colors ${viewMode === "stack" ? "bg-secondary" : "hover:bg-secondary"}`}
             onClick={() => setViewMode("stack")}
@@ -897,12 +897,12 @@ export function TimeMachineRolodex() {
         </div>
 
         {/* Entrestate wordmark */}
-        <div className="absolute left-6 top-6 z-50 flex items-center gap-3">
+        <div className="absolute start-6 top-6 z-50 flex items-center gap-3">
           <a
             href={prefixLocalePath("/", locale)}
             className="text-[10px] font-medium text-muted-foreground/50 transition-colors hover:text-muted-foreground flex items-center gap-1"
           >
-            <ChevronRight className="h-3 w-3 rotate-180" />
+            <ChevronRight className={`h-3 w-3 ${isArabic ? "" : "rotate-180"}`} />
             {copy.back}
           </a>
           <span className="text-border/50">|</span>
@@ -965,7 +965,7 @@ export function TimeMachineRolodex() {
 
                               {/* Background stroke decoration */}
                               <div
-                                className="pointer-events-none absolute right-6 top-4 select-none font-serif font-black leading-none text-foreground"
+                                className="pointer-events-none absolute end-6 top-4 select-none font-serif font-black leading-none text-foreground"
                                 aria-hidden
                                 style={{ fontSize: "200px", WebkitTextStroke: "1px currentColor", color: "transparent", opacity: 0.04 }}
                               >
@@ -1005,14 +1005,14 @@ export function TimeMachineRolodex() {
                                 <p className="text-sm text-muted-foreground/60">{card.date}</p>
                                 {isActive && (
                                   <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
-                                    {copy.openReport} <ChevronRight className="h-4 w-4" />
+                                    {copy.openReport} <ChevronRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
                                   </span>
                                 )}
                               </div>
                             </div>
 
-                            {/* ── Right rail — topics ── */}
-                            <div className="hidden md:flex w-[148px] shrink-0 flex-col border-l border-border/30 bg-card/20 p-5 pt-8">
+                            {/* ── Side rail — topics ── */}
+                            <div className="hidden md:flex w-[148px] shrink-0 flex-col border-s border-border/30 bg-card/20 p-5 pt-8">
                               <p className="mb-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/25">
                                 {copy.topics}
                               </p>
@@ -1046,7 +1046,7 @@ export function TimeMachineRolodex() {
             </div>
 
             {/* Timeline — desktop only */}
-            <div className="absolute bottom-20 right-8 top-20 z-40 hidden md:flex flex-col items-end justify-between py-8">
+            <div className="absolute bottom-20 end-8 top-20 z-40 hidden md:flex flex-col items-end justify-between py-8">
               {cards.map((card, index) => {
                 const isActive = index === activeIndex
                 return (
@@ -1056,7 +1056,7 @@ export function TimeMachineRolodex() {
                     </span>
                     <div className="relative flex items-center">
                       <div className={`h-0.5 transition-all duration-300 ${isActive ? "w-8 bg-primary" : "w-4 bg-border group-hover:w-6 group-hover:bg-muted-foreground"}`} />
-                      {isActive && <div className="absolute -right-1 h-2 w-2 rounded-full bg-primary" />}
+                      {isActive && <div className="absolute -end-1 h-2 w-2 rounded-full bg-primary" />}
                     </div>
                   </button>
                 )
@@ -1070,7 +1070,7 @@ export function TimeMachineRolodex() {
                 onClick={() => setPosition((p) => Math.max(0, Math.round(p) - 1))}
                 disabled={activeIndex === 0}
               >
-                <ChevronRight className="h-4 w-4 rotate-180" />
+                <ChevronRight className={`h-4 w-4 ${isArabic ? "" : "rotate-180"}`} />
               </button>
               <span className="text-xs tabular-nums text-muted-foreground">{activeIndex + 1} / {cards.length}</span>
               <button
@@ -1078,7 +1078,7 @@ export function TimeMachineRolodex() {
                 onClick={() => setPosition((p) => Math.min(cards.length - 1, Math.round(p) + 1))}
                 disabled={activeIndex === cards.length - 1}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
               </button>
             </div>
 
@@ -1103,12 +1103,12 @@ export function TimeMachineRolodex() {
                           {card.category}
                         </span>
                       )}
-                      <span className="ml-auto text-[10px] text-muted-foreground/50">{card.date}</span>
+                      <span className="ms-auto text-[10px] text-muted-foreground/50">{card.date}</span>
                     </div>
                     <p className="font-serif text-lg font-medium leading-snug text-foreground">{card.title}</p>
                     <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground line-clamp-2">{card.subtitle}</p>
                     <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary">
-                      {copy.openReport} <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                      {copy.openReport} <ChevronRight className={`h-3 w-3 transition-transform group-hover:translate-x-0.5 ${isArabic ? "rotate-180" : ""}`} />
                     </div>
                   </button>
                 ))}
@@ -1136,7 +1136,7 @@ export function TimeMachineRolodex() {
                       {card.title}
                     </span>
                     <span className="min-w-0 flex-1 text-muted-foreground">{card.subtitle}</span>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-1 group-hover:text-foreground" />
+                    <ChevronRight className={`h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-1 group-hover:text-foreground ${isArabic ? "rotate-180" : ""}`} />
                   </button>
                 ))}
               </div>
@@ -1152,7 +1152,7 @@ export function TimeMachineRolodex() {
                   <div className="relative flex h-full flex-col justify-between overflow-hidden p-4">
                     {/* Stroke background */}
                     <div
-                      className="pointer-events-none absolute right-2 top-0 select-none font-serif font-black leading-none text-foreground"
+                      className="pointer-events-none absolute end-2 top-0 select-none font-serif font-black leading-none text-foreground"
                       aria-hidden
                       style={{ fontSize: "100px", WebkitTextStroke: "1px currentColor", color: "transparent", opacity: 0.05 }}
                     >

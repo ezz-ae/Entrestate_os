@@ -26,6 +26,12 @@ import {
   MessageSquare,
   Menu,
   X,
+  Building2,
+  MapPin,
+  Users2,
+  FileText,
+  PenLine,
+  Eye,
 } from "lucide-react"
 import Image from "next/image"
 import { UpgradeModal } from "./upgrade-modal"
@@ -278,20 +284,30 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const displayEmail = user?.email || "account@entrestate.com"
   const avatar = user?.image || "/avatars/avatar-01.svg"
 
-  const workspaceLinks = [
-    { label: "Workspace Home", href: "/workspace", icon: LayoutGrid, description: "Overview and activity" },
-    { label: "Notebook", href: "/notebook", icon: BookOpen, description: "Decision notebooks" },
-    { label: "Dashboards", href: "/workspace/dashboards", icon: BarChart3, description: "Layered market views" },
-    { label: "Market Research Desk", href: "/workspace/data-scientist", icon: Database, description: "EDA + modeling" },
-    { label: "Market Score", href: "/market-score", icon: ShieldCheck, description: "Score validation" },
-    { label: "Investor Match Desk", href: "/agent-runtime", icon: TrendingUp, description: "Match client profiles" },
-    { label: "Market Data Packs", href: "/workspace/daas", icon: Layers, description: "Data products" },
-    { label: "Lead Flow Builder", href: "/workspace/agent-creator", icon: Bot, description: "Automation builder" },
-    { label: "Search", href: "/workspace/search", icon: Search, description: "City/area/project search" },
-    { label: "Saved Searches", href: "/workspace/saved-searches", icon: Bookmark, description: "Bookmarked queries" },
-    { label: "Comparisons", href: "/workspace/comparisons", icon: GitCompare, description: "Side-by-side scenarios" },
-    { label: "Data Sources", href: "/workspace/imports", icon: Import, description: "Managed ingestion" },
-    { label: "Math Tools", href: "/workspace/math-tools", icon: Calculator, description: "Calculators and builders" },
+  const isArabic = locale === "ar"
+
+  const inputLinks = [
+    { label: isArabic ? "مساحة العمل" : "Workspace Home", href: "/workspace", icon: LayoutGrid, description: isArabic ? "نظرة عامة والتحديثات" : "Overview and activity" },
+    { label: isArabic ? "دفتر الملاحظات" : "Notebook", href: "/notebook", icon: BookOpen, description: isArabic ? "دفاتر القرار" : "Decision notebooks" },
+    { label: isArabic ? "لوحة السوق" : "Dashboards", href: "/workspace/dashboards", icon: BarChart3, description: isArabic ? "قراءات مركبة" : "Layered market views" },
+    { label: isArabic ? "أبحاث السوق" : "Market Research Desk", href: "/workspace/data-scientist", icon: Database, description: isArabic ? "تحليل ونمذجة" : "EDA + modeling" },
+    { label: isArabic ? "مطابقة المستثمر" : "Investor Match Desk", href: "/agent-runtime", icon: TrendingUp, description: isArabic ? "ربط العميل بالمخزون" : "Match client profiles" },
+    { label: isArabic ? "مسار العملاء" : "Lead Flow Builder", href: "/workspace/agent-creator", icon: Bot, description: isArabic ? "أتمتة المسارات" : "Automation builder" },
+    { label: isArabic ? "البحث" : "Search", href: "/workspace/search", icon: Search, description: isArabic ? "مدن ومناطق ومشاريع" : "City/area/project search" },
+    { label: isArabic ? "المقارنات" : "Comparisons", href: "/workspace/comparisons", icon: GitCompare, description: isArabic ? "سيناريوهات جنبًا إلى جنب" : "Side-by-side scenarios" },
+    { label: isArabic ? "حاسبات سريعة" : "Math Tools", href: "/workspace/math-tools", icon: Calculator, description: isArabic ? "حاسبات ومساعدات" : "Calculators and builders" },
+  ]
+
+  const outputLinks = [
+    { label: isArabic ? "المشاريع" : "Properties", href: "/properties", icon: Building2, description: isArabic ? "كل مشروع مصنّف" : "Every scored project" },
+    { label: isArabic ? "المناطق" : "Areas", href: "/areas", icon: MapPin, description: isArabic ? "العائد والعرض بالموقع" : "Yield & supply by location" },
+    { label: isArabic ? "المطورون" : "Developers", href: "/developers", icon: Users2, description: isArabic ? "الموثوقية والسجل" : "Reliability & track record" },
+    { label: isArabic ? "بيانات السوق" : "Market Data", href: "/top-data", icon: BarChart3, description: isArabic ? "نبض · توقيت · ضغط" : "Pulse · Timing · Stress" },
+    { label: isArabic ? "قراءة السوق" : "Market Score", href: "/market-score", icon: ShieldCheck, description: isArabic ? "التحقق من الدرجة" : "Score validation" },
+    { label: isArabic ? "التقارير" : "Reports", href: "/reports/library", icon: FileText, description: isArabic ? "المذكرات والأبحاث" : "Memos & research" },
+    { label: isArabic ? "حزم البيانات" : "Market Data Packs", href: "/workspace/daas", icon: Layers, description: isArabic ? "منتجات بيانات" : "Data products" },
+    { label: isArabic ? "المحفوظات" : "Saved Searches", href: "/workspace/saved-searches", icon: Bookmark, description: isArabic ? "استعلامات محفوظة" : "Bookmarked queries" },
+    { label: isArabic ? "مصادر البيانات" : "Data Sources", href: "/workspace/imports", icon: Import, description: isArabic ? "الإدخال والحوكمة" : "Managed ingestion" },
   ]
 
   // Handle auto-open and session loading from URL
@@ -761,12 +777,40 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                     </Link>
                   </div>
 
+                  {/* INPUT — Ask & Create */}
                   <div className="space-y-1.5">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 px-1">Workspace</p>
-                    {workspaceLinks.map((link) => (
+                    <div className="flex items-center gap-1.5 px-1">
+                      <PenLine className="h-3 w-3 text-primary" />
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{isArabic ? "اسأل وأنشئ" : "Ask & Create"}</p>
+                    </div>
+                    {inputLinks.map((link) => (
                       <Link
                         key={link.href}
-                        href={link.href}
+                        href={prefixLocalePath(link.href, locale)}
+                        onClick={handleCloseSidebar}
+                        className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-accent/50 active:scale-[0.98]"
+                      >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
+                          <link.icon className="h-4 w-4" />
+                        </span>
+                        <span className="flex flex-col min-w-0">
+                          <span className="text-sm font-medium truncate">{link.label}</span>
+                          <span className="text-[11px] text-muted-foreground truncate">{link.description}</span>
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* OUTPUT — View & Analyze */}
+                  <div className="space-y-1.5 pt-3">
+                    <div className="flex items-center gap-1.5 px-1">
+                      <Eye className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">{isArabic ? "عرض وتحليل" : "View & Analyze"}</p>
+                    </div>
+                    {outputLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={prefixLocalePath(link.href, locale)}
                         onClick={handleCloseSidebar}
                         className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 px-3 py-2.5 text-sm text-foreground transition-colors hover:bg-accent/50 active:scale-[0.98]"
                       >
