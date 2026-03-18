@@ -24,7 +24,6 @@ export function LocaleSwitcher() {
           <Link
             key={targetLocale}
             href={href}
-            locale={false}
             className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide transition ${
               isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
             }`}
