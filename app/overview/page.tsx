@@ -151,10 +151,15 @@ export default async function OverviewPage() {
   const insightText = generateInsight(buyPct, avgYield, highConfidencePct, topIntent)
   const updatedLabel = formatRelativeTime(homepage.data_as_of)
 
+  const safeInt = (n: any) => {
+    const v = Number(n)
+    return isNaN(v) ? 0 : Math.floor(Math.abs(v))
+  }
+
   const kpis = [
-    { label: "Total Projects", value: totalProjects.toLocaleString(), icon: Building2, iconClass: "text-primary", sub: "Active UAE inventory", href: "/properties" },
-    { label: "BUY Signals", value: buySignals.toLocaleString(), icon: TrendingUp, iconClass: "text-emerald-600 dark:text-emerald-400", sub: `${buyPct.toFixed(0)}% of total inventory`, href: "/properties?timing=BUY" },
-    { label: "HIGH Confidence", value: highConfidence.toLocaleString(), icon: ShieldCheck, iconClass: "text-blue-600 dark:text-blue-400", sub: `${highConfidencePct.toFixed(0)}% data verified`, href: "/properties" },
+    { label: "Total Projects", value: safeInt(totalProjects).toLocaleString(), icon: Building2, iconClass: "text-primary", sub: "Active UAE inventory", href: "/properties" },
+    { label: "BUY Signals", value: safeInt(buySignals).toLocaleString(), icon: TrendingUp, iconClass: "text-emerald-600 dark:text-emerald-400", sub: `${buyPct.toFixed(0)}% of total inventory`, href: "/properties?timing=BUY" },
+    { label: "HIGH Confidence", value: safeInt(highConfidence).toLocaleString(), icon: ShieldCheck, iconClass: "text-blue-600 dark:text-blue-400", sub: `${highConfidencePct.toFixed(0)}% data verified`, href: "/properties" },
     { label: "Avg Asking Price", value: formatAed(avgPrice), icon: CircleDot, iconClass: "text-violet-600 dark:text-violet-400", sub: "L1 canonical pricing", href: "/properties" },
     { label: "Avg Gross Yield", value: typeof avgYield === "number" ? `${avgYield.toFixed(1)}%` : "—", icon: BarChart3, iconClass: "text-amber-600 dark:text-amber-400", sub: "Across all inventory", href: "/top-data" },
   ]
@@ -225,7 +230,7 @@ export default async function OverviewPage() {
                 <h2 className="text-sm font-semibold text-foreground">Market Timing Signals</h2>
                 <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${sentiment.color}`}>{sentiment.label}</span>
               </div>
-              <p className="mb-4 text-[11px] text-muted-foreground">{totalProjects.toLocaleString()} projects scored</p>
+              <p className="mb-4 text-[11px] text-muted-foreground">{safeInt(totalProjects).toLocaleString()} projects scored</p>
               <div className="space-y-4">
                 {timingBars.map((t) => (
                   <div key={t.label}>
@@ -235,8 +240,8 @@ export default async function OverviewPage() {
                         <span className="text-[10px] text-muted-foreground">{t.desc}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs font-semibold tabular-nums text-foreground">{t.count.toLocaleString()}</span>
-                        <span className="ms-1 text-[10px] text-muted-foreground">({t.pct.toFixed(0)}%)</span>
+                        <span className="text-xs font-semibold tabular-nums text-foreground">{safeInt(t.count).toLocaleString()}</span>
+                        <span className="ms-1 text-[10px] text-muted-foreground">({(isNaN(t.pct) ? 0 : t.pct).toFixed(0)}%)</span>
                       </div>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted/50">
@@ -348,8 +353,8 @@ export default async function OverviewPage() {
                         <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{intent.description}</p>
                       </div>
                       <div className="flex flex-shrink-0 flex-col items-end gap-1">
-                        <span className="text-sm font-bold tabular-nums text-foreground">{intent.count.toLocaleString()}</span>
-                        <span className="text-[10px] text-muted-foreground">{pct.toFixed(0)}%</span>
+                        <span className="text-sm font-bold tabular-nums text-foreground">{safeInt(intent.count).toLocaleString()}</span>
+                        <span className="text-[10px] text-muted-foreground">{(isNaN(pct) ? 0 : pct).toFixed(0)}%</span>
                       </div>
                     </div>
                     <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted/60">
