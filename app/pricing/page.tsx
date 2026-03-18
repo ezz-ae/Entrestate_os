@@ -314,7 +314,7 @@ export default function PricingPage() {
   const faqGroups = FAQ_GROUPS[locale] ?? FAQ_GROUPS.en
 
   return (
-    <main id="main-content">
+    <main id="main-content" dir={isArabic ? "rtl" : "ltr"}>
       <Navbar />
 
       <div className="mx-auto max-w-[1100px] px-4 sm:px-6 pb-24 pt-28 md:pt-36">
@@ -382,7 +382,7 @@ export default function PricingPage() {
                   >
                     <a href={type.href}>
                       {type.cta}
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
                     </a>
                   </Button>
                 ) : (
@@ -424,7 +424,7 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-0 divide-y sm:divide-y-0 ${isArabic ? "sm:divide-x-reverse" : "sm:divide-x"} divide-border/40`}>
             {orgFeatures.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="p-6 md:p-7">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/50 mb-4">

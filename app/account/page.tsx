@@ -122,7 +122,7 @@ export default async function AccountPage() {
   const usagePct = Math.min((usage.used / usage.limit) * 100, 100)
 
   return (
-    <main id="main-content">
+    <main id="main-content" dir={isArabic ? "rtl" : "ltr"}>
       <Navbar />
 
       {/* ── Mobile section tabs ── */}

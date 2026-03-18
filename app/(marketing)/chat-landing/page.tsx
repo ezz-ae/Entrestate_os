@@ -10,56 +10,151 @@ import { MarketingLLMInput } from "@/components/marketing/marketing-llm-input"
 import { ArrowRight, Command, Scale, Search, FileText, SlidersHorizontal, Gauge, ShieldAlert, BarChart3, Database, History, Activity, TrendingUp, MapPin, Building2, Users, Zap, Brain } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-const NAV_LINKS = [
-  { label: "Platform", href: "/overview" },
-  { label: "Intelligence", href: "/ai" },
-  { label: "Enterprise", href: "/plans" },
-  { label: "Pricing", href: "/pricing" },
-]
+// ── Bilingual data ────────────────────────────────────────────────────────────
 
-const commands = [
-  { id: "screen",  title: "/screen",  desc: "Find ranked projects with constraints", icon: Search },
-  { id: "compare", title: "/compare", desc: "Direct area or project comparison",     icon: Scale },
-  { id: "memo",    title: "/memo",    desc: "Generate full investor memo",            icon: FileText },
-  { id: "risk",    title: "/risk",    desc: "Real V1 stress breakdown",              icon: SlidersHorizontal },
-  { id: "price",   title: "/price",   desc: "Price reality check",                   icon: Gauge },
-  { id: "area",    title: "/area",    desc: "Area-level risk brief",                 icon: ShieldAlert },
-  { id: "pulse",   title: "/pulse",   desc: "Live DLD market pulse",                icon: BarChart3 },
-  { id: "bench",   title: "/bench",   desc: "DLD area benchmark",                   icon: Database },
-  { id: "history", title: "/history", desc: "DLD transaction search",               icon: History },
-]
+const NAV_LINKS = {
+  en: [
+    { label: "Platform", href: "/overview" },
+    { label: "Intelligence", href: "/ai" },
+    { label: "Enterprise", href: "/plans" },
+    { label: "Pricing", href: "/pricing" },
+  ],
+  ar: [
+    { label: "المنصة", href: "/overview" },
+    { label: "الذكاء", href: "/ai" },
+    { label: "المؤسسات", href: "/plans" },
+    { label: "الأسعار", href: "/pricing" },
+  ],
+}
 
-const stats = [
-  { value: "1,216", label: "Scored Projects", icon: Building2 },
-  { value: "183",   label: "Areas Covered",   icon: MapPin },
-  { value: "36K+",  label: "DLD Transactions",icon: TrendingUp },
-  { value: "481",   label: "Developers Rated",icon: Users },
-]
+const commands = {
+  en: [
+    { id: "screen",  title: "/screen",  desc: "Find ranked projects with constraints", icon: Search },
+    { id: "compare", title: "/compare", desc: "Direct area or project comparison",     icon: Scale },
+    { id: "memo",    title: "/memo",    desc: "Generate full investor memo",            icon: FileText },
+    { id: "risk",    title: "/risk",    desc: "Real V1 stress breakdown",              icon: SlidersHorizontal },
+    { id: "price",   title: "/price",   desc: "Price reality check",                   icon: Gauge },
+    { id: "area",    title: "/area",    desc: "Area-level risk brief",                 icon: ShieldAlert },
+    { id: "pulse",   title: "/pulse",   desc: "Live DLD market pulse",                icon: BarChart3 },
+    { id: "bench",   title: "/bench",   desc: "DLD area benchmark",                   icon: Database },
+    { id: "history", title: "/history", desc: "DLD transaction search",               icon: History },
+  ],
+  ar: [
+    { id: "screen",  title: "/screen",  desc: "ابحث عن مشاريع مصنّفة بمعايير محددة",   icon: Search },
+    { id: "compare", title: "/compare", desc: "مقارنة مباشرة بين مناطق أو مشاريع",     icon: Scale },
+    { id: "memo",    title: "/memo",    desc: "إنشاء مذكرة استثمار كاملة",              icon: FileText },
+    { id: "risk",    title: "/risk",    desc: "تحليل ضغط V1 الحقيقي",                  icon: SlidersHorizontal },
+    { id: "price",   title: "/price",   desc: "فحص واقعية الأسعار",                     icon: Gauge },
+    { id: "area",    title: "/area",    desc: "موجز مخاطر المنطقة",                     icon: ShieldAlert },
+    { id: "pulse",   title: "/pulse",   desc: "نبض سوق DLD المباشر",                   icon: BarChart3 },
+    { id: "bench",   title: "/bench",   desc: "معيار منطقة DLD",                        icon: Database },
+    { id: "history", title: "/history", desc: "بحث في معاملات DLD",                     icon: History },
+  ],
+}
 
-const features = [
-  {
-    icon: Brain,
-    title: "Decision Engine V1",
-    desc: "Every project scored on timing, stress resilience, yield, and investor grade — not guesses.",
+const stats = {
+  en: [
+    { value: "1,216", label: "Scored Projects", icon: Building2 },
+    { value: "183",   label: "Areas Covered",   icon: MapPin },
+    { value: "36K+",  label: "DLD Transactions", icon: TrendingUp },
+    { value: "481",   label: "Developers Rated", icon: Users },
+  ],
+  ar: [
+    { value: "١٬٢١٦", label: "مشروع مُصنّف",       icon: Building2 },
+    { value: "١٨٣",   label: "منطقة مغطاة",        icon: MapPin },
+    { value: "+٣٦ ألف", label: "معاملة DLD",       icon: TrendingUp },
+    { value: "٤٨١",   label: "مطور مُقيَّم",        icon: Users },
+  ],
+}
+
+const features = {
+  en: [
+    {
+      icon: Brain,
+      title: "Decision Engine V1",
+      desc: "Every project scored on timing, stress resilience, yield, and investor grade — not guesses.",
+    },
+    {
+      icon: Zap,
+      title: "Real-Time DLD Data",
+      desc: "Live transaction feed from Dubai Land Department. Prices anchored to verified deals.",
+    },
+    {
+      icon: Building2,
+      title: "Developer Intelligence",
+      desc: "481 developers rated by delivery reliability, track record, and market positioning.",
+    },
+  ],
+  ar: [
+    {
+      icon: Brain,
+      title: "محرك القرار V1",
+      desc: "كل مشروع مُقيَّم بالتوقيت ومرونة الضغط والعائد ودرجة المستثمر — ليس تخمينات.",
+    },
+    {
+      icon: Zap,
+      title: "بيانات DLD مباشرة",
+      desc: "رصد مباشر للمعاملات من دائرة الأراضي والأملاك. أسعار مرتبطة بصفقات مؤكدة.",
+    },
+    {
+      icon: Building2,
+      title: "ذكاء المطورين",
+      desc: "٤٨١ مطوراً مُقيَّماً بموثوقية التسليم والسجل والموقع السوقي.",
+    },
+  ],
+}
+
+const examples = {
+  en: [
+    "Find 2BR under AED 2M with BUY timing label",
+    "Compare Dubai Marina vs JBR on yield",
+    "Top 5 emerging areas for investment",
+    "V1 stress profile for a Dubai Harbour project",
+  ],
+  ar: [
+    "ابحث عن شقة غرفتين تحت 2 مليون درهم بإشارة شراء",
+    "قارن دبي مارينا و JBR من حيث العائد",
+    "أفضل 5 مناطق ناشئة للاستثمار",
+    "ملف ضغط V1 لمشروع في دبي هاربر",
+  ],
+}
+
+const COPY = {
+  en: {
+    engine:       "ENTRESTATE INTELLIGENCE V4.2",
+    optimize:     "GEMINI POWERED",
+    headline1:    "The future of real estate",
+    headline2:    "is intelligent.",
+    subtitle:     "Move beyond data. Access professional-grade market intelligence, automated risk benchmarks, and verified execution.",
+    start:        "Start Intelligence Session",
+    enterprise:   "Explore Enterprise Plans",
+    sectionTitle: "Intelligence that thinks with you.",
+    sectionBody:  "The platform doesn't just return rows. It analyzes context, benchmarks risks, and drafts professional insights using the same logic as the world's top real estate analysts.",
+    sectionLink:  "Explore the Knowledge Engine",
+    chat:         "Chat",
+    logIn:        "Log in",
+    getStarted:   "Get Started",
+    advancedCmds: "Advanced Neural Commands",
   },
-  {
-    icon: Zap,
-    title: "Real-Time DLD Data",
-    desc: "Live transaction feed from Dubai Land Department. Prices anchored to verified deals.",
+  ar: {
+    engine:       "محرك القرار العقاري 4.2",
+    optimize:     "مصمم بالعربية والإنجليزية",
+    headline1:    "اسأل السوق",
+    headline2:    "قبل القرار.",
+    subtitle:     "ادخل مباشرة إلى قراءة المشاريع والمناطق والمخاطر والتوقيت من مكان واحد.",
+    start:        "ابدأ جلسة التحليل",
+    enterprise:   "استعرض خطط المؤسسات",
+    sectionTitle: "ذكاء يتفكر معك.",
+    sectionBody:  "المنصة لا تعيد صفوفاً فحسب — بل تحلل السياق وتقيس المخاطر وتصيغ تقارير احترافية.",
+    sectionLink:  "استكشف محرك المعرفة",
+    chat:         "محادثة",
+    logIn:        "تسجيل الدخول",
+    getStarted:   "ابدأ الآن",
+    advancedCmds: "أوامر عصبية متقدمة",
   },
-  {
-    icon: Building2,
-    title: "Developer Intelligence",
-    desc: "481 developers rated by delivery reliability, track record, and market positioning.",
-  },
-]
+}
 
-const examples = [
-  "Find 2BR under AED 2M with BUY timing label",
-  "Compare Dubai Marina vs JBR on yield",
-  "Top 5 emerging areas for investment",
-  "V1 stress profile for a Dubai Harbour project",
-]
+// ── Animation ─────────────────────────────────────────────────────────────────
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -71,42 +166,25 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] } },
 }
 
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function ChatLandingPage() {
-  const locale   = useLocale()
-  const isArabic = locale === "ar"
-  const heroRef  = useRef<HTMLDivElement>(null)
+  const locale  = useLocale()
+  const isRTL   = locale === "ar"
+  const copy    = isRTL ? COPY.ar : COPY.en
+  const navLinks = isRTL ? NAV_LINKS.ar : NAV_LINKS.en
+  const cmds     = isRTL ? commands.ar : commands.en
+  const st       = isRTL ? stats.ar : stats.en
+  const feat     = isRTL ? features.ar : features.en
+  const ex       = isRTL ? examples.ar : examples.en
+
+  const heroRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] })
   const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0])
   const heroY       = useTransform(scrollYProgress, [0, 0.6], [0, -60])
 
-  const copy = isArabic
-    ? {
-        engine:    "محرك القرار العقاري 4.2",
-        optimize:  "مصمم للعمل بالعربية والإنجليزية",
-        headline1: "اسأل السوق",
-        headline2: "قبل القرار.",
-        subtitle:  "ادخل مباشرة إلى قراءة المشاريع والمناطق والمخاطر والتوقيت من مكان واحد.",
-        start:     "ابدأ جلسة التحليل",
-        enterprise:"استعرض خطط المؤسسات",
-        sectionTitle: "ذكاء يتفكر معك.",
-        sectionBody: "المنصة لا تعيد صفوفاً فحسب — بل تحلل السياق وتقيس المخاطر وتصيغ تقارير احترافية.",
-        sectionLink: "استكشف محرك المعرفة",
-      }
-    : {
-        engine:    "ENTRESTATE INTELLIGENCE V4.2",
-        optimize:  "GEMINI POWERED",
-        headline1: "The future of real estate",
-        headline2: "is intelligent.",
-        subtitle:  "Move beyond data. Access professional-grade market intelligence, automated risk benchmarks, and verified execution.",
-        start:     "Start Intelligence Session",
-        enterprise:"Explore Enterprise Plans",
-        sectionTitle: "Intelligence that thinks with you.",
-        sectionBody: "The platform doesn't just return rows. It analyzes context, benchmarks risks, and drafts professional insights using the same logic as the world's top real estate analysts.",
-        sectionLink: "Explore the Knowledge Engine",
-      }
-
   return (
-    <div className="min-h-screen bg-background flex flex-col selection:bg-primary/20">
+    <div className="min-h-screen bg-background flex flex-col selection:bg-primary/20" dir={isRTL ? "rtl" : "ltr"}>
 
       {/* ── Ambient background ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
@@ -124,10 +202,10 @@ export default function ChatLandingPage() {
             </Link>
             <nav className="hidden lg:flex items-center gap-8">
               <Link href="/chat" className="text-sm font-bold text-primary relative group">
-                Chat
+                {copy.chat}
                 <span className="absolute -bottom-1 left-0 w-full h-px bg-primary" />
               </Link>
-              {NAV_LINKS.map(({ label, href }) => (
+              {navLinks.map(({ label, href }) => (
                 <Link key={label} href={href} className="text-sm font-medium text-muted-foreground/70 hover:text-foreground transition-colors relative group">
                   {label}
                   <span className="absolute -bottom-1 left-0 w-0 h-px bg-primary transition-all group-hover:w-full" />
@@ -136,9 +214,9 @@ export default function ChatLandingPage() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Log in</Link>
+            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{copy.logIn}</Link>
             <Button asChild size="sm" className="rounded-full bg-foreground text-background hover:bg-foreground/90 px-6 font-medium shadow-xl shadow-foreground/10">
-              <Link href="/signup">Get Started</Link>
+              <Link href="/signup">{copy.getStarted}</Link>
             </Button>
           </div>
         </div>
@@ -180,18 +258,18 @@ export default function ChatLandingPage() {
               <Button asChild size="lg" className="h-14 rounded-full px-10 gap-3 text-base bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98]">
                 <Link href="/chat">
                   {copy.start}
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
                 </Link>
               </Button>
               <Link href="/plans" className="group text-sm font-semibold flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
                 {copy.enterprise}
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className={`w-3.5 h-3.5 group-hover:translate-x-1 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : ""}`} />
               </Link>
             </motion.div>
 
             {/* Stats row */}
             <motion.div variants={itemVariants} className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-3xl mb-24">
-              {stats.map(({ value, label, icon: Icon }) => (
+              {st.map(({ value, label, icon: Icon }) => (
                 <div key={label} className="flex flex-col items-center gap-1.5 p-4 rounded-2xl bg-card/30 border border-border/30 backdrop-blur-sm">
                   <Icon className="w-4 h-4 text-primary/60 mb-0.5" />
                   <span className="text-2xl font-bold text-foreground tracking-tight">{value}</span>
@@ -218,9 +296,9 @@ export default function ChatLandingPage() {
           >
             {/* Example chips */}
             <div className="flex flex-wrap justify-center gap-2.5 mb-8">
-              {examples.map((ex, i) => (
+              {ex.map((text, i) => (
                 <button key={i} className="px-4 py-2 bg-card/40 hover:bg-card border border-border/40 hover:border-primary/30 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-all shadow-sm hover:shadow-md hover:scale-[1.02]">
-                  {ex}
+                  {text}
                 </button>
               ))}
             </div>
@@ -237,7 +315,7 @@ export default function ChatLandingPage() {
             transition={{ staggerChildren: 0.1 }}
             className="grid grid-cols-1 md:grid-cols-3 gap-5"
           >
-            {features.map(({ icon: Icon, title, desc }) => (
+            {feat.map(({ icon: Icon, title, desc }) => (
               <motion.div
                 key={title}
                 initial={{ opacity: 0, y: 20 }}
@@ -267,11 +345,11 @@ export default function ChatLandingPage() {
             <div className="flex items-center gap-3 mb-12 justify-center text-muted-foreground/40">
               <div className="h-px w-12 bg-border/40" />
               <Command className="w-4 h-4" />
-              <span className="text-xs font-bold uppercase tracking-[0.3em]">Advanced Neural Commands</span>
+              <span className="text-xs font-bold uppercase tracking-[0.3em]">{copy.advancedCmds}</span>
               <div className="h-px w-12 bg-border/40" />
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-4">
-              {commands.map((cmd) => (
+              {cmds.map((cmd) => (
                 <motion.div
                   key={cmd.id}
                   whileHover={{ y: -4, scale: 1.03 }}
@@ -307,7 +385,7 @@ export default function ChatLandingPage() {
             </p>
             <Link href="/overview" className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline underline-offset-4 transition-all">
               {copy.sectionLink}
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
             </Link>
           </motion.div>
         </section>

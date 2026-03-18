@@ -221,5 +221,77 @@
     "clearFilters": "Clear all filters",
     "previous": "← Previous",
     "next": "Next →"
+  },
+  "signals": {
+    "STRONG_BUY": "Strong Buy",
+    "BUY": "Buy",
+    "HOLD": "Hold",
+    "WAIT": "Wait",
+    "AVOID": "Avoid"
+  },
+  "timing": {
+    "STRONG_BUY": "Excellent Timing",
+    "BUY": "Good Timing",
+    "HOLD": "Neutral Timing",
+    "WAIT": "Wait",
+    "AVOID": "Bad Timing"
+  },
+  "stress": {
+    "A": "Excellent",
+    "B": "Good",
+    "C": "Average",
+    "D": "Weak",
+    "E": "Critical"
+  },
+  "yield": {
+    "EXCEPTIONAL": "Exceptional",
+    "STRONG": "Strong",
+    "FAIR": "Fair",
+    "WEAK": "Weak",
+    "POOR": "Poor"
+  },
+  "evidence": {
+    "L5": "Verified — Level 5",
+    "L4": "Strong — Level 4",
+    "L3": "Moderate — Level 3"
+  },
+  "metrics": {
+    "Investor Score": "Investor Score",
+    "Timing Score": "Timing Score",
+    "Stress Score": "Stress Score",
+    "Yield Score": "Yield Score",
+    "Evidence Score": "Evidence Score",
+    "Price": "Price",
+    "Yield": "Yield",
+    "Golden Visa": "Golden Visa",
+    "Transactions": "Transactions",
+    "Volume": "Volume",
+    "Velocity": "Velocity",
+    "Off-Plan": "Off-Plan",
+    "Ready": "Ready"
+  },
+  "cta": {
+    "Get Exclusive Pricing": "Get Exclusive Pricing",
+    "Request Access": "Request Access",
+    "View Project": "View Project",
+    "Compare": "Compare",
+    "Generate Memo": "Generate Memo",
+    "Screen Projects": "Screen Projects",
+    "View Area": "View Area",
+    "View Developer": "View Developer"
+  },
+  "areasPack": {
+    "Jumeirah Village Circle": "Jumeirah Village Circle",
+    "Business Bay": "Business Bay",
+    "Dubai Marina": "Dubai Marina",
+    "Downtown Dubai": "Downtown Dubai",
+    "Dubai Hills Estate": "Dubai Hills Estate",
+    "Palm Jumeirah": "Palm Jumeirah",
+    "Dubai South": "Dubai South",
+    "MBR City": "MBR City",
+    "Al Furjan": "Al Furjan",
+    "Arjan": "Arjan",
+    "DAMAC Hills": "DAMAC Hills",
+    "Dubai Creek Harbour": "Dubai Creek Harbour"
   }
 }

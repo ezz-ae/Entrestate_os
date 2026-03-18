@@ -94,7 +94,7 @@ export default function NotebookPage() {
   })
 
   return (
-    <main id="main-content" className="min-h-screen bg-background">
+    <main id="main-content" className="min-h-screen bg-background" dir={isArabic ? "rtl" : "ltr"}>
       <Navbar />
 
       {/* Ambient */}
@@ -139,7 +139,7 @@ export default function NotebookPage() {
                 ? "جميع الدفاتر والمخرجات تحمل علامة Entrestate ما لم تكن على منصة المؤسسات."
                 : "All books and outputs are branded with Entrestate unless you're on an Organisation Terminal."}
             </p>
-            <Link href="/pricing" className="text-[11px] font-semibold text-primary hover:underline underline-offset-2 ml-auto shrink-0">
+            <Link href="/pricing" className="text-[11px] font-semibold text-primary hover:underline underline-offset-2 ms-auto shrink-0">
               {isArabic ? "منصة المؤسسات" : "Organisation Terminal"}
             </Link>
           </div>
@@ -220,12 +220,13 @@ export default function NotebookPage() {
         {/* ── Search + filter bar ── */}
         <div className="flex flex-col sm:flex-row gap-3 mb-8">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+            <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 ${isArabic ? "right-3" : "left-3"}`} />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={isArabic ? "بحث في الدفاتر…" : "Search books…"}
-              className="w-full rounded-xl border border-border/60 bg-card/50 pl-9 pr-4 py-2.5 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              dir={isArabic ? "rtl" : "ltr"}
+              className={`w-full rounded-xl border border-border/60 bg-card/50 py-2.5 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all ${isArabic ? "pr-9 pl-4" : "pl-9 pr-4"}`}
             />
           </div>
           <div className="flex items-center gap-1.5 overflow-x-auto">
@@ -346,7 +347,7 @@ export default function NotebookPage() {
                               {book.pageCount} {isArabic ? "ص" : "p"}
                             </span>
                           </div>
-                          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                          <ArrowRight className={`h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-primary transition-all ${isArabic ? "rotate-180 group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`} />
                         </div>
 
                         {/* Quick actions — appear on hover */}
