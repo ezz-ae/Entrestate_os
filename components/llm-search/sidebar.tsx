@@ -179,6 +179,7 @@ function MarkdownContent({ content }: { content: string }) {
 // ── Message bubble ────────────────────────────────────────────────────────────
 
 function MessageBubble({ message }: { message: any }) {
+  const t = useTranslations("sidebar")
   const [isExpanded, setIsExpanded] = useState(false)
   const isUser = message.role === "user"
   const content = getMessageText(message)
@@ -212,7 +213,7 @@ function MessageBubble({ message }: { message: any }) {
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="mt-1.5 text-[11px] font-bold text-primary-foreground/80 hover:text-primary-foreground underline underline-offset-4"
               >
-                {isExpanded ? "Show less" : "Read more"}
+                {isExpanded ? t("showLess") : t("readMore")}
               </button>
             )}
           </>
@@ -536,9 +537,9 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
 
   // Mobile bottom nav panels
   const mobilePanels = [
-    { id: "chat",      icon: MessageSquare, label: "Chat" },
-    { id: "history",   icon: Clock,         label: "History" },
-    { id: "workspace", icon: LayoutGrid,     label: "Workspace" },
+    { id: "chat",      icon: MessageSquare, label: t("chat") },
+    { id: "history",   icon: Clock,         label: t("history") },
+    { id: "workspace", icon: LayoutGrid,     label: t("workspace") },
   ] as const
 
   const sidebarContent = (
@@ -565,7 +566,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
         >
           {isSidebarOpen ? <X className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
           <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
-            Chat
+            {t("chat")}
           </span>
         </Button>
 
@@ -582,7 +583,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
               <Clock className="h-5 w-5" />
             </Button>
             <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
-              History
+              {t("history")}
             </span>
           </div>
 
@@ -598,7 +599,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
               <LayoutGrid className="h-5 w-5" />
             </Button>
             <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
-              Workspace
+              {t("workspace")}
             </span>
           </div>
         </nav>
@@ -613,7 +614,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
               <Image src={avatar} alt={displayName} width={36} height={36} className="object-cover" />
             </Link>
             <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
-              Workspace
+              {t("workspace")}
             </span>
           </div>
         </div>
@@ -768,7 +769,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                     className="flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <X className="h-4.5 w-4.5" />
-                    Close
+                    {t("close")}
                   </button>
                 </div>
               )}
@@ -875,7 +876,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                   ) : historyItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
                       <Clock className="h-8 w-8 text-muted-foreground/30 mb-3" />
-                      <p className="text-sm text-muted-foreground/70">No recent sessions found.</p>
+                      <p className="text-sm text-muted-foreground/70">{t("noRecentSessions")}</p>
                     </div>
                   ) : (
                     <div className="flex-1 overflow-y-auto p-2">
@@ -889,7 +890,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                             }`}
                           >
                             <p className={`truncate text-[13px] mb-0.5 ${currentId === item.id ? 'font-semibold text-foreground' : 'text-muted-foreground group-hover:text-foreground'}`}>
-                              {item.title || "Untitled Session"}
+                              {item.title || t("untitledSession")}
                             </p>
                             <p className="text-[10px] text-muted-foreground/60 group-hover:text-muted-foreground/80 transition-colors">
                               {new Date(item.updatedAt).toLocaleDateString()}
@@ -924,7 +925,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                     className="flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <X className="h-4.5 w-4.5" />
-                    Close
+                    {t("close")}
                   </button>
                 </div>
               )}

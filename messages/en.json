@@ -76,7 +76,15 @@
       "report": "Generate a detailed report"
     },
     "placeholder": "How can I help you?",
-    "view": "View"
+    "view": "View",
+    "chat": "Chat",
+    "history": "History",
+    "workspace": "Workspace",
+    "close": "Close",
+    "showLess": "Show less",
+    "readMore": "Read more",
+    "noRecentSessions": "No recent sessions found.",
+    "untitledSession": "Untitled Session"
   },
   "dashboard": {
     "title": "Dashboard",
