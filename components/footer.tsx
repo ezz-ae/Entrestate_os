@@ -249,12 +249,12 @@ export function Footer() {
                 {t("Decision Intelligence Platform", "منصة القرار")}
               </p>
               <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-                {t("Built for professionals who need precision, not noise.", "مبنية للمهنيين الذين يحتاجون إلى الدقة، لا الضجيج.")}
+                {t("Built for professionals who need precision, not noise.", "مبنية للمهنيين الذين يحتاجون إلى الدقة.")}
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {t(
                   "Market coverage, project evidence, and investor-first workflows for UAE real estate operators. Backed by live DLD data.",
-                  "تغطية السوق، وأدلة المشاريع، وسير عمل يركز على المستثمر لمشغلي العقار في الإمارات. مدعومة ببيانات DLD المباشرة.",
+                  "تغطية السوق، وأدلة المشاريع، وسير عمل يركز على المستثمر لمشغلي العقار في الإمارات. مدعومة ببيانات دائرة الأراضي والأملاك في دبي المباشرة.",
                 )}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">

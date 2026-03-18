@@ -406,17 +406,17 @@ function extractToolOutputs(messages: any[]): Record<string, unknown>[] {
   return outputs
 }
 
-function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: string): WorkspaceCard[] {
+function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: string, t: (key: string) => string): WorkspaceCard[] {
   const rows = toolOutputs
     .flatMap((output) => toRows(output.rows))
     .filter((row) => Object.keys(row).length > 0)
 
   if (rows.length === 0) {
     return [
-      { title: "Matched projects", value: "0", subtitle: "Ask a question to screen inventory" },
-      { title: "Avg asking price", value: "-", subtitle: "Appears after a search query" },
-      { title: "Decision label", value: "-", subtitle: "STRONG_BUY · BUY · HOLD · WAIT · AVOID" },
-      { title: "Data confidence", value: "-", subtitle: "HIGH · MEDIUM · LOW quality tier" },
+      { title: t("matchedProjects"), value: "0", subtitle: t("askToScreen") },
+      { title: t("avgAskingPrice"), value: "-", subtitle: t("appearsAfterSearch") },
+      { title: t("decisionLabel"), value: "-", subtitle: t("decisionLabels") },
+      { title: t("dataConfidence"), value: "-", subtitle: t("qualityTier") },
     ]
   }
 
@@ -455,10 +455,10 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
   const avgScore = scoreValues.length > 0 ? scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length : null
 
   return [
-    { title: "Matched projects", value: formatDecimal(rows.length, locale, 0, 0), subtitle: "From live inventory scan" },
-    { title: "Avg asking price", value: formatAed(avgPrice, locale), subtitle: "Across matched results" },
-    { title: "Decision label", value: topDecision, subtitle: `Timing label lead: ${topTiming}` },
-    { title: "Data confidence", value: topConfidence, subtitle: `Avg investor score: ${formatMetric(avgScore, locale)}` },
+    { title: t("matchedProjects"), value: formatDecimal(rows.length, locale, 0, 0), subtitle: t("fromLiveScan") },
+    { title: t("avgAskingPrice"), value: formatAed(avgPrice, locale), subtitle: t("acrossMatchedResults") },
+    { title: t("decisionLabel"), value: topDecision, subtitle: `${t("timingLabelLead")}: ${topTiming}` },
+    { title: t("dataConfidence"), value: topConfidence, subtitle: `${t("avgInvestorScore")}: ${formatMetric(avgScore, locale)}` },
   ]
 }
 
@@ -876,15 +876,15 @@ export function ChatInterface({
   const isBusy = status === "submitted" || status === "streaming"
   const submitBlocked = input.trim().length === 0 || chatBlocked || isBusy
   const usageStatusLabel = useMemo(() => {
-    if (limit === null) return "Unlimited · ⌘↵ to send"
+    if (limit === null) return t("unlimitedUsage")
     if (chatBlocked) {
-      return "Usage cooling down · ⌘↵ to send"
+      return t("usageCoolingDown")
     }
-    return "Free access · ⌘↵ to send"
-  }, [chatBlocked, limit])
+    return t("freeAccess")
+  }, [chatBlocked, limit, t])
 
   const toolOutputs = useMemo(() => extractToolOutputs(messages as any[]), [messages])
-  const workspaceCards = useMemo(() => deriveWorkspaceCards(toolOutputs, locale), [locale, toolOutputs])
+  const workspaceCards = useMemo(() => deriveWorkspaceCards(toolOutputs, locale, t), [locale, toolOutputs, t])
   const comparisonRows = useMemo(() => deriveComparisonRows(toolOutputs, locale), [locale, toolOutputs])
   const dldNotifications = useMemo(() => deriveDldNotifications(toolOutputs), [toolOutputs])
   const dataFreshness = useMemo(() => resolveDataFreshness(toolOutputs), [toolOutputs])
@@ -1722,9 +1722,9 @@ export function ChatInterface({
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Gauge className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold text-foreground">Decision Canvas</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t("decisionCanvas")}</h3>
           </div>
-          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">Live</span>
+          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">{t("live")}</span>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
@@ -1743,21 +1743,21 @@ export function ChatInterface({
         <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
           <div className="mb-2 flex items-center gap-2">
             <BarChart3 className="h-3.5 w-3.5 text-primary" />
-            <p className="text-xs font-semibold text-foreground">Performance Curves</p>
+            <p className="text-xs font-semibold text-foreground">{t("performanceCurves")}</p>
           </div>
           {comparisonRows.length < 2 ? (
-            <p className="text-xs text-muted-foreground">Run a comparison query to see score and yield trend curves.</p>
+            <p className="text-xs text-muted-foreground">{t("runComparisonQuery")}</p>
           ) : (
             <div className="space-y-2">
               <div className="rounded-lg border border-border/60 bg-gradient-to-br from-card/90 to-background/80 p-2">
-                <p className="mb-1 text-[11px] font-medium text-muted-foreground">Investor Score</p>
+                <p className="mb-1 text-[11px] font-medium text-muted-foreground">{t("investorScore")}</p>
                 <svg viewBox="0 0 220 64" className="h-16 w-full">
                   <path d={buildAreaPath(scoreSparkPath)} fill="rgba(59,130,246,0.16)" />
                   <path d={scoreSparkPath} stroke="rgb(59,130,246)" strokeWidth="2" fill="none" />
                 </svg>
               </div>
               <div className="rounded-lg border border-border/60 bg-gradient-to-br from-card/90 to-background/80 p-2">
-                <p className="mb-1 text-[11px] font-medium text-muted-foreground">Gross Yield %</p>
+                <p className="mb-1 text-[11px] font-medium text-muted-foreground">{t("grossYield")}</p>
                 <svg viewBox="0 0 220 64" className="h-16 w-full">
                   <path d={buildAreaPath(yieldSparkPath)} fill="rgba(34,197,94,0.16)" />
                   <path d={yieldSparkPath} stroke="rgb(34,197,94)" strokeWidth="2" fill="none" />
@@ -1770,11 +1770,11 @@ export function ChatInterface({
         <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
           <div className="mb-2 flex items-center gap-2">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <p className="text-xs font-semibold text-foreground">DLD Notification Feed</p>
+            <p className="text-xs font-semibold text-foreground">{t("dldFeed")}</p>
           </div>
 
           {dldNotifications.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Ask for notable DLD deals to populate live transaction notifications.</p>
+            <p className="text-xs text-muted-foreground">{t("askForDldDeals")}</p>
           ) : (
             <div className="space-y-2">
               {dldNotifications.map((txn, index) => (
@@ -1841,11 +1841,11 @@ export function ChatInterface({
         <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
           <div className="mb-2 flex items-center gap-2">
             <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
-            <p className="text-xs font-semibold text-foreground">V1 Risk Breakdown</p>
+            <p className="text-xs font-semibold text-foreground">{t("v1RiskBreakdown")}</p>
           </div>
 
           {!selectedRow ? (
-            <p className="text-xs text-muted-foreground">Select a project from the comparison table to review its real V1 stress metrics.</p>
+            <p className="text-xs text-muted-foreground">{t("selectProjectForRisk")}</p>
           ) : (
             <>
               <p className="text-xs font-medium text-foreground">{selectedRow.label}</p>
@@ -1866,12 +1866,12 @@ export function ChatInterface({
 
               <Button type="button" className="mt-3 w-full gap-1.5" variant="secondary" onClick={() => void runRiskBriefInChat()}>
                 <TrendingUp className="h-3.5 w-3.5" />
-                Open V1 risk brief in AI chat
+                {t("openRiskBrief")}
               </Button>
 
               <Button type="button" className="mt-2 w-full gap-1.5" variant="outline" onClick={() => void saveToShortlist()}>
                 <BookmarkPlus className="h-3.5 w-3.5" />
-                Save to watchlist
+                {t("saveToWatchlist")}
               </Button>
 
               {shortlistResult.message ? (
@@ -1886,40 +1886,40 @@ export function ChatInterface({
         <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
           <div className="mb-2 flex items-center gap-2">
             <FileText className="h-3.5 w-3.5 text-primary" />
-            <p className="text-xs font-semibold text-foreground">Report Export</p>
+            <p className="text-xs font-semibold text-foreground">{t("reportExport")}</p>
           </div>
           <p className="text-xs text-muted-foreground">
-            Save the AI's analysis as a structured investor report you can download and share.
+            {t("reportExportDescription")}
           </p>
 
           <div className="mt-3 space-y-2.5">
             <label className="block text-[11px] text-muted-foreground">
-              Client context
+              {t("clientContext")}
               <select
                 value={selectedMemoryEntryId}
                 onChange={(event) => setSelectedMemoryEntryId(event.target.value)}
                 className="mt-1 h-8 w-full rounded-md border border-border/60 bg-background px-2 text-xs text-foreground"
               >
-                <option value="">Auto-detect from chat</option>
+                <option value="">{t("autoDetect")}</option>
                 {comprehensiveProfile.memoryEntries.map((entry) => (
                   <option key={entry.id} value={entry.id}>
-                    {entry.clientName.trim() || "Untitled client memory"}
+                    {entry.clientName.trim() || t("untitledClient")}
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="block text-[11px] text-muted-foreground">
-              Report template
+              {t("reportTemplate")}
               <select
                 value={selectedTemplateId}
                 onChange={(event) => setSelectedTemplateId(event.target.value)}
                 className="mt-1 h-8 w-full rounded-md border border-border/60 bg-background px-2 text-xs text-foreground"
               >
-                <option value="">Auto-select best template</option>
+                <option value="">{t("autoSelectTemplate")}</option>
                 {comprehensiveProfile.reportTemplates.map((template) => (
                   <option key={template.id} value={template.id}>
-                    {(template.name.trim() || "Untitled template") +
+                    {(template.name.trim() || t("untitledTemplate")) +
                       ` (${formatReportAudienceLabel(template.audience)})`}
                   </option>
                 ))}
@@ -1927,7 +1927,7 @@ export function ChatInterface({
             </label>
 
             <label className="block text-[11px] text-muted-foreground">
-              Audience
+              {t("audience")}
               <select
                 value={selectedAudienceOverride}
                 onChange={(event) =>
@@ -1935,11 +1935,11 @@ export function ChatInterface({
                 }
                 className="mt-1 h-8 w-full rounded-md border border-border/60 bg-background px-2 text-xs text-foreground"
               >
-                <option value="">Auto-infer from chat</option>
-                <option value="client">Client</option>
-                <option value="social">Social</option>
-                <option value="investor">Investor</option>
-                <option value="executive">Executive</option>
+                <option value="">{t("autoInfer")}</option>
+                <option value="client">{t("client")}</option>
+                <option value="social">{t("social")}</option>
+                <option value="investor">{t("investor")}</option>
+                <option value="executive">{t("executive")}</option>
               </select>
             </label>
           </div>
@@ -1951,7 +1951,7 @@ export function ChatInterface({
             className="mt-3 w-full"
             variant="secondary"
           >
-            {reportDraft.status === "saving" ? "Saving report..." : "Save report draft"}
+            {reportDraft.status === "saving" ? t("savingReport") : t("saveReportDraft")}
           </Button>
           <Button
             type="button"
@@ -1969,7 +1969,7 @@ export function ChatInterface({
             className="mt-3 w-full"
             variant="secondary"
           >
-            Download Media Report
+            {t("downloadMediaReport")}
           </Button>
 
           {reportDraft.message ? (
@@ -1983,14 +1983,14 @@ export function ChatInterface({
               href={reportDownloadHref}
               className="mt-2 inline-block text-xs text-primary underline"
             >
-              Download report
+              {t("downloadReport")}
             </Link>
           ) : null}
         </div>
 
         {latestAssistantText ? (
           <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-background/80 p-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Latest output</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("latestOutput")}</p>
             <p className="mt-2 line-clamp-6 text-xs text-foreground">{latestAssistantText}</p>
           </div>
         ) : null}
