@@ -185,7 +185,7 @@ function ExploreContent() {
             </Link>
             <div className="h-4 w-px bg-border" />
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground">{profile.rowCount.toLocaleString()}</span>
+              <span className="text-sm font-medium text-foreground">{profile.rowCount ? profile.rowCount.toLocaleString() : "—"}</span>
               <span className="text-sm text-muted-foreground">projects</span>
             </div>
           </div>

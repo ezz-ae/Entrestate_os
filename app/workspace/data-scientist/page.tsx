@@ -131,7 +131,7 @@ export default function DataScientistPage() {
               <p className="text-sm text-muted-foreground mt-2">
                 A quick read from the live scoring feed so you know the data is live.
               </p>
-              {snapshot ? (
+              {snapshot && snapshot.totalAssets && snapshot.conservativeReadyPool ? (
                 <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
                   <div className="rounded-lg border border-border/60 bg-card/60 p-4">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">Projects scored</p>
