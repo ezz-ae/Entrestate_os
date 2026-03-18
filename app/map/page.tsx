@@ -107,7 +107,6 @@ export default function MapPage() {
                     <Link
                       key={area.slug}
                       href={prefixLocalePath(`/areas/${area.slug}`, locale)}
-                      locale={false}
                       className={`rounded-xl border p-3 transition-all hover:scale-[1.02] hover:shadow-md ${getClusterColor(area)}`}
                     >
                       <div className="text-xs font-medium text-foreground truncate">{pickLocalizedText(locale, area.area_ar, area.area, area.area)}</div>

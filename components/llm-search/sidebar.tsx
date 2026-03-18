@@ -801,7 +801,6 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                     </div>
                     <Link
                       href={prefixLocalePath("/account", locale)}
-                      locale={false}
                       onClick={handleCloseSidebar}
                       className="shrink-0 inline-flex items-center rounded-lg border border-border/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >

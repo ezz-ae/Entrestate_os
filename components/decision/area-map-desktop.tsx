@@ -186,7 +186,6 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
 
         <Link
           href={prefixLocalePath("/areas", locale)}
-          locale={false}
           className="flex items-center justify-center gap-2 rounded-xl border border-border/50 py-3 text-sm text-muted-foreground transition hover:border-border hover:text-foreground"
         >
           <Layers className="h-4 w-4" />
@@ -274,7 +273,6 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
                 <Link
                   key={project}
                   href={prefixLocalePath(`/properties/${slugifyProject(project)}`, locale)}
-                  locale={false}
                   className="group flex items-center justify-between rounded-lg border border-border/30 bg-card/30 px-3 py-2.5 text-sm transition-all hover:border-border/60 hover:bg-card/60"
                 >
                   <span className="truncate text-foreground/80 group-hover:text-foreground">{project}</span>
@@ -289,7 +287,6 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
         <div className="mt-auto">
           <Link
             href={prefixLocalePath(`/areas/${area.slug}`, locale)}
-            locale={false}
             className="flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 hover:-translate-y-0.5 hover:shadow-lg"
             style={{ background: color, boxShadow: `0 4px 24px -4px ${color}60` }}
           >

@@ -260,7 +260,6 @@ export function Footer() {
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
                   href={toHref("/chat")}
-                  locale={false}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20"
                 >
                   {t("Open Copilot", "افتح المساعد")}
@@ -268,14 +267,12 @@ export function Footer() {
                 </Link>
                 <Link
                   href={toHref("/plans")}
-                  locale={false}
                   className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
                 >
                   {t("View Plans", "عرض الباقات")}
                 </Link>
                 <Link
                   href={toHref("/contact")}
-                  locale={false}
                   className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {t("Talk to Sales", "تحدث إلى المبيعات")}
@@ -339,7 +336,7 @@ export function Footer() {
                   <p className="mt-3 text-[10px] text-muted-foreground/40">
                     {t("Generated", "تم الإنشاء")} {new Date(report.createdAt).toLocaleDateString(locale === "ar" ? "ar-AE-u-nu-latn" : "en-US", { month: "long", day: "numeric" })}
                     {" · "}
-                    <Link href={toHref("/account/reports")} locale={false} className="underline underline-offset-2 hover:text-muted-foreground/60">
+                    <Link href={toHref("/account/reports")} className="underline underline-offset-2 hover:text-muted-foreground/60">
                       {t("All reports", "كل التقارير")}
                     </Link>
                   </p>
@@ -358,7 +355,6 @@ export function Footer() {
                   </div>
                   <Link
                     href={toHref("/account/reports")}
-                    locale={false}
                     className="text-xs text-muted-foreground/50 underline underline-offset-2 hover:text-muted-foreground"
                   >
                     {t("View all reports →", "عرض كل التقارير ←")}
@@ -388,7 +384,6 @@ export function Footer() {
                   {/* Read button */}
                   <Link
                     href={toHref(LATEST_LIBRARY_REPORT.href)}
-                    locale={false}
                     className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-border/60 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-border hover:bg-secondary/60"
                   >
                     <ExternalLink className="h-3.5 w-3.5 shrink-0" />
@@ -452,7 +447,7 @@ export function Footer() {
 
           {/* Brand column */}
           <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-            <Link href={toHref("/")} locale={false} className="mb-5 flex items-center gap-2">
+            <Link href={toHref("/")} className="mb-5 flex items-center gap-2">
               <div className="flex gap-0.5" aria-hidden="true">
                 <div className="h-3 w-3 rounded-sm bg-foreground" />
                 <div className="h-3 w-3 rounded-sm bg-foreground/50" />
@@ -469,7 +464,7 @@ export function Footer() {
             <div className="mt-5 flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_2px_rgba(52,211,153,0.4)]" />
               <span className="text-[11px] text-muted-foreground/60">{t("All systems operational", "جميع الأنظمة تعمل")}</span>
-              <Link href={toHref("/status")} locale={false} className="ms-1 text-[11px] text-muted-foreground/40 underline underline-offset-2 hover:text-muted-foreground">
+              <Link href={toHref("/status")} className="ms-1 text-[11px] text-muted-foreground/40 underline underline-offset-2 hover:text-muted-foreground">
                 {t("Status", "الحالة")}
               </Link>
             </div>
@@ -523,7 +518,6 @@ export function Footer() {
                   <li key={link.label}>
                     <Link
                       href={toHref(link.href)}
-                      locale={false}
                       className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {link.label}
@@ -559,7 +553,6 @@ export function Footer() {
                 <Link
                   key={link.label}
                   href={toHref(link.href)}
-                  locale={false}
                   className="text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground"
                 >
                   {link.label}

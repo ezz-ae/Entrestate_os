@@ -105,7 +105,6 @@ export function AreaCard(area: AreaCardProps) {
                   <Link
                     key={`${area.slug}-${project}`}
                     href={prefixLocalePath(`/properties/${slugifyProject(project)}`, locale)}
-                    locale={false}
                     className="relative z-30 rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-[11px] text-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
                   >
                     {project}
@@ -119,7 +118,6 @@ export function AreaCard(area: AreaCardProps) {
 
       <Link
         href={prefixLocalePath(`/areas/${area.slug}`, locale)}
-        locale={false}
         className="absolute inset-0 z-10"
         aria-label={copy.openArea}
       />

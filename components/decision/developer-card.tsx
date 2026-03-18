@@ -125,7 +125,6 @@ export function DeveloperCard(developer: DeveloperCardProps) {
                       <Link
                         key={`${developer.slug}-area-${area.value}`}
                         href={prefixLocalePath(`/areas/${area.slug}`, locale)}
-                        locale={false}
                         className="relative z-30 rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-[11px] text-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
                       >
                         {area.label}
@@ -143,7 +142,6 @@ export function DeveloperCard(developer: DeveloperCardProps) {
                       <Link
                         key={`${developer.slug}-project-${projectName}`}
                         href={prefixLocalePath(`/properties/${slugify(projectName)}`, locale)}
-                        locale={false}
                         className="relative z-30 rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-[11px] text-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
                       >
                         {projectName}
@@ -159,7 +157,6 @@ export function DeveloperCard(developer: DeveloperCardProps) {
 
       <Link
         href={prefixLocalePath(`/developers/${developer.slug}`, locale)}
-        locale={false}
         className="absolute inset-0 z-10"
         aria-label={copy.openDetails}
       />

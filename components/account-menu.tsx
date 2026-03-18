@@ -70,7 +70,6 @@ export function AccountMenu() {
     return (
       <Link
         href={prefixLocalePath("/login", locale)}
-        locale={false}
         className="flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-1.5 text-sm text-foreground hover:bg-secondary/80 transition-colors"
       >
         {copy.signIn}
@@ -110,31 +109,31 @@ export function AccountMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href={prefixLocalePath("/account", locale)} locale={false} className="flex items-center gap-2">
+          <Link href={prefixLocalePath("/account", locale)} className="flex items-center gap-2">
             <User className="h-4 w-4" />
             {copy.overview}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={prefixLocalePath("/account#team", locale)} locale={false} className="flex items-center gap-2">
+          <Link href={prefixLocalePath("/account#team", locale)} className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             {copy.team}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={prefixLocalePath("/account#billing", locale)} locale={false} className="flex items-center gap-2">
+          <Link href={prefixLocalePath("/account#billing", locale)} className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
             {copy.billing}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={prefixLocalePath("/account#security", locale)} locale={false} className="flex items-center gap-2">
+          <Link href={prefixLocalePath("/account#security", locale)} className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             {copy.security}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={prefixLocalePath("/account#apps", locale)} locale={false} className="flex items-center gap-2">
+          <Link href={prefixLocalePath("/account#apps", locale)} className="flex items-center gap-2">
             <Boxes className="h-4 w-4" />
             {copy.apps}
           </Link>

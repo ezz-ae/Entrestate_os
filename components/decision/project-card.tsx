@@ -97,7 +97,6 @@ export function ProjectCard(project: ProjectCardProps) {
   return (
     <Link
       href={prefixLocalePath(`/properties/${project.slug}`, locale)}
-      locale={false}
       className={`group relative block overflow-hidden rounded-2xl border border-border bg-card border-l-4 ${accent.border} transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.4)]`}
     >
       {/* Top section — always visible */}

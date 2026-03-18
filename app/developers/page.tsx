@@ -285,7 +285,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
             <div className="col-span-3 rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-16 text-center">
               <p className="text-sm font-medium text-foreground">{copy.emptyTitle}</p>
               <p className="mt-1 text-xs text-muted-foreground">{copy.emptyBody}</p>
-              <Link href={prefixLocalePath("/developers", locale)} locale={false} className="mt-4 inline-block rounded-full border border-border/60 bg-card px-4 py-2 text-xs text-foreground transition hover:border-primary/40">
+              <Link href={prefixLocalePath("/developers", locale)} className="mt-4 inline-block rounded-full border border-border/60 bg-card px-4 py-2 text-xs text-foreground transition hover:border-primary/40">
                 {copy.clearFilter}
               </Link>
             </div>

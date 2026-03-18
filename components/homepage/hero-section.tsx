@@ -118,7 +118,6 @@ export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: P
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
               href={prefixLocalePath("/overview", locale)}
-              locale={false}
               className="hidden md:flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
             >
               {copy.openDashboard}
@@ -126,7 +125,6 @@ export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: P
             </Link>
             <Link
               href={prefixLocalePath("/chat", locale)}
-              locale={false}
               className="flex items-center gap-2 rounded-full border border-border bg-card px-7 py-3 text-sm font-semibold text-foreground transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
             >
               <Sparkles className="h-4 w-4 text-primary" />

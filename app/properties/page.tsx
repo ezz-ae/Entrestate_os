@@ -196,7 +196,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
           {hasFilters && (
             <>
               <span className="text-border/60">·</span>
-              <Link href={prefixLocalePath("/properties", locale)} locale={false} className="rounded-full border border-border/50 px-3 py-1 text-xs text-muted-foreground transition hover:border-primary/30 hover:text-foreground">
+              <Link href={prefixLocalePath("/properties", locale)} className="rounded-full border border-border/50 px-3 py-1 text-xs text-muted-foreground transition hover:border-primary/30 hover:text-foreground">
                 {t("clearAll")}
               </Link>
             </>
@@ -209,25 +209,25 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
             {params.timing && (
               <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
                 {t("signalChip")}: {params.timing}
-                <Link href={prefixLocalePath(buildFilterHref(baseParams, { timing: undefined, page: undefined }), locale)} locale={false} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { timing: undefined, page: undefined }), locale)} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.stress && (
               <span className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs text-foreground">
                 {t("riskChip")}: {params.stress}
-                <Link href={prefixLocalePath(buildFilterHref(baseParams, { stress: undefined, page: undefined }), locale)} locale={false} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { stress: undefined, page: undefined }), locale)} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.area && (
               <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
                 {t("areaChip")}: {params.area}
-                <Link href={prefixLocalePath(buildFilterHref(baseParams, { area: undefined, page: undefined }), locale)} locale={false} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { area: undefined, page: undefined }), locale)} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
             {params.developer && (
               <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
                 {t("developerChip")}: {params.developer}
-                <Link href={prefixLocalePath(buildFilterHref(baseParams, { developer: undefined, page: undefined }), locale)} locale={false} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { developer: undefined, page: undefined }), locale)} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
           </div>
@@ -262,7 +262,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
             <div className="col-span-3 rounded-2xl border border-dashed border-border/60 bg-card/40 px-6 py-16 text-center">
               <p className="text-sm font-medium text-foreground">{t("emptyTitle")}</p>
               <p className="mt-1 text-xs text-muted-foreground">{t("emptyBody")}</p>
-              <Link href={prefixLocalePath("/properties", locale)} locale={false} className="mt-4 inline-block rounded-full border border-border/60 bg-card px-4 py-2 text-xs text-foreground transition hover:border-primary/40">
+              <Link href={prefixLocalePath("/properties", locale)} className="mt-4 inline-block rounded-full border border-border/60 bg-card px-4 py-2 text-xs text-foreground transition hover:border-primary/40">
                 {t("clearFilters")}
               </Link>
             </div>

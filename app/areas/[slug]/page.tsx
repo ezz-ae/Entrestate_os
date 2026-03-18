@@ -138,7 +138,6 @@ export default async function AreaDetailPage({ params }: { params: Promise<{ slu
                 >
                   <Link
                     href={prefixLocalePath(`/developers/${slugify(String(developer.developer ?? "developer"))}`, locale)}
-                    locale={false}
                     className="truncate pr-3 text-foreground transition hover:text-primary"
                   >
                     {pickLocalizedText(locale, developer.developer_ar, developer.developer, copy.developerFallback)}
