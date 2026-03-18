@@ -97,7 +97,7 @@ export function Navbar() {
       >
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <nav className="flex items-center justify-between" aria-label={t("mainNavigation")}>
-            <Link href={prefixLocalePath(logoHref, locale)} locale={false} className="flex items-center gap-2.5">
+            <Link href={prefixLocalePath(logoHref, locale)} className="flex items-center gap-2.5">
               <div className="flex gap-0.5" aria-hidden="true">
                 <div className="w-3 h-3 rounded-sm bg-foreground" />
                 <div className="w-3 h-3 rounded-sm bg-foreground/60" />
@@ -113,7 +113,7 @@ export function Navbar() {
                   <Link
                     key={link.label}
                     href={prefixLocalePath(link.href, locale)}
-                    locale={false}
+                   
                     onClick={(e) => handleNavClick(e, link.href)}
                     className={`nav-link-underline text-sm transition-colors ${
                       isActive
@@ -191,7 +191,7 @@ export function Navbar() {
                 <Link
                   key={link.label}
                   href={prefixLocalePath(link.href, locale)}
-                  locale={false}
+                 
                   onClick={(e) => handleNavClick(e, link.href)}
                   className={`text-[2rem] font-semibold tracking-tight transition-all duration-400 py-1.5 ${
                     isActive ? "text-primary" : "text-foreground hover:text-primary"
@@ -225,7 +225,7 @@ export function Navbar() {
             </div>
             <Link
               href={prefixLocalePath("/account", locale)}
-              locale={false}
+             
               onClick={() => setIsMobileMenuOpen(false)}
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
