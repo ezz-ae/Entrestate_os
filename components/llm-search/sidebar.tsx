@@ -422,7 +422,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
 
   const isBusy = status === "submitted" || status === "streaming"
 
-  const sendPrompt = async (prompt: string) => {
+  const sendPrompt = React.useCallback(async (prompt: string) => {
     const trimmedPrompt = prompt.trim()
     if (!trimmedPrompt) {
       return false
@@ -443,7 +443,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
       setLocalError(message)
       return false
     }
-  }
+  }, [isBusy, stop, clearError, sendMessage, setLocalError])
 
   useEffect(() => {
     if (!promptParam || !isDesktopViewport) {
