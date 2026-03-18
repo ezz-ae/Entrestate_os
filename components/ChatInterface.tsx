@@ -1460,12 +1460,46 @@ export function ChatInterface({
             </div>
           </div>
 
+          {/* ── Comprehensive Outputs Showcase ── */}
+          <div className="w-full max-w-5xl mb-24 px-4">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="h-px flex-1 bg-border/40" />
+              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40 whitespace-nowrap">
+                {t("chatLanding.comprehensiveTitle")}
+              </h3>
+              <div className="h-px flex-1 bg-border/40" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { title: t("chatLanding.outputMemoTitle"), desc: t("chatLanding.outputMemoDesc"), icon: FileText, color: "text-blue-500", bg: "bg-blue-500/5" },
+                { title: t("chatLanding.outputRiskTitle"), desc: t("chatLanding.outputRiskDesc"), icon: ShieldCheck, color: "text-emerald-500", bg: "bg-emerald-500/5" },
+                { title: t("chatLanding.outputCompareTitle"), desc: t("chatLanding.outputCompareDesc"), icon: Scale, color: "text-violet-500", bg: "bg-violet-500/5" }
+              ].map((item, i) => (
+                <motion.div 
+                  key={item.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + (i * 0.1), duration: 0.8 }}
+                  className="p-8 rounded-[2.5rem] border border-border/40 bg-card/30 backdrop-blur-xl hover:border-primary/40 hover:bg-card/50 transition-all group relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/5 to-transparent blur-2xl" />
+                  <div className={`w-14 h-14 rounded-2xl ${item.bg} flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-inner`}>
+                    <item.icon className={`w-7 h-7 ${item.color}`} />
+                  </div>
+                  <h4 className="text-xl font-bold text-foreground mb-3 tracking-tight">{item.title}</h4>
+                  <p className="text-sm text-muted-foreground/80 leading-relaxed font-medium">{item.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
           {/* ── Writes, brainstorms... text ── */}
-          <div className="mt-24 max-w-3xl pb-20">
+          <div className="mt-12 max-w-3xl pb-20">
             <h2 className="text-4xl md:text-5xl font-serif text-foreground/90 leading-tight mb-8">
               Intelligence that <span className="text-primary italic relative">thinks<span className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary/30" /></span> with you.
             </h2>
-            <Link href="#" className="inline-flex items-center gap-3 text-base font-bold text-primary hover:text-primary/80 transition-all group">
+            <Link href={prefixLocalePath("/overview", locale)} className="inline-flex items-center gap-3 text-base font-bold text-primary hover:text-primary/80 transition-all group">
               {t("chatLanding.exploreEngine")}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform rtl:rotate-180 rtl:group-hover:-translate-x-1" />
             </Link>

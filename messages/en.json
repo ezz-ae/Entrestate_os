@@ -186,7 +186,14 @@
     "exploreEngine": "Explore the Knowledge Engine",
     "analyze": "Analyze",
     "verifiedData": "Verified High Confidence Grade A/B only",
-    "dldStat": "DLD Transacted AED 4.2B Today"
+    "dldStat": "DLD Transacted AED 4.2B Today",
+    "comprehensiveTitle": "Comprehensive AI Outputs",
+    "outputMemoTitle": "Investment Memos",
+    "outputMemoDesc": "End-to-end project analysis reports",
+    "outputRiskTitle": "V1 Risk Profiling",
+    "outputRiskDesc": "Deep dive into stress & liquidity resilience",
+    "outputCompareTitle": "Market Comparisons",
+    "outputCompareDesc": "Side-by-side yield and price benchmarking"
   },
   "properties": {
     "liveFeed": "Live Project Feed",
