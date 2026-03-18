@@ -206,6 +206,19 @@
     "noMatchingCommands": "لم أتمكن من العثور على أمر مطابق. جرب 'screen' أو 'project'.",
     "compareTitle": "مقارنة المشاريع",
     "compareEmpty": "اطلب مني مقارنة مشاريع أو مناطق لرؤيتها جنباً إلى جنب.",
+    "chatLanding": {
+      "analyze": "حلل",
+      "dldStat": "معاملات DLD اليوم: 4.2 مليار درهم",
+      "verifiedData": "بيانات مؤكدة عالية الثقة (درجة A/B فقط)",
+      "comprehensiveTitle": "مخرجات ذكاء اصطناعي متكاملة",
+      "outputMemoTitle": "مذكرات استثمارية",
+      "outputMemoDesc": "تقارير تحليلية شاملة للمشاريع",
+      "outputRiskTitle": "تقييم المخاطر V1",
+      "outputRiskDesc": "تحليل عميق لمرونة الضغط والسيولة",
+      "outputCompareTitle": "مقارنة السوق",
+      "outputCompareDesc": "تحليل تفصيلي للعوائد والأسعار",
+      "exploreEngine": "اكتشف إمكانيات المحرك التحليلي"
+    },
     "slashExamples": {
       "screen": "هل يمكنك العثور على مشاريع تحت 2 مليون درهم في دبي مارينا مع إمكانات عالية؟",
       "yield": "ما هي المنطقة في دبي التي تقدم أفضل عائد إيجاري حالياً؟"

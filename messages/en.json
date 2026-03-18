@@ -61,6 +61,19 @@
     "noMatchingCommands": "I couldn't find a matching command. Try 'screen' or 'project'.",
     "compareTitle": "Project Comparison",
     "compareEmpty": "Ask to compare projects or areas to populate this panel.",
+    "chatLanding": {
+      "analyze": "Analyze",
+      "dldStat": "DLD Transacted AED 4.2B Today",
+      "verifiedData": "Verified High Confidence Grade A/B only",
+      "comprehensiveTitle": "Comprehensive AI Outputs",
+      "outputMemoTitle": "Investment Memos",
+      "outputMemoDesc": "End-to-end project analysis reports",
+      "outputRiskTitle": "V1 Risk Profiling",
+      "outputRiskDesc": "Deep dive into stress & liquidity resilience",
+      "outputCompareTitle": "Market Comparisons",
+      "outputCompareDesc": "Side-by-side yield and price benchmarking",
+      "exploreEngine": "Explore the Knowledge Engine"
+    },
     "slashExamples": {
       "screen": "Find BUY timing label projects under AED 2M in Dubai Marina with stress grade A or B.",
       "yield": "Which Dubai area offers the best yield-to-price ratio right now?"
