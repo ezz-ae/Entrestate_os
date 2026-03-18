@@ -325,7 +325,7 @@ export default function PricingPage() {
             {isArabic ? "الوصول" : "Access"}
           </p>
           <h1 className="mt-3 text-3xl font-semibold text-foreground md:text-5xl leading-tight">
-            {isArabic ? "مجاني للجميع.\nمؤسسي للشركات." : "Free for everyone.\nOrganisation Terminal for companies."}
+            {isArabic ? "مجاني للجميع." : "Free for everyone."}
           </h1>
           <p className="mt-4 text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
             {isArabic
