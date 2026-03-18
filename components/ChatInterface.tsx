@@ -1498,7 +1498,11 @@ export function ChatInterface({
           {/* ── Writes, brainstorms... text ── */}
           <div className="mt-12 max-w-3xl pb-20">
             <h2 className="text-4xl md:text-5xl font-serif text-foreground/90 leading-tight mb-8">
-              Intelligence that <span className="text-primary italic relative">thinks<span className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary/30" /></span> with you.
+              {t("chatLanding.titleLineOne")}{" "}
+              <span className="text-primary italic relative">
+                {t("chatLanding.titleLineTwo")}
+                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary/30" />
+              </span>
             </h2>
             <Link href={prefixLocalePath("/overview", locale)} className="inline-flex items-center gap-3 text-base font-bold text-primary hover:text-primary/80 transition-all group">
               {t("chatLanding.exploreEngine")}
