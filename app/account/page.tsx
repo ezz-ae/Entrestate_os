@@ -121,13 +121,18 @@ export default async function AccountPage() {
     ? await listBillingEventsByAccountKey(entitlement.accountKey)
     : []
 
-  const usage = entitlement.accountKey
+  const usageData = entitlement.accountKey
     ? await getCopilotDailyUsage(entitlement.accountKey, entitlement.tier)
-    : { used: 0, limit: getCopilotDailyLimit(entitlement.tier) }
+    : null
+
+  const usage = {
+    used: usageData?.used ?? 0,
+    limit: usageData?.limit ?? 100
+  }
 
   const tierLabel = t(`tier.${entitlement.tier}`)
 
-  const usagePct = Math.min((usage.used / usage.limit) * 100, 100)
+  const usagePct = usage.limit ? Math.min((usage.used / usage.limit) * 100, 100) : 0
 
   return (
     <main id="main-content" dir={isArabic ? "rtl" : "ltr"}>
@@ -282,15 +287,15 @@ export default async function AccountPage() {
                     </thead>
                     <tbody className="divide-y divide-border">
                       {billingEvents.map((event: BillingActivityEvent) => (
-                        <tr key={event.id} className="hover:bg-muted/30">
-                          <td className="px-4 py-3 font-medium tabular-nums whitespace-nowrap">{formatDate(event.createdAt, locale)}</td>
+                        <tr key={event.event_id} className="hover:bg-muted/30">
+                          <td className="px-4 py-3 font-medium tabular-nums whitespace-nowrap">{formatDate(event.received_at, locale)}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                              <span className="capitalize">{event.type.replace(/_/g, ' ')}</span>
+                              <span className="capitalize">{event.event_type?.replace(/_/g, ' ') || "Event"}</span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-right font-medium tabular-nums whitespace-nowrap">{event.amount} {event.currency}</td>
+                          <td className="px-4 py-3 text-right font-medium tabular-nums whitespace-nowrap">-</td>
                         </tr>
                       ))}
                     </tbody>
