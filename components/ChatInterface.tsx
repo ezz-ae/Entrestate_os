@@ -51,7 +51,7 @@ import type {
 import { formatAed as formatAedValue } from "@/lib/format/currency"
 import { formatDecimal } from "@/lib/format/number"
 import { pickLocalizedText } from "@/lib/format/entities"
-import type { AppLocale } from "@/i18n/locale"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type ChatInterfaceProps = {
   id?: string
