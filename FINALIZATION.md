@@ -161,15 +161,15 @@
 
 ## PROMPT #4 — Distribution, Acquisition & Trust
 ### I) Embed SDK
-- [ ] `packages/embed/src/index.ts` — self-contained, CSP-safe, no eval()
-- [ ] 4 widget types implemented: `market_card`, `area_table`, `score_badge`, `market_pulse`
-- [ ] `app/api/embed/route.ts` — returns only `columns_exposed` per embed type
-- [ ] Free-tier: "Powered by Entrestate" non-removable (hardcoded in `styles.ts`)
-- [ ] Pro-embedder: `data-accent` custom color supported
-- [ ] Gated columns render blurred + upgrade CTA
-- [ ] Response cache: `Cache-Control: public, max-age=3600`
-- [ ] Rate limit: 100 req/min per ref, 10 req/min unauthenticated
-- [ ] `packages/embed/package.json` — publishable, semver
+- [x] `packages/embed/src/index.ts` — self-contained, CSP-safe, no eval()
+- [x] 4 widget types implemented: `market_card`, `area_table`, `score_badge`, `market_pulse`
+- [x] `app/api/embed/route.ts` — returns only `columns_exposed` per embed type
+- [x] Free-tier: "Powered by Entrestate" non-removable (hardcoded in `styles.ts`)
+- [x] Pro-embedder: `data-accent` custom color supported
+- [x] Gated columns render blurred + upgrade CTA
+- [x] Response cache: `Cache-Control: public, max-age=3600`
+- [x] Rate limit: 100 req/min per ref, 10 req/min unauthenticated
+- [x] `packages/embed/package.json` — publishable, semver
 
 ### II) Attribution Engine
 - [ ] `lib/attribution/events.ts` — `trackAttributionEvent()` non-blocking (void, no await)

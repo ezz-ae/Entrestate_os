@@ -258,6 +258,7 @@ function buildDealScreenerQuery(input: DealScreenerInput, includeBedroomColumns 
       requireStress: true,
       requireArea: true,
       requireDeveloper: true,
+      requireConfidence: true,
       onlyUae: true,
       excludeGarbageDeveloper: true,
       requireBedroomSanity: true,

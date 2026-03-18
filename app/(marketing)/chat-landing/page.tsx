@@ -76,7 +76,7 @@ const features = {
     },
     {
       icon: Zap,
-      title: "Real-Time DLD Data",
+      title: "Live DLD Data",
       desc: "Live transaction feed from Dubai Land Department. Prices anchored to verified deals.",
     },
     {

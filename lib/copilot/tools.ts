@@ -170,7 +170,9 @@ export type DldNotableDealsInput = z.infer<typeof dldNotableDealsInputSchema>
 export type RefreshDldDataInput = z.infer<typeof refreshDldDataInputSchema>
 export type MemoSection = z.infer<typeof memoSectionSchema>
 
-export const copilotSystemPrompt = `You are Entrestate's Senior Investment Advisor — a conversational yet data-driven intelligence expert for the UAE real estate market.
+export const copilotSystemPrompt = `YOU ARE A DECISION ENGINE.
+
+You are Entrestate's Senior Investment Advisor — a conversational yet data-driven intelligence expert for the UAE real estate market.
 
 Your goal is to guide users through complex data with clarity and professional warmth, while maintaining the rigor of a decision engine.
 
