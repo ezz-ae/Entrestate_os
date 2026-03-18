@@ -1,3 +1,5 @@
+"use client"
+
 import React, { type FormEvent, type KeyboardEvent, useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { useLocale, useTranslations } from "next-intl"
@@ -270,49 +272,40 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const querySessionId = searchParams?.get("id")
   const promptParam = searchParams?.get("prompt") ?? searchParams?.get("q")
   const { data: session } = authClient.useSession()
-  const starterCards = locale === "ar"
-    ? [
-        { label: "ساعدني في المقارنة", prompt: "هل يمكنك مساعدتي في المقارنة بين أفضل المناطق أداءً في دبي من حيث العائد ونمو الأسعار؟ أريد معرفة أين توجد أفضل الفرص حالياً." },
-        { label: "ابحث لي عن صفقات", prompt: "أبحث عن أفضل صفقات البيع على الخارطة المتاحة حالياً. هل يمكنك العثور على مشاريع لمطورين موثوقين بعوائد جيدة وخطط سداد مرنة؟" },
-        { label: "ماذا يحدث في السوق؟", prompt: "أخبرني بما يحدث في سوق عقارات دبي حالياً — ما هي الاتجاهات الرئيسية وأين تتوجه الاستثمارات الذكية؟" },
-        { label: "خطط لاستثماري", prompt: "هل يمكنك مساعدتي في رسم خارطة طريق لاستثماري العقاري في دبي؟ أريد فهم أفضل استراتيجيات الدخول والعوائد المتوقعة." },
-      ]
-    : [
-        { label: "Help me compare", prompt: "Can you help me compare the top performing areas in Dubai by yield and price growth? I'd like to know where the best opportunities are right now." },
-        { label: "Find me deals", prompt: "I'm looking for the best off-plan deals available now. Can you find projects from reliable developers with good yields and flexible payment plans?" },
-        { label: "What's happening in the market?", prompt: "Tell me what's happening in the Dubai real estate market right now — what are the key trends and where is the smart money going?" },
-        { label: "Plan my investment", prompt: "Can you help me build an investment roadmap for Dubai? I want to understand the best entry strategies and expected returns." },
-      ]
+  const starterCards = [
+    { label: t("starterCards.compare"), prompt: "Can you help me compare the top performing areas in Dubai by yield and price growth? I'd like to know where the best opportunities are right now." },
+    { label: t("starterCards.deals"), prompt: "I'm looking for the best off-plan deals available now. Can you find projects from reliable developers with good yields and flexible payment plans?" },
+    { label: t("starterCards.market"), prompt: "Tell me what's happening in the Dubai real estate market right now — what are the key trends and where is the smart money going?" },
+    { label: t("starterCards.plan"), prompt: "Can you help me build an investment roadmap for Dubai? I want to understand the best entry strategies and expected returns." },
+  ]
 
   const user = session?.user
   const displayName = user?.name || user?.email || "Entrestate Member"
   const displayEmail = user?.email || "account@entrestate.com"
   const avatar = user?.image || "/avatars/avatar-01.svg"
 
-  const isArabic = locale === "ar"
-
   const inputLinks = [
-    { label: isArabic ? "مساحة العمل" : "Workspace Home", href: "/workspace", icon: LayoutGrid, description: isArabic ? "نظرة عامة والتحديثات" : "Overview and activity" },
-    { label: isArabic ? "دفتر الملاحظات" : "Notebook", href: "/notebook", icon: BookOpen, description: isArabic ? "دفاتر القرار" : "Decision notebooks" },
-    { label: isArabic ? "لوحة السوق" : "Dashboards", href: "/workspace/dashboards", icon: BarChart3, description: isArabic ? "قراءات مركبة" : "Layered market views" },
-    { label: isArabic ? "أبحاث السوق" : "Market Research Desk", href: "/workspace/data-scientist", icon: Database, description: isArabic ? "تحليل ونمذجة" : "EDA + modeling" },
-    { label: isArabic ? "مطابقة المستثمر" : "Investor Match Desk", href: "/agent-runtime", icon: TrendingUp, description: isArabic ? "ربط العميل بالمخزون" : "Match client profiles" },
-    { label: isArabic ? "مسار العملاء" : "Lead Flow Builder", href: "/workspace/agent-creator", icon: Bot, description: isArabic ? "أتمتة المسارات" : "Automation builder" },
-    { label: isArabic ? "البحث" : "Search", href: "/workspace/search", icon: Search, description: isArabic ? "مدن ومناطق ومشاريع" : "City/area/project search" },
-    { label: isArabic ? "المقارنات" : "Comparisons", href: "/workspace/comparisons", icon: GitCompare, description: isArabic ? "سيناريوهات جنبًا إلى جنب" : "Side-by-side scenarios" },
-    { label: isArabic ? "حاسبات سريعة" : "Math Tools", href: "/workspace/math-tools", icon: Calculator, description: isArabic ? "حاسبات ومساعدات" : "Calculators and builders" },
+    { label: t("workspace.links.workspaceHome"), href: "/workspace", icon: LayoutGrid, description: t("workspace.links.workspaceHomeDesc") },
+    { label: t("workspace.links.notebook"), href: "/notebook", icon: BookOpen, description: t("workspace.links.notebookDesc") },
+    { label: t("workspace.links.dashboards"), href: "/workspace/dashboards", icon: BarChart3, description: t("workspace.links.dashboardsDesc") },
+    { label: t("workspace.links.marketResearch"), href: "/workspace/data-scientist", icon: Database, description: t("workspace.links.marketResearchDesc") },
+    { label: t("workspace.links.investorMatch"), href: "/agent-runtime", icon: TrendingUp, description: t("workspace.links.investorMatchDesc") },
+    { label: t("workspace.links.leadFlow"), href: "/workspace/agent-creator", icon: Bot, description: t("workspace.links.leadFlowDesc") },
+    { label: t("workspace.links.search"), href: "/workspace/search", icon: Search, description: t("workspace.links.searchDesc") },
+    { label: t("workspace.links.comparisons"), href: "/workspace/comparisons", icon: GitCompare, description: t("workspace.links.comparisonsDesc") },
+    { label: t("workspace.links.mathTools"), href: "/workspace/math-tools", icon: Calculator, description: t("workspace.links.mathToolsDesc") },
   ]
 
   const outputLinks = [
-    { label: isArabic ? "المشاريع" : "Properties", href: "/properties", icon: Building2, description: isArabic ? "كل مشروع مصنّف" : "Every scored project" },
-    { label: isArabic ? "المناطق" : "Areas", href: "/areas", icon: MapPin, description: isArabic ? "العائد والعرض بالموقع" : "Yield & supply by location" },
-    { label: isArabic ? "المطورون" : "Developers", href: "/developers", icon: Users2, description: isArabic ? "الموثوقية والسجل" : "Reliability & track record" },
-    { label: isArabic ? "بيانات السوق" : "Market Data", href: "/top-data", icon: BarChart3, description: isArabic ? "نبض · توقيت · ضغط" : "Pulse · Timing · Stress" },
-    { label: isArabic ? "قراءة السوق" : "Market Score", href: "/market-score", icon: ShieldCheck, description: isArabic ? "التحقق من الدرجة" : "Score validation" },
-    { label: isArabic ? "التقارير" : "Reports", href: "/reports/library", icon: FileText, description: isArabic ? "المذكرات والأبحاث" : "Memos & research" },
-    { label: isArabic ? "حزم البيانات" : "Market Data Packs", href: "/workspace/daas", icon: Layers, description: isArabic ? "منتجات بيانات" : "Data products" },
-    { label: isArabic ? "المحفوظات" : "Saved Searches", href: "/workspace/saved-searches", icon: Bookmark, description: isArabic ? "استعلامات محفوظة" : "Bookmarked queries" },
-    { label: isArabic ? "مصادر البيانات" : "Data Sources", href: "/workspace/imports", icon: Import, description: isArabic ? "الإدخال والحوكمة" : "Managed ingestion" },
+    { label: t("workspace.links.properties"), href: "/properties", icon: Building2, description: t("workspace.links.propertiesDesc") },
+    { label: t("workspace.links.areas"), href: "/areas", icon: MapPin, description: t("workspace.links.areasDesc") },
+    { label: t("workspace.links.developers"), href: "/developers", icon: Users2, description: t("workspace.links.developersDesc") },
+    { label: t("workspace.links.marketData"), href: "/top-data", icon: BarChart3, description: t("workspace.links.marketDataDesc") },
+    { label: t("workspace.links.marketScore"), href: "/market-score", icon: ShieldCheck, description: t("workspace.links.marketScoreDesc") },
+    { label: t("workspace.links.reports"), href: "/reports/library", icon: FileText, description: t("workspace.links.reportsDesc") },
+    { label: t("workspace.links.dataPacks"), href: "/workspace/daas", icon: Layers, description: t("workspace.links.dataPacksDesc") },
+    { label: t("workspace.links.savedSearches"), href: "/workspace/saved-searches", icon: Bookmark, description: t("workspace.links.savedSearchesDesc") },
+    { label: t("workspace.links.dataSources"), href: "/workspace/imports", icon: Import, description: t("workspace.links.dataSourcesDesc") },
   ]
 
   // Handle auto-open and session loading from URL
@@ -637,7 +630,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                     <Sparkles className="h-4 w-4 text-primary" />
                   )}
                   <div className="flex flex-col">
-                    <h2 className="text-sm font-semibold leading-none">Chat</h2>
+                    <h2 className="text-sm font-semibold leading-none">{t("chat")}</h2>
                     {authenticated && (
                       <span className="text-[10px] text-muted-foreground leading-none mt-0.5 truncate max-w-[160px]">{displayName}</span>
                     )}
@@ -820,7 +813,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5 px-1">
                       <PenLine className="h-3 w-3 text-primary" />
-                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{isArabic ? "اسأل وأنشئ" : "Ask & Create"}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{t("workspace.askAndCreate")}</p>
                     </div>
                     {inputLinks.map((link) => (
                       <Link
@@ -844,7 +837,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                   <div className="space-y-1.5 pt-3">
                     <div className="flex items-center gap-1.5 px-1">
                       <Eye className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">{isArabic ? "عرض وتحليل" : "View & Analyze"}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">{t("workspace.viewAndAnalyze")}</p>
                     </div>
                     {outputLinks.map((link) => (
                       <Link
