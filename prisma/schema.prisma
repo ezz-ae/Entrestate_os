@@ -85,6 +85,8 @@ model Team {
   apiKeys   ApiKey[]
   userProfiles UserProfile[]
   assistantReports AssistantReport[]
+
+  @@map("teams")
 }
 
 model User {
@@ -101,6 +103,8 @@ model User {
   apiKeys     ApiKey[]
   assistantReports AssistantReport[]
   marketBooks     MarketBook[]
+
+  @@map("users")
 }
 
 model AssistantReport {
@@ -132,6 +136,7 @@ model TeamMember {
 
   @@index([teamId])
   @@index([userId])
+  @@map("team_members")
 }
 
 model AgentTemplate {
@@ -144,6 +149,8 @@ model AgentTemplate {
   sampleOutput     Json
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
+  @@map("agent_templates")
 }
 
 model AgentDefinition {
@@ -170,6 +177,7 @@ model AgentDefinition {
   ruleSets   RuleSet[]
 
   @@index([teamId])
+  @@map("agent_definitions")
 }
 
 model AgentVersion {
@@ -183,6 +191,7 @@ model AgentVersion {
   agent      AgentDefinition @relation(fields: [agentId], references: [id])
 
   @@index([agentId])
+  @@map("agent_versions")
 }
 
 model AgentRun {
@@ -200,6 +209,7 @@ model AgentRun {
   messages   AgentMessage[]
 
   @@index([agentId])
+  @@map("agent_runs")
 }
 
 model AgentMessage {
@@ -213,6 +223,7 @@ model AgentMessage {
   run       AgentRun @relation(fields: [runId], references: [id])
 
   @@index([runId])
+  @@map("agent_messages")
 }
 
 model Connector {
@@ -224,6 +235,8 @@ model Connector {
   enabled     Boolean       @default(true)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+
+  @@map("connectors")
 }
 
 model ConnectorCredential {
@@ -238,6 +251,7 @@ model ConnectorCredential {
 
   @@index([teamId])
   @@index([connectorId])
+  @@map("connector_credentials")
 }
 
 model KnowledgeSource {
@@ -251,6 +265,7 @@ model KnowledgeSource {
   team       Team     @relation(fields: [teamId], references: [id])
 
   @@index([teamId])
+  @@map("knowledge_sources")
 }
 
 model RuleSet {
@@ -263,6 +278,7 @@ model RuleSet {
   agent      AgentDefinition @relation(fields: [agentId], references: [id])
 
   @@index([agentId])
+  @@map("rule_sets")
 }
 
 enum Visibility {

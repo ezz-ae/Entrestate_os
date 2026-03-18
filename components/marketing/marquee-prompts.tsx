@@ -78,6 +78,8 @@ export function MarqueePrompts({ onPromptSelect }: MarqueePromptsProps) {
     router.push(prefixLocalePath(`/chat?${params.toString()}`, locale))
   }
 
+  const isRtl = locale === "ar"
+
   return (
     <div className="relative w-full overflow-hidden py-12 flex flex-col gap-8">
       {promptRows.map((row, rowIndex) => (
@@ -85,7 +87,9 @@ export function MarqueePrompts({ onPromptSelect }: MarqueePromptsProps) {
           <motion.div
             className="flex gap-6 whitespace-nowrap"
             animate={{
-              x: rowIndex % 2 === 0 ? [0, -1000] : [-1000, 0],
+              x: isRtl 
+                ? (rowIndex % 2 === 0 ? [1000, 0] : [0, 1000])
+                : (rowIndex % 2 === 0 ? [0, -1000] : [-1000, 0]),
             }}
             transition={{
               x: {

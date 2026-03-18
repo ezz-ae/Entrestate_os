@@ -1,6 +1,6 @@
 {
   "nav": {
-    "chat": "Chat",
+    "chat": "AI Chat",
     "overview": "Overview",
     "areas": "Areas",
     "developers": "Developers",
@@ -22,8 +22,8 @@
   },
   "system": {
     "loadingTitle": "Loading experience",
-    "loadingBody": "We\u2019re preparing the latest page state and market context.",
-    "loadingShort": "Loading\u2026",
+    "loadingBody": "We’re preparing the latest page state and market context.",
+    "loadingShort": "Loading…",
     "errorTitle": "Something went wrong",
     "errorBody": "This view failed to render. You can retry now or return to the homepage.",
     "retry": "Try again",
@@ -55,7 +55,7 @@
   },
   "chat": {
     "heroPlaceholder": "What's on your mind? Tell me about your investment goals...",
-    "composerPlaceholder": "Ask me anything\u2014try screening projects, checking prices, or generating a memo.",
+    "composerPlaceholder": "Ask me anything—try screening projects, checking prices, or generating a memo.",
     "liveAnalysis": "Analyzing live market data...",
     "noMatchingCommands": "I couldn't find a matching command. Try 'screen' or 'project'.",
     "compareTitle": "Project Comparison",
@@ -70,11 +70,149 @@
     "decisionSubtitle": "Ask me about any area, project, or developer in the UAE.",
     "quickReplies": {
       "more": "Tell me more about this",
-      "report": "Generate a detailed report",
       "risks": "What are the risks involved?",
-      "summarize": "Can you summarize this?"
+      "summarize": "Can you summarize this?",
+      "report": "Generate a detailed report"
     },
     "placeholder": "How can I help you?",
     "view": "View"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "investorDashboard": "Investor Dashboard",
+    "subtitle": "Live market pulse, timing signals, and confidence distribution across UAE real estate.",
+    "marketPulse": "Market Pulse snapshot",
+    "totalProjects": "Total Projects",
+    "qualifiedInventory": "Qualified inventory",
+    "avgPrice": "Avg Price",
+    "acrossInventory": "Across all inventory",
+    "avgYield": "Avg Yield",
+    "currentGrossYield": "Current gross yield",
+    "buySignals": "BUY Signals",
+    "activeOpportunities": "Active opportunities",
+    "dataFreshness": "Data as of"
+  },
+  "topData": {
+    "title": "Market Data Hub",
+    "subtitle": "The complete dataset: timing distribution, stress profiles, yield tiers, and area intelligence.",
+    "sections": {
+      "market-pulse": {
+        "title": "Market Pulse",
+        "subtitle": "Big-picture snapshot: active projects, average price, average yield, and BUY opportunities."
+      },
+      "timing-signals": {
+        "title": "Timing Signals",
+        "subtitle": "Distribution of STRONG_BUY / BUY / HOLD / WAIT / AVOID signals with price and yield context."
+      },
+      "stress-grades": {
+        "title": "Stress Grades",
+        "subtitle": "Portfolio resilience distribution from grade A through E."
+      },
+      "yield-labels": {
+        "title": "Yield Labels",
+        "subtitle": "Yield tier distribution with pricing context."
+      },
+      "evidence-levels": {
+        "title": "Evidence Levels",
+        "subtitle": "Data confidence mix and verified evidence coverage."
+      },
+      "decision-labels": {
+        "title": "Decision Labels",
+        "subtitle": "STRONG_BUY to AVOID distribution across scored inventory."
+      },
+      "affordability": {
+        "title": "Affordability Tiers",
+        "subtitle": "Project mix by affordability segment and yield profile."
+      },
+      "outcome-intents": {
+        "title": "Outcome Intents",
+        "subtitle": "What investor goals the current inventory best serves."
+      },
+      "top-projects": {
+        "title": "Top Projects",
+        "subtitle": "Ranked projects table with price, yield, stress, timing, and score fields."
+      },
+      "area-intelligence": {
+        "title": "Area Intelligence",
+        "subtitle": "Area-level project depth, pricing, efficiency, and supply pressure."
+      },
+      "developer-reliability": {
+        "title": "Developer Reliability",
+        "subtitle": "Developer-level consistency, safe-project count, and track record."
+      },
+      "golden-visa": {
+        "title": "Golden Visa",
+        "subtitle": "Eligible inventory counts and quality profile for AED 2M+ buyers."
+      },
+      "trust-bar": {
+        "title": "Trust Bar",
+        "subtitle": "Data hierarchy, engine stack, and confidence distribution across the dataset."
+      },
+      "dld-market": {
+        "title": "DLD Market Transactions",
+        "subtitle": "Live verified transactions from the Dubai Land Department (DLD) with trend insights."
+      }
+    }
+  },
+  "account": {
+    "title": "Account Settings",
+    "identity": "Account Identity",
+    "billing": "Subscription & Billing",
+    "activePlan": "Active Plan",
+    "status": "Status",
+    "nextBilling": "Next Billing Date",
+    "manage": "Manage Subscription",
+    "tier": {
+      "free": "Starter",
+      "pro": "Pro",
+      "team": "Team",
+      "institutional": "Institutional"
+    },
+    "quickAccess": {
+      "chat": "AI Chat",
+      "chatDesc": "Decision sessions, deal screener, memos",
+      "marketData": "Market Data",
+      "marketDataDesc": "Top-data tables and market pulse",
+      "areas": "Area Intelligence",
+      "areasDesc": "Area trust maps and supply pressure"
+    }
+  },
+  "chatLanding": {
+    "heroBadge": "Decision Engine V1.2",
+    "liveFeed": "Live Market Feed",
+    "titleLineOne": "Intelligence that",
+    "titleLineTwo": "thinks with you.",
+    "subtitle": "The first autonomous investment analyst for the UAE real estate market. Scored, verified, and ready for execution.",
+    "exploreEngine": "Explore the Knowledge Engine",
+    "analyze": "Analyze",
+    "verifiedData": "Verified High Confidence Grade A/B only",
+    "dldStat": "DLD Transacted AED 4.2B Today"
+  },
+  "properties": {
+    "liveFeed": "Live Project Feed",
+    "titleLead": "Project",
+    "titleAccent": "Intelligence",
+    "freshness": "Data Freshness",
+    "inventoryDepth": "Inventory Depth",
+    "filtered": "Filtered Results",
+    "totalActive": "Total UAE Active",
+    "activeBuy": "Active BUY Signals",
+    "density": "Page Opportunity density",
+    "marketPrice": "Market Price (L1)",
+    "marketPriceSub": "Derived mean benchmark",
+    "strategicYield": "Strategic Yield",
+    "strategicYieldSub": "Annualized gross mean",
+    "signal": "Signal:",
+    "risk": "Risk:",
+    "clearAll": "Clear all",
+    "signalChip": "Signal",
+    "riskChip": "Risk Grade",
+    "areaChip": "Area",
+    "developerChip": "Developer",
+    "emptyTitle": "No projects match these filters",
+    "emptyBody": "Try adjusting your timing signal or risk grade filter.",
+    "clearFilters": "Clear all filters",
+    "previous": "← Previous",
+    "next": "Next →"
   }
 }

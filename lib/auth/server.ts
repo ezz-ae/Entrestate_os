@@ -37,8 +37,17 @@ export function getAuth() {
 
 async function getSessionData() {
   if (!auth) return null
-  const { data } = await auth.getSession()
-  return data ?? null
+  try {
+    const { data } = await auth.getSession()
+    return data ?? null
+  } catch (error) {
+    // Silently handle "Cookies can only be modified in a Server Action or Route Handler"
+    // which happens when auth library tries to refresh session during page render
+    if (String(error).includes("Cookies can only be modified")) {
+      return null
+    }
+    throw error
+  }
 }
 
 export async function getSessionUser() {

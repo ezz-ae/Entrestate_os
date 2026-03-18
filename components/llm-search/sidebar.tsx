@@ -466,14 +466,23 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
 
   useEffect(() => {
     const root = document.documentElement
-    const leftOffset = isDesktopViewport && authenticated ? (effectiveOpenPanel ? 420 : 72) : 0
+    const offset = isDesktopViewport && authenticated ? (effectiveOpenPanel ? 420 : 72) : 0
+    const locale = document.documentElement.lang || "en"
+    const isRtl = locale === "ar"
 
-    root.style.setProperty("--copilot-left-offset", `${leftOffset}px`)
+    if (isRtl) {
+      root.style.setProperty("--copilot-right-offset", `${offset}px`)
+      root.style.setProperty("--copilot-left-offset", "0px")
+    } else {
+      root.style.setProperty("--copilot-left-offset", `${offset}px`)
+      root.style.setProperty("--copilot-right-offset", "0px")
+    }
 
     return () => {
       root.style.setProperty("--copilot-left-offset", "0px")
+      root.style.setProperty("--copilot-right-offset", "0px")
     }
-  }, [effectiveOpenPanel, isDesktopViewport])
+  }, [effectiveOpenPanel, isDesktopViewport, authenticated])
 
   useEffect(() => {
     if (isDesktopViewport) {
@@ -842,14 +851,14 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   return (
     <>
       {authenticated ? (
-        <div className="fixed inset-y-0 left-0 z-50 hidden md:flex">
+        <div className="fixed inset-y-0 left-0 rtl:left-auto rtl:right-0 z-50 hidden md:flex">
           {sidebarContent}
         </div>
       ) : null}
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[55] bg-background/80 backdrop-blur-sm md:hidden animate-in fade-in duration-300" onClick={handleCloseSidebar} />
       )}
-      <div className={`fixed inset-y-0 left-0 z-[60] h-full transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'}`}>
+      <div className={`fixed inset-y-0 left-0 rtl:left-auto rtl:right-0 z-[60] h-full transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full pointer-events-none'}`}>
         {sidebarContent}
       </div>
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />

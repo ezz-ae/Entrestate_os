@@ -717,9 +717,9 @@ export async function listAreas(): Promise<{
 
   const profiles = await runOptionalQuery<{ area_name: string; area_ar: string | null; image_url: string | null; area_type: string | null }>(Prisma.sql`
     SELECT
-      area_name,
-      area_ar,
-      image_url,
+      name AS area_name,
+      COALESCE(payload->>'area_ar', payload->>'name_ar') AS area_ar,
+      image AS image_url,
       area_type
     FROM gc_area_profiles
   `)
@@ -810,7 +810,7 @@ export async function getAreaBySlug(slug: string): Promise<{
       SELECT
         d.name,
         d.developer,
-        gp.developer_ar,
+        COALESCE(gp.payload->>'developer_ar', gp.payload->>'name_ar') AS developer_ar,
         d.l1_canonical_price,
         d.l1_canonical_yield,
         d.l2_stress_test_grade,
@@ -826,7 +826,7 @@ export async function getAreaBySlug(slug: string): Promise<{
     runQuery(Prisma.sql`
       SELECT
         d.developer,
-        MAX(gp.developer_ar) AS developer_ar,
+        MAX(COALESCE(gp.payload->>'developer_ar', gp.payload->>'name_ar')) AS developer_ar,
         COUNT(*)::int AS projects
       FROM ${DETAIL_TABLE_SQL} d
       LEFT JOIN gc_developer_profiles gp ON LOWER(gp.name) = LOWER(d.developer)
@@ -837,13 +837,13 @@ export async function getAreaBySlug(slug: string): Promise<{
     `),
     runOptionalQuery(Prisma.sql`
       SELECT
-        area_name,
-        area_ar,
-        image_url,
+        name AS area_name,
+        COALESCE(payload->>'area_ar', payload->>'name_ar') AS area_ar,
+        image AS image_url,
         area_type,
-        city
+        payload->>'city' AS city
       FROM gc_area_profiles
-      WHERE LOWER(area_name) LIKE LOWER('%' || ${areaName} || '%')
+      WHERE LOWER(name) LIKE LOWER('%' || ${areaName} || '%')
       LIMIT 1
     `),
   ])
@@ -944,10 +944,10 @@ export async function listDevelopers(): Promise<{
   const profiles = await runOptionalQuery<{ name: string; developer_ar: string | null; logo_url: string | null; founded_year: string | null; hq: string | null }>(Prisma.sql`
     SELECT
       name,
-      developer_ar,
-      logo_url,
-      founded_year,
-      hq
+      COALESCE(payload->>'developer_ar', payload->>'name_ar') AS developer_ar,
+      logo AS logo_url,
+      payload->>'founded_year' AS founded_year,
+      payload->>'hq' AS hq
     FROM gc_developer_profiles
   `)
 
@@ -1091,14 +1091,14 @@ export async function getDeveloperBySlug(slug: string): Promise<{
     runQuery(Prisma.sql`
       SELECT
         d.area,
-        MAX(gp.area_ar) AS area_ar,
+        MAX(COALESCE(gp.payload->>'area_ar', gp.payload->>'name_ar')) AS area_ar,
         COUNT(*)::int AS projects
       FROM (
         SELECT COALESCE(final_area, area) AS area
         FROM ${DETAIL_TABLE_SQL}
         WHERE ${developerWhere}
       ) d
-      LEFT JOIN gc_area_profiles gp ON LOWER(gp.area_name) = LOWER(d.area)
+      LEFT JOIN gc_area_profiles gp ON LOWER(gp.name) = LOWER(d.area)
       GROUP BY 1
       ORDER BY projects DESC
       LIMIT 15
@@ -1106,12 +1106,12 @@ export async function getDeveloperBySlug(slug: string): Promise<{
     runOptionalQuery(Prisma.sql`
       SELECT
         name,
-        developer_ar,
-        logo_url,
-        founded_year,
-        hq,
-        footprint,
-        continuity
+        COALESCE(payload->>'developer_ar', payload->>'name_ar') AS developer_ar,
+        logo AS logo_url,
+        payload->>'founded_year' AS founded_year,
+        payload->>'hq' AS hq,
+        payload->>'footprint' AS footprint,
+        payload->>'continuity' AS continuity
       FROM gc_developer_profiles
       WHERE LOWER(name) LIKE LOWER('%' || ${developerName} || '%')
       LIMIT 1

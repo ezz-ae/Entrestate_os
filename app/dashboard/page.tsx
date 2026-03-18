@@ -10,10 +10,13 @@ import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { BarChart3, MessageSquare, FileText, TrendingUp, ShieldCheck, Clock } from "lucide-react"
 
+import { getTranslations } from "next-intl/server"
+
 export const dynamic = "force-dynamic"
 
 export default async function DashboardPage() {
   const locale = await getRequestLocale()
+  const t = await getTranslations({ locale, namespace: "dashboard" })
   const isArabic = locale === "ar"
   const numberLocale = getNumberLocale(locale)
   const pulse = await getMarketPulse()
@@ -43,30 +46,30 @@ export default async function DashboardPage() {
 
   const stats = [
     {
-      title: isArabic ? "إجمالي المشاريع" : "Total Projects",
+      title: t("totalProjects"),
       value: projects.toLocaleString(numberLocale),
-      subtitle: isArabic ? "المخزون المؤهل" : "Qualified inventory",
+      subtitle: t("qualifiedInventory"),
       icon: BarChart3,
       accent: "text-sky-400",
     },
     {
-      title: isArabic ? "متوسط السعر" : "Avg Price",
+      title: t("avgPrice"),
       value: formatAed(avgPrice, locale, { compact: true, fallback: "AED —" }),
-      subtitle: isArabic ? "عبر كامل السوق" : "Across all inventory",
+      subtitle: t("acrossInventory"),
       icon: TrendingUp,
       accent: "text-violet-400",
     },
     {
-      title: isArabic ? "متوسط العائد" : "Avg Yield",
+      title: t("avgYield"),
       value: avgYield === null ? "—" : `${avgYield.toFixed(1)}%`,
-      subtitle: isArabic ? "العائد الجاري" : "Current gross yield",
+      subtitle: t("currentGrossYield"),
       icon: ShieldCheck,
       accent: "text-emerald-400",
     },
     {
-      title: isArabic ? "فرص BUY" : "BUY Signals",
+      title: t("buySignals"),
       value: typeof buySignals?.count === "number" ? buySignals.count.toLocaleString(numberLocale) : "—",
-      subtitle: isArabic ? "الفرص المفتوحة الآن" : "Active opportunities",
+      subtitle: t("activeOpportunities"),
       icon: Clock,
       accent: "text-emerald-400",
     },
@@ -77,14 +80,12 @@ export default async function DashboardPage() {
       <Navbar />
       <div className="mx-auto max-w-[1200px] px-6 pb-20 pt-28 md:pt-36">
         <header className="mb-6">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "لوحة السوق" : "Dashboard"}</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("title")}</p>
           <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">
-            {isArabic ? "لقطة القرار في لحظتها" : "Investor Dashboard"}
+            {t("investorDashboard")}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {isArabic
-              ? "نبض مباشر للسوق: السعر، العائد، إشارات التوقيت، وثقة البيانات في السوق السكني الإماراتي."
-              : "Live market pulse, timing signals, and confidence distribution across UAE real estate."}
+            {t("subtitle")}
           </p>
         </header>
 

@@ -1327,113 +1327,122 @@ export function ChatInterface({
         >
           {/* ── Badge ── */}
           <div className="mb-10">
-            <div className="inline-flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-primary bg-primary/5 rounded-full border border-primary/10 backdrop-blur-sm shadow-inner cursor-default group">
-              <Activity className="w-3.5 h-3.5 animate-pulse" />
-              <span className="tracking-wide uppercase">{heroCopy.engine}</span>
-              <div className="h-3 w-px bg-primary/20 mx-1" />
-              <span className="text-primary/60 font-medium italic">{heroCopy.feed}</span>
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-primary bg-primary/5 rounded-full border border-primary/10 backdrop-blur-sm shadow-inner cursor-default group relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 animate-shimmer" />
+              <Activity className="w-3.5 h-3.5 animate-pulse relative z-10" />
+              <span className="tracking-wide uppercase relative z-10">{heroCopy.engine}</span>
+              <div className="h-3 w-px bg-primary/20 mx-1 relative z-10" />
+              <span className="text-primary/60 font-medium italic relative z-10">{heroCopy.feed}</span>
             </div>
           </div>
 
           {/* ── Headline ── */}
-          <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-medium text-foreground leading-[1.1] tracking-tight mb-8">
-            {heroCopy.titleLineOne}<br />
-            <span className="text-muted-foreground/40 italic">{heroCopy.titleLineTwo}</span>
+          <h1 className="font-serif text-4xl md:text-6xl lg:text-8xl font-medium text-foreground leading-[1.1] tracking-tight mb-8">
+            <span className="inline-block hover:scale-[1.02] transition-transform duration-500">{heroCopy.titleLineOne}</span><br />
+            <span className="text-muted-foreground/40 italic bg-gradient-to-r from-muted-foreground/40 via-foreground/60 to-muted-foreground/40 bg-clip-text animate-gradient-slow">{heroCopy.titleLineTwo}</span>
           </h1>
 
-          <p className="text-lg md:text-xl text-muted-foreground/80 max-w-2xl mb-12 font-medium leading-relaxed">
+          <p className="text-lg md:text-2xl text-muted-foreground/80 max-w-3xl mb-12 font-medium leading-relaxed">
             {heroCopy.subtitle}
           </p>
 
           {/* ── Marquee ── */}
-          <div className="w-full mb-16 select-none">
+          <div className="w-full mb-16 select-none opacity-90 hover:opacity-100 transition-opacity">
             <MarqueePrompts onPromptSelect={(prompt) => { void sendPrompt(prompt) }} />
           </div>
 
           {/* ── Example Chips ── */}
-          <div className="flex flex-wrap justify-center gap-3 mb-10 max-w-4xl">
+          <div className="flex flex-wrap justify-center gap-3 mb-12 max-w-4xl">
             {capabilityCards.map((card) => (
               <button
                 key={card.label}
                 type="button"
                 onClick={() => void sendPrompt(card.prompt)}
-                className="px-6 py-3 bg-card/60 backdrop-blur-md hover:bg-card border border-border/40 hover:border-primary/40 rounded-2xl text-sm font-bold text-muted-foreground hover:text-foreground transition-all shadow-sm hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 active:scale-95"
+                className="px-8 py-4 bg-card/40 backdrop-blur-xl hover:bg-card border border-border/40 hover:border-primary/40 rounded-2xl text-sm font-bold text-muted-foreground hover:text-foreground transition-all shadow-sm hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-1 active:scale-95 group"
               >
-                {card.label}
+                <span className="flex items-center gap-2">
+                  {card.label}
+                  <ArrowRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all rtl:rotate-180" />
+                </span>
               </button>
             ))}
           </div>
 
           {/* ── Input Shell ── */}
-          <div className="w-full max-w-3xl group mb-20">
+          <div className="w-full max-w-3xl group mb-24 relative">
+            <div className="absolute -inset-4 bg-primary/5 blur-3xl rounded-full opacity-50" />
             <div className="relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-1000 group-hover:duration-200" />
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 via-accent/30 to-primary/30 rounded-[2rem] blur-md opacity-0 group-focus-within:opacity-100 transition duration-1000" />
               
-              <div className="relative bg-card/80 backdrop-blur-xl rounded-2xl border border-border/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] focus-within:shadow-[0_8px_30px_rgba(47,90,166,0.1)] focus-within:border-primary/40 transition-all">
+              <div className="relative bg-card/90 backdrop-blur-2xl rounded-[1.5rem] border border-border/60 shadow-[0_20px_50px_rgba(0,0,0,0.1)] focus-within:shadow-[0_20px_60px_rgba(47,90,166,0.15)] focus-within:border-primary/40 transition-all overflow-hidden">
                 <form onSubmit={submitMessage}>
-                  <div className="relative min-h-[120px] p-2">
+                  <div className="relative min-h-[140px] p-2">
                     <Textarea
                       value={input}
                       onChange={(event) => setInput(event.target.value)}
                       onKeyDown={(event) => { void onInputKeyDown(event) }}
                       placeholder={t("heroPlaceholder")}
-                      className="min-h-[120px] w-full bg-transparent border-0 focus-visible:ring-0 resize-none py-4 px-4 text-base relative z-10 shadow-none placeholder:text-muted-foreground/30"
+                      className="min-h-[140px] w-full bg-transparent border-0 focus-visible:ring-0 resize-none py-6 px-8 text-xl relative z-10 shadow-none placeholder:text-muted-foreground/20 leading-relaxed"
                       disabled={chatBlocked}
                     />
 
                     {isSlashPaletteOpen ? (
-                      <div className="absolute bottom-[100%] left-4 right-4 mb-2 rounded-xl border border-border/70 bg-card/98 p-2 shadow-xl backdrop-blur">
+                      <div className="absolute bottom-[100%] left-4 right-4 mb-4 rounded-2xl border border-border/70 bg-card/98 p-3 shadow-2xl backdrop-blur-xl z-50">
                         {filteredSlashCommands.length === 0 ? (
-                          <p className="px-2 py-1 text-xs text-muted-foreground">{t("noMatchingCommands")}</p>
+                          <p className="px-3 py-2 text-xs text-muted-foreground">{t("noMatchingCommands")}</p>
                         ) : (
-                          filteredSlashCommands.map((command, index) => {
-                            const Icon = command.icon
-                            const isActive = index === slashActiveIndex
-                            return (
-                              <button
-                                key={command.id}
-                                type="button"
-                                onClick={() => void activateSlashCommand(command)}
-                                className={`flex w-full items-start gap-2.5 rounded-lg px-3 py-2.5 text-left transition ${isActive ? "bg-primary/10" : "hover:bg-background"}`}
-                              >
-                                <Icon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary" />
-                                <span>
-                                  <span className="block text-xs font-semibold text-foreground">{command.title}</span>
-                                  <span className="block text-[11px] text-muted-foreground">{command.description}</span>
-                                </span>
-                              </button>
-                            )
-                          })
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                            {filteredSlashCommands.map((command, index) => {
+                              const Icon = command.icon
+                              const isActive = index === slashActiveIndex
+                              return (
+                                <button
+                                  key={command.id}
+                                  type="button"
+                                  onClick={() => void activateSlashCommand(command)}
+                                  className={`flex w-full items-start gap-3 rounded-xl px-4 py-3 text-left transition-all ${isActive ? "bg-primary/10 border-primary/20" : "hover:bg-background border-transparent"} border`}
+                                >
+                                  <div className={`p-2 rounded-lg ${isActive ? "bg-primary/20" : "bg-muted/50"}`}>
+                                    <Icon className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <span>
+                                    <span className="block text-xs font-bold text-foreground">{command.title}</span>
+                                    <span className="block text-[11px] text-muted-foreground line-clamp-1">{command.description}</span>
+                                  </span>
+                                </button>
+                              )
+                            })}
+                          </div>
                         )}
                       </div>
                     ) : null}
                   </div>
 
-                  <div className="flex items-center justify-between p-3 border-t border-border/10">
-                    <div className="flex gap-1">
+                  <div className="flex items-center justify-between p-4 border-t border-border/5 bg-muted/20">
+                    <div className="flex gap-2 px-2">
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-accent/10 rounded-xl"
+                        className="h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-accent/20 rounded-xl transition-colors"
                         disabled={!canUpload}
                         title={canUpload ? "Attach file" : "Log in to attach files"}
                       >
-                        <Paperclip className="h-4 w-4" />
+                        <Paperclip className="h-5 w-5" />
                       </Button>
-                      <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-accent/10 rounded-xl">
-                        <Globe className="h-4 w-4" />
+                      <Button type="button" variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-accent/20 rounded-xl transition-colors">
+                        <Globe className="h-5 w-5" />
                       </Button>
                     </div>
                     
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="px-2">
                       <Button 
                         type="submit"
                         disabled={submitBlocked}
-                        className="h-10 px-6 rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2"
+                        className="h-12 px-10 rounded-xl bg-primary text-primary-foreground shadow-xl shadow-primary/25 hover:bg-primary/90 transition-all flex items-center gap-3"
                       >
-                        <Send className="h-4 w-4" />
-                        <span className="font-semibold">Analyze</span>
+                        <Send className="h-5 w-5" />
+                        <span className="font-bold text-base">{t("chatLanding.analyze")}</span>
                       </Button>
                     </motion.div>
                   </div>
@@ -1441,24 +1450,24 @@ export function ChatInterface({
               </div>
             </div>
             
-            <div className="mt-4 flex items-center justify-center gap-4 text-[10px] text-muted-foreground/40 font-bold uppercase tracking-widest">
-              <span className="flex items-center gap-1.5">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-[11px] text-muted-foreground/50 font-bold uppercase tracking-[0.2em]">
+              <span className="flex items-center gap-2 bg-emerald-500/5 px-3 py-1.5 rounded-full border border-emerald-500/10">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                DLD Transacted AED 4.2B Today
+                {t("chatLanding.dldStat")}
               </span>
               <span className="w-1 h-1 rounded-full bg-border" />
-              <span>Verified High Confidence Grade A/B only</span>
+              <span className="px-3 py-1.5">{t("chatLanding.verifiedData")}</span>
             </div>
           </div>
 
           {/* ── Writes, brainstorms... text ── */}
-          <div className="mt-20 max-w-3xl">
-            <h2 className="text-3xl md:text-4xl font-serif text-foreground/90 leading-tight mb-6">
-              Intelligence that <span className="text-primary italic">thinks</span> with you.
+          <div className="mt-24 max-w-3xl pb-20">
+            <h2 className="text-4xl md:text-5xl font-serif text-foreground/90 leading-tight mb-8">
+              Intelligence that <span className="text-primary italic relative">thinks<span className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary/30" /></span> with you.
             </h2>
-            <Link href="#" className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline underline-offset-4">
-              Explore the Knowledge Engine
-              <ArrowRight className="w-4 h-4" />
+            <Link href="#" className="inline-flex items-center gap-3 text-base font-bold text-primary hover:text-primary/80 transition-all group">
+              {t("chatLanding.exploreEngine")}
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform rtl:rotate-180 rtl:group-hover:-translate-x-1" />
             </Link>
           </div>
         </motion.div>
