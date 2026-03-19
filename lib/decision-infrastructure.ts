@@ -196,9 +196,30 @@ function normalizeValue(value: unknown): unknown {
   return value
 }
 
+function isDatabaseUnavailable(error: unknown) {
+  if (!error || typeof error !== "object") return false
+  const candidate = error as { code?: string; message?: string }
+  const message = candidate.message ?? ""
+  return (
+    candidate.code === "P1001" ||
+    message.includes("Can't reach database server") ||
+    message.includes("ECONNREFUSED") ||
+    message.includes("ENOTFOUND") ||
+    message.includes("ETIMEDOUT")
+  )
+}
+
 async function runQuery<T extends DbRow = DbRow>(query: Prisma.Sql): Promise<T[]> {
-  const rows = await withStatementTimeout((tx) => tx.$queryRaw<T[]>(query), STATEMENT_TIMEOUT_MS)
-  return rows.map((row) => normalizeValue(row) as T)
+  try {
+    const rows = await withStatementTimeout((tx) => tx.$queryRaw<T[]>(query), STATEMENT_TIMEOUT_MS)
+    return rows.map((row) => normalizeValue(row) as T)
+  } catch (error) {
+    if (isDatabaseUnavailable(error)) {
+      console.error("Decision infrastructure DB unavailable; returning empty result set.", { error })
+      return []
+    }
+    throw error
+  }
 }
 
 async function runOptionalQuery<T extends DbRow = DbRow>(query: Prisma.Sql): Promise<T[]> {
