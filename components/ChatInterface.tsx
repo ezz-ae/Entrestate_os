@@ -784,6 +784,9 @@ export function ChatInterface({
   const [selectedMemoryEntryId, setSelectedMemoryEntryId] = useState("")
   const [selectedTemplateId, setSelectedTemplateId] = useState("")
   const [selectedAudienceOverride, setSelectedAudienceOverride] = useState<"" | ComprehensiveProfileReportAudience>("")
+  const [goldenPathPreview, setGoldenPathPreview] = useState<GoldenPathPreview | null>(null)
+  const [goldenPathError, setGoldenPathError] = useState<string | null>(null)
+  const [goldenPathLoading, setGoldenPathLoading] = useState<GoldenPathId | null>(null)
 
   const [selectedProject, setSelectedProject] = useState<string>("")
   const [slashActiveIndex, setSlashActiveIndex] = useState(0)
@@ -828,7 +831,7 @@ export function ChatInterface({
       }
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted) return
     let cancelled = false
 
     const loadUsage = async () => {
@@ -855,9 +858,11 @@ export function ChatInterface({
       }
     }
 
-  const [goldenPathPreview, setGoldenPathPreview] = useState<GoldenPathPreview | null>(null)
-  const [goldenPathError, setGoldenPathError] = useState<string | null>(null)
-  const [goldenPathLoading, setGoldenPathLoading] = useState<GoldenPathId | null>(null)
+    void loadUsage()
+    return () => {
+      cancelled = true
+    }
+  }, [mounted])
 
   const runGoldenPath = async (pathId: GoldenPathId) => {
     setGoldenPathError(null)
@@ -886,12 +891,6 @@ export function ChatInterface({
       setGoldenPathLoading(null)
     }
   }
-
-    void loadUsage()
-    return () => {
-      cancelled = true
-    }
-  }, [mounted])
 
   useEffect(() => {
     if (!mounted) return

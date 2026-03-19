@@ -62,6 +62,8 @@
     "compareTitle": "Project Comparison",
     "compareEmpty": "Ask to compare projects or areas to populate this panel.",
     "freeAccess": "Free for all",
+    "unlimitedUsage": "Unlimited usage",
+    "usageCoolingDown": "Cooling down",
     "matchedProjects": "Matched Projects",
     "askToScreen": "Ask to screen",
     "avgAskingPrice": "Avg Asking Price",
