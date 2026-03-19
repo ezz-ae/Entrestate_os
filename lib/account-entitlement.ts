@@ -11,7 +11,15 @@ export type CurrentEntitlement = {
 }
 
 export async function getCurrentEntitlement(accountKeyOverride?: string | null): Promise<CurrentEntitlement> {
-  const accountKey = accountKeyOverride?.trim() || (await getSessionUser())?.id?.trim() || null
+  let accountKey = accountKeyOverride?.trim() || null
+  if (!accountKey) {
+    try {
+      accountKey = (await getSessionUser())?.id?.trim() || null
+    } catch (error) {
+      console.error("Failed to load session user; falling back to free entitlement.", { error })
+      accountKey = null
+    }
+  }
   if (!accountKey) {
     return {
       accountKey: null,
@@ -22,8 +30,27 @@ export async function getCurrentEntitlement(accountKeyOverride?: string | null):
     }
   }
 
-  const entitlement = await getEntitlementByAccountKey(accountKey)
-  if (!entitlement) {
+  try {
+    const entitlement = await getEntitlementByAccountKey(accountKey)
+    if (!entitlement) {
+      return {
+        accountKey,
+        tier: "free",
+        source: "default",
+        subscriptionId: null,
+        status: null,
+      }
+    }
+
+    return {
+      accountKey,
+      tier: coerceEntitlementTier(entitlement.tier),
+      source: "billing_entitlements",
+      subscriptionId: entitlement.paypal_subscription_id,
+      status: entitlement.paypal_status,
+    }
+  } catch (error) {
+    console.error("Entitlement lookup failed; falling back to free entitlement.", { error, accountKey })
     return {
       accountKey,
       tier: "free",
@@ -31,13 +58,5 @@ export async function getCurrentEntitlement(accountKeyOverride?: string | null):
       subscriptionId: null,
       status: null,
     }
-  }
-
-  return {
-    accountKey,
-    tier: coerceEntitlementTier(entitlement.tier),
-    source: "billing_entitlements",
-    subscriptionId: entitlement.paypal_subscription_id,
-    status: entitlement.paypal_status,
   }
 }

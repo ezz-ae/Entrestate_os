@@ -208,16 +208,26 @@ export async function getCopilotDailyUsage(accountKey: string, tier: CopilotTier
     return buildUnlimitedUsage(normalizedKey)
   }
 
-  await ensureUsageTables()
   const now = new Date()
-  const rows = await prisma.$queryRaw<FreeUsageWindowRow[]>(Prisma.sql`
-    SELECT window_started_at, messages_count, cooldown_until
-    FROM copilot_usage_windows
-    WHERE account_key = ${normalizedKey}
-    LIMIT 1
-  `)
+  try {
+    await ensureUsageTables()
+    const rows = await prisma.$queryRaw<FreeUsageWindowRow[]>(Prisma.sql`
+      SELECT window_started_at, messages_count, cooldown_until
+      FROM copilot_usage_windows
+      WHERE account_key = ${normalizedKey}
+      LIMIT 1
+    `)
 
-  return resolveFreeUsageFromRow(normalizedKey, rows[0] ?? null, now)
+    return resolveFreeUsageFromRow(normalizedKey, rows[0] ?? null, now)
+  } catch (error) {
+    console.error("Copilot usage lookup failed; returning free usage fallback.", { error, accountKey: normalizedKey })
+    return buildFreeUsage(normalizedKey, now, {
+      used: 0,
+      blocked: false,
+      resetAt: null,
+      cooldownUntil: null,
+    })
+  }
 }
 
 export async function consumeCopilotUsage(accountKey: string, tier: CopilotTier): Promise<{ allowed: boolean; usage: CopilotDailyUsage }> {
