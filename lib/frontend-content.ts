@@ -96,7 +96,7 @@ export async function getMarketPulseSummary() {
   const rows = await dbQuery<MarketPulseSummary>(Prisma.sql`
     SELECT
       COUNT(*)::int AS total,
-      ROUND(AVG(price_from) FILTER (WHERE price_from > 0))::int AS avg_price,
+      ROUND(AVG(price_from_aed) FILTER (WHERE price_from_aed > 0))::int AS avg_price,
       ROUND(AVG(rental_yield::numeric) FILTER (WHERE rental_yield > 0), 1) AS avg_yield,
       COUNT(CASE WHEN timing_label IN ('STRONG_BUY', 'BUY') THEN 1 END)::int AS buy_signals,
       COUNT(CASE WHEN price_confidence = 'HIGH' THEN 1 END)::int AS high_confidence
@@ -120,7 +120,7 @@ export async function getOutcomeIntentCounts() {
     SELECT
       LOWER(TRIM(intent)) AS intent,
       COUNT(*)::int AS count
-    FROM ${DETAIL_TABLE_SQL},
+    FROM ${SUMMARY_TABLE_SQL},
       LATERAL unnest(COALESCE(outcome_intent, ARRAY[]::text[])) AS intent
     GROUP BY 1
     ORDER BY count DESC

@@ -16,7 +16,7 @@ const querySchema = z
 
 const EMBED_SPECS = {
   market_card: {
-    columns_exposed: ["name", "area", "price_aed", "score_0_100", "safety_band"],
+    columns_exposed: ["name", "area", "price_from_aed", "score_0_100", "safety_band"],
     leadMagnet: true,
   },
   area_table: {

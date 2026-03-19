@@ -47,6 +47,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
   const result = await listProperties({
     page: currentPage,
     pageSize,
+    locale,
     filters: {
       area: params.area,
       developer: params.developer,
@@ -66,7 +67,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
   // Derive stats from current page
   const projects = result.projects
   const buyCount = projects.filter((p) => (p.timing_label ?? p.l3_timing_signal) === "BUY").length
-  const prices = projects.map((p) => typeof (p.price_from ?? p.l1_canonical_price) === "number" ? Number(p.price_from ?? p.l1_canonical_price) : null).filter((v): v is number => v !== null && v > 0)
+  const prices = projects.map((p) => typeof (p.price_from_aed ?? p.l1_canonical_price) === "number" ? Number(p.price_from_aed ?? p.l1_canonical_price) : null).filter((v): v is number => v !== null && v > 0)
   const avgPrice = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : null
   const yields = projects.map((p) => typeof (p.rental_yield ?? p.l1_canonical_yield) === "number" ? Number(p.rental_yield ?? p.l1_canonical_yield) : null).filter((v): v is number => v !== null && v > 0)
   const avgYield = yields.length > 0 ? yields.reduce((a, b) => a + b, 0) / yields.length : null

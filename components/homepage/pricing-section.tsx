@@ -11,32 +11,32 @@ type Tier = {
 
 const DEFAULT_TIERS: Tier[] = [
   {
-    name: "Starter",
-    price: "Free",
-    description: "3 decision sessions/day, limited screening, core market pulse",
-    href: "/pricing",
-    cta: "Start Free",
-  },
-  {
-    name: "Pro",
+    name: "Solo Analyst",
     price: "$299/mo",
-    description: "Unlimited Decision Tunnel sessions and deal screening",
-    href: "/api/billing/paypal/checkout?tier=pro",
-    cta: "Pay with PayPal",
+    description: "Professional research for independent investors with L1 provenance.",
+    href: "/pricing",
+    cta: "Get Started",
   },
   {
-    name: "Team",
-    price: "$999/mo",
-    description: "Shared watchlists, reports, collaboration workflows",
-    href: "/api/billing/paypal/checkout?tier=team",
-    cta: "Pay with PayPal",
+    name: "Realtor Pro",
+    price: "$499/mo",
+    description: "Institutional evidence with personal branding for client deliverables.",
+    href: "/pricing",
+    cta: "Get Started",
+  },
+  {
+    name: "Entrestate OS",
+    price: "$2,500/mo",
+    description: "Full infrastructure: 5 seats, API substrate, and Automation Studio.",
+    href: "/pricing",
+    cta: "Go Enterprise",
   },
   {
     name: "Institutional",
-    price: "$4,000/mo",
-    description: "Portfolio monitoring, fund reporting, and enterprise reliability",
-    href: "/api/billing/paypal/checkout?tier=institutional",
-    cta: "Pay with PayPal",
+    price: "Custom",
+    description: "Unlimited scale, on-prem AI, and custom data node integration.",
+    href: "mailto:hello@entrestate.com",
+    cta: "Contact Sales",
   },
 ]
 

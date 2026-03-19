@@ -1,80 +1,130 @@
-import { Navbar } from "@/components/navbar"
-import { Footer } from "@/components/footer"
-import { Shield, Clock, Database } from "lucide-react"
-import { getRequestLocale } from "@/i18n/request"
+import { Check, Shield, Zap, Crown } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
-function getTierCards(locale: "en" | "ar") {
-  if (locale === "ar") {
-    return [
-      {
-        title: "حدود العمق الزمني",
-        detail: "اضبط المدة التاريخية المتاحة لكل باقة، من قراءات قصيرة إلى وصول كامل.",
-        icon: Clock,
-      },
-      {
-        title: "العناصر المحفوظة",
-        detail: "حدد سقوف الجداول المحفوظة والملاحظات ومساحات العمل المرتبطة بها.",
-        icon: Database,
-      },
-      {
-        title: "الأعمدة المتقدمة",
-        detail: "افتح الإشارات والأعمدة الاحترافية على مستوى الخادم بحسب الباقة.",
-        icon: Shield,
-      },
-    ]
-  }
-
-  return [
+export default function TierSettingsPage() {
+  const tiers = [
     {
-      title: "Time Depth Limits",
-      detail: "Control historical depth per tier (30d to unlimited).",
-      icon: Clock,
+      name: "Solo Analyst",
+      price: "$299",
+      description: "For individual researchers and independent consultants.",
+      features: ["L1 Data Access", "Unlimited Market Search", "Standard TableSpec Export", "Email Support"],
+      current: true,
+      icon: Zap,
     },
     {
-      title: "Saved Tables",
-      detail: "Set caps on saved Time Tables and notes.",
-      icon: Database,
-    },
-    {
-      title: "Premium Columns",
-      detail: "Gate business and enterprise signals server-side.",
+      name: "Realtor Pro",
+      price: "$499",
+      description: "For high-performing agents and boutique agencies.",
+      features: [
+        "Everything in Solo",
+        "Infographic Render Mode",
+        "Multi-Branded Artifacts",
+        "Priority Reasoning Support",
+      ],
+      current: false,
       icon: Shield,
     },
+    {
+      name: "Entrestate OS",
+      price: "$2,500",
+      description: "Institutional infrastructure for funds and developers.",
+      features: [
+        "Everything in Pro",
+        "Full API Substrate",
+        "Automation Studio (Scheduled)",
+        "White-label Branding",
+        "Dedicated Success Manager",
+      ],
+      current: false,
+      icon: Crown,
+      enterprise: true,
+    },
   ]
-}
-
-export default async function TierSettingsPage() {
-  const locale = await getRequestLocale()
-  const isArabic = locale === "ar"
-  const tierCards = getTierCards(locale)
 
   return (
-    <main id="main-content">
-      <Navbar />
-      <div className="pt-28 pb-20 md:pt-36 md:pb-28">
-        <div className="mx-auto w-full max-w-[1200px] px-6">
-          <header className="mb-8">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "الإعدادات — الباقات" : "Settings - Tier"}</p>
-            <h1 className="mt-3 text-3xl md:text-5xl font-serif text-foreground">{isArabic ? "ضبط الصلاحيات حسب الباقة" : "Tier governance"}</h1>
-            <p className="mt-3 text-sm text-muted-foreground max-w-2xl">
-              {isArabic
-                ? "من هنا نضبط عمق البيانات والعناصر المحفوظة والأعمدة المتقدمة بحسب كل باقة دون تعديل الكود كل مرة."
-                : "Manage limits for time depth, saved objects, and premium signals without touching code."}
-            </p>
-          </header>
+    <div className="container max-w-6xl py-12 px-6">
+      <div className="flex flex-col gap-4 mb-12">
+        <h1 className="text-4xl font-bold tracking-tight text-slate-50">Subscription & Infrastructure</h1>
+        <p className="text-slate-400 text-lg max-w-2xl">
+          Manage your intelligence tier and institutional access level.
+        </p>
+      </div>
 
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {tierCards.map((card) => (
-              <div key={card.title} className="rounded-2xl border border-border/70 bg-card/70 p-6">
-                <card.icon className="h-5 w-5 text-accent" />
-                <h2 className="mt-4 text-lg font-semibold text-foreground">{card.title}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">{card.detail}</p>
+      <div className="grid gap-8 md:grid-cols-3">
+        {tiers.map((tier) => (
+          <Card 
+            key={tier.name} 
+            className={`relative overflow-hidden bg-slate-900/40 border-slate-800 backdrop-blur-xl ${
+              tier.enterprise ? 'border-blue-500/50 shadow-[0_0_30px_-5px_rgba(59,130,246,0.2)]' : ''
+            }`}
+          >
+            {tier.current && (
+              <div className="absolute top-0 right-0 px-3 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest rounded-bl-xl border-l border-b border-emerald-500/20">
+                Active Plan
               </div>
-            ))}
-          </section>
+            )}
+            
+            <CardHeader className="pb-8">
+              <div className="h-12 w-12 rounded-2xl bg-slate-800/50 flex items-center justify-center mb-6 border border-slate-700">
+                <tier.icon className={`h-6 w-6 ${tier.enterprise ? 'text-blue-400' : 'text-slate-400'}`} />
+              </div>
+              <CardTitle className="text-2xl font-bold text-slate-100">{tier.name}</CardTitle>
+              <CardDescription className="text-slate-400 mt-2 min-h-[40px] leading-relaxed">
+                {tier.description}
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-6">
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-bold text-slate-50">{tier.price}</span>
+                <span className="text-slate-500 font-medium">/month</span>
+              </div>
+              
+              <ul className="space-y-4">
+                {tier.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3 group">
+                    <div className="mt-1 h-4 w-4 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                      <Check className="h-2.5 w-2.5 text-blue-400" />
+                    </div>
+                    <span className="text-sm text-slate-300 transition-colors group-hover:text-slate-100 leading-snug">
+                      {feature}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+            
+            <CardFooter className="pt-8">
+              <Button 
+                variant={tier.current ? "secondary" : "default"} 
+                className={`w-full h-12 rounded-xl font-bold uppercase tracking-widest text-xs transition-all ${
+                  tier.current 
+                    ? "bg-slate-800 hover:bg-slate-700 text-slate-300" 
+                    : "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20"
+                }`}
+              >
+                {tier.current ? "Current Settings" : tier.enterprise ? "Contact Sales" : "Upgrade Plan"}
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+
+      <div className="mt-16 p-8 rounded-3xl bg-slate-900/20 border border-slate-800/60 backdrop-blur-sm">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-slate-100 italic">Custom Enterprise Substrate</h3>
+            <p className="text-slate-400 max-w-xl leading-relaxed">
+              Need a private instance with custom model fine-tuning and on-premise data residency? 
+              Our infrastructure team can provision a dedicated Entrestate Cluster for your fund.
+            </p>
+          </div>
+          <Button variant="outline" className="h-12 px-8 rounded-xl border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+            Request Architect Call
+          </Button>
         </div>
       </div>
-      <Footer />
-    </main>
+    </div>
   )
 }

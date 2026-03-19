@@ -29,6 +29,7 @@ const tableSpecSortSchema = z.object({
 })
 
 export const tableSpecEntitlementsSchema = z.object({
+  currentTier: z.enum(["free", "pro", "team", "institutional", "business", "enterprise"]).optional(),
   allowedRowGrains: z.array(z.enum(["project", "asset", "transaction"])).optional(),
   allowedSignals: z.array(z.string()).optional(),
   allowedFilters: z.array(z.string()).optional(),
@@ -48,6 +49,8 @@ export const tableSpecSchema = z.object({
   filters: z.array(tableSpecFilterSchema),
   sort: tableSpecSortSchema.optional(),
   limit: z.number().int().positive().optional(),
+  reasoning: z.string().optional(),
+  dataSource: z.string().optional(),
 })
 
 export type TableSpecSchema = z.infer<typeof tableSpecSchema>

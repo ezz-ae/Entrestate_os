@@ -18,7 +18,7 @@ import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
 import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 
 const marketNumbers = [
-  { value: "2,813", label: "Active Projects", detail: "Tracked across UAE in real time" },
+  { value: "2,813", label: "Active Projects", detail: "Tracked across UAE on live refreshes" },
   { value: "481", label: "Canonical Developers", detail: "Normalized & verified identities" },
   { value: "136", label: "BUY Signals", detail: "Evidence-backed opportunities" },
   { value: "34.3%", label: "L1 Coverage", detail: "Static Truth recovery in progress" },

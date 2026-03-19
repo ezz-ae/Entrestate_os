@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useMobile } from "@/seq/hooks/use-mobile"
 import { useImageUpload } from "./hooks/use-image-upload"
 import { useImageGeneration } from "./hooks/use-image-generation"
@@ -15,6 +15,8 @@ import { GenerationHistory } from "./generation-history"
 import { GlobalDropZone } from "./global-drop-zone"
 import { FullscreenViewer } from "./fullscreen-viewer"
 import { useSearchParams } from "next/navigation"
+import { cn } from "@/seq/lib/utils"
+import type { BrandedOverlayData } from "./branded-overlay"
 
 function EmptyFooterHistory() {
   return (
@@ -40,12 +42,24 @@ export function ImageCombiner() {
   const [showHowItWorks, setShowHowItWorks] = useState(false)
   const [logoLoaded, setLogoLoaded] = useState(false)
   const [apiKeyMissing, setApiKeyMissing] = useState(false)
+  const [showInfographic, setShowInfographic] = useState(true)
 
-  const [leftWidth, setLeftWidth] = useState(50)
+  const infographicData = useMemo<BrandedOverlayData>(
+    () => ({
+      projectName: "Institutional Portfolio",
+      area: "Prime District 1, Dubai",
+      price: "AED 1.2M+",
+      yield: "8.2% Net",
+      score: 88,
+    }),
+    [],
+  )
+
+  const [leftWidth, setLeftWidth] = useState(54)
   const [isResizing, setIsResizing] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const promptTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const promptTextareaRef = useRef<HTMLTextAreaElement>(null!)
   const initialLoadRef = useRef(false)
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
@@ -143,7 +157,7 @@ export function ImageCombiner() {
   }, [])
 
   useEffect(() => {
-    if (initialLoadRef.current) return
+    if (initialLoadRef.current || !searchParams) return
     const promptParam = searchParams.get("prompt")
     const mediaParam = searchParams.get("media")
 
@@ -181,15 +195,202 @@ export function ImageCombiner() {
     document.body.style.overflow = "unset"
   }, [])
 
+  const getImageBlob = useCallback(async (imageUrl: string): Promise<Blob> => {
+    if (imageUrl.startsWith("data:")) {
+      const parts = imageUrl.split(",")
+      const mime = parts[0].match(/:(.*?);/)?.[1] || "image/png"
+      const bstr = atob(parts[1])
+      const n = bstr.length
+      const u8arr = new Uint8Array(n)
+      for (let i = 0; i < n; i++) {
+        u8arr[i] = bstr.charCodeAt(i)
+      }
+      return new Blob([u8arr], { type: mime })
+    }
+
+    const response = await fetch(imageUrl)
+    return response.blob()
+  }, [])
+
+  const renderBrandedImage = useCallback(async (imageUrl: string, data: BrandedOverlayData): Promise<Blob> => {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image()
+      image.crossOrigin = "anonymous"
+      image.onload = () => resolve(image)
+      image.onerror = () => reject(new Error("Failed to load image"))
+      image.src = imageUrl
+    })
+
+    const width = img.naturalWidth || img.width
+    const height = img.naturalHeight || img.height
+    const canvas = document.createElement("canvas")
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext("2d")
+    if (!ctx) {
+      throw new Error("Failed to get canvas context")
+    }
+
+    ctx.drawImage(img, 0, 0, width, height)
+
+    const scale = Math.min(width, height) / 900
+    const pad = Math.max(24, 40 * scale)
+    const radius = Math.max(14, 22 * scale)
+
+    const drawRoundedRect = (x: number, y: number, w: number, h: number, r: number) => {
+      const corner = Math.min(r, w / 2, h / 2)
+      ctx.beginPath()
+      ctx.moveTo(x + corner, y)
+      ctx.arcTo(x + w, y, x + w, y + h, corner)
+      ctx.arcTo(x + w, y + h, x, y + h, corner)
+      ctx.arcTo(x, y + h, x, y, corner)
+      ctx.arcTo(x, y, x + w, y, corner)
+      ctx.closePath()
+    }
+
+    const truncateText = (text: string, maxWidth: number) => {
+      if (ctx.measureText(text).width <= maxWidth) return text
+      let truncated = text
+      while (truncated.length > 0 && ctx.measureText(`${truncated}...`).width > maxWidth) {
+        truncated = truncated.slice(0, -1)
+      }
+      return `${truncated}...`
+    }
+
+    const bottomGradient = ctx.createLinearGradient(0, height * 0.5, 0, height)
+    bottomGradient.addColorStop(0, "rgba(2, 6, 23, 0)")
+    bottomGradient.addColorStop(1, "rgba(2, 6, 23, 0.65)")
+    ctx.fillStyle = bottomGradient
+    ctx.fillRect(0, height * 0.5, width, height * 0.5)
+
+    const badgeWidth = Math.min(width * 0.48, 420 * scale)
+    const badgeHeight = Math.max(52, 66 * scale)
+    drawRoundedRect(pad, pad, badgeWidth, badgeHeight, radius)
+    ctx.fillStyle = "rgba(2, 6, 23, 0.78)"
+    ctx.fill()
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"
+    ctx.lineWidth = 2
+    ctx.stroke()
+
+    const badgeIconSize = Math.max(26, 32 * scale)
+    ctx.fillStyle = "rgba(59, 130, 246, 0.2)"
+    ctx.beginPath()
+    ctx.arc(pad + badgeIconSize / 2 + 16 * scale, pad + badgeHeight / 2, badgeIconSize / 2, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = "rgba(59, 130, 246, 0.4)"
+    ctx.stroke()
+
+    ctx.fillStyle = "rgba(148, 163, 184, 0.9)"
+    ctx.font = `600 ${Math.max(10, 12 * scale)}px "Space Grotesk", "IBM Plex Sans", sans-serif`
+    ctx.fillText("ENTRESTATE OS VERIFIED", pad + badgeIconSize + 28 * scale, pad + badgeHeight / 2 - 6 * scale)
+    ctx.fillStyle = "rgba(255, 255, 255, 0.95)"
+    ctx.font = `700 ${Math.max(16, 18 * scale)}px "Space Grotesk", "IBM Plex Sans", sans-serif`
+    ctx.fillText("Institutional Asset", pad + badgeIconSize + 28 * scale, pad + badgeHeight / 2 + 16 * scale)
+
+    if (data.score) {
+      const scoreRadius = Math.max(28, 34 * scale)
+      const scoreX = width - pad - scoreRadius
+      const scoreY = pad + scoreRadius
+      ctx.fillStyle = "rgba(16, 185, 129, 0.2)"
+      ctx.beginPath()
+      ctx.arc(scoreX, scoreY, scoreRadius, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = "rgba(16, 185, 129, 0.45)"
+      ctx.lineWidth = 2
+      ctx.stroke()
+
+      ctx.fillStyle = "rgba(16, 185, 129, 0.9)"
+      ctx.font = `700 ${Math.max(9, 11 * scale)}px "Space Grotesk", "IBM Plex Sans", sans-serif`
+      ctx.textAlign = "center"
+      ctx.fillText("SCORE", scoreX, scoreY - 6 * scale)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)"
+      ctx.font = `800 ${Math.max(18, 24 * scale)}px "Space Grotesk", "IBM Plex Sans", sans-serif`
+      ctx.fillText(String(data.score), scoreX, scoreY + 18 * scale)
+      ctx.textAlign = "left"
+    }
+
+    const cardWidth = Math.min(width * 0.72, 640 * scale)
+    const cardHeight = Math.max(160, 200 * scale)
+    const cardX = pad
+    const cardY = height - pad - cardHeight - 28 * scale
+
+    drawRoundedRect(cardX, cardY, cardWidth, cardHeight, radius * 1.2)
+    ctx.fillStyle = "rgba(2, 6, 23, 0.84)"
+    ctx.fill()
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)"
+    ctx.stroke()
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.95)"
+    ctx.font = `800 ${Math.max(22, 32 * scale)}px "Space Grotesk", "IBM Plex Sans", sans-serif`
+    const projectName = truncateText(data.projectName || "Dubai Waterfront Portfolio", cardWidth - 80 * scale)
+    ctx.fillText(projectName, cardX + 28 * scale, cardY + 44 * scale)
+
+    ctx.fillStyle = "rgba(148, 163, 184, 0.9)"
+    ctx.font = `600 ${Math.max(12, 16 * scale)}px "Space Grotesk", "IBM Plex Sans", sans-serif`
+    const area = truncateText(data.area || "Prime District 1", cardWidth - 80 * scale)
+    ctx.fillText(area, cardX + 28 * scale, cardY + 72 * scale)
+
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)"
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(cardX + 28 * scale, cardY + 96 * scale)
+    ctx.lineTo(cardX + cardWidth - 28 * scale, cardY + 96 * scale)
+    ctx.stroke()
+
+    ctx.fillStyle = "rgba(245, 158, 11, 0.9)"
+    ctx.font = `700 ${Math.max(10, 12 * scale)}px "Space Grotesk", "IBM Plex Sans", sans-serif`
+    ctx.fillText("ENTRY PRICE", cardX + 28 * scale, cardY + 122 * scale)
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.95)"
+    ctx.font = `800 ${Math.max(16, 22 * scale)}px "Space Grotesk", "IBM Plex Sans", sans-serif`
+    ctx.fillText(data.price || "AED 1.2M", cardX + 28 * scale, cardY + 150 * scale)
+
+    const rightColumnX = cardX + cardWidth / 2 + 16 * scale
+    ctx.fillStyle = "rgba(16, 185, 129, 0.9)"
+    ctx.font = `700 ${Math.max(10, 12 * scale)}px "Space Grotesk", "IBM Plex Sans", sans-serif`
+    ctx.fillText("TARGET YIELD", rightColumnX, cardY + 122 * scale)
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.95)"
+    ctx.font = `800 ${Math.max(16, 22 * scale)}px "Space Grotesk", "IBM Plex Sans", sans-serif`
+    ctx.fillText(data.yield || "8.2% Net", rightColumnX, cardY + 150 * scale)
+
+    ctx.fillStyle = "rgba(148, 163, 184, 0.65)"
+    ctx.font = `600 ${Math.max(9, 11 * scale)}px "Space Grotesk", "IBM Plex Sans", sans-serif`
+    ctx.fillText("DLD L1 CANONICAL DATA", cardX + 10 * scale, height - pad / 2)
+    const footerRight = "GENERATED VIA ENTRESTATE OS"
+    const footerWidth = ctx.measureText(footerRight).width
+    ctx.fillText(footerRight, width - pad - footerWidth, height - pad / 2)
+
+    return new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error("Failed to export branded image"))
+      }, "image/png")
+    })
+  }, [])
+
+  const getExportBlob = useCallback(async () => {
+    if (!generatedImage) return null
+    if (!showInfographic) {
+      return getImageBlob(generatedImage.url)
+    }
+    try {
+      return await renderBrandedImage(generatedImage.url, infographicData)
+    } catch (error) {
+      console.error("Failed to render branded export:", error)
+      return getImageBlob(generatedImage.url)
+    }
+  }, [generatedImage, showInfographic, getImageBlob, renderBrandedImage, infographicData])
+
   const downloadImage = useCallback(async () => {
     if (!generatedImage) return
     try {
-      const response = await fetch(generatedImage.url)
-      const blob = await response.blob()
+      const blob = await getExportBlob()
+      if (!blob) return
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
-      link.download = `nano-banana-pro-${currentMode}-result.png`
+      link.download = showInfographic ? "entrestate-infographic.png" : `nano-banana-pro-${currentMode}-result.png`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -198,73 +399,32 @@ export function ImageCombiner() {
       console.error("Error downloading image:", error)
       window.open(generatedImage.url, "_blank")
     }
-  }, [generatedImage, currentMode])
+  }, [generatedImage, currentMode, getExportBlob, showInfographic])
 
-  const openImageInNewTab = useCallback(() => {
+  const openImageInNewTab = useCallback(async () => {
     if (!generatedImage?.url) return
     try {
-      if (generatedImage.url.startsWith("data:")) {
-        const parts = generatedImage.url.split(",")
-        const mime = parts[0].match(/:(.*?);/)?.[1] || "image/png"
-        const bstr = atob(parts[1])
-        const n = bstr.length
-        const u8arr = new Uint8Array(n)
-        for (let i = 0; i < n; i++) {
-          u8arr[i] = bstr.charCodeAt(i)
-        }
-        const blob = new Blob([u8arr], { type: mime })
-        const blobUrl = URL.createObjectURL(blob)
-        const newWindow = window.open(blobUrl, "_blank", "noopener,noreferrer")
-        if (newWindow) {
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
-        }
-      } else {
-        window.open(generatedImage.url, "_blank", "noopener,noreferrer")
+      const blob = await getExportBlob()
+      if (!blob) return
+      const blobUrl = URL.createObjectURL(blob)
+      const newWindow = window.open(blobUrl, "_blank", "noopener,noreferrer")
+      if (newWindow) {
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
       }
     } catch (error) {
       console.error("Error opening image:", error)
       window.open(generatedImage.url, "_blank")
     }
-  }, [generatedImage])
+  }, [generatedImage, getExportBlob])
 
   const copyImageToClipboard = useCallback(async () => {
     if (!generatedImage) return
     try {
-      const convertToPngBlob = async (imageUrl: string): Promise<Blob> => {
-        return new Promise((resolve, reject) => {
-          const img = new Image()
-          img.crossOrigin = "anonymous"
-          img.onload = () => {
-            const canvas = document.createElement("canvas")
-            canvas.width = img.width
-            canvas.height = img.height
-            const ctx = canvas.getContext("2d")
-            if (!ctx) {
-              reject(new Error("Failed to get canvas context"))
-              return
-            }
-            ctx.drawImage(img, 0, 0)
-            canvas.toBlob(
-              (blob) => {
-                if (blob) {
-                  resolve(blob)
-                } else {
-                  reject(new Error("Failed to convert to blob"))
-                }
-              },
-              "image/png",
-              1.0,
-            )
-          }
-          img.onerror = () => reject(new Error("Failed to load image"))
-          img.src = imageUrl
-        })
-      }
-
-      setToast({ message: "Copying image...", type: "success" })
+      setToast({ message: showInfographic ? "Copying infographic..." : "Copying image...", type: "success" })
       window.focus()
 
-      const pngBlob = await convertToPngBlob(generatedImage.url)
+      const pngBlob = await getExportBlob()
+      if (!pngBlob) return
       const clipboardItem = new ClipboardItem({ "image/png": pngBlob })
       await navigator.clipboard.write([clipboardItem])
 
@@ -275,7 +435,7 @@ export function ImageCombiner() {
       setToast({ message: "Failed to copy image", type: "error" })
       setTimeout(() => setToast(null), 2000)
     }
-  }, [generatedImage])
+  }, [generatedImage, getExportBlob, showInfographic])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -539,7 +699,7 @@ export function ImageCombiner() {
       const containerRect = container.getBoundingClientRect()
       const offsetX = e.clientX - containerRect.left
       const percentage = (offsetX / containerRect.width) * 100
-      const clampedPercentage = Math.max(30, Math.min(70, percentage))
+      const clampedPercentage = Math.max(35, Math.min(65, percentage))
       setLeftWidth(clampedPercentage)
     },
     [isResizing],
@@ -570,7 +730,14 @@ export function ImageCombiner() {
   }, [isResizing, handleMouseMove, handleMouseUp])
 
   return (
-    <div className="h-screen w-full flex flex-col bg-[var(--surface-0)] h-full  flex flex-col">
+    <div className="h-screen w-full flex flex-col bg-[#020617] text-slate-50 relative overflow-hidden selection:bg-blue-500/30">
+      {/* ── Background Mesh ── */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
+        <div className="absolute top-[20%] -right-[10%] w-[35%] h-[35%] rounded-full bg-indigo-600/10 blur-[120px]" />
+        <div className="absolute -bottom-[10%] left-[20%] w-[30%] h-[30%] rounded-full bg-emerald-600/10 blur-[120px]" />
+      </div>
+
       {toast && <ToastNotification message={toast.message} type={toast.type as any} />}
 
       {isDraggingOver && (
@@ -579,35 +746,51 @@ export function ImageCombiner() {
 
       <div
         ref={containerRef}
-        className="flex-1 flex overflow-hidden"
+        className="relative z-10 flex-1 flex overflow-hidden"
         style={{ userSelect: isResizing ? "none" : "auto" }}
       >
-        <div className="flex flex-col overflow-hidden w-full flex flex-col bg-[var(--surface-0)] relative" style={{ width: `${leftWidth}%`, minWidth: "300px" }}>
-          <div className="flex-shrink-0 h-16 px-4 flex items-center justify-between border-b border-border relative">
-            <div className="flex items-center bg-background rounded-lg p-0.5">
+        <div className="flex flex-col overflow-hidden w-full bg-slate-900/40 backdrop-blur-2xl border-r border-slate-800 relative transition-colors" style={{ width: `${leftWidth}%`, minWidth: "350px" }}>
+          <div className="flex-shrink-0 h-20 px-6 flex items-center justify-between border-b border-slate-800/60 relative">
+            <div className="flex items-center bg-slate-950/60 border border-slate-800 rounded-xl p-1">
               <button
                 onClick={() => setMode("simple")}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mode === "simple" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${mode === "simple" ? "bg-slate-800 text-white shadow-sm" : "text-slate-500 hover:text-slate-300"
                   }`}
               >
                 Simple
               </button>
               <button
                 onClick={() => setMode("custom")}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mode === "custom" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${mode === "custom" ? "bg-slate-800 text-white shadow-sm" : "text-slate-500 hover:text-slate-300"
                   }`}
               >
                 Custom
               </button>
             </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowInfographic(!showInfographic)}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border flex items-center gap-2",
+                  showInfographic 
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_20px_-5px_rgba(16,185,129,0.4)]" 
+                    : "bg-slate-950/40 text-slate-500 border-slate-800 hover:border-slate-700"
+                )}
+              >
+                <div className={cn("h-1.5 w-1.5 rounded-full", showInfographic ? "bg-emerald-400 animate-pulse" : "bg-slate-600")} />
+                Infographic Mode
+              </button>
+            </div>
+
             {apiKeyMissing && (
-              <span className="text-[10px] px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">
-                API Key Missing
+              <span className="absolute -top-1 -right-1 text-[8px] px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-bl-lg font-bold">
+                API OFFLINE
               </span>
             )}
           </div>
 
-          <>
+          <div className="flex-1 overflow-hidden">
             <InputSection
               prompt={prompt}
               setPrompt={setPrompt}
@@ -647,32 +830,37 @@ export function ImageCombiner() {
               onLoadMore={loadMore}
               isLoadingMore={isLoadingMore}
             />
-          </>
+          </div>
+          
           <div
-            className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize hover:bg-[var(--accent-primary)]/40 focus:bg-[var(--accent-primary)]/40 active:bg-[var(--accent-primary)]/40 transition-colors group"
+            className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-blue-500/15 active:bg-blue-500/30 transition-colors group z-20"
             onMouseDown={handleMouseDown}
             onDoubleClick={handleDoubleClick}
-
           >
-            <div className="absolute right-0 top-0 bottom-0 w-px bg-[var(--border-default)] group-hover:bg-[var(--accent-primary)]/60 group-focus:bg-[var(--accent-primary)]/60 group-active:bg-[var(--accent-primary)]/60" />
+            <div className="absolute right-0 top-0 bottom-0 w-px bg-slate-800/80 group-hover:bg-blue-500/40" />
+            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+              <span className="h-1 w-1 rounded-full bg-slate-500" />
+              <span className="h-1 w-1 rounded-full bg-slate-500" />
+              <span className="h-1 w-1 rounded-full bg-slate-500" />
+            </div>
           </div>
         </div>
 
-
-
-
-        <div className="flex-1 flex flex-col overflow-hidden bg-background" style={{ minWidth: "300px" }}>
-          <div className="flex-shrink-0 h-16 px-4 flex items-center justify-between ">
-            <span className="text-sm font-medium text-foreground">Output</span>
+        <div className="flex-1 flex flex-col overflow-hidden bg-slate-950/20" style={{ minWidth: "350px" }}>
+          <div className="flex-shrink-0 h-20 px-8 flex items-center justify-between border-b border-slate-800/40">
+            <div className="flex items-center gap-3">
+              <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+              <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Intelligence Output</span>
+            </div>
             {persistedGenerations.length > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {persistedGenerations.filter((g) => g.status === "complete").length} generated
+              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                {persistedGenerations.filter((g) => g.status === "complete").length} Renders Cached
               </span>
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4 flex flex-col h-full">
+          <div className="flex-1 overflow-hidden relative">
+            <div className="absolute inset-0 p-8 flex flex-col h-full overflow-hidden">
               <OutputSection
                 selectedGeneration={selectedGeneration}
                 generations={persistedGenerations}
@@ -689,12 +877,18 @@ export function ImageCombiner() {
                 onCopy={copyImageToClipboard}
                 onDownload={downloadImage}
                 onOpenInNewTab={openImageInNewTab}
+                showInfographic={showInfographic}
+                infographicData={infographicData}
               />
             </div>
           </div>
+          
           {/* History Panel */}
           {persistedGenerations.length > 0 && (
-            <div className="border-t border-border w-full flex flex-col bg-[var(--surface-0)] px-4 py-2 pt-4">
+            <div className="border-t border-slate-800/60 w-full bg-slate-900/20 backdrop-blur-xl px-8 py-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Render Pipeline</h3>
+              </div>
               <GenerationHistory
                 generations={persistedGenerations}
                 selectedId={selectedGenerationId}

@@ -77,7 +77,7 @@ describe("copilot SQL builder", () => {
 
     const text = sqlText(sql)
     expect(text).toContain("FROM")
-    expect(text).toContain("price_from <=")
+    expect(text).toContain("price_from_aed <=")
     expect(text).toContain("COALESCE(bedrooms_max, bedrooms_min) >=")
     expect(text).toContain("COALESCE(bedrooms_min, bedrooms_max) <=")
     expect(text).toContain("COALESCE(price_confidence, 'LOW') IN ('MEDIUM', 'HIGH')")

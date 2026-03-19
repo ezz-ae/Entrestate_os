@@ -9,6 +9,9 @@ import {
   ShieldCheck,
   TrendingUp,
   FileText,
+  Lock,
+  Activity,
+  Zap,
 } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -353,21 +356,95 @@ export default async function HomePage({
           </div>
         </section>
 
-        {/* ── Who it's for ── */}
-        <section className="mt-20">
-          <div className="mb-8 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{isArabic ? "لمن صُممت" : "Who this is for"}</p>
-            <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
-              {isArabic ? "مصممة لمن يتخذون قرارات حقيقية" : "Built for people who make real decisions"}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {whoFor.map((w) => (
-              <div key={w.audience} className="rounded-2xl border border-border/60 bg-card/50 px-6 py-5">
-                <p className="text-sm font-semibold text-foreground">{w.audience}</p>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{w.description}</p>
+        {/* ── Enterprise funnel ── */}
+        <section className="mt-28 rounded-3xl border border-blue-500/20 bg-blue-500/5 p-8 md:p-12 overflow-hidden relative">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-400 mb-6">
+                <Lock className="h-3 w-3" />
+                {isArabic ? "الفئة المؤسسية" : "Institutional Tier"}
               </div>
-            ))}
+              <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
+                {isArabic ? "نظام تشغيل المؤسسات" : "The Enterprise Operating System"}
+              </h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                {isArabic 
+                  ? "تجاوز مجرد البحث. قم ببناء بنية تحتية خاصة للقرار مع وصول كامل إلى الـ API، وأتمتة مخصصة، وبيانات مشفرة." 
+                  : "Move beyond search. Build private decision infrastructure with full API access, custom automation studio, and cryptographically signed L1 data."}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href={prefixLocalePath("/os", locale)}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-8 py-4 text-sm font-bold text-white transition-all hover:bg-blue-600 shadow-lg shadow-blue-500/25"
+                >
+                  {isArabic ? "استكشاف لوحة التحكم" : "Explore Enterprise OS"}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href={prefixLocalePath("/docs", locale)}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/50 px-8 py-4 text-sm font-semibold transition-all hover:bg-slate-900"
+                >
+                  {isArabic ? "وثائق المطورين" : "Developer Docs"}
+                </Link>
+              </div>
+            </div>
+            <div className="relative aspect-square lg:aspect-video rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-2xl">
+               <div className="flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-2">
+                       <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+                       <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Active Tunnel</span>
+                    </div>
+                    <Activity className="h-4 w-4 text-blue-500" />
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center space-y-4">
+                    <div className="h-12 w-full rounded-lg bg-slate-900 border border-slate-800 flex items-center px-4">
+                       <div className="h-1.5 w-1/3 rounded-full bg-blue-500/40" />
+                    </div>
+                    <div className="h-12 w-full rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center px-4">
+                       <div className="h-1.5 w-1/2 rounded-full bg-indigo-500" />
+                    </div>
+                    <div className="h-12 w-full rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center px-4">
+                       <div className="h-1.5 w-2/3 rounded-full bg-emerald-500" />
+                    </div>
+                  </div>
+               </div>
+            </div>
+          </div>
+          <div className="absolute top-0 right-0 -mr-24 -mt-24 h-96 w-96 bg-blue-600/10 blur-[120px] rounded-full" />
+        </section>
+
+        {/* ── Automation Moat ── */}
+        <section className="mt-28">
+          <div className="mb-12 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold">{isArabic ? "خندق الأتمتة" : "The Automation Moat"}</h2>
+            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">
+              {isArabic 
+                ? "لا تكتفِ بالوصول إلى البيانات؛ قم بأتمتتها. أنشئ وكلاء ذكاء اصطناعي يعملون على مدار الساعة لاستخراج الفرص." 
+                : "Don't just access data; automate it. Build AI agents that run 24/7 to extract opportunities, verify signals, and generate market briefs."}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 backdrop-blur-sm">
+               <Zap className="h-8 w-8 text-blue-400 mb-6" />
+               <h3 className="text-xl font-bold mb-3">{isArabic ? "استوديو الوكلاء المحترفين" : "Pro Agent Studio"}</h3>
+               <p className="text-sm text-slate-500 leading-relaxed mb-6">
+                 Visual node-based builder for high-end market pipelines. Connect data scientists to live inventory feeds.
+               </p>
+               <Link href={prefixLocalePath("/apps/agent-builder", locale)} className="text-sm font-semibold text-blue-400 flex items-center gap-2">
+                 {isArabic ? "بدء البناء" : "Start building"} <ArrowRight className="h-4 w-4" />
+               </Link>
+            </div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-8 backdrop-blur-sm">
+               <FileText className="h-8 w-8 text-violet-400 mb-6" />
+               <h3 className="text-xl font-bold mb-3">{isArabic ? "أتمتة المخرجات الضخمة" : "Mass-Automation Outputs"}</h3>
+               <p className="text-sm text-slate-500 leading-relaxed mb-6">
+                 Schedule thousands of personalized PDF briefs or social assets. Scale your institutional reach without increasing headcount.
+               </p>
+               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 border border-slate-800 px-2 py-1 rounded">
+                 Enterprise Only
+               </span>
+            </div>
           </div>
         </section>
 

@@ -65,7 +65,7 @@ export async function GET(request: Request) {
           name,
           area,
           developer,
-          price_from,
+          price_from_aed,
           rental_yield,
           timing_label,
           stress_grade_v1,

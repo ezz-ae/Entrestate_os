@@ -564,8 +564,8 @@ export default function SearchPage() {
                 const name = String(project.name ?? copy.unnamedProject)
                 const devName = pickLocalizedText(locale, project.developer_ar, project.developer, "")
                 const areaName = pickLocalizedText(locale, project.area_ar, project.final_area ?? project.area, "")
-                const priceValue = typeof project.price_from === "number"
-                  ? project.price_from
+                const priceValue = typeof project.price_from_aed === "number"
+                  ? project.price_from_aed
                   : typeof project.l1_canonical_price === "number"
                     ? project.l1_canonical_price
                     : null
@@ -576,13 +576,11 @@ export default function SearchPage() {
                     : null
                 const scoreValue = typeof project.investor_score_v1 === "number"
                   ? project.investor_score_v1
-                  : typeof project.investor_score === "number"
-                    ? project.investor_score
-                    : typeof project.engine_god_metric === "number"
-                      ? project.engine_god_metric
-                      : typeof project.god_metric === "number"
-                        ? project.god_metric
-                        : null
+                  : typeof project.engine_god_metric === "number"
+                    ? project.engine_god_metric
+                    : typeof project.god_metric === "number"
+                      ? project.god_metric
+                      : null
                 const score = typeof scoreValue === "number"
                   ? Math.round(Number(scoreValue))
                   : null

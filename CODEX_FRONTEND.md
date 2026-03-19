@@ -121,6 +121,30 @@ SELECT name, evidence_sources, evidence_exclusions, evidence_assumptions,
 FROM inventory_full WHERE name = $1;
 ```
 
+## ENTERPRISE OPERATING SYSTEM (/os)
+
+A premium, glassmorphic Decision Infrastructure for institutional users.
+
+### 1. Enterprise Dashboard (`enterprise-dashboard.tsx`)
+- **Layout**: Glassmorphic stats cards + Decision Tunnel stepper.
+- **Workflow**: Intent (Prompt) → Evidence (Source Graph) → Judgment (Signal Grade).
+- **Design**: `backdrop-blur-md`, subtle `@/components/ui/card` borders, HSL-tailored accents.
+
+### 2. Automation Studio (`agent-builder-app.tsx`)
+- **Mode**: Pro-grade builder for mass-automation.
+- **Views**:
+    - **Builder**: natural language agent configuration.
+    - **Schedule**: Recurring task manager for PDF/Newsletter generation.
+    - **Monitor**: Real-time health/throughput dashboard for data pipelines.
+
+## ENTERPRISE API (/api/enterprise/)
+
+### /api/enterprise/timetables (POST)
+- **Security**: Bearer Token Auth (check `Authorization` header).
+- **Input**: `{ intent?: string, overrides?: object, goldenPath?: string }`.
+- **Logic**: Compiles intent via TableSpec compiler → Materializes data from `automation_inventory_view_v1`.
+- **Output**: `{ requestId, spec, data, metadata }`.
+
 ## IMPLEMENTATION ORDER
 1. Create lib/db.ts (Neon connection pool)
 2. Create app/api/top-data/route.ts
@@ -129,6 +153,8 @@ FROM inventory_full WHERE name = $1;
 5. Create app/top-data/page.tsx (dashboard from entrestate_top_data)
 6. Create app/api/deal-screener/route.ts
 7. Create app/api/evidence-drawer/[name]/route.ts
-8. Create components/ for each section type
-9. Add Stripe billing integration
-10. Add auth middleware for tier gating
+8. **Phase 2: Enterprise OS (/os) & Dashboard**
+9. **Phase 2: Automation Studio Scheduling & Monitoring**
+10. **Phase 2: Enterprise Timetables API**
+11. Add Stripe billing integration
+12. Add auth middleware for tier gating

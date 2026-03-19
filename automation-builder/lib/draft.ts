@@ -4,6 +4,7 @@ export type AutomationDraft = Omit<
   AutomationDefinition,
   "id" | "teamId" | "createdAt" | "updatedAt" | "version" | "status" | "shareId"
 > & { status?: AutomationDefinition["status"] }
+export type AgentDraft = AutomationDraft
 
 export function buildDraftFromTemplate(template: AutomationTemplate): AutomationDraft {
   return {

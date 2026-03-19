@@ -20,7 +20,7 @@ const flatInputSchema = z.object({
   timing_label: z.enum(["STRONG_BUY", "BUY", "HOLD", "WAIT", "AVOID"]).optional(),
   stress_grade_min: z.enum(["A", "B", "C", "D", "E"]).optional(),
   sort_by: z
-    .enum(["investor_score_v1", "price_from", "rental_yield", "developer_reliability_score"])
+    .enum(["investor_score_v1", "price_from_aed", "rental_yield", "developer_reliability_score"])
     .default("investor_score_v1"),
   limit: z.number().int().min(1).max(50).default(10),
 })
@@ -28,7 +28,7 @@ const flatInputSchema = z.object({
 const nestedInputSchema = z.object({
   filters: flatInputSchema.partial().optional(),
   sort_by: z
-    .enum(["investor_score_v1", "price_from", "rental_yield", "developer_reliability_score"])
+    .enum(["investor_score_v1", "price_from_aed", "rental_yield", "developer_reliability_score"])
     .default("investor_score_v1"),
   limit: z.number().int().min(1).max(50).default(10),
 })

@@ -4,10 +4,10 @@ import type { Metadata } from "next"
 export const metadata: Metadata = {
   title: "Response Lab - Entrestate",
   description:
-    "Compare response engines in real time. No access key required. Review tone, structure, and depth across engines.",
+    "Compare response engines live. No access key required. Review tone, structure, and depth across engines.",
   openGraph: {
     title: "Response Lab - Entrestate",
-    description: "Compare response engines in real time. No access key required.",
+    description: "Compare response engines live. No access key required.",
   },
 }
 

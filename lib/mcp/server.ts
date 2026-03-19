@@ -16,7 +16,7 @@ export const MCP_RESOURCES = {
       "area",
       "city",
       "developer",
-      "price_from",
+      "price_from_aed",
       "price_to",
       "timing_label",
       "stress_grade_v1",
@@ -270,24 +270,24 @@ export async function mcpCrossReference(input: {
 
   const queries: Record<string, string> = {
     price_vs_dld: `
-      SELECT ic.name, ic.area, ic.price_from as listed_price,
+      SELECT ic.name, ic.area, ic.price_from_aed as listed_price,
              dab.median_price as dld_median, dab.p25_price, dab.p75_price,
              dab.avg_price_per_sqm as dld_psqm, dab.daily_velocity,
              CASE
-               WHEN ic.price_from < dab.p25_price THEN 'BELOW MARKET'
-               WHEN ic.price_from > dab.p75_price THEN 'ABOVE MARKET'
+               WHEN ic.price_from_aed < dab.p25_price THEN 'BELOW MARKET'
+               WHEN ic.price_from_aed > dab.p75_price THEN 'ABOVE MARKET'
                ELSE 'FAIR VALUE'
              END as price_verdict,
              ic.timing_label, ic.stress_grade_v1, ic.rental_yield
       FROM inventory_clean ic
       JOIN dld_area_benchmarks_live dab ON UPPER(dab.area) = UPPER(ic.area)
-      WHERE ic.price_from > 0 ${filterClause}
+      WHERE ic.price_from_aed > 0 ${filterClause}
       ORDER BY ic.quality_score DESC
       LIMIT ${limit}`,
     developer_portfolio: `
       SELECT dr.name as developer, dr.tier, dr.project_count as registry_projects,
              COUNT(ic.id) as clean_projects,
-             AVG(ic.price_from)::bigint as avg_price,
+             AVG(ic.price_from_aed)::bigint as avg_price,
              AVG(ic.rental_yield)::numeric(4,2) as avg_yield,
              AVG(ic.investor_score_v1)::numeric(4,1) as avg_score,
              STRING_AGG(DISTINCT ic.area, ', ' ORDER BY ic.area) as areas,
@@ -305,7 +305,7 @@ export async function mcpCrossReference(input: {
              dab.median_price, dab.avg_price_per_sqm, dab.daily_velocity,
              dab.offplan_pct, dab.ready_pct, dab.freehold_pct,
              COUNT(ic.id) as inventory_projects,
-             AVG(ic.price_from)::bigint as inventory_avg_price,
+             AVG(ic.price_from_aed)::bigint as inventory_avg_price,
              AVG(ic.rental_yield)::numeric(4,2) as avg_yield,
              COUNT(*) FILTER (WHERE ic.timing_label IN ('STRONG_BUY', 'BUY')) as buy_signals,
              COUNT(*) FILTER (WHERE ic.stress_grade_v1 = 'A') as grade_a_projects
@@ -317,20 +317,20 @@ export async function mcpCrossReference(input: {
       ORDER BY dab.daily_velocity DESC
       LIMIT ${limit}`,
     golden_visa_opportunities: `
-      SELECT ic.name, ic.area, ic.developer, ic.price_from,
+      SELECT ic.name, ic.area, ic.developer, ic.price_from_aed,
              ic.timing_label, ic.stress_grade_v1, ic.rental_yield, ic.investor_score_v1,
              dab.median_price as dld_area_median, dab.freehold_pct,
-             CASE WHEN ic.price_from < dab.median_price THEN 'BELOW MEDIAN' ELSE 'AT/ABOVE MEDIAN' END as vs_market
+             CASE WHEN ic.price_from_aed < dab.median_price THEN 'BELOW MEDIAN' ELSE 'AT/ABOVE MEDIAN' END as vs_market
       FROM inventory_clean ic
       LEFT JOIN dld_area_benchmarks_live dab ON UPPER(dab.area) = UPPER(ic.area)
-      WHERE ic.price_from >= 2000000
+      WHERE ic.price_from_aed >= 2000000
         AND ic.timing_label IN ('STRONG_BUY', 'BUY', 'HOLD')
         AND ic.stress_grade_v1 IN ('A', 'B')
       ORDER BY ic.investor_score_v1 DESC
       LIMIT ${limit}`,
     stress_test_report: `
       SELECT ic.stress_grade_v1, COUNT(*) as projects,
-             AVG(ic.price_from)::bigint as avg_price,
+             AVG(ic.price_from_aed)::bigint as avg_price,
              AVG(ic.rental_yield)::numeric(4,2) as avg_yield,
              AVG(ic.investor_score_v1)::numeric(4,1) as avg_score,
              COUNT(*) FILTER (WHERE ic.timing_label IN ('STRONG_BUY', 'BUY')) as buy_signals,

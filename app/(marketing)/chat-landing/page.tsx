@@ -54,13 +54,13 @@ const commands = {
 
 const stats = {
   en: [
-    { value: "1,216", label: "Scored Projects", icon: Building2 },
+    { value: "2,813", label: "Scored Projects", icon: Building2 },
     { value: "183",   label: "Areas Covered",   icon: MapPin },
     { value: "36K+",  label: "DLD Transactions", icon: TrendingUp },
     { value: "481",   label: "Developers Rated", icon: Users },
   ],
   ar: [
-    { value: "١٬٢١٦", label: "مشروع مُصنّف",       icon: Building2 },
+    { value: "٢٬٨١٣", label: "مشروع مُصنّف",       icon: Building2 },
     { value: "١٨٣",   label: "منطقة مغطاة",        icon: MapPin },
     { value: "+٣٦ ألف", label: "معاملة DLD",       icon: TrendingUp },
     { value: "٤٨١",   label: "مطور مُقيَّم",        icon: Users },

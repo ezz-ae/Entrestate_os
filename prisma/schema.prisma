@@ -513,3 +513,26 @@ model BookFeed {
   @@index([bookId, createdAt])
   @@map("book_feeds")
 }
+model ProvenanceLog {
+  id              String   @id @default(cuid())
+  runId           String   @unique @map("run_id")
+  snapshotTs      DateTime @default(now()) @map("snapshot_ts")
+  dataSource      String   @map("data_source")
+  confidenceScore Float    @map("confidence_score")
+  reasoning       String?  @map("reasoning")
+  payload         Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([runId])
+  @@map("provenance_logs")
+}
+
+view LatestProvenance {
+  id              String   @id
+  runId           String   @map("run_id")
+  snapshotTs      DateTime @map("snapshot_ts")
+  dataSource      String   @map("data_source")
+  confidenceScore Float    @map("confidence_score")
+
+  @@map("latest_provenance")
+}

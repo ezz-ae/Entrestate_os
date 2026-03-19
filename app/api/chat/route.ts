@@ -46,6 +46,7 @@ import {
   mcpDescribeTable,
   mcpQuery,
 } from "@/lib/mcp/server"
+import { getLatestNotebookProvenance } from "@/lib/notebook-provenance"
 import { Prisma, dbQuery } from "@/lib/db"
 import {
   mcpCrossReferenceInputSchema,
@@ -250,16 +251,16 @@ function extractProjectQuery(message: string) {
 function buildProjectContent(row: Record<string, unknown>, locale: string) {
   const name = typeof row.project_name === "string" ? row.project_name : typeof row.name === "string" ? row.name : "Project"
   const area = pickLocalizedText(locale, row.area_ar, row.area, "UAE")
-  const price = toFiniteNumber(row.price_from)
+  const price = toFiniteNumber(row.price_from_aed)
   const yieldValue = toFiniteNumber(row.rental_yield)
-  const stressGrade = typeof row.stress_grade === "string" ? row.stress_grade : typeof row.stress_grade_v1 === "string" ? row.stress_grade_v1 : "-"
+  const stressGrade = typeof row.stress_grade_v1 === "string" ? row.stress_grade_v1 : "-"
   const stressScore = toFiniteNumber(row.stress_score)
   const timing = typeof row.timing_label === "string" ? row.timing_label : "-"
   const timingScore = toFiniteNumber(row.timing_score)
-  const evidence = typeof row.evidence_label === "string" ? row.evidence_label : typeof row.evidence_label_v1 === "string" ? row.evidence_label_v1 : "-"
+  const evidence = typeof row.evidence_label_v1 === "string" ? row.evidence_label_v1 : "-"
   const evidenceScore = toFiniteNumber(row.evidence_score)
-  const investorScore = toFiniteNumber(row.investor_score ?? row.investor_score_v1)
-  const decision = typeof row.decision_label === "string" ? row.decision_label : typeof row.decision_label_v1 === "string" ? row.decision_label_v1 : "-"
+  const investorScore = toFiniteNumber(row.investor_score_v1)
+  const decision = typeof row.decision_label_v1 === "string" ? row.decision_label_v1 : "-"
   const developer = pickLocalizedText(locale, row.developer_ar, row.developer, "Developer")
 
   return [
@@ -283,13 +284,13 @@ function buildScreeningTable(rows: Record<string, unknown>[], locale: string) {
   const body = rows.slice(0, 8).map((row) => {
     const name = typeof row.project_name === "string" ? row.project_name : typeof row.name === "string" ? row.name : "Project"
     const area = pickLocalizedText(locale, row.area_ar, row.area, "-")
-    const price = toFiniteNumber(row.price_from)
+    const price = toFiniteNumber(row.price_from_aed)
     const yieldValue = toFiniteNumber(row.rental_yield)
-    const stress = typeof row.stress_grade === "string" ? row.stress_grade : typeof row.stress_grade_v1 === "string" ? row.stress_grade_v1 : "-"
+    const stress = typeof row.stress_grade_v1 === "string" ? row.stress_grade_v1 : "-"
     const timing = typeof row.timing_label === "string" ? row.timing_label : "-"
-    const evidence = typeof row.evidence_label === "string" ? row.evidence_label : typeof row.evidence_label_v1 === "string" ? row.evidence_label_v1 : "-"
-    const score = toFiniteNumber(row.investor_score ?? row.investor_score_v1)
-    const signal = typeof row.decision_label === "string" ? row.decision_label : typeof row.decision_label_v1 === "string" ? row.decision_label_v1 : "-"
+    const evidence = typeof row.evidence_label_v1 === "string" ? row.evidence_label_v1 : "-"
+    const score = toFiniteNumber(row.investor_score_v1)
+    const signal = typeof row.decision_label_v1 === "string" ? row.decision_label_v1 : "-"
 
     return `| ${name} | ${area} | ${price === null ? "-" : formatAed(price, locale)} | ${yieldValue === null ? "-" : `${formatDecimal(yieldValue, locale, 2, 2)}%`} | ${stress} | ${timing} | ${evidence} | ${score === null ? "-" : formatInteger(Math.round(score), locale)} | ${signal} |`
   })
@@ -448,7 +449,7 @@ function buildDataCardsFromRows(rows: Record<string, unknown>[], locale: string)
   }
 
   const prices = rows
-    .map((row) => toFiniteNumber(row.price_from ?? row.l1_canonical_price))
+    .map((row) => toFiniteNumber(row.price_from_aed ?? row.l1_canonical_price))
     .filter((value): value is number => value !== null && value > 0)
 
   const areaFrequency = new Map<string, number>()
@@ -607,6 +608,19 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
   })
 }
 
+const PROVENANCE_TIMEOUT_MS = 500
+
+async function resolveProvenanceFast() {
+  try {
+    return await Promise.race([
+      getLatestNotebookProvenance(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), PROVENANCE_TIMEOUT_MS)),
+    ])
+  } catch {
+    return null
+  }
+}
+
 async function buildDeterministicFallback(message: string, locale: string, context?: { city?: string; area?: string }) {
   if (message.trim().toUpperCase().includes("PULSE")) {
     const pulse = await executeDldMarketPulse()
@@ -632,16 +646,16 @@ async function buildDeterministicFallback(message: string, locale: string, conte
         area_ar,
         developer,
         developer_ar,
-        price_from,
+        price_from_aed,
         rental_yield,
         timing_score,
         timing_label,
         stress_score,
-        stress_grade_v1 AS stress_grade,
+        stress_grade_v1,
         evidence_score,
-        evidence_label_v1 AS evidence_label,
-        investor_score_v1 AS investor_score,
-        decision_label_v1 AS decision_label,
+        evidence_label_v1,
+        investor_score_v1,
+        decision_label_v1,
         developer_reliability_score,
         supply_resilience_score,
         liquidity_resilience_score,
@@ -705,6 +719,8 @@ async function buildDeterministicFallback(message: string, locale: string, conte
 
 export async function POST(request: Request) {
   const requestId = getRequestId(request)
+  const provenance = await resolveProvenanceFast()
+  const runId = provenance?.run_id ?? requestId
 
   try {
     const body = await request.json()
@@ -905,7 +921,7 @@ export async function POST(request: Request) {
           maxSteps: 6,
           toolChoice: "auto",
           tools: toolset,
-        }),
+        } as any),
         chatModelTimeoutMs,
         "chat model",
       )
@@ -939,36 +955,48 @@ export async function POST(request: Request) {
           ? `The data shows: ${toolSummary}`
           : "No matching projects found."
 
-      return NextResponse.json(
-        {
-          content,
-          dataCards: dataCards ?? deterministic?.dataCards,
-          notifications: notifications.length > 0 ? notifications : undefined,
-          suggestions: getDefaultSuggestions(locale),
-          evidence: {
+      const responsePayload = {
+        content,
+        dataCards: dataCards ?? deterministic?.dataCards,
+        notifications: notifications.length > 0 ? notifications : undefined,
+        suggestions: getDefaultSuggestions(locale),
+        evidence: {
+          sources_used: deterministic?.evidence?.sources_used ?? collectSources(toolResults),
+          warnings: confidenceWarnings,
+          run_id: runId,
+          provenance: {
+            run_id: runId,
+            snapshot_ts: provenance?.snapshot_ts ?? null,
             sources_used: deterministic?.evidence?.sources_used ?? collectSources(toolResults),
-            warnings: confidenceWarnings,
-          },
-          data_as_of: deterministic?.data_as_of ?? resolveDataAsOf(toolResults),
-          compiler_output: buildCompilerOutput(message),
-          requestId,
-          request_id: requestId,
-          usage,
-        },
-        {
-          status: 200,
-          headers: {
-            "x-request-id": requestId,
-            ...buildUsageHeaders(usage),
           },
         },
-      )
+        data_as_of: deterministic?.data_as_of ?? resolveDataAsOf(toolResults),
+        compiler_output: buildCompilerOutput(message),
+        requestId,
+        request_id: requestId,
+        run_id: runId,
+        usage,
+      }
+
+      return NextResponse.json(responsePayload, {
+        status: 200,
+        headers: {
+          "x-request-id": requestId,
+          ...buildUsageHeaders(usage),
+        },
+      })
     } catch (error) {
       console.error("Chat route LLM execution failed:", { requestId, error })
       const fallback = await buildDeterministicFallback(message, locale, parsed.data.context)
       return NextResponse.json(
         {
           ...fallback,
+          run_id: runId,
+          provenance: {
+            run_id: runId,
+            snapshot_ts: provenance?.snapshot_ts ?? null,
+            sources_used: fallback.evidence?.sources_used ?? ["deterministic_fallback"],
+          },
           warning: "Live model unavailable. Returned deterministic market response.",
           suggestions: getDefaultSuggestions(locale),
           compiler_output: buildCompilerOutput(message),

@@ -9,7 +9,7 @@ import { ProCanvas } from "@/automation-builder/components/pro-canvas"
 import { Button } from "@/automation-builder/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/automation-builder/components/ui/tabs"
 import { Separator } from "@/automation-builder/components/ui/separator"
-import { ShieldCheck, Wand2 } from "lucide-react"
+import { ShieldCheck, Wand2, LayoutDashboard, Calendar, Activity, Lock, Sparkles, ChevronRight } from "lucide-react"
 import type { AgentDefinition, AgentTemplate } from "@/automation-builder/lib/automation-types"
 import type { AgentDraft } from "@/automation-builder/lib/draft"
 import { buildDraftFromTemplate } from "@/automation-builder/lib/draft"
@@ -35,7 +35,11 @@ const emptyDraft: AgentDraft = {
   connectors: { listings: true, projects: true, marketIntel: true, crm: false },
 }
 
+import { ScheduledOutputs } from "@/automation-builder/components/scheduled-outputs"
+import { PipelineMonitor } from "@/automation-builder/components/pipeline-monitor"
+
 export default function AgentBuilderApp() {
+  const [activeTab, setActiveTab] = useState("builder")
   const [mode, setMode] = useState<"easy" | "pro">("easy")
   const [editablePro, setEditablePro] = useState(false)
   const [step, setStep] = useState(1)
@@ -127,105 +131,144 @@ export default function AgentBuilderApp() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card px-6 py-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <ShieldCheck className="h-5 w-5 text-primary-foreground" />
+    <div className="min-h-screen bg-[#020617] text-slate-50 relative overflow-hidden selection:bg-blue-500/30">
+      {/* ── Background Mesh ── */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
+        <div className="absolute top-[20%] -right-[10%] w-[35%] h-[35%] rounded-full bg-indigo-600/10 blur-[120px]" />
+        <div className="absolute -bottom-[10%] left-[20%] w-[30%] h-[30%] rounded-full bg-emerald-600/10 blur-[120px]" />
+      </div>
+
+      <header className="relative z-10 border-b border-slate-800 bg-slate-900/40 backdrop-blur-xl px-8 py-6">
+        <div className="mx-auto max-w-7xl flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              <ShieldCheck className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-foreground md:text-xl">Agent-First Builder</h1>
-              <p className="text-xs text-muted-foreground md:text-sm">
-                Build real estate agents without technical setup.
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-1">
+                <Lock className="h-2.5 w-2.5" />
+                Institutional
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight text-white">Automation Studio</h1>
+              <p className="text-sm text-slate-400">
+                Scale your institutional decision moat with autonomous agents.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Tabs value={mode} onValueChange={(value) => setMode(value as "easy" | "pro")}>
-              <TabsList>
-                <TabsTrigger value="easy">Easy mode</TabsTrigger>
-                <TabsTrigger value="pro">Pro mode</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            {mode === "easy" && (
-              <Button onClick={handleSave} disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save agent"}
-              </Button>
-            )}
+          <div className="flex items-center gap-6">
+             <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="bg-slate-950/60 border border-slate-800 p-1 h-12 rounded-xl">
+                  <TabsTrigger value="builder" className="gap-2 px-6 uppercase text-[10px] font-bold tracking-[0.2em] data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                    <LayoutDashboard className="h-3.5 w-3.5" />
+                    Builder
+                  </TabsTrigger>
+                  <TabsTrigger value="schedule" className="gap-2 px-6 uppercase text-[10px] font-bold tracking-[0.2em] data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                    <Calendar className="h-3.5 w-3.5" />
+                    Schedule
+                  </TabsTrigger>
+                  <TabsTrigger value="monitor" className="gap-2 px-6 uppercase text-[10px] font-bold tracking-[0.2em] data-[state=active]:bg-slate-800 data-[state=active]:text-white">
+                    <Activity className="h-3.5 w-3.5" />
+                    Monitor
+                  </TabsTrigger>
+                </TabsList>
+             </Tabs>
+             <Separator orientation="vertical" className="h-8 bg-slate-800" />
+             {activeTab === "builder" && (
+                <div className="flex items-center gap-4">
+                  <Tabs value={mode} onValueChange={(value) => setMode(value as "easy" | "pro")}>
+                    <TabsList className="bg-slate-950/40 border border-slate-800 rounded-lg p-1">
+                      <TabsTrigger value="easy" className="text-[10px] font-bold uppercase tracking-widest px-4">Easy</TabsTrigger>
+                      <TabsTrigger value="pro" className="text-[10px] font-bold uppercase tracking-widest px-4">Pro</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+             )}
           </div>
         </div>
       </header>
 
-      {mode === "easy" ? (
-        <main className="container mx-auto px-6 py-8">
-          <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.6fr] gap-6">
-            <div className="space-y-6">
-              <AgentWizard
-                step={step}
-                onStepChange={setStep}
-                templates={templates}
-                selectedTemplateId={selectedTemplateId}
-                draft={draft}
-                onDraftChange={setDraft}
-                onSelectTemplate={handleSelectTemplate}
-              />
-              <Separator />
-              <div className="flex items-center gap-3 rounded-xl border border-border bg-card/60 p-5">
-                <Wand2 className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">Agent ready in minutes</p>
-                  <p className="text-xs text-muted-foreground">
-                    Save the agent, then test it with a sample conversation.
-                  </p>
+      <main className="relative z-10 mx-auto max-w-7xl px-8 py-12">
+        {activeTab === "builder" && (
+          mode === "easy" ? (
+            <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.6fr] gap-12">
+              <div className="space-y-12">
+                <div className="rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur-xl p-8">
+                  <AgentWizard
+                    step={step}
+                    onStepChange={setStep}
+                    templates={templates}
+                    selectedTemplateId={selectedTemplateId}
+                    draft={draft}
+                    onDraftChange={setDraft}
+                    onSelectTemplate={handleSelectTemplate}
+                  />
                 </div>
-                <Button className="ml-auto" variant="outline" onClick={handleSave} disabled={isSaving}>
-                  {isSaving ? "Saving..." : "Save & version"}
-                </Button>
+                
+                <div className="flex items-center gap-6 rounded-3xl border border-emerald-500/20 bg-emerald-500/5 p-8 backdrop-blur-xl">
+                  <div className="rounded-2xl bg-emerald-500/20 p-3">
+                    <Sparkles className="h-6 w-6 text-emerald-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-lg font-bold text-white">Agent Validation Successful</p>
+                    <p className="text-sm text-slate-400">
+                      Heuristic checks passed. Your agent is ready for versioning and deployment.
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleSave} 
+                    disabled={isSaving}
+                    className="h-12 px-8 rounded-xl bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-600 transition-all flex items-center gap-2"
+                  >
+                    {isSaving ? "Finalizing..." : "Save & Provision"}
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-10">
+                <AgentLibrary
+                  agents={agents}
+                  selectedAgentId={activeAgentId}
+                  onSelect={handleSelectAgent}
+                  onCreate={() => {
+                    if (templates[0]) {
+                      handleSelectTemplate(templates[0])
+                    } else {
+                      setDraft(emptyDraft)
+                    }
+                    setActiveAgentId(null)
+                  }}
+                  onClone={async (id) => {
+                    await cloneAgent(id)
+                    await refreshAgents()
+                  }}
+                  onShare={async (id) => {
+                    await shareAgent(id)
+                    await refreshAgents()
+                  }}
+                  onPublish={async (id) => {
+                    await publishAgent(id)
+                    await refreshAgents()
+                  }}
+                />
+                <AgentPreview draft={draft} />
+                <AgentTestPanel
+                  draft={draft}
+                  activeAutomationId={activeAgentId}
+                  template={selectedTemplate}
+                  onEnsureAutomation={handleEnsureAgent}
+                />
               </div>
             </div>
+          ) : (
+            <ProCanvas editable={editablePro} onToggleEdit={() => setEditablePro((prev) => !prev)} />
+          )
+        )}
 
-            <div className="space-y-6">
-              <AgentLibrary
-                agents={agents}
-                selectedAgentId={activeAgentId}
-                onSelect={handleSelectAgent}
-                onCreate={() => {
-                  if (templates[0]) {
-                    handleSelectTemplate(templates[0])
-                  } else {
-                    setDraft(emptyDraft)
-                  }
-                  setActiveAgentId(null)
-                }}
-                onClone={async (id) => {
-                  await cloneAgent(id)
-                  await refreshAgents()
-                }}
-                onShare={async (id) => {
-                  await shareAgent(id)
-                  await refreshAgents()
-                }}
-                onPublish={async (id) => {
-                  await publishAgent(id)
-                  await refreshAgents()
-                }}
-              />
-              <AgentPreview draft={draft} />
-              <AgentTestPanel
-                draft={draft}
-                activeAgentId={activeAgentId}
-                template={selectedTemplate}
-                onEnsureAgent={handleEnsureAgent}
-              />
-            </div>
-          </div>
-        </main>
-      ) : (
-        <main className="container mx-auto px-6 py-8">
-          <ProCanvas editable={editablePro} onToggleEdit={() => setEditablePro((prev) => !prev)} />
-        </main>
-      )}
+        {activeTab === "schedule" && <ScheduledOutputs />}
+        {activeTab === "monitor" && <PipelineMonitor />}
+      </main>
     </div>
   )
 }

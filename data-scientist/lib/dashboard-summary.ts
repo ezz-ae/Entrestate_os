@@ -54,7 +54,7 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   ],
   confidence: ["data_confidence", "confidence", "confidence_score"],
   name: ["name", "project_name", "title"],
-  score: ["investment_score", "score", "investment_score_final", "score_0_100", "final_rank", "match_score"],
+  score: ["investor_score_v1", "score", "score_0_100", "final_rank", "match_score"],
 }
 
 function resolveColumn(rows: Record<string, unknown>[], aliases: string[]): string | null {

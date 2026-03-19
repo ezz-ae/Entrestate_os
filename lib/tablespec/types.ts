@@ -1,3 +1,5 @@
+import { ColumnTier } from "../registry/columns"
+
 export type TableSpecRowGrain = "project" | "asset" | "transaction"
 export type TableSpecTimeGrain = "daily" | "weekly" | "monthly" | "quarterly" | "yearly" | "lifecycle"
 
@@ -30,6 +32,7 @@ export type TableSpecSort = {
 }
 
 export type TableSpecEntitlements = {
+  currentTier?: ColumnTier
   allowedRowGrains?: TableSpecRowGrain[]
   allowedSignals?: string[]
   allowedFilters?: string[]
@@ -49,6 +52,8 @@ export type TableSpec = {
   filters: TableSpecFilter[]
   sort?: TableSpecSort
   limit?: number
+  reasoning?: string
+  dataSource?: string
 }
 
 export type TableSpecGoldenPath =
@@ -62,6 +67,7 @@ export type TableSpecCompileInput = {
   profile?: {
     riskProfile?: string
     horizon?: string
+    reasoning?: string
   }
   overrides?: Partial<TableSpec>
   entitlements?: TableSpecEntitlements

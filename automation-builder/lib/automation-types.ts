@@ -82,6 +82,7 @@ export const AutomationDefinitionSchema = z.object({
   shareId: z.string().optional(),
 })
 export type AutomationDefinition = z.infer<typeof AutomationDefinitionSchema>
+export type AgentDefinition = AutomationDefinition
 
 export const AutomationTemplateSchema = z.object({
   id: z.string(),
@@ -110,6 +111,7 @@ export const AutomationTemplateSchema = z.object({
   sampleOutput: z.record(z.string(), z.string()),
 })
 export type AutomationTemplate = z.infer<typeof AutomationTemplateSchema>
+export type AgentTemplate = AutomationTemplate
 
 export const AutomationVersionSchema = z.object({
   id: z.string(),

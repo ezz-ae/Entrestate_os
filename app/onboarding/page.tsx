@@ -113,87 +113,163 @@ const COPY = {
   },
 } as const
 
+import { inferOnboardingProfile, generateInitialQuery } from "@/lib/profile/inference"
+import { Attribution } from "@/lib/attribution/tracker"
+
+type Objective = "yield" | "growth" | "visa"
+type RiskLevel = "conservative" | "balanced" | "aggressive"
+
+const ONBOARDING_COPY = {
+  en: {
+    step: (current: number) => `Phase ${current} of 3`,
+    titleOne: "What is your primary investment objective?",
+    bodyOne: "We optimize the infrastructure's intelligence layer based on your target outcome.",
+    objectives: [
+      { key: "yield" as const, label: "Yield Maximization", description: "Optimize for stable, high-yield rental income", icon: BarChart3 },
+      { key: "growth" as const, label: "Capital Growth", description: "Target high-appreciation areas and emerging clusters", icon: TrendingUp },
+      { key: "visa" as const, label: "Golden Visa Residency", description: "Identify eligible assets at the AED 2M+ threshold", icon: Shield },
+    ],
+    titleTwo: "Deployment constraints",
+    bodyTwo: "Define your operational boundaries for budget and handover timing.",
+    budget: "Budget liquidity",
+    horizon: "Time horizon",
+    titleThree: "Risk Appetite & Methodology",
+    bodyThree: "Set your risk tolerance for asset selection and scoring weights.",
+    riskLabels: {
+      conservative: "Conservative: Institutional resilience focus",
+      balanced: "Balanced: Risk-adjusted performance",
+      aggressive: "Aggressive: High-upside emerging opportunities",
+    },
+    finish: "Initialize OS",
+    finishing: "Deploying persona...",
+    skip: "Skip profiling",
+    continue: "Continue",
+  },
+  ar: {
+    step: (current: number) => `المرحلة ${current} من 3`,
+    titleOne: "ما هو هدفك الاستثماري الأساسي؟",
+    bodyOne: "نقوم بضبط ذكاء النظام بناءً على النتيجة التي تسعى لتحقيقها.",
+    objectives: [
+      { key: "yield" as const, label: "تعظيم العائد", description: "التركيز على عوائد إيجارية مرتفعة ومستقرة", icon: BarChart3 },
+      { key: "growth" as const, label: "نمو رأس المال", description: "استهداف المناطق ذات الارتفاع العالي في القيمة", icon: TrendingUp },
+      { key: "visa" as const, label: "الإقامة الذهبية", description: "تحديد الأصول المؤهلة بحد 2 مليون درهم فأكثر", icon: Shield },
+    ],
+    titleTwo: "قيود التنفيذ",
+    bodyTwo: "حدد حدودك التشغيلية للميزانية وتوقيت التسليم.",
+    budget: "سيولة الميزانية",
+    horizon: "الأفق الزمني",
+    titleThree: "شهية المخاطرة والمنهجية",
+    bodyThree: "حدد مستوى تحملك للمخاطر لاختيار الأصول وأوزان التقييم.",
+    riskLabels: {
+      conservative: "محافظ: التركيز على المرونة المؤسسية",
+      balanced: "متوازن: أداء معدل حسب المخاطر",
+      aggressive: "نمائي: فرص ناشئة ذات عائد مرتفع",
+    },
+    finish: "بدء النظام",
+    finishing: "جارٍ الإعداد...",
+    skip: "تخطي الملف الشخصي",
+    continue: "التالي",
+  },
+} as const
+
 export default function OnboardingPage() {
   const router = useRouter()
   const locale = useLocale() as AppLocale
-  const copy = COPY[locale] ?? COPY.en
-  const roles = getRoles(locale)
-  const horizons = getHorizons(locale)
-  const budgetRanges = getBudgetRanges(locale)
+  const copy = ONBOARDING_COPY[locale] ?? ONBOARDING_COPY.en
+  
   const [step, setStep] = useState(1)
-  const [role, setRole] = useState<Role | null>(null)
+  const [objective, setObjective] = useState<Objective | null>(null)
   const [horizon, setHorizon] = useState("")
   const [budget, setBudget] = useState("")
-  const [yieldBias, setYieldBias] = useState(50)
+  const [riskTolerance, setRiskTolerance] = useState<RiskLevel>("balanced")
   const [saving, setSaving] = useState(false)
+
+  const budgetRanges = getBudgetRanges(locale)
+  const horizons = getHorizons(locale)
 
   async function finish() {
     setSaving(true)
-    try {
-      const profileUpdate: Record<string, unknown> = {}
-      if (role) {
-        profileUpdate.inferredSignals = { onboardingRole: role }
-      }
-      if (horizon) profileUpdate.horizon = horizon
-      if (budget) {
-        const match = budgetRanges.find((item) => item.key === budget)
-        if (match) profileUpdate.preferredMarkets = [`budget:${match.min}-${match.max ?? "max"}`]
-      }
-      profileUpdate.yieldVsSafety = yieldBias / 100
-      profileUpdate.riskBias = yieldBias > 60 ? 0.5 : 0.65
+    const profile = inferOnboardingProfile({
+      objective: objective || undefined,
+      budget: budget || undefined,
+      horizon: horizon || undefined,
+      riskTolerance,
+    })
 
+    try {
+      Attribution.logOnboardingComplete(objective || undefined)
       await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profileUpdate),
+        body: JSON.stringify(profile),
       })
-    } catch {
-      // non-blocking
+    } catch (e) {
+      console.error("Onboarding profile sync failed", e)
     } finally {
       setSaving(false)
-      const query =
-        role === "broker"
-          ? locale === "ar"
-            ? "اعرض لي المشاريع الجاهزة بإشارة BUY"
-            : "Show me ready BUY-signal projects"
-          : locale === "ar"
-            ? "ما المناطق التي تقدم أفضل عائد؟"
-            : "What areas have the best yield?"
-      router.push(prefixLocalePath(`/chat?q=${encodeURIComponent(query)}`, locale))
+      const query = generateInitialQuery({
+        objective: objective || undefined,
+        budget: budget || undefined,
+      })
+      router.push(prefixLocalePath(`/os?q=${encodeURIComponent(query)}&onboarded=true`, locale))
     }
   }
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-xl">
-        <div className="flex items-center gap-2 mb-8">
-          {[1, 2, 3].map((item) => (
-            <div key={item} className={`h-1 flex-1 rounded-full transition-colors ${item <= step ? "bg-foreground" : "bg-border"}`} />
+    <main className="min-h-screen bg-[#050505] text-slate-200 flex items-center justify-center p-6 font-sans">
+      <div className="w-full max-w-xl relative">
+        {/* Progress Orbit */}
+        <div className="flex items-center gap-2 mb-12">
+          {[1, 2, 3].map((i) => (
+            <div 
+              key={i} 
+              className={`h-0.5 flex-1 transition-all duration-500 ${
+                i <= step ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-800"
+              }`} 
+            />
           ))}
         </div>
 
         {step === 1 && (
-          <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">{copy.step(1)}</p>
-            <h1 className="mt-3 text-2xl md:text-3xl font-serif text-foreground">{copy.titleOne}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{copy.bodyOne}</p>
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {roles.map((item) => (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-500/80 font-semibold mb-4">
+              {copy.step(1)}
+            </p>
+            <h1 className="text-3xl md:text-4xl font-serif text-white tracking-tight mb-4">
+              {copy.titleOne}
+            </h1>
+            <p className="text-slate-400 text-sm leading-relaxed mb-10 max-w-md">
+              {copy.bodyOne}
+            </p>
+            
+            <div className="grid gap-4">
+              {copy.objectives.map((obj) => (
                 <button
-                  key={item.key}
+                  key={obj.key}
                   onClick={() => {
-                    setRole(item.key)
+                    setObjective(obj.key)
                     setStep(2)
                   }}
-                  className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors ${
-                    role === item.key ? "border-primary/60 bg-primary/10" : "border-border/60 bg-card/70 hover:border-primary/30"
+                  className={`group relative flex items-center gap-4 rounded-2xl border p-5 text-left transition-all duration-300 ${
+                    objective === obj.key 
+                      ? "border-emerald-500/50 bg-emerald-500/5 shadow-[0_0_20px_rgba(16,185,129,0.1)]" 
+                      : "border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/60"
                   }`}
                 >
-                  <item.icon className="h-5 w-5 mt-0.5 text-accent shrink-0" />
-                  <div>
-                    <div className="text-sm font-medium text-foreground">{item.label}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{item.description}</div>
+                  <div className={`p-3 rounded-xl transition-colors ${
+                    objective === obj.key ? "bg-emerald-500/20 text-emerald-400" : "bg-slate-800 text-slate-500 group-hover:text-slate-300"
+                  }`}>
+                    <obj.icon className="w-6 h-6" />
                   </div>
+                  <div>
+                    <h3 className="text-base font-medium text-white group-hover:text-emerald-400 transition-colors">
+                      {obj.label}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">{obj.description}</p>
+                  </div>
+                  <ArrowRight className={`ml-auto w-4 h-4 transition-all duration-300 ${
+                    objective === obj.key ? "text-emerald-500 translate-x-0 opacity-100" : "text-slate-700 -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0"
+                  }`} />
                 </button>
               ))}
             </div>
@@ -201,23 +277,31 @@ export default function OnboardingPage() {
         )}
 
         {step === 2 && (
-          <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">{copy.step(2)}</p>
-            <h1 className="mt-3 text-2xl md:text-3xl font-serif text-foreground">{copy.titleTwo}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{copy.bodyTwo}</p>
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-500/80 font-semibold mb-4">
+              {copy.step(2)}
+            </p>
+            <h1 className="text-3xl md:text-4xl font-serif text-white tracking-tight mb-4">
+              {copy.titleTwo}
+            </h1>
+            <p className="text-slate-400 text-sm leading-relaxed mb-10">
+              {copy.bodyTwo}
+            </p>
 
-            <div className="mt-8 space-y-6">
+            <div className="space-y-10">
               <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">{copy.budget}</p>
-                <div className="grid grid-cols-2 gap-2">
+                <label className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-4 block">
+                  {copy.budget}
+                </label>
+                <div className="grid grid-cols-2 gap-3">
                   {budgetRanges.map((item) => (
                     <button
                       key={item.key}
                       onClick={() => setBudget(item.key)}
-                      className={`rounded-xl border px-4 py-3 text-sm transition-colors ${
+                      className={`px-4 py-3 rounded-xl border text-xs font-medium transition-all ${
                         budget === item.key
-                          ? "border-primary/60 bg-primary/10 text-foreground"
-                          : "border-border/60 bg-background/50 text-foreground hover:border-primary/30"
+                          ? "border-emerald-500/50 bg-emerald-500/5 text-emerald-400"
+                          : "border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700"
                       }`}
                     >
                       {item.label}
@@ -227,66 +311,96 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">{copy.horizon}</p>
-                <div className="space-y-2">
+                <label className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-4 block">
+                  {copy.horizon}
+                </label>
+                <div className="grid gap-2">
                   {horizons.map((item) => (
                     <button
                       key={item.key}
                       onClick={() => setHorizon(item.key)}
-                      className={`w-full text-left rounded-xl border px-4 py-3 text-sm transition-colors ${
+                      className={`flex items-center justify-between px-5 py-3.5 rounded-xl border text-xs transition-all ${
                         horizon === item.key
-                          ? "border-primary/60 bg-primary/10 text-foreground"
-                          : "border-border/60 bg-background/50 text-foreground hover:border-primary/30"
+                          ? "border-emerald-500/50 bg-emerald-500/5 text-emerald-400"
+                          : "border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700"
                       }`}
                     >
-                      <span className="font-medium">{item.label}</span>
-                      <span className="text-muted-foreground ml-2">{item.description}</span>
+                      <span className="font-semibold">{item.label}</span>
+                      <span className="text-[10px] opacity-60 font-normal">{item.description}</span>
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 flex items-center justify-between">
-              <button onClick={() => setStep(3)} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition">
-                <SkipForward className="h-3.5 w-3.5" /> {copy.skip}
+            <div className="mt-12 flex items-center justify-between">
+              <button 
+                onClick={() => setStep(3)}
+                className="text-xs text-slate-500 hover:text-white transition-colors"
+              >
+                {copy.skip}
               </button>
-              <button onClick={() => setStep(3)} className="inline-flex items-center gap-2 rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-medium transition hover:bg-foreground/90">
-                {copy.continue} <ArrowRight className="h-4 w-4" />
+              <button 
+                onClick={() => setStep(3)}
+                className="flex items-center gap-2 bg-white text-black px-6 py-3 rounded-full text-sm font-bold hover:bg-emerald-400 transition-colors"
+              >
+                {copy.continue} <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         )}
 
         {step === 3 && (
-          <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">{copy.step(3)}</p>
-            <h1 className="mt-3 text-2xl md:text-3xl font-serif text-foreground">{copy.titleThree}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{copy.bodyThree}</p>
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-center">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-500/80 font-semibold mb-4 text-left">
+              {copy.step(3)}
+            </p>
+            <h1 className="text-3xl md:text-4xl font-serif text-white tracking-tight mb-4 text-left">
+              {copy.titleThree}
+            </h1>
+            <p className="text-slate-400 text-sm leading-relaxed mb-12 text-left">
+              {copy.bodyThree}
+            </p>
 
-            <div className="mt-8">
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                <div className="flex items-center gap-1.5">
-                  <Shield className="h-3.5 w-3.5" />
-                  {copy.safety}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Rocket className="h-3.5 w-3.5" />
-                  {copy.yield}
-                </div>
-              </div>
-              <input type="range" min={0} max={100} value={yieldBias} onChange={(e) => setYieldBias(Number(e.target.value))} className="w-full accent-foreground" />
-              <div className="text-center mt-2">
-                <span className="text-xs text-muted-foreground">{yieldDescription(yieldBias, locale)}</span>
-              </div>
+            <div className="grid gap-3 mb-12">
+              {(["conservative", "balanced", "aggressive"] as const).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRiskTolerance(r)}
+                  className={`px-5 py-4 rounded-2xl border text-sm transition-all text-left ${
+                    riskTolerance === r
+                      ? "border-emerald-500/50 bg-emerald-500/5 text-emerald-400"
+                      : "border-slate-800 bg-slate-900/50 text-slate-500 hover:border-slate-700"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="capitalize font-bold tracking-wide">
+                      {copy.riskLabels[r].split(":")[0]}
+                    </span>
+                    {riskTolerance === r && <Rocket className="w-4 h-4 text-emerald-500" />}
+                  </div>
+                  <p className="text-[10px] mt-1 opacity-70">
+                    {copy.riskLabels[r].split(":")[1]?.trim()}
+                  </p>
+                </button>
+              ))}
             </div>
 
-            <div className="mt-10 flex items-center justify-between">
-              <button onClick={() => finish()} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition">
-                <SkipForward className="h-3.5 w-3.5" /> {copy.skip}
+            <div className="flex items-center justify-between">
+              <button 
+                onClick={finish}
+                className="text-xs text-slate-500 hover:text-white transition-colors"
+              >
+                {copy.skip}
               </button>
-              <button onClick={() => finish()} disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-foreground text-background px-6 py-2.5 text-sm font-medium transition hover:bg-foreground/90 disabled:opacity-50">
-                {saving ? copy.finishing : copy.finish} <ArrowRight className="h-4 w-4" />
+              <button 
+                onClick={finish} 
+                disabled={saving}
+                className="flex items-center gap-3 bg-emerald-500 text-black px-8 py-3.5 rounded-full text-sm font-bold hover:bg-emerald-400 disabled:opacity-50 transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)]"
+              >
+                {saving ? copy.finishing : copy.finish} 
+                {!saving && <Rocket className="w-4 h-4" />}
+                {saving && <div className="w-4 h-4 border-2 border-black border-t-transparent animate-spin rounded-full" />}
               </button>
             </div>
           </div>

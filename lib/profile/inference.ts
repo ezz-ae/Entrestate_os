@@ -59,3 +59,49 @@ export function inferProfileUpdate(profile: UserProfile, signals: BehavioralSign
 
   return { profile: updated, adjustments }
 }
+
+/**
+ * Translates onboarding selections into a UserProfile update.
+ */
+export function inferOnboardingProfile(selections: {
+  objective?: "yield" | "growth" | "visa" | string
+  budget?: string
+  horizon?: string
+  riskTolerance?: "conservative" | "balanced" | "aggressive" | string
+}) {
+  const riskMap: Record<string, number> = {
+    conservative: 0.3,
+    balanced: 0.65,
+    aggressive: 0.9,
+  }
+
+  const yieldMap: Record<string, number> = {
+    yield: 0.9,
+    growth: 0.5,
+    visa: 0.4,
+  }
+
+  return {
+    riskBias: selections.riskTolerance ? (riskMap[selections.riskTolerance] ?? 0.65) : 0.65,
+    yieldVsSafety: selections.objective ? (yieldMap[selections.objective] ?? 0.5) : 0.5,
+    horizon: selections.horizon,
+    preferredMarkets: selections.budget ? [`budget:${selections.budget}`] : [],
+  }
+}
+
+/**
+ * Generates the first context-aware query for the user.
+ */
+export function generateInitialQuery(selections: {
+  objective?: string
+  budget?: string
+}): string {
+  const obj = selections.objective?.toLowerCase() || ""
+  const budgetStr = selections.budget ? ` budget around ${selections.budget}` : ""
+
+  if (obj.includes("yield")) return `Show me high-yield projects${budgetStr} in Dubai`
+  if (obj.includes("growth")) return `Top capital growth projects${budgetStr} with high resilience scores`
+  if (obj.includes("visa")) return `Golden Visa eligible properties${budgetStr} under AED 4M`
+  
+  return "What are the best real estate investment opportunities today?"
+}

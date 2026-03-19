@@ -25,7 +25,7 @@ const PROJECT_SORT_COLUMNS = {
 
 const CURATED_PROJECT_SORT_COLUMNS = {
   god_metric: "investor_score_v1",
-  price: "price_from",
+  price: "price_from_aed",
   yield: "rental_yield",
   reliability: "developer_reliability_score",
 } as const
@@ -88,6 +88,7 @@ export type ListPropertiesInput = {
   sortBy?: SortBy
   page?: number
   pageSize?: number
+  locale?: string
 }
 
 function toSqlList(values: string[]) {
@@ -202,11 +203,11 @@ export function slugifyName(value: string) {
     .replace(/^-+|-+$/g, "")
 }
 
-function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
+function buildPropertyClauses(filters?: PropertyFilters, locale?: string): Prisma.Sql[] {
   const clauses: Prisma.Sql[] = USE_CURATED_PROPERTIES_VIEW
     ? [
         Prisma.sql`name IS NOT NULL`,
-        Prisma.sql`COALESCE(price_from, 0) > 0`,
+        Prisma.sql`COALESCE(price_from_aed, 0) > 0`,
         Prisma.sql`TRIM(COALESCE(area, '')) <> ''`,
         Prisma.sql`TRIM(COALESCE(developer, '')) <> ''`,
       ]
@@ -224,6 +225,13 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
         }),
       ]
   const gradeOrder = ["A", "B", "C", "D"] as const
+  const isArabic = locale === "ar"
+  const curatedAreaExpr = isArabic
+    ? Prisma.sql`COALESCE(NULLIF(TRIM(area_ar), ''), area)`
+    : Prisma.sql`area`
+  const curatedDeveloperExpr = isArabic
+    ? Prisma.sql`COALESCE(NULLIF(TRIM(developer_ar), ''), developer)`
+    : Prisma.sql`developer`
 
   if (!filters) return clauses
 
@@ -239,12 +247,16 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
   if (filters.area) {
     clauses.push(
       USE_CURATED_PROPERTIES_VIEW
-        ? Prisma.sql`LOWER(area) LIKE LOWER(${`%${filters.area}%`})`
+        ? Prisma.sql`LOWER(${curatedAreaExpr}) LIKE LOWER(${`%${filters.area}%`})`
         : Prisma.sql`LOWER(COALESCE(final_area, area)) LIKE LOWER(${`%${filters.area}%`})`,
     )
   }
   if (filters.developer) {
-    clauses.push(Prisma.sql`LOWER(developer) LIKE LOWER(${`%${filters.developer}%`})`)
+    clauses.push(
+      USE_CURATED_PROPERTIES_VIEW
+        ? Prisma.sql`LOWER(${curatedDeveloperExpr}) LIKE LOWER(${`%${filters.developer}%`})`
+        : Prisma.sql`LOWER(developer) LIKE LOWER(${`%${filters.developer}%`})`,
+    )
   }
   if (filters.intent) {
     if (!USE_CURATED_PROPERTIES_VIEW) {
@@ -254,14 +266,14 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
   if (typeof filters.budgetMaxAed === "number") {
     clauses.push(
       USE_CURATED_PROPERTIES_VIEW
-        ? Prisma.sql`price_from <= ${filters.budgetMaxAed}`
+        ? Prisma.sql`price_from_aed <= ${filters.budgetMaxAed}`
         : Prisma.sql`l1_canonical_price <= ${filters.budgetMaxAed}`,
     )
   }
   if (typeof filters.budgetMinAed === "number") {
     clauses.push(
       USE_CURATED_PROPERTIES_VIEW
-        ? Prisma.sql`price_from >= ${filters.budgetMinAed}`
+        ? Prisma.sql`price_from_aed >= ${filters.budgetMinAed}`
         : Prisma.sql`l1_canonical_price >= ${filters.budgetMinAed}`,
     )
   }
@@ -295,7 +307,7 @@ function buildPropertyClauses(filters?: PropertyFilters): Prisma.Sql[] {
     clauses.push(
       USE_CURATED_PROPERTIES_VIEW
         ? Prisma.sql`(
-            COALESCE(price_from, 0) >= 2000000
+            COALESCE(price_from_aed, 0) >= 2000000
             OR LOWER(COALESCE(golden_visa, 'false')) IN ('true', 'yes', '1')
           )`
         : Prisma.sql`(
@@ -320,7 +332,7 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
   const offset = (page - 1) * pageSize
   const sortBy = input.sortBy ?? "god_metric"
 
-  const clauses = buildPropertyClauses(input.filters)
+  const clauses = buildPropertyClauses(input.filters, input.locale)
   const whereClause = clauses.length > 0 ? Prisma.sql`WHERE ${Prisma.join(clauses, " AND ")}` : Prisma.empty
   const sortColumn = Prisma.raw(
     USE_CURATED_PROPERTIES_VIEW ? CURATED_PROJECT_SORT_COLUMNS[sortBy] : PROJECT_SORT_COLUMNS[sortBy],
@@ -337,10 +349,9 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
           area,
           area_ar,
           area AS final_area,
-          NULL::numeric AS bedrooms_min,
           NULL::numeric AS bedrooms_max,
           NULL::numeric AS beds,
-          price_from,
+          price_from_aed,
           rental_yield,
           timing_score,
           timing_label,
@@ -349,15 +360,13 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
           yield_score,
           yield_label,
           evidence_score,
-          evidence_label_v1 AS evidence_label,
+          evidence_label_v1,
           investor_score_v1,
-          investor_score_v1 AS investor_score,
           decision_label_v1,
-          decision_label_v1 AS decision_label,
           hero_image,
           golden_visa,
           score_version,
-          price_from AS l1_canonical_price,
+          price_from_aed AS l1_canonical_price,
           rental_yield AS l1_canonical_yield,
           NULL AS l1_canonical_status,
           price_confidence AS l1_confidence,
@@ -444,10 +453,9 @@ export async function getProjectBySlug(slug: string): Promise<{
           area,
           area_ar,
           area AS final_area,
-          NULL::numeric AS bedrooms_min,
           NULL::numeric AS bedrooms_max,
           NULL::numeric AS beds,
-          price_from,
+          price_from_aed,
           rental_yield,
           timing_score,
           timing_label,
@@ -456,15 +464,13 @@ export async function getProjectBySlug(slug: string): Promise<{
           yield_score,
           yield_label,
           evidence_score,
-          evidence_label_v1 AS evidence_label,
+          evidence_label_v1,
           investor_score_v1,
-          investor_score_v1 AS investor_score,
           decision_label_v1,
-          decision_label_v1 AS decision_label,
           hero_image,
           golden_visa,
           score_version,
-          price_from AS l1_canonical_price,
+          price_from_aed AS l1_canonical_price,
           rental_yield AS l1_canonical_yield,
           NULL AS l1_canonical_status,
           price_confidence AS l1_confidence,
@@ -547,7 +553,7 @@ export async function getProjectBySlug(slug: string): Promise<{
           SELECT
             area,
             COUNT(*)::int AS projects,
-            ROUND(AVG(price_from) FILTER (WHERE price_from > 0)) AS avg_price,
+            ROUND(AVG(price_from_aed) FILTER (WHERE price_from_aed > 0)) AS avg_price,
             ROUND(AVG(rental_yield::numeric) FILTER (WHERE rental_yield > 0), 1) AS avg_yield,
             ROUND(AVG(investor_score_v1::numeric), 1) AS avg_efficiency
           FROM ${PROPERTIES_TABLE_SQL}
@@ -575,14 +581,14 @@ export async function getProjectBySlug(slug: string): Promise<{
             area,
             area_ar,
             area AS final_area,
-            price_from,
+            price_from_aed,
             rental_yield,
             timing_label,
             stress_grade_v1,
             investor_score_v1,
             decision_label_v1,
             price_confidence,
-            price_from AS l1_canonical_price,
+            price_from_aed AS l1_canonical_price,
             rental_yield AS l1_canonical_yield,
             stress_grade_v1 AS l2_stress_test_grade,
             timing_label AS l3_timing_signal,
@@ -670,7 +676,7 @@ export async function listAreas(): Promise<{
           (to_jsonb(t) ->> 'avg_price')::numeric AS avg_price,
           (to_jsonb(t) ->> 'avg_yield')::numeric AS avg_yield,
           COALESCE(
-            (to_jsonb(t) ->> 'avg_investment_score')::numeric,
+            (to_jsonb(t) ->> 'avg_investor_score_v1')::numeric,
             (to_jsonb(t) ->> 'avg_score')::numeric,
             (to_jsonb(t) ->> 'efficiency')::numeric
           ) AS efficiency,
@@ -908,6 +914,7 @@ export async function listDevelopers(): Promise<{
           d.total_projects,
           d.priced_projects
         FROM ${DEVELOPERS_TABLE_SQL} d
+        WHERE d.name <> 'Unknown Developer'
         ORDER BY project_count DESC
       `)
     : []
@@ -935,7 +942,10 @@ export async function listDevelopers(): Promise<{
           ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
           ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price
         FROM ${DETAIL_TABLE_SQL}
-        WHERE ${Prisma.join(developerQualityClauses, " AND ")}
+        WHERE ${Prisma.join(
+          [Prisma.sql`developer <> 'Unknown Developer'`, ...developerQualityClauses],
+          " AND ",
+        )}
         GROUP BY 1
         HAVING COUNT(*) >= 3
         ORDER BY reliability DESC NULLS LAST

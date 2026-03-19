@@ -6,6 +6,7 @@ import { ProgressBar } from "./progress-bar"
 import { useMobile } from "@/seq/hooks/use-mobile"
 import { useEffect } from "react"
 import type { Generation } from "./types"
+import { BrandedOverlay, type BrandedOverlayData } from "./branded-overlay"
 
 interface OutputSectionProps {
   selectedGeneration: Generation | undefined
@@ -23,6 +24,8 @@ interface OutputSectionProps {
   onCopy: () => void
   onDownload: () => void
   onOpenInNewTab: () => void
+  showInfographic?: boolean
+  infographicData: BrandedOverlayData
 }
 
 export function OutputSection({
@@ -40,6 +43,8 @@ export function OutputSection({
   onLoadAsInput,
   onCopy,
   onDownload,
+  infographicData,
+  showInfographic = false,
 }: OutputSectionProps) {
   const isMobile = useMobile()
 
@@ -132,16 +137,16 @@ export function OutputSection({
 
   return (
     <div className="flex flex-col h-full min-h-0 select-none relative group/output">
-      <div className="relative flex-1 min-h-0 flex flex-col">
+      <div className="relative flex-1 min-h-0 flex flex-col rounded-3xl overflow-hidden border border-slate-800 bg-slate-900/20 backdrop-blur-xl">
         {selectedGeneration?.status === "loading" ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/60 backdrop-blur-md z-40">
             <ProgressBar
               progress={selectedGeneration.progress}
               onCancel={() => onCancelGeneration(selectedGeneration.id)}
             />
           </div>
         ) : isConvertingHeic ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-950/60 backdrop-blur-md z-40">
             <ProgressBar progress={heicProgress} onCancel={() => {}} isConverting />
           </div>
         ) : generatedImage ? (
@@ -158,38 +163,45 @@ export function OutputSection({
                 onLoad={() => setImageLoaded(true)}
                 onClick={onOpenFullscreen}
               />
+              <BrandedOverlay 
+                isVisible={showInfographic} 
+                data={infographicData}
+              />
             </div>
           </div>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-center py-6 select-none bg-card/50 border border-dashed border-border">
-            <div>
-              <div className="w-8 h-8 md:w-16 md:h-16 mx-auto mb-3 border border-border flex items-center justify-center w-full flex flex-col bg-[var(--surface-0)]">
+          <div className="absolute inset-0 flex items-center justify-center text-center p-8 select-none bg-slate-950/40 border-2 border-dashed border-slate-800/60 rounded-3xl">
+            <div className="space-y-4">
+              <div className="w-20 h-20 mx-auto rounded-3xl border border-slate-800 flex items-center justify-center bg-slate-900/40 text-slate-500">
                 <svg
-                  className="w-4 h-4 md:w-8 md:h-8 text-muted-foreground"
+                  className="w-10 h-10"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <rect x="3" y="3" width="18" height="18" rx="4" />
                   <circle cx="8.5" cy="8.5" r="1.5" />
                   <polyline points="21,15 16,10 5,21" />
                 </svg>
               </div>
-              <p className="text-xs text-muted-foreground font-medium py-1 md:py-2">Ready to build</p>
+              <div>
+                <p className="text-sm font-bold text-slate-300">Ready for Strategy</p>
+                <p className="text-xs text-slate-500 mt-2">Initialize your prompt to render a mandate visual.</p>
+              </div>
             </div>
           </div>
         )}
 
         {generations.length > 0 && (
-          <div className="hidden lg:flex flex-col items-center w-full absolute bottom-6 z-30 pointer-events-none gap-2">
-            <div className="pointer-events-auto">
+          <div className="hidden lg:flex flex-col items-center w-full absolute bottom-8 z-30 pointer-events-none gap-2">
+            <div className="pointer-events-auto bg-slate-950/80 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-2xl">
               {renderButtons("flex justify-center gap-2 transition-all duration-200")}
             </div>
           </div>
         )}
       </div>
 
-      {generations.length > 0 && renderButtons("mt-3 md:mt-4 flex lg:hidden justify-center gap-2 shrink-0")}
+      {generations.length > 0 && renderButtons("mt-6 flex lg:hidden justify-center gap-3 shrink-0")}
     </div>
   )
 }

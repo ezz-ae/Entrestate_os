@@ -67,6 +67,23 @@ type WorkspaceCard = {
   subtitle: string
 }
 
+type GoldenPathId = "underwrite_development_site" | "compare_area_yields" | "draft_spa_contract"
+
+type GoldenPathPreview = {
+  metadata?: {
+    id?: string
+    hash?: string
+    rowCount?: number
+    spec?: {
+      intent?: string
+      signals?: string[]
+      row_grain?: string
+    }
+  }
+  rows?: Record<string, unknown>[]
+  requestId?: string
+}
+
 type ComparisonRow = {
   label: string
   area: string
@@ -421,7 +438,7 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
   }
 
   const prices = rows
-    .map((row) => toFiniteNumber(row.price_from ?? row.l1_canonical_price))
+    .map((row) => toFiniteNumber(row.price_from_aed ?? row.l1_canonical_price))
     .filter((value): value is number => value !== null && value > 0)
   const avgPrice = prices.length > 0 ? prices.reduce((sum, value) => sum + value, 0) / prices.length : null
 
@@ -480,7 +497,7 @@ function deriveComparisonRows(toolOutputs: Record<string, unknown>[], locale: st
       timingSignal: toText(row.timing_label ?? row.l3_timing_signal),
       stressGrade: toText(row.stress_grade_v1 ?? row.l2_stress_test_grade),
       stressScore: toFiniteNumber(row.stress_score ?? row.engine_stress_test),
-      price: toFiniteNumber(row.price_from ?? row.l1_canonical_price),
+      price: toFiniteNumber(row.price_from_aed ?? row.l1_canonical_price),
       yield: toFiniteNumber(row.rental_yield ?? row.l1_canonical_yield),
       score: toFiniteNumber(row.investor_score_v1 ?? row.engine_god_metric),
       developerReliabilityScore: toFiniteNumber(row.developer_reliability_score ?? row.l2_developer_reliability),
@@ -654,6 +671,43 @@ const COMMAND_PROMPTS: Record<AppLocale, Array<{ label: string; prompt: string; 
   ],
 }
 
+const GOLDEN_PATHS: Record<AppLocale, Array<{ id: GoldenPathId; label: string; description: string }>> = {
+  en: [
+    {
+      id: "underwrite_development_site",
+      label: "Underwrite Development Site",
+      description: "Pre-validated TableSpec for underwriting: price, risk, handover, developer.",
+    },
+    {
+      id: "compare_area_yields",
+      label: "Compare Area Yields",
+      description: "Deterministic yield comparison across top UAE submarkets.",
+    },
+    {
+      id: "draft_spa_contract",
+      label: "Draft SPA Contract",
+      description: "Contract-ready signals: payment plan, handover, fees, developer checks.",
+    },
+  ],
+  ar: [
+    {
+      id: "underwrite_development_site",
+      label: "تقييم موقع تطوير",
+      description: "مسار ذهبي ثابت لتقييم السعر والمخاطر والتسليم والمطور.",
+    },
+    {
+      id: "compare_area_yields",
+      label: "مقارنة عوائد المناطق",
+      description: "مقارنة عوائد محددة مسبقاً عبر المناطق الأساسية.",
+    },
+    {
+      id: "draft_spa_contract",
+      label: "مسودة عقد SPA",
+      description: "إشارات تعاقدية أساسية: خطة الدفع، التسليم، الرسوم، المطور.",
+    },
+  ],
+}
+
 const slashCommands: SlashCommand[] = [
   {
     id: "compare",
@@ -744,6 +798,7 @@ export function ChatInterface({
 
   const capabilityCards = CAPABILITY_CARDS[locale] ?? CAPABILITY_CARDS.en
   const commandPrompts = COMMAND_PROMPTS[locale] ?? COMMAND_PROMPTS.en
+  const goldenPaths = GOLDEN_PATHS[locale] ?? GOLDEN_PATHS.en
   const heroCopy = isArabic
     ? {
         engine: "محرك القرار العقاري 4.2",
@@ -799,6 +854,38 @@ export function ChatInterface({
         // keep server defaults
       }
     }
+
+  const [goldenPathPreview, setGoldenPathPreview] = useState<GoldenPathPreview | null>(null)
+  const [goldenPathError, setGoldenPathError] = useState<string | null>(null)
+  const [goldenPathLoading, setGoldenPathLoading] = useState<GoldenPathId | null>(null)
+
+  const runGoldenPath = async (pathId: GoldenPathId) => {
+    setGoldenPathError(null)
+    setGoldenPathLoading(pathId)
+    try {
+      const response = await fetch("/api/time-table/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          goldenPath: pathId,
+          useLLM: false,
+          limit: 8,
+        }),
+      })
+
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        setGoldenPathError(typeof payload?.error === "string" ? payload.error : "Golden Path failed to load.")
+        return
+      }
+
+      setGoldenPathPreview(payload as GoldenPathPreview)
+    } catch {
+      setGoldenPathError("Golden Path failed to load.")
+    } finally {
+      setGoldenPathLoading(null)
+    }
+  }
 
     void loadUsage()
     return () => {
@@ -1350,6 +1437,51 @@ export function ChatInterface({
           {/* ── Marquee ── */}
           <div className="w-full mb-16 select-none opacity-90 hover:opacity-100 transition-opacity">
             <MarqueePrompts onPromptSelect={(prompt) => { void sendPrompt(prompt) }} />
+          </div>
+
+          {/* ── Golden Paths ── */}
+          <div className="w-full max-w-5xl mb-14">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Golden Path Shortcuts</p>
+              {goldenPathLoading ? (
+                <span className="text-[11px] text-muted-foreground/70">Compiling {goldenPathLoading.replace(/_/g, " ")}</span>
+              ) : null}
+            </div>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {goldenPaths.map((path) => (
+                <button
+                  key={path.id}
+                  type="button"
+                  onClick={() => void runGoldenPath(path.id)}
+                  disabled={Boolean(goldenPathLoading)}
+                  className="rounded-2xl border border-border/40 bg-card/50 p-5 text-left transition-all hover:border-primary/40 hover:bg-card/70 disabled:opacity-60"
+                >
+                  <p className="text-sm font-semibold text-foreground">{path.label}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">{path.description}</p>
+                </button>
+              ))}
+            </div>
+            {goldenPathError ? (
+              <p className="mt-3 text-xs text-rose-500">{goldenPathError}</p>
+            ) : null}
+            {goldenPathPreview?.metadata ? (
+              <div className="mt-4 rounded-2xl border border-border/40 bg-background/50 p-4 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-3 text-muted-foreground">
+                  <span className="font-semibold text-foreground">
+                    {goldenPathPreview.metadata.spec?.intent ?? "Golden Path Preview"}
+                  </span>
+                  <span>Rows: {goldenPathPreview.metadata.rowCount ?? goldenPathPreview.rows?.length ?? 0}</span>
+                  {goldenPathPreview.metadata.hash ? (
+                    <span className="font-mono text-[10px]">{goldenPathPreview.metadata.hash.slice(0, 12)}</span>
+                  ) : null}
+                </div>
+                <div className="mt-3 rounded-lg border border-border/40 bg-background/70 p-3">
+                  <pre className="whitespace-pre-wrap text-[11px] text-muted-foreground">
+                    {JSON.stringify(goldenPathPreview.rows?.slice(0, 4) ?? [], null, 2)}
+                  </pre>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* ── Example Chips ── */}

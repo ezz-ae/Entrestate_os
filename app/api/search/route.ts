@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   const sortBy = (params.get("sortBy") ?? "god_metric") as "god_metric" | "price" | "yield" | "reliability"
   const page = Math.max(1, Number(params.get("page") ?? "1") || 1)
   const pageSize = Math.min(100, Math.max(1, Number(params.get("pageSize") ?? "25") || 25))
+  const locale = params.get("locale") ?? undefined
 
   const filters: PropertyFilters = {}
   if (params.get("area")) filters.area = params.get("area")!
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
   if (params.get("goldenVisa") === "true") filters.goldenVisaRequired = true
 
   try {
-    const result = await listProperties({ filters, sortBy, page, pageSize })
+    const result = await listProperties({ filters, sortBy, page, pageSize, locale })
     return NextResponse.json(result)
   } catch {
     return NextResponse.json({ projects: [], total: 0, page: 1, pageSize, data_as_of: new Date().toISOString() })

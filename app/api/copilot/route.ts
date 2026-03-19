@@ -200,9 +200,51 @@ export async function POST(request: Request) {
     }
 
     const headerAccountKey = request.headers.get("x-entrestate-account-key")?.trim() || request.headers.get("x-entrestate-user-id")?.trim()
-    const entitlement = await getCurrentEntitlement(headerAccountKey)
+    let entitlement = {
+      accountKey: null,
+      tier: "free",
+      source: "default",
+      subscriptionId: null,
+      status: null,
+    }
+    try {
+      entitlement = await getCurrentEntitlement(headerAccountKey)
+    } catch (error) {
+      console.error("Copilot entitlement lookup failed; using free tier fallback.", { requestId, error })
+    }
     const usageAccountKey = entitlement.accountKey || getAnonymousCopilotAccountKey(request)
-    const { allowed, usage } = await safeConsumeCopilotUsage(usageAccountKey, entitlement.tier)
+    let allowed = true
+    let usage = {
+      accountKey: usageAccountKey,
+      date: new Date().toISOString().slice(0, 10),
+      used: 0,
+      limit: null,
+      remaining: null,
+      blocked: false,
+      resetAt: null,
+      cooldownUntil: null,
+      cooldownSecondsRemaining: null,
+    }
+
+    try {
+      const usageResult = await safeConsumeCopilotUsage(usageAccountKey, entitlement.tier)
+      allowed = usageResult.allowed
+      usage = usageResult.usage
+    } catch (error) {
+      console.error("Copilot usage tracking failed; allowing request with fallback usage.", {
+        requestId,
+        error,
+      })
+      if (!entitlement?.accountKey) {
+        entitlement = {
+          accountKey: null,
+          tier: "free",
+          source: "default",
+          subscriptionId: null,
+          status: null,
+        }
+      }
+    }
 
     if (!allowed) {
       return NextResponse.json(
@@ -237,10 +279,14 @@ export async function POST(request: Request) {
     if (userId) {
       const lastMessage = body.messages[body.messages.length - 1]
       if (lastMessage.role === "user") {
-        await saveChatMessage(userId, sessionId, {
-          role: "user",
-          content: typeof lastMessage.content === "string" ? lastMessage.content : "",
-        })
+        try {
+          await saveChatMessage(userId, sessionId, {
+            role: "user",
+            content: typeof lastMessage.content === "string" ? lastMessage.content : "",
+          })
+        } catch (error) {
+          console.error("Copilot persistence failed; skipping user message save.", { requestId, error })
+        }
       }
     }
 
@@ -455,11 +501,15 @@ export async function POST(request: Request) {
       tools: toolset,
       onFinish: async ({ text, toolCalls }) => {
         if (userId && (text || (toolCalls && toolCalls.length > 0))) {
-          await saveChatMessage(userId, sessionId, {
-            role: "assistant",
-            content: text || "",
-            toolCalls: toolCalls,
-          })
+          try {
+            await saveChatMessage(userId, sessionId, {
+              role: "assistant",
+              content: text || "",
+              toolCalls: toolCalls,
+            })
+          } catch (error) {
+            console.error("Copilot persistence failed; skipping assistant message save.", { requestId, error })
+          }
         }
       },
     })

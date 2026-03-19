@@ -11,7 +11,7 @@ import {
 } from "./types"
 import { enforceTableSpec } from "./validation"
 
-const defaultSignals = ["price_aed", "yield_pct", "risk_band", "liquidity_band"]
+const defaultSignals = ["price_from_aed", "yield_pct", "risk_band", "liquidity_band"]
 const areaKeywords = [
   "jvc",
   "dubai marina",
@@ -94,7 +94,7 @@ const parseTimeRangeFromHorizon = (horizon?: string): TableSpecTimeRange => {
 const buildSignals = (intent: string): string[] => {
   const normalized = normalizeText(intent)
   const signals = new Set(defaultSignals)
-  if (normalized.includes("price")) signals.add("price_aed")
+  if (normalized.includes("price")) signals.add("price_from_aed")
   if (normalized.includes("yield")) signals.add("yield_pct")
   if (normalized.includes("risk")) signals.add("risk_band")
   if (normalized.includes("liquidity")) signals.add("liquidity_band")
@@ -107,7 +107,7 @@ const buildFilters = (intent: string, profile?: TableSpecCompileInput["profile"]
   const filters: TableSpecFilter[] = []
   const budget = parseBudgetAed(normalized)
   if (budget) {
-    filters.push({ field: "price_aed", op: "lte", value: budget })
+    filters.push({ field: "price_from_aed", op: "lte", value: budget })
   }
   const beds = parseBeds(normalized)
   if (beds) {
@@ -159,18 +159,31 @@ const applyOverrides = (spec: TableSpec, overrides?: Partial<TableSpec>): TableS
   }
 }
 
+const ensureProvenance = (spec: TableSpec): TableSpec => {
+  const reasoning = spec.reasoning?.trim().length
+    ? spec.reasoning
+    : `Intent mapped to TableSpec signals: ${spec.signals.join(", ")}.`
+  const dataSource = spec.dataSource?.trim().length ? spec.dataSource : "L2 Derived"
+
+  return {
+    ...spec,
+    reasoning,
+    dataSource,
+  }
+}
+
 export function compileTableSpec(input: TableSpecCompileInput): TableSpecCompilation {
   const warnings: string[] = []
 
   if (input.goldenPath) {
-    const spec = applyOverrides(resolveGoldenPath(input.goldenPath), input.overrides)
+    const spec = ensureProvenance(applyOverrides(resolveGoldenPath(input.goldenPath), input.overrides))
     const parsed = tableSpecSchema.parse(spec)
     const validated = enforceTableSpec(parsed, input.entitlements)
     return { spec: validated, warnings, source: "golden_path" }
   }
 
   if (!input.intent) warnings.push("missing_intent")
-  const spec = applyOverrides(createIntentSpec(input), input.overrides)
+  const spec = ensureProvenance(applyOverrides(createIntentSpec(input), input.overrides))
   const parsed = tableSpecSchema.parse(spec)
   const validated = enforceTableSpec(parsed, input.entitlements)
   return { spec: validated, warnings, source: "intent" }
