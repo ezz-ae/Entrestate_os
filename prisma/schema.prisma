@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["views"]
 }
 
 datasource db {
@@ -528,7 +529,7 @@ model ProvenanceLog {
 }
 
 view LatestProvenance {
-  id              String   @id
+  id              String
   runId           String   @map("run_id")
   snapshotTs      DateTime @map("snapshot_ts")
   dataSource      String   @map("data_source")
