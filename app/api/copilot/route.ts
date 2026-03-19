@@ -194,7 +194,12 @@ export async function POST(request: Request) {
   const locale = normalizeLocale(request.headers.get("x-entrestate-locale"))
 
   try {
-    const body = (await request.json()) as { messages?: UIMessage[]; id?: string }
+    let body: { messages?: UIMessage[]; id?: string }
+    try {
+      body = (await request.json()) as { messages?: UIMessage[]; id?: string }
+    } catch {
+      return NextResponse.json({ error: "Invalid request payload", requestId }, { status: 400 })
+    }
     if (!Array.isArray(body.messages) || body.messages.length === 0) {
       return NextResponse.json({ error: "Invalid request payload", requestId }, { status: 400 })
     }

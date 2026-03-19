@@ -308,13 +308,11 @@ export async function safeConsumeCopilotUsage(
   try {
     return await consumeCopilotUsage(accountKey, tier)
   } catch (error) {
-    if (!isRetryableUsageError(error)) {
-      throw error
-    }
-
-    console.error("Copilot usage transaction failed; using non-blocking fallback.", {
+    const retryable = isRetryableUsageError(error)
+    console.error("Copilot usage tracking failed; using non-blocking fallback.", {
       accountKey,
       tier,
+      retryable,
       error,
     })
 
