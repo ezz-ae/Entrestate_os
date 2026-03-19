@@ -2,6 +2,8 @@ import { getMarketPulseSummary } from "@/lib/frontend-content"
 import { getCompleteIntelligenceSynthesis } from "@/lib/ai/enterprise/service"
 import { EnterpriseDashboard } from "./enterprise-dashboard"
 
+export const dynamic = "force-dynamic"
+
 export default async function OsPage() {
   const [pulse, intelligence] = await Promise.all([
     getMarketPulseSummary().catch(() => ({
