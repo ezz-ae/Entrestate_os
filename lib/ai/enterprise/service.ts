@@ -50,6 +50,10 @@ export async function getCompleteIntelligenceSynthesis(): Promise<EnterpriseStra
   }
 }
 
+export async function getEnterpriseStrategicContext(): Promise<EnterpriseStrategicContext | null> {
+  return getCompleteIntelligenceSynthesis()
+}
+
 /**
  * Generates an institutional-grade strategic narrative.
  */

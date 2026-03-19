@@ -1,8 +1,8 @@
-import "server-only"
-
 export type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR"
 
-const CURRENT_LEVEL: LogLevel = (process.env.ENTRESTATE_LOG_LEVEL?.toUpperCase() as LogLevel) || "INFO"
+const envLevel =
+  typeof process !== "undefined" ? (process.env.ENTRESTATE_LOG_LEVEL?.toUpperCase() as LogLevel) : undefined
+const CURRENT_LEVEL: LogLevel = envLevel || "INFO"
 
 const LEVELS: Record<LogLevel, number> = {
   DEBUG: 0,
