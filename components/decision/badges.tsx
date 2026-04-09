@@ -30,6 +30,11 @@ function baseClassName(colorClass: string) {
   return cn("inline-flex rounded-full border px-2 py-0.5 text-xs font-medium", colorClass)
 }
 
+function normalizeBadgeValue(value: string | number | null | undefined, fallback: string) {
+  if (value === null || value === undefined) return fallback
+  return String(value)
+}
+
 function formatBadgeLabel(locale: string, value: string, arabicLabel?: string) {
   if (locale !== "ar" || !arabicLabel) return value
   return `${value} · ${arabicLabel}`
@@ -37,7 +42,7 @@ function formatBadgeLabel(locale: string, value: string, arabicLabel?: string) {
 
 export function TimingSignalBadge({ signal }: { signal: string | null | undefined }) {
   const locale = useLocale()
-  const value = (signal ?? "UNKNOWN").toUpperCase()
+  const value = normalizeBadgeValue(signal, "UNKNOWN").toUpperCase()
   const tone =
     value === "STRONG_BUY"
       ? "border-emerald-600/50 bg-emerald-600/15 text-emerald-200"
@@ -54,7 +59,7 @@ export function TimingSignalBadge({ signal }: { signal: string | null | undefine
 
 export function StressGradeBadge({ grade }: { grade: string | null | undefined }) {
   const locale = useLocale()
-  const value = (grade ?? "N/A").toUpperCase()
+  const value = normalizeBadgeValue(grade, "N/A").toUpperCase()
   const tone =
     value === "A"
       ? "border-emerald-600/50 bg-emerald-600/10 text-emerald-300"
@@ -74,7 +79,7 @@ export function StressGradeBadge({ grade }: { grade: string | null | undefined }
 
 export function ConfidenceBadge({ confidence }: { confidence: string | null | undefined }) {
   const locale = useLocale()
-  const value = (confidence ?? "UNKNOWN").toUpperCase()
+  const value = normalizeBadgeValue(confidence, "UNKNOWN").toUpperCase()
   const tone =
     value === "HIGH"
       ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
