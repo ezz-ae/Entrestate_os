@@ -550,12 +550,10 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
   const offset = (page - 1) * pageSize
   const sortBy = input.sortBy ?? "god_metric"
 
-  const hasFilters = Boolean(
-    input.filters
-      && Object.values(input.filters).some((value) => value !== undefined && value !== null && value !== ""),
-  )
-
   const curatedFallbackTables = [
+    "public.entrestate_projects_api",
+    "api.entrestate_projects_api",
+    "api.projects_v1",
     "canonical.inventory_clean",
     "public.inventory_clean",
     "inventory_clean",
@@ -563,15 +561,16 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
 
   const candidates: Array<{ tableSql: Prisma.Sql; useCurated: boolean }> = [
     { tableSql: PROPERTIES_TABLE_SQL, useCurated: USE_CURATED_PROPERTIES_VIEW },
-    ...(USE_CURATED_PROPERTIES_VIEW && !hasFilters
+    ...(USE_CURATED_PROPERTIES_VIEW
       ? curatedFallbackTables
           .filter((name) => name.toLowerCase() !== PROPERTIES_TABLE_NAME.toLowerCase())
           .map((name) => ({ tableSql: Prisma.raw(name), useCurated: true }))
       : []),
   ]
 
-  if (!hasFilters && !USE_CURATED_PROPERTIES_VIEW) {
+  if (!USE_CURATED_PROPERTIES_VIEW) {
     candidates.push({ tableSql: Prisma.raw("canonical.inventory_clean"), useCurated: true })
+    candidates.push({ tableSql: Prisma.raw("public.entrestate_projects_api"), useCurated: true })
   }
 
   async function fetchFrom(tableSql: Prisma.Sql, useCurated: boolean) {
@@ -673,7 +672,7 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
     const result = await fetchFrom(candidate.tableSql, candidate.useCurated)
     rows = result.rows
     total = result.total
-    if (rows.length > 0 || total > 0 || hasFilters) {
+    if (rows.length > 0 || total > 0) {
       break
     }
   }
@@ -990,8 +989,52 @@ export async function listAreas(): Promise<{
   data_as_of: string
   areas: Array<DecisionRecord & { slug: string }>
 }> {
-  const rows = USE_CURATED_AREAS_VIEW
-    ? await runQuery(Prisma.sql`
+  const curatedAreaCandidates = [
+    AREAS_TABLE_NAME,
+    "public.entrestate_areas_api",
+    "api.entrestate_areas_api",
+    "api.areas_v1",
+    "api.area_intelligence_v1",
+  ].filter((value, index, all) => all.findIndex((entry) => entry.toLowerCase() === value.toLowerCase()) === index)
+
+  const nonCuratedAreasQuery = Prisma.sql`
+    SELECT
+      COALESCE(final_area, area) AS area,
+      MODE() WITHIN GROUP (ORDER BY COALESCE(NULLIF(TRIM(final_city), ''), NULLIF(TRIM(city), ''), 'Dubai')) AS city,
+      COUNT(*)::int AS projects,
+      ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price,
+      ROUND(AVG(l1_canonical_yield::numeric), 1) AS avg_yield,
+      ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
+      ROUND(AVG(l3_supply_pressure::numeric), 2) AS supply_pressure,
+      NULL::int AS source_count,
+      NULL::text AS confidence,
+      COUNT(CASE WHEN l3_timing_signal = 'BUY' THEN 1 END)::int AS buy_signals
+    FROM ${DETAIL_TABLE_SQL}
+    WHERE ${Prisma.join(
+      buildQualityClauses({
+        requirePrice: true,
+        requireStress: true,
+        requireArea: true,
+        requireConfidence: true,
+        onlyUae: true,
+        requireBedroomSanity: true,
+      }),
+      " AND ",
+    )}
+    GROUP BY 1
+    HAVING COUNT(*) >= 3
+    ORDER BY efficiency DESC NULLS LAST
+  `
+
+  let rows: DbRow[] = []
+
+  if (USE_CURATED_AREAS_VIEW) {
+    for (const tableName of curatedAreaCandidates) {
+      const tableSql = tableName.toLowerCase() === AREAS_TABLE_NAME.toLowerCase()
+        ? AREAS_TABLE_SQL
+        : Prisma.raw(tableName)
+
+      const candidateRows = await runOptionalQuery(Prisma.sql`
         SELECT
           COALESCE(
             NULLIF(TRIM(to_jsonb(t) ->> 'area'), ''),
@@ -1038,48 +1081,25 @@ export async function listAreas(): Promise<{
             END,
             0
           ) AS buy_signals
-        FROM ${AREAS_TABLE_SQL} t
+        FROM ${tableSql} t
         WHERE TRIM(COALESCE(
           NULLIF(TRIM(to_jsonb(t) ->> 'area'), ''),
           NULLIF(TRIM(to_jsonb(t) ->> 'name'), ''),
           NULLIF(TRIM(to_jsonb(t) ->> 'area_name'), '')
         )) <> ''
-          AND COALESCE(
-            (to_jsonb(t) ->> 'total_projects')::int,
-            (to_jsonb(t) ->> 'project_count')::int,
-            (to_jsonb(t) ->> 'projects')::int,
-            0
-          ) >= 2
         ORDER BY efficiency DESC NULLS LAST
       `)
-    : await runQuery(Prisma.sql`
-        SELECT
-          COALESCE(final_area, area) AS area,
-          MODE() WITHIN GROUP (ORDER BY COALESCE(NULLIF(TRIM(final_city), ''), NULLIF(TRIM(city), ''), 'Dubai')) AS city,
-          COUNT(*)::int AS projects,
-          ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price,
-          ROUND(AVG(l1_canonical_yield::numeric), 1) AS avg_yield,
-          ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
-          ROUND(AVG(l3_supply_pressure::numeric), 2) AS supply_pressure,
-          NULL::int AS source_count,
-          NULL::text AS confidence,
-          COUNT(CASE WHEN l3_timing_signal = 'BUY' THEN 1 END)::int AS buy_signals
-        FROM ${DETAIL_TABLE_SQL}
-        WHERE ${Prisma.join(
-          buildQualityClauses({
-            requirePrice: true,
-            requireStress: true,
-            requireArea: true,
-            requireConfidence: true,
-            onlyUae: true,
-            requireBedroomSanity: true,
-          }),
-          " AND ",
-        )}
-        GROUP BY 1
-        HAVING COUNT(*) >= 3
-        ORDER BY efficiency DESC NULLS LAST
-      `)
+
+      if (candidateRows.length > 0) {
+        rows = candidateRows
+        break
+      }
+    }
+  }
+
+  if (rows.length === 0) {
+    rows = await runOptionalQuery(nonCuratedAreasQuery)
+  }
 
   const profiles = await runOptionalQuery<{ area_name: string; area_ar: string | null; image_url: string | null; area_type: string | null }>(Prisma.sql`
     SELECT
@@ -1244,8 +1264,22 @@ export async function listDevelopers(): Promise<{
     requireBedroomSanity: true,
   })
 
-  const curatedRows = USE_CURATED_DEVELOPERS_VIEW
-    ? await runQuery(Prisma.sql`
+  const curatedDeveloperCandidates = [
+    DEVELOPERS_TABLE_NAME,
+    "public.entrestate_developers_api",
+    "api.entrestate_developers_api",
+    "api.developers_v1",
+  ].filter((value, index, all) => all.findIndex((entry) => entry.toLowerCase() === value.toLowerCase()) === index)
+
+  let curatedRows: DbRow[] = []
+
+  if (USE_CURATED_DEVELOPERS_VIEW) {
+    for (const tableName of curatedDeveloperCandidates) {
+      const tableSql = tableName.toLowerCase() === DEVELOPERS_TABLE_NAME.toLowerCase()
+        ? DEVELOPERS_TABLE_SQL
+        : Prisma.raw(tableName)
+
+      const candidateRows = await runOptionalQuery(Prisma.sql`
         SELECT
           COALESCE(
             NULLIF(TRIM(to_jsonb(d) ->> 'id'), ''),
@@ -1296,14 +1330,20 @@ export async function listDevelopers(): Promise<{
           NULLIF(TRIM(to_jsonb(d) ->> 'developer_type'), '') AS developer_type,
           COALESCE((to_jsonb(d) ->> 'total_projects')::int, 0) AS total_projects,
           COALESCE((to_jsonb(d) ->> 'priced_projects')::int, 0) AS priced_projects
-        FROM ${DEVELOPERS_TABLE_SQL} d
+        FROM ${tableSql} d
         WHERE COALESCE(
           NULLIF(TRIM(to_jsonb(d) ->> 'name'), ''),
           NULLIF(TRIM(to_jsonb(d) ->> 'developer'), '')
         ) <> 'Unknown Developer'
         ORDER BY project_count DESC
       `)
-    : []
+
+      if (candidateRows.length > 0) {
+        curatedRows = candidateRows
+        break
+      }
+    }
+  }
 
   const rows = curatedRows.length > 0
     ? curatedRows.map((row) => ({

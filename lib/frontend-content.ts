@@ -99,6 +99,15 @@ const DLD_FALLBACK_TABLES = [
   "public.notifications_v1",
 ] as const
 
+const INVENTORY_FALLBACK_TABLES = [
+  "public.entrestate_projects_api",
+  "api.entrestate_projects_api",
+  "api.projects_v1",
+  "canonical.inventory_clean",
+  "public.inventory_clean",
+  "inventory_clean",
+] as const
+
 type DldFallbackRow = {
   headline: string | null
   subline: string | null
@@ -233,15 +242,74 @@ type InventoryContext = {
   tableName: string
   tableSql: Prisma.Sql
   columns: Set<string>
+  total: number
+}
+
+function buildInventoryCandidates() {
+  const configured = getInventoryTableName().trim()
+  const candidates = [configured, ...INVENTORY_FALLBACK_TABLES]
+  const unique = new Set<string>()
+
+  for (const tableName of candidates) {
+    if (!tableName || !tableName.trim()) continue
+    unique.add(tableName.trim())
+  }
+
+  return {
+    configured,
+    candidates: Array.from(unique),
+  }
 }
 
 async function getInventoryContext(): Promise<InventoryContext> {
-  const tableName = getInventoryTableName()
-  const columns = await getTableColumns(tableName)
+  const { configured, candidates } = buildInventoryCandidates()
+  let fallbackContext: InventoryContext | null = null
+
+  for (const tableName of candidates) {
+    const tableSql = tableName.toLowerCase() === configured.toLowerCase()
+      ? getInventoryTableSql()
+      : Prisma.raw(tableName)
+
+    try {
+      const columns = await getTableColumns(tableName)
+      if (columns.size === 0) continue
+
+      const countRows = await dbQuery<InventoryCountRow>(Prisma.sql`
+        SELECT COUNT(*)::int AS total
+        FROM ${tableSql}
+      `)
+
+      const total = countRows[0]?.total ?? 0
+      const context: InventoryContext = {
+        tableName,
+        tableSql,
+        columns,
+        total,
+      }
+
+      if (!fallbackContext) {
+        fallbackContext = context
+      }
+
+      if (total > 0) {
+        return context
+      }
+    } catch (error) {
+      if (isMissingRelationError(error, tableName) || isMissingColumnError(error)) {
+        continue
+      }
+    }
+  }
+
+  if (fallbackContext) {
+    return fallbackContext
+  }
+
   return {
-    tableName,
+    tableName: configured,
     tableSql: getInventoryTableSql(),
-    columns,
+    columns: new Set(),
+    total: 0,
   }
 }
 
@@ -536,12 +604,8 @@ export async function getHomepageContentSections() {
 }
 
 export async function getTopDataRows() {
-  const countRows = await dbQuery<InventoryCountRow>(Prisma.sql`
-    SELECT COUNT(*)::int AS total
-    FROM ${getInventoryTableSql()}
-  `)
-
-  const inventoryTotal = countRows[0]?.total ?? 2813
+  const inventoryContext = await getInventoryContext()
+  const inventoryTotal = inventoryContext.total > 0 ? inventoryContext.total : 2813
   let rows: TopDataRow[] = []
 
   try {
@@ -596,8 +660,22 @@ export async function getTopDataRows() {
 }
 
 export async function getMarketPulseSummary() {
-  const context = await getInventoryContext()
-  const summary = await buildMarketPulseSnapshot(context)
+  let summary: MarketPulseSummary
+
+  try {
+    const context = await getInventoryContext()
+    summary = await buildMarketPulseSnapshot(context)
+  } catch (error) {
+    console.error("Market pulse summary fallback engaged.", { error })
+    summary = {
+      total: 0,
+      avg_price: null,
+      avg_yield: null,
+      buy_signals: 0,
+      high_confidence: 0,
+    }
+  }
+
   return {
     data_as_of: new Date().toISOString(),
     summary,
