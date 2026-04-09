@@ -1,6 +1,17 @@
 import "server-only"
 import { PrismaClient } from "@prisma/client"
 
+function isUsableDatabaseUrl(url: string | undefined) {
+  if (!url) return false
+  try {
+    const parsed = new URL(url)
+    const isPostgresProtocol = parsed.protocol === "postgresql:" || parsed.protocol === "postgres:"
+    return isPostgresProtocol && Boolean(parsed.hostname)
+  } catch {
+    return false
+  }
+}
+
 function sanitizeDatabaseUrl(url: string | undefined) {
   if (!url) return url
   try {
@@ -28,8 +39,10 @@ function enhanceDatabaseUrl(url: string | undefined) {
   }
 }
 
-const pooledUrl = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL
-const unpooledUrl = process.env.DATABASE_URL_UNPOOLED || process.env.NEON_DATABASE_URL_UNPOOLED
+const pooledCandidate = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL
+const unpooledCandidate = process.env.DATABASE_URL_UNPOOLED || process.env.NEON_DATABASE_URL_UNPOOLED
+const pooledUrl = isUsableDatabaseUrl(pooledCandidate) ? pooledCandidate : undefined
+const unpooledUrl = isUsableDatabaseUrl(unpooledCandidate) ? unpooledCandidate : undefined
 const preferUnpooledInDev =
   Boolean(pooledUrl && pooledUrl.includes("-pooler.")) &&
   Boolean(unpooledUrl) &&

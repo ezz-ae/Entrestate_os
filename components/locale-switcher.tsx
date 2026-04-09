@@ -1,9 +1,8 @@
 "use client"
 
-import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
-import { locales, prefixLocalePath, stripLocalePrefix, type AppLocale } from "@/i18n/locale"
+import { prefixLocalePath, stripLocalePrefix, type AppLocale } from "@/i18n/locale"
 
 export function LocaleSwitcher() {
   const locale = useLocale() as AppLocale
@@ -13,25 +12,20 @@ export function LocaleSwitcher() {
 
   const normalizedPath = stripLocalePrefix(pathname || "/")
   const search = searchParams.toString()
+  const targetLocale: AppLocale = locale === "ar" ? "en" : "ar"
+  const href = `${prefixLocalePath(normalizedPath, targetLocale)}${search ? `?${search}` : ""}`
+  const targetLabel = targetLocale === "ar" ? "عربي" : "English"
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-card/80 p-1" aria-label={t("label")}>
-      {locales.map((targetLocale) => {
-        const href = `${prefixLocalePath(normalizedPath, targetLocale)}${search ? `?${search}` : ""}`
-        const isActive = targetLocale === locale
-
-        return (
-          <Link
-            key={targetLocale}
-            href={href}
-            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide transition ${
-              isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {t(targetLocale)}
-          </Link>
-        )
-      })}
-    </div>
+    <button
+      type="button"
+      aria-label={t("label")}
+      className="inline-flex items-center rounded-full border border-border/70 bg-card/80 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-foreground transition hover:bg-secondary"
+      onClick={() => {
+        window.location.assign(href)
+      }}
+    >
+      {targetLabel}
+    </button>
   )
 }
