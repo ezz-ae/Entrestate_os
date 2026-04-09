@@ -4,5 +4,5 @@ import { prefixLocalePath } from "@/i18n/locale"
 
 export default async function PlansPage() {
   const locale = await getRequestLocale()
-  redirect(prefixLocalePath("/pricing", locale))
+  redirect(prefixLocalePath("/enterprise", locale))
 }

@@ -18,7 +18,7 @@ export const DEMO_STORYBOARD = {
     },
     {
       imageUrl: "/covers/cover-03.svg",
-      prompt: "Double-height lobby, concierge desk, marble textures, soft daylight",
+      prompt: "Double-height lobby, reception desk, marble textures, soft daylight",
       duration: 5 as const,
       aspectRatio: "16:9" as const,
     },
@@ -75,7 +75,7 @@ export const DEMO_TRANSITION_STORYBOARD = {
     {
       imageUrl: "/covers/cover-03.svg",
       label: "Transition 1 - Last Frame",
-      description: "Lobby interior with concierge and marble textures",
+      description: "Lobby interior with reception desk and marble textures",
     },
     {
       imageUrl: "/covers/cover-04.svg",
@@ -119,7 +119,7 @@ export const DEMO_FINAL_SEQUENCE = {
     },
     {
       imageUrl: "/covers/cover-03.svg",
-      prompt: "Lobby interior with concierge, marble textures, and soft daylight",
+      prompt: "Lobby interior with reception desk, marble textures, and soft daylight",
       duration: 5 as const,
       linkedImageUrl: undefined,
       videoUrl: "",

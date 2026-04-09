@@ -5,7 +5,7 @@
 
 > **Audience:** CTO / Head of Engineering at regional portals (Dubizzle, Bayut, PropertyFinder)
 
-> **What this is:** Invisible infrastructure. Not a marketplace. Not a consumer app. A licensable decision engine that plugs into your existing portal via API.
+> **What this is:** Invisible infrastructure. Not a infrastructure platform. Not a enterprise infrastructure. A licensable decision engine that plugs into your existing portal via API.
 
 ---
 

@@ -90,6 +90,133 @@ function isMissingColumnError(error: unknown) {
   )
 }
 
+const DLD_FALLBACK_TABLES = [
+  "api.dld_transactions_v1",
+  "public.dld_transactions_v1",
+  "dld_transactions_arvo",
+  "public.dld_transactions_arvo",
+  "api.notifications_v1",
+  "public.notifications_v1",
+] as const
+
+type DldFallbackRow = {
+  headline: string | null
+  subline: string | null
+  amount: number | null
+  badge: string | null
+  reg_type: string | null
+  prop_type: string | null
+  is_notable: boolean
+}
+
+function isEmptyPayload(value: unknown): boolean {
+  if (value === null || value === undefined) return true
+
+  if (Array.isArray(value)) {
+    return value.length === 0
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    if (trimmed.length === 0) return true
+
+    if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        return isEmptyPayload(parsed)
+      } catch {
+        return false
+      }
+    }
+
+    return false
+  }
+
+  if (typeof value === "object") {
+    return Object.keys(value as Record<string, unknown>).length === 0
+  }
+
+  return false
+}
+
+async function buildDldMarketFallbackRows(limit = 12) {
+  for (const tableName of DLD_FALLBACK_TABLES) {
+    try {
+      const rows = await dbQuery<DldFallbackRow>(Prisma.sql`
+        SELECT
+          COALESCE(
+            NULLIF(to_jsonb(t)->>'headline', ''),
+            NULLIF(to_jsonb(t)->>'title', ''),
+            CONCAT_WS(' · ', NULLIF(to_jsonb(t)->>'project', ''), NULLIF(to_jsonb(t)->>'area', ''))
+          ) AS headline,
+          COALESCE(
+            NULLIF(to_jsonb(t)->>'subline', ''),
+            CONCAT_WS(' · ',
+              COALESCE(NULLIF(to_jsonb(t)->>'area', ''), NULLIF(to_jsonb(t)->>'community', ''), NULLIF(to_jsonb(t)->>'city', '')),
+              COALESCE(NULLIF(to_jsonb(t)->>'reg_type', ''), NULLIF(to_jsonb(t)->>'transaction_type', ''), NULLIF(to_jsonb(t)->>'badge', '')),
+              COALESCE(NULLIF(to_jsonb(t)->>'transaction_date', ''), NULLIF(to_jsonb(t)->>'date', ''), NULLIF(to_jsonb(t)->>'created_at', ''))
+            )
+          ) AS subline,
+          COALESCE(
+            NULLIF(
+              regexp_replace(
+                COALESCE(
+                  to_jsonb(t)->>'amount_aed',
+                  to_jsonb(t)->>'amount',
+                  to_jsonb(t)->>'price',
+                  to_jsonb(t)->>'value',
+                  '0'
+                ),
+                '[^0-9\\.-]',
+                '',
+                'g'
+              ),
+              ''
+            )::numeric,
+            0
+          ) AS amount,
+          COALESCE(NULLIF(to_jsonb(t)->>'badge', ''), NULLIF(to_jsonb(t)->>'deal_tag', '')) AS badge,
+          COALESCE(NULLIF(to_jsonb(t)->>'reg_type', ''), NULLIF(to_jsonb(t)->>'transaction_type', '')) AS reg_type,
+          COALESCE(NULLIF(to_jsonb(t)->>'prop_type', ''), NULLIF(to_jsonb(t)->>'property_type', '')) AS prop_type,
+          CASE
+            WHEN LOWER(COALESCE(to_jsonb(t)->>'is_notable', 'false')) IN ('true', '1', 'yes') THEN true
+            ELSE false
+          END AS is_notable
+        FROM ${Prisma.raw(tableName)} t
+        ORDER BY COALESCE(
+          NULLIF(to_jsonb(t)->>'transaction_date', ''),
+          NULLIF(to_jsonb(t)->>'date', ''),
+          NULLIF(to_jsonb(t)->>'created_at', ''),
+          '1970-01-01'
+        ) DESC,
+        amount DESC NULLS LAST
+        LIMIT ${limit}
+      `)
+
+      if (rows.length === 0) {
+        continue
+      }
+
+      return rows.map((row) => ({
+        headline: row.headline?.trim() || "DLD transaction",
+        subline: row.subline?.trim() || "Dubai Land Department feed",
+        amount: typeof row.amount === "number" ? row.amount : 0,
+        badge: row.badge,
+        reg_type: row.reg_type ?? "",
+        prop_type: row.prop_type ?? "",
+        is_notable: Boolean(row.is_notable),
+      }))
+    } catch (error) {
+      if (isMissingColumnError(error) || isMissingRelationError(error, tableName)) {
+        continue
+      }
+      throw error
+    }
+  }
+
+  return []
+}
+
 async function buildSafeTopDataFallback(inventoryTotal: number) {
   try {
     return await buildTopDataFallback(inventoryTotal)
@@ -180,7 +307,22 @@ async function buildTopDataFallback(inventoryTotal: number) {
   const goldenVisaColumn = pickColumn(context.columns, "golden_visa_required", "golden_visa")
   const confidenceColumn = pickColumn(context.columns, "price_confidence")
 
-  const [marketPulse, timingRows, stressRows, yieldRows, evidenceRows, decisionRows, affordabilityRows, outcomeRows, topProjectRows, areaRows, developerRows, goldenVisaRows, confidenceRows] = await Promise.all([
+  const [
+    marketPulse,
+    timingRows,
+    stressRows,
+    yieldRows,
+    evidenceRows,
+    decisionRows,
+    affordabilityRows,
+    outcomeRows,
+    topProjectRows,
+    areaRows,
+    developerRows,
+    goldenVisaRows,
+    confidenceRows,
+    dldMarketRows,
+  ] = await Promise.all([
     buildMarketPulseSnapshot(context),
     timingColumn
       ? dbQuery(Prisma.sql`
@@ -339,6 +481,7 @@ async function buildTopDataFallback(inventoryTotal: number) {
           ORDER BY count DESC
         `)
       : Promise.resolve([]),
+    buildDldMarketFallbackRows(),
   ])
 
   const dataAsOf = new Date().toISOString()
@@ -370,7 +513,7 @@ async function buildTopDataFallback(inventoryTotal: number) {
   pushSection("developer-reliability", developerRows, 11)
   pushSection("golden-visa", goldenVisaRows[0] ?? {}, 12)
   pushSection("trust-bar", { confidence_distribution: confidenceRows }, 13)
-  pushSection("dld-market", [], 14)
+  pushSection("dld-market", dldMarketRows, 14)
 
   return {
     data_as_of: dataAsOf,
@@ -415,7 +558,20 @@ export async function getTopDataRows() {
     throw error
   }
 
+  const dldFallbackRows = await buildDldMarketFallbackRows()
+
   const normalizedRows = rows.map((row) => {
+    if (row.id === "dld-market") {
+      if (!isEmptyPayload(row.data_json)) {
+        return row
+      }
+
+      return {
+        ...row,
+        data_json: dldFallbackRows,
+      }
+    }
+
     if (row.id !== "market-pulse") return row
 
     const dataJson = row.data_json && typeof row.data_json === "object" && !Array.isArray(row.data_json)

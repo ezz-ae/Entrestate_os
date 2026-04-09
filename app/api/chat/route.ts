@@ -61,6 +61,7 @@ import { pickLocalizedText } from "@/lib/format/entities"
 import { formatAed as formatAedValue } from "@/lib/format/currency"
 import { formatDecimal, formatInteger } from "@/lib/format/number"
 import { getInventoryTableSql } from "@/lib/inventory-table"
+import { getEnterpriseConfig } from "@/lib/enterprise-config"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -787,7 +788,7 @@ export async function POST(request: Request) {
           error: "Free usage is cooling down. Try again once your cooldown ends.",
           upgrade_cta: {
             label: "Upgrade for uninterrupted access",
-            url: "/pricing",
+            url: "/plans",
           },
           tier: entitlement.tier,
           usage,
@@ -959,12 +960,20 @@ export async function POST(request: Request) {
     }
 
     try {
+      const enterpriseConfig = await getEnterpriseConfig()
+
       const response = await withTimeout(
         generateText({
           model,
-          system: getCopilotSystemPrompt(locale),
+          system: getCopilotSystemPrompt(locale, {
+            voice: enterpriseConfig.prompt.voice,
+            constraints: enterpriseConfig.prompt.constraints,
+            language: enterpriseConfig.prompt.language,
+            brandName: enterpriseConfig.brand.brand_name,
+            tone: enterpriseConfig.brand.tone,
+          }),
           prompt,
-          temperature: 0,
+          temperature: enterpriseConfig.prompt.temperature,
           maxSteps: 6,
           toolChoice: "auto",
           tools: toolset,

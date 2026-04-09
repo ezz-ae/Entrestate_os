@@ -1,5 +1,6 @@
 import { ConfidenceBadge, StressGradeBadge, TimingSignalBadge } from "@/components/decision/badges"
 import { formatAed, formatScore, formatYield } from "@/components/decision/formatters"
+import { TransactionNotification } from "@/components/dld/transaction-notification"
 
 type TopDataSectionProps = {
   section: string
@@ -46,6 +47,16 @@ function asNumber(value: unknown): number | null {
 
 function asText(value: unknown, fallback = "—") {
   return typeof value === "string" && value.trim().length > 0 ? value : fallback
+}
+
+function asBoolean(value: unknown) {
+  if (typeof value === "boolean") return value
+  if (typeof value === "number") return value !== 0
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    return normalized === "true" || normalized === "1" || normalized === "yes"
+  }
+  return false
 }
 
 function isArabicLocale(locale?: string | null) {
@@ -623,6 +634,56 @@ function GenericListView({ data }: { data: unknown }) {
   )
 }
 
+function DldMarketView({ data, locale }: { data: unknown; locale?: string }) {
+  const rows = dataToRecords(data)
+
+  const feed = rows
+    .map((row) => {
+      const headline = asText(
+        valueFromKeys(row, ["headline", "title", "project", "name"]),
+        isArabicLocale(locale) ? "صفقة DLD" : "DLD transaction",
+      )
+      const subline = asText(
+        valueFromKeys(row, ["subline", "area", "community", "city"]),
+        isArabicLocale(locale) ? "دبي - دائرة الأراضي" : "Dubai Land Department",
+      )
+      const amount = asNumber(valueFromKeys(row, ["amount", "amount_aed", "price", "value"])) ?? 0
+      const badge = asText(valueFromKeys(row, ["badge", "deal_tag"]), "") || null
+      const regType = asText(valueFromKeys(row, ["reg_type", "transaction_type"]), "")
+      const propType = asText(valueFromKeys(row, ["prop_type", "property_type"]), "")
+      const isNotable = asBoolean(valueFromKeys(row, ["is_notable"])) || amount >= 10_000_000
+
+      return {
+        headline,
+        subline,
+        amount,
+        badge,
+        reg_type: regType,
+        prop_type: propType,
+        is_notable: isNotable,
+      }
+    })
+    .filter((entry) => entry.headline.trim().length > 0)
+
+  if (feed.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {isArabicLocale(locale)
+          ? "لا توجد صفقات DLD متاحة حالياً في هذا المقطع."
+          : "No DLD market feed is available for this section yet."}
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      {feed.slice(0, 15).map((txn, index) => (
+        <TransactionNotification key={`dld-${txn.headline}-${index}`} txn={txn} />
+      ))}
+    </div>
+  )
+}
+
 function renderSection(section: string, data: unknown, locale?: string) {
   if (section === "market-pulse") return <MarketPulseView data={data} locale={locale} />
   if (section === "timing-signals") return <TimingSignalsView data={data} />
@@ -640,7 +701,7 @@ function renderSection(section: string, data: unknown, locale?: string) {
   if (section === "area-intelligence") return <AreaIntelligenceView data={data} />
   if (section === "developer-reliability") return <DeveloperReliabilityView data={data} />
   if (section === "golden-visa") return <GoldenVisaView data={data} />
-  if (section === "dld-market") return <GenericListView data={data} />
+  if (section === "dld-market") return <DldMarketView data={data} locale={locale} />
   if (section === "affordability") return <AffordabilityView data={data} />
   if (section === "outcome-intents") return <OutcomeIntentsView data={data} />
   if (section === "trust-bar") return <TrustBarView data={data} />

@@ -251,6 +251,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                       typeof similar.l2_stress_test_grade === "string" ? similar.l2_stress_test_grade : null
                     }
                     l3_timing_signal={typeof similar.l3_timing_signal === "string" ? similar.l3_timing_signal : null}
+                    decision_label_v1={typeof similar.decision_label_v1 === "string" ? similar.decision_label_v1 : null}
                     engine_god_metric={typeof similar.engine_god_metric === "number" ? similar.engine_god_metric : null}
                     l1_confidence={typeof similar.l1_confidence === "string" ? similar.l1_confidence : null}
                   />

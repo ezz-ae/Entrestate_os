@@ -1,5 +1,6 @@
 {
-  "name": "my-v0-project",
+  "name": "entrestate-decision-infrastructure",
+  "description": "Enterprise real estate decision infrastructure frontend and API integration layer.",
   "version": "0.1.0",
   "private": true,
   "scripts": {

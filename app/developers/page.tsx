@@ -3,6 +3,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { DeveloperCard } from "@/components/decision/developer-card"
 import { listDevelopers } from "@/lib/decision-infrastructure"
+import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { TrendingUp, Building2, BarChart3, ShieldCheck, Users2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getRequestLocale } from "@/i18n/request"
@@ -78,6 +79,8 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
   const freshnessLabel = data.data_as_of
     ? formatDate(data.data_as_of, locale)
     : null
+  const syncMeta = buildDataSyncMeta("developers", data.data_as_of)
+  const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
 
   const copy = {
     audit: isArabic ? "تدقيق الأطراف المقابلة" : "Counterparty Audit",
@@ -132,6 +135,11 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-1">{copy.freshness}</span>
               <p className="text-xs font-bold text-foreground bg-secondary/50 px-3 py-1 rounded-lg border border-border/40">
                 {freshnessLabel}
+              </p>
+              <p className="mt-2 text-[10px] text-muted-foreground/60">
+                {isArabic
+                  ? `مزامنة API · ${syncMeta.primaryView} · ${syncTimestamp}`
+                  : `API sync · ${syncMeta.primaryView} · ${syncTimestamp}`}
               </p>
             </div>
           )}
@@ -267,7 +275,9 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
               developer_ar={typeof developer.developer_ar === "string" ? developer.developer_ar : null}
               projects={typeof developer.projects === "number" ? developer.projects : null}
               reliability={typeof developer.reliability === "number" ? developer.reliability : null}
+              tier={typeof developer.tier === "string" ? developer.tier : null}
               avg_price={typeof developer.avg_price === "number" ? developer.avg_price : null}
+              avg_yield={typeof developer.avg_yield === "number" ? developer.avg_yield : null}
               logo_url={typeof developer.logo_url === "string" ? developer.logo_url : null}
               top_areas={
                 Array.isArray(developer.top_areas)
@@ -279,6 +289,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
                   ? developer.top_projects.filter((item): item is string => typeof item === "string")
                   : null
               }
+              apiPreview={developer as Record<string, unknown>}
             />
           ))}
           {filtered.length === 0 && (

@@ -122,8 +122,8 @@ export default async function EnterprisePage() {
           </h1>
           <p className="mt-4 max-w-3xl text-base text-muted-foreground leading-relaxed">
             {isArabic
-              ? "هذا الموقع ليس سوقاً للمستهلك. كل ما تراه هنا هو واجهة API تعمل تحت البنية الحالية لديك - دون تغيير واجهتك الحالية."
-              : "This site is not a consumer marketplace. Everything you see is an API running invisibly under your existing frontend - no rebuild required."}
+              ? "هذا الموقع ليس منصة إدراج عامة. كل ما تراه هنا هو واجهة API تعمل تحت البنية الحالية لديك — دون تغيير واجهتك الحالية."
+              : "This site is not a public listing portal. Everything you see is an API running invisibly under your existing frontend - no rebuild required."}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link

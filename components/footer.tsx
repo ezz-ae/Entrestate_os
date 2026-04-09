@@ -38,6 +38,7 @@ const columns = [
     links: [
       { label: "API Docs", href: "/docs/partners-apis" },
       { label: "Enterprise Integration", href: "/enterprise" },
+      { label: "Configuration Panel", href: "/settings/configuration" },
       { label: "Data Science Dashboard", href: "/workspace/data-scientist" },
       { label: "Agent Builder", href: "/apps/agent-builder" },
       { label: "Enterprise Tiers", href: "/plans" },
@@ -119,6 +120,7 @@ export function Footer() {
           "Integration Guide": "دليل التكامل",
           "API Docs": "وثائق الـ API",
           "Enterprise Integration": "تكامل المؤسسات",
+          "Configuration Panel": "لوحة التهيئة",
           "Data Science Dashboard": "لوحة علوم البيانات",
           "Agent Builder": "منشئ الوكلاء",
           "Enterprise Tiers": "باقات المؤسسات",
@@ -494,6 +496,9 @@ export function Footer() {
               <p className="text-[11px] text-muted-foreground/40">
                 {t("Registered in the United Arab Emirates", "مسجلة في دولة الإمارات العربية المتحدة")}
               </p>
+              <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[10px] font-medium text-primary/80">
+                {t("Powered by Entrestate API", "مدعوم عبر Entrestate API")}
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
               {[

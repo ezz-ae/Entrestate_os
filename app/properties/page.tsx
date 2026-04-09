@@ -3,6 +3,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ProjectCard } from "@/components/decision/project-card"
 import { listProperties } from "@/lib/decision-infrastructure"
+import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { BarChart3, TrendingUp, ShieldCheck, Zap, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getRequestLocale } from "@/i18n/request"
@@ -14,11 +15,15 @@ import { getTranslations } from "next-intl/server"
 
 export const dynamic = "force-dynamic"
 
+type PropertySortBy = "god_metric" | "price" | "yield" | "timing" | "reliability"
+
 type SearchParams = {
   area?: string
   developer?: string
   timing?: "BUY" | "HOLD" | "WAIT"
   stress?: "A" | "B" | "C" | "D"
+  sortBy?: PropertySortBy
+  goldenVisa?: string
   minPrice?: string
   maxPrice?: string
   bedsMin?: string
@@ -43,16 +48,22 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
   const page = Number.parseInt(params.page ?? "1", 10)
   const currentPage = Number.isFinite(page) && page > 0 ? page : 1
   const pageSize = 21
+  const allowedSortValues: PropertySortBy[] = ["god_metric", "price", "yield", "timing", "reliability"]
+  const sortBy = allowedSortValues.includes((params.sortBy ?? "") as PropertySortBy)
+    ? (params.sortBy as PropertySortBy)
+    : "god_metric"
 
   const result = await listProperties({
     page: currentPage,
     pageSize,
+    sortBy,
     locale,
     filters: {
       area: params.area,
       developer: params.developer,
       timingSignal: params.timing,
       stressGradeMin: params.stress,
+      goldenVisaRequired: params.goldenVisa === "true",
       budgetMinAed: params.minPrice ? Number.parseFloat(params.minPrice) : undefined,
       budgetMaxAed: params.maxPrice ? Number.parseFloat(params.maxPrice) : undefined,
       bedsMin: params.bedsMin ? Number.parseFloat(params.bedsMin) : undefined,
@@ -62,7 +73,17 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
 
   const totalProjectsCount = result.total || 0
   const totalPages = Math.ceil(totalProjectsCount / pageSize)
-  const hasFilters = !!(params.timing || params.stress || params.area || params.developer || params.minPrice || params.maxPrice)
+  const hasFilters = !!(
+    params.timing
+    || params.stress
+    || params.goldenVisa === "true"
+    || params.area
+    || params.developer
+    || params.minPrice
+    || params.maxPrice
+    || params.bedsMin
+    || params.bedsMax
+  )
 
   // Derive stats from current page
   const projects = result.projects
@@ -75,6 +96,8 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
   const freshnessLabel = result.data_as_of
     ? formatDate(result.data_as_of, locale)
     : null
+  const syncMeta = buildDataSyncMeta("properties", result.data_as_of)
+  const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(locale === "ar" ? "ar-AE" : "en-AE")
 
   // Base params for filter links (preserve all except the one being changed)
   const baseParams: Record<string, string | undefined> = {
@@ -82,9 +105,61 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
     developer: params.developer,
     timing: params.timing,
     stress: params.stress,
+    sortBy,
+    goldenVisa: params.goldenVisa,
     minPrice: params.minPrice,
     maxPrice: params.maxPrice,
+    bedsMin: params.bedsMin,
+    bedsMax: params.bedsMax,
   }
+
+  const ui = locale === "ar"
+    ? {
+        area: "المنطقة",
+        developer: "المطور",
+        minPrice: "أقل سعر",
+        maxPrice: "أعلى سعر",
+        bedsMin: "غرف نوم (حد أدنى)",
+        bedsMax: "غرف نوم (حد أقصى)",
+        sortBy: "الترتيب",
+        applyFilters: "تطبيق الفلاتر",
+        goldenVisa: "الإقامة الذهبية",
+        minPriceChip: "أقل سعر",
+        maxPriceChip: "أعلى سعر",
+        bedsMinChip: "غرف (من)",
+        bedsMaxChip: "غرف (إلى)",
+      }
+    : {
+        area: "Area",
+        developer: "Developer",
+        minPrice: "Min price",
+        maxPrice: "Max price",
+        bedsMin: "Beds (min)",
+        bedsMax: "Beds (max)",
+        sortBy: "Sort by",
+        applyFilters: "Apply filters",
+        goldenVisa: "Golden Visa",
+        minPriceChip: "Min price",
+        maxPriceChip: "Max price",
+        bedsMinChip: "Beds min",
+        bedsMaxChip: "Beds max",
+      }
+
+  const sortOptions: Array<{ value: PropertySortBy; label: string }> = locale === "ar"
+    ? [
+        { value: "god_metric", label: "النتيجة" },
+        { value: "price", label: "السعر" },
+        { value: "yield", label: "العائد" },
+        { value: "timing", label: "التوقيت" },
+        { value: "reliability", label: "موثوقية المطور" },
+      ]
+    : [
+        { value: "god_metric", label: "Score" },
+        { value: "price", label: "Price" },
+        { value: "yield", label: "Yield" },
+        { value: "timing", label: "Timing" },
+        { value: "reliability", label: "Developer reliability" },
+      ]
 
   const pageSummary = locale === "ar"
     ? `الصفحة ${formatInteger(currentPage, locale)} من ${formatInteger(totalPages || 1, locale)} · عرض ${formatInteger(projects.length, locale)} من ${formatInteger(totalProjectsCount, locale)} مشروعاً`
@@ -118,6 +193,11 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-1">{t("freshness")}</span>
               <p className="text-xs font-bold text-foreground bg-secondary/50 px-3 py-1 rounded-lg border border-border/40">
                 {freshnessLabel}
+              </p>
+              <p className="mt-2 text-[10px] text-muted-foreground/60">
+                {locale === "ar"
+                  ? `مزامنة API · ${syncMeta.primaryView} · ${syncTimestamp}`
+                  : `API sync · ${syncMeta.primaryView} · ${syncTimestamp}`}
               </p>
             </div>
           )}
@@ -154,6 +234,81 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
             : "API response preview: toggle any card to view the JSON payload as delivered to the frontend."}
         </div>
 
+        <form
+          action={prefixLocalePath("/properties", locale)}
+          className="mb-6 rounded-2xl border border-border/60 bg-card/70 p-4"
+        >
+          {params.timing ? <input type="hidden" name="timing" value={params.timing} /> : null}
+          {params.stress ? <input type="hidden" name="stress" value={params.stress} /> : null}
+          {params.goldenVisa === "true" ? <input type="hidden" name="goldenVisa" value="true" /> : null}
+          <input type="hidden" name="page" value="1" />
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-7">
+            <input
+              name="area"
+              defaultValue={params.area ?? ""}
+              placeholder={ui.area}
+              className="rounded-lg border border-border/60 bg-background/70 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60"
+            />
+            <input
+              name="developer"
+              defaultValue={params.developer ?? ""}
+              placeholder={ui.developer}
+              className="rounded-lg border border-border/60 bg-background/70 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60"
+            />
+            <input
+              name="minPrice"
+              type="number"
+              min={0}
+              defaultValue={params.minPrice ?? ""}
+              placeholder={ui.minPrice}
+              className="rounded-lg border border-border/60 bg-background/70 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60"
+            />
+            <input
+              name="maxPrice"
+              type="number"
+              min={0}
+              defaultValue={params.maxPrice ?? ""}
+              placeholder={ui.maxPrice}
+              className="rounded-lg border border-border/60 bg-background/70 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60"
+            />
+            <input
+              name="bedsMin"
+              type="number"
+              min={0}
+              defaultValue={params.bedsMin ?? ""}
+              placeholder={ui.bedsMin}
+              className="rounded-lg border border-border/60 bg-background/70 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60"
+            />
+            <input
+              name="bedsMax"
+              type="number"
+              min={0}
+              defaultValue={params.bedsMax ?? ""}
+              placeholder={ui.bedsMax}
+              className="rounded-lg border border-border/60 bg-background/70 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60"
+            />
+            <select
+              name="sortBy"
+              defaultValue={sortBy}
+              className="rounded-lg border border-border/60 bg-background/70 px-3 py-2 text-sm text-foreground"
+              aria-label={ui.sortBy}
+            >
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mt-3 flex justify-end">
+            <Button type="submit" size="sm">
+              {ui.applyFilters}
+            </Button>
+          </div>
+        </form>
+
         {/* Filters */}
         <div className="mb-6 flex flex-wrap items-center gap-2">
           {/* Timing signal */}
@@ -179,6 +334,23 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
           </div>
 
           <span className="text-border/60">·</span>
+
+          <Link
+            href={prefixLocalePath(
+              buildFilterHref(baseParams, {
+                goldenVisa: params.goldenVisa === "true" ? undefined : "true",
+                page: undefined,
+              }),
+              locale,
+            )}
+            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+              params.goldenVisa === "true"
+                ? "border-violet-500/60 bg-violet-500/15 text-violet-300"
+                : "border-violet-500/30 bg-violet-500/5 text-violet-300/70 hover:bg-violet-500/10"
+            }`}
+          >
+            {ui.goldenVisa}
+          </Link>
 
           {/* Stress grade */}
           <div className="flex items-center gap-1.5">
@@ -238,6 +410,36 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
                 <Link href={prefixLocalePath(buildFilterHref(baseParams, { developer: undefined, page: undefined }), locale)} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
               </span>
             )}
+            {params.minPrice && (
+              <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
+                {ui.minPriceChip}: {formatAed(Number(params.minPrice), locale)}
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { minPrice: undefined, page: undefined }), locale)} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
+              </span>
+            )}
+            {params.maxPrice && (
+              <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
+                {ui.maxPriceChip}: {formatAed(Number(params.maxPrice), locale)}
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { maxPrice: undefined, page: undefined }), locale)} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
+              </span>
+            )}
+            {params.bedsMin && (
+              <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
+                {ui.bedsMinChip}: {params.bedsMin}
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { bedsMin: undefined, page: undefined }), locale)} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
+              </span>
+            )}
+            {params.bedsMax && (
+              <span className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1 text-xs text-muted-foreground">
+                {ui.bedsMaxChip}: {params.bedsMax}
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { bedsMax: undefined, page: undefined }), locale)} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
+              </span>
+            )}
+            {params.goldenVisa === "true" && (
+              <span className="flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs text-violet-300">
+                {ui.goldenVisa}
+                <Link href={prefixLocalePath(buildFilterHref(baseParams, { goldenVisa: undefined, page: undefined }), locale)} className="ms-0.5 opacity-60 hover:opacity-100">×</Link>
+              </span>
+            )}
           </div>
         )}
 
@@ -262,6 +464,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
               l1_canonical_yield={typeof project.l1_canonical_yield === "number" ? project.l1_canonical_yield : null}
               l2_stress_test_grade={typeof project.l2_stress_test_grade === "string" ? project.l2_stress_test_grade : null}
               l3_timing_signal={typeof project.l3_timing_signal === "string" ? project.l3_timing_signal : null}
+              decision_label_v1={typeof project.decision_label_v1 === "string" ? project.decision_label_v1 : null}
               engine_god_metric={typeof project.engine_god_metric === "number" ? project.engine_god_metric : null}
               l1_confidence={typeof project.l1_confidence === "string" ? project.l1_confidence : null}
               apiPreview={project as Record<string, unknown>}

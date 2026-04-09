@@ -3,6 +3,7 @@ import { Footer } from "@/components/footer"
 import { AreasView } from "@/components/decision/areas-view"
 import { AreaCard } from "@/components/decision/area-card"
 import { listAreas } from "@/lib/decision-infrastructure"
+import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { getRequestLocale } from "@/i18n/request"
 import { formatInteger } from "@/lib/format/number"
 
@@ -12,6 +13,8 @@ export default async function AreasPage() {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
   const data = await listAreas()
+  const syncMeta = buildDataSyncMeta("areas", data.data_as_of)
+  const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
 
   return (
     <main id="main-content">
@@ -28,6 +31,11 @@ export default async function AreasPage() {
             {isArabic
               ? `قراءة مباشرة لـ ${formatInteger(data.areas.length, locale)} منطقة: السعر، العائد، كثافة المشاريع، وفرص الدخول.`
               : `${formatInteger(data.areas.length, locale)} area profiles - pricing depth, yield averages, and market timing signals. Click any dot to explore.`}
+          </p>
+          <p className="mt-2 text-[11px] text-muted-foreground/60">
+            {isArabic
+              ? `مزامنة API · ${syncMeta.primaryView} · ${syncTimestamp}`
+              : `API sync · ${syncMeta.primaryView} · ${syncTimestamp}`}
           </p>
         </header>
 
@@ -76,6 +84,7 @@ export default async function AreasPage() {
                 confidence={typeof area.confidence === "string" ? area.confidence : null}
                 image_url={typeof area.image_url === "string" ? area.image_url : null}
                 top_projects={Array.isArray(area.top_projects) ? area.top_projects.filter((item): item is string => typeof item === "string") : []}
+                apiPreview={area as Record<string, unknown>}
                 locale={locale}
               />
             ))}

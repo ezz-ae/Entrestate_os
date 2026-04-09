@@ -64,6 +64,7 @@ import {
 import { loadChatSession, saveChatMessage } from "@/lib/copilot/persistence"
 import { getUserProfile } from "@/lib/profile/queries"
 import { normalizeLocale } from "@/i18n/locale"
+import { getEnterpriseConfig } from "@/lib/enterprise-config"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -257,7 +258,7 @@ export async function POST(request: Request) {
           error: "Free usage is cooling down. Try again once your cooldown ends.",
           upgrade_cta: {
             label: "Upgrade for uninterrupted access",
-            url: "/pricing",
+            url: "/plans",
           },
           tier: entitlement.tier,
           usage,
@@ -494,13 +495,21 @@ export async function POST(request: Request) {
       }
     }
 
-    const systemPrompt = getCopilotSystemPrompt(locale).replace("{USER_PROFILE_CONTEXT}", profileContext)
+    const enterpriseConfig = await getEnterpriseConfig()
+
+    const systemPrompt = getCopilotSystemPrompt(locale, {
+      voice: enterpriseConfig.prompt.voice,
+      constraints: enterpriseConfig.prompt.constraints,
+      language: enterpriseConfig.prompt.language,
+      brandName: enterpriseConfig.brand.brand_name,
+      tone: enterpriseConfig.brand.tone,
+    }).replace("{USER_PROFILE_CONTEXT}", profileContext)
 
     const result = streamText({
       model,
       system: systemPrompt,
       messages: await convertToModelMessages(normalizedMessages, { tools: toolset }),
-      temperature: 0.3,
+      temperature: enterpriseConfig.prompt.temperature,
       stopWhen: stepCountIs(6),
       toolChoice: "required",
       tools: toolset,

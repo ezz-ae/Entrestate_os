@@ -20,6 +20,7 @@ const PROJECT_SORT_COLUMNS = {
   god_metric: "engine_god_metric",
   price: "l1_canonical_price",
   yield: "l1_canonical_yield",
+  timing: "l3_timing_signal",
   reliability: "l2_developer_reliability",
 } as const
 
@@ -101,6 +102,16 @@ const CURATED_PROJECT_SORT_EXPRESSIONS: Record<SortBy, Prisma.Sql> = {
   god_metric: Prisma.sql`investor_score_v1`,
   price: CURATED_PRICE_EXPR,
   yield: Prisma.sql`rental_yield`,
+  timing: Prisma.sql`
+    CASE UPPER(COALESCE(${CURATED_TIMING_LABEL}, ''))
+      WHEN 'STRONG_BUY' THEN 5
+      WHEN 'BUY' THEN 4
+      WHEN 'HOLD' THEN 3
+      WHEN 'WAIT' THEN 2
+      WHEN 'AVOID' THEN 1
+      ELSE 0
+    END
+  `,
   reliability: Prisma.sql`developer_reliability_score`,
 }
 
@@ -133,10 +144,17 @@ function tableEndsWith(tableName: string, suffix: string) {
 const USE_CURATED_PROPERTIES_VIEW =
   tableEndsWith(PROPERTIES_TABLE_NAME, "entrestate_projects_api") ||
   tableEndsWith(PROPERTIES_TABLE_NAME, "entrestate_projects_api_full") ||
+  tableEndsWith(PROPERTIES_TABLE_NAME, "projects_v1") ||
   tableEndsWith(PROPERTIES_TABLE_NAME, "inventory_clean")
 
-const USE_CURATED_AREAS_VIEW = tableEndsWith(AREAS_TABLE_NAME, "entrestate_areas_api")
-const USE_CURATED_DEVELOPERS_VIEW = tableEndsWith(DEVELOPERS_TABLE_NAME, "entrestate_developers_api")
+const USE_CURATED_AREAS_VIEW =
+  tableEndsWith(AREAS_TABLE_NAME, "entrestate_areas_api")
+  || tableEndsWith(AREAS_TABLE_NAME, "areas_v1")
+  || tableEndsWith(AREAS_TABLE_NAME, "area_intelligence_v1")
+
+const USE_CURATED_DEVELOPERS_VIEW =
+  tableEndsWith(DEVELOPERS_TABLE_NAME, "entrestate_developers_api")
+  || tableEndsWith(DEVELOPERS_TABLE_NAME, "developers_v1")
 
 type SortBy = keyof typeof PROJECT_SORT_COLUMNS
 
@@ -367,6 +385,23 @@ async function runOptionalQuery<T extends DbRow = DbRow>(query: Prisma.Sql): Pro
   }
 }
 
+function getNonCuratedSortExpression(sortBy: SortBy): Prisma.Sql {
+  if (sortBy === "timing") {
+    return Prisma.sql`
+      CASE UPPER(COALESCE(l3_timing_signal, ''))
+        WHEN 'STRONG_BUY' THEN 5
+        WHEN 'BUY' THEN 4
+        WHEN 'HOLD' THEN 3
+        WHEN 'WAIT' THEN 2
+        WHEN 'AVOID' THEN 1
+        ELSE 0
+      END
+    `
+  }
+
+  return Prisma.raw(PROJECT_SORT_COLUMNS[sortBy])
+}
+
 export function slugifyName(value: string) {
   return value
     .toLowerCase()
@@ -544,7 +579,7 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
     const whereClause = clauses.length > 0 ? Prisma.sql`WHERE ${Prisma.join(clauses, " AND ")}` : Prisma.empty
     const sortColumn = useCurated
       ? CURATED_PROJECT_SORT_EXPRESSIONS[sortBy]
-      : Prisma.raw(PROJECT_SORT_COLUMNS[sortBy])
+      : getNonCuratedSortExpression(sortBy)
 
     const selectQuery = useCurated
       ? Prisma.sql`
@@ -958,19 +993,32 @@ export async function listAreas(): Promise<{
   const rows = USE_CURATED_AREAS_VIEW
     ? await runQuery(Prisma.sql`
         SELECT
-          t.area,
+          COALESCE(
+            NULLIF(TRIM(to_jsonb(t) ->> 'area'), ''),
+            NULLIF(TRIM(to_jsonb(t) ->> 'name'), ''),
+            NULLIF(TRIM(to_jsonb(t) ->> 'area_name'), '')
+          ) AS area,
           COALESCE(
             NULLIF(TRIM(to_jsonb(t) ->> 'area_ar'), ''),
             NULLIF(TRIM(to_jsonb(t) ->> 'name_ar'), '')
           ) AS area_ar,
-          NULLIF(TRIM(COALESCE(t.city, '')), '') AS city,
-          COALESCE((to_jsonb(t) ->> 'total_projects')::int, 0) AS projects,
-          (to_jsonb(t) ->> 'avg_price')::numeric AS avg_price,
-          (to_jsonb(t) ->> 'avg_yield')::numeric AS avg_yield,
           COALESCE(
-            (to_jsonb(t) ->> 'avg_investor_score_v1')::numeric,
-            (to_jsonb(t) ->> 'avg_score')::numeric,
-            (to_jsonb(t) ->> 'efficiency')::numeric
+            NULLIF(TRIM(to_jsonb(t) ->> 'city'), ''),
+            NULLIF(TRIM(to_jsonb(t) ->> 'region'), ''),
+            'Dubai'
+          ) AS city,
+          COALESCE(
+            (to_jsonb(t) ->> 'total_projects')::int,
+            (to_jsonb(t) ->> 'project_count')::int,
+            (to_jsonb(t) ->> 'projects')::int,
+            0
+          ) AS projects,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t) ->> 'avg_price'`)} AS avg_price,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t) ->> 'avg_yield'`)} AS avg_yield,
+          COALESCE(
+            ${curatedNumeric(Prisma.sql`to_jsonb(t) ->> 'avg_investor_score_v1'`)},
+            ${curatedNumeric(Prisma.sql`to_jsonb(t) ->> 'avg_score'`)},
+            ${curatedNumeric(Prisma.sql`to_jsonb(t) ->> 'efficiency'`)}
           ) AS efficiency,
           COALESCE(
             (to_jsonb(t) ->> 'source_count')::int,
@@ -991,8 +1039,17 @@ export async function listAreas(): Promise<{
             0
           ) AS buy_signals
         FROM ${AREAS_TABLE_SQL} t
-        WHERE TRIM(COALESCE(t.area, '')) <> ''
-          AND COALESCE((to_jsonb(t) ->> 'total_projects')::int, 0) >= 2
+        WHERE TRIM(COALESCE(
+          NULLIF(TRIM(to_jsonb(t) ->> 'area'), ''),
+          NULLIF(TRIM(to_jsonb(t) ->> 'name'), ''),
+          NULLIF(TRIM(to_jsonb(t) ->> 'area_name'), '')
+        )) <> ''
+          AND COALESCE(
+            (to_jsonb(t) ->> 'total_projects')::int,
+            (to_jsonb(t) ->> 'project_count')::int,
+            (to_jsonb(t) ->> 'projects')::int,
+            0
+          ) >= 2
         ORDER BY efficiency DESC NULLS LAST
       `)
     : await runQuery(Prisma.sql`
@@ -1190,31 +1247,60 @@ export async function listDevelopers(): Promise<{
   const curatedRows = USE_CURATED_DEVELOPERS_VIEW
     ? await runQuery(Prisma.sql`
         SELECT
-          d.id,
-          d.name,
-          d.slug,
-          d.tier,
-          d.logo,
+          COALESCE(
+            NULLIF(TRIM(to_jsonb(d) ->> 'id'), ''),
+            NULLIF(TRIM(to_jsonb(d) ->> 'developer_id'), '')
+          ) AS id,
+          COALESCE(
+            NULLIF(TRIM(to_jsonb(d) ->> 'name'), ''),
+            NULLIF(TRIM(to_jsonb(d) ->> 'developer'), '')
+          ) AS name,
+          NULLIF(TRIM(to_jsonb(d) ->> 'slug'), '') AS slug,
+          NULLIF(TRIM(to_jsonb(d) ->> 'tier'), '') AS tier,
+          COALESCE(
+            NULLIF(TRIM(to_jsonb(d) ->> 'logo'), ''),
+            NULLIF(TRIM(to_jsonb(d) ->> 'logo_url'), '')
+          ) AS logo,
           COALESCE(
             NULLIF(TRIM(to_jsonb(d) ->> 'developer_ar'), ''),
             NULLIF(TRIM(to_jsonb(d) ->> 'name_ar'), '')
           ) AS developer_ar,
-          d.project_count,
-          d.avg_score,
-          d.avg_yield,
-          d.avg_price,
-          d.buy_signals,
-          d.safe_projects,
-          d.areas,
-          d.top_project,
-          d.payload,
-          d.description,
-          d.hq,
-          d.developer_type,
-          d.total_projects,
-          d.priced_projects
+          COALESCE(
+            (to_jsonb(d) ->> 'project_count')::int,
+            (to_jsonb(d) ->> 'projects')::int,
+            (to_jsonb(d) ->> 'total_projects')::int,
+            0
+          ) AS project_count,
+          ${curatedNumeric(Prisma.sql`to_jsonb(d) ->> 'avg_score'`)} AS avg_score,
+          COALESCE(
+            ${curatedNumeric(Prisma.sql`to_jsonb(d) ->> 'avg_yield'`)},
+            ${curatedNumeric(Prisma.sql`to_jsonb(d) ->> 'yield_avg'`)}
+          ) AS avg_yield,
+          ${curatedNumeric(Prisma.sql`to_jsonb(d) ->> 'avg_price'`)} AS avg_price,
+          COALESCE(
+            (to_jsonb(d) ->> 'buy_signals')::int,
+            0
+          ) AS buy_signals,
+          COALESCE(
+            (to_jsonb(d) ->> 'safe_projects')::int,
+            0
+          ) AS safe_projects,
+          COALESCE(to_jsonb(d) -> 'areas', to_jsonb(d) -> 'top_areas') AS areas,
+          COALESCE(
+            NULLIF(TRIM(to_jsonb(d) ->> 'top_project'), ''),
+            NULLIF(TRIM(to_jsonb(d) ->> 'top_projects'), '')
+          ) AS top_project,
+          to_jsonb(d) AS payload,
+          NULLIF(TRIM(to_jsonb(d) ->> 'description'), '') AS description,
+          NULLIF(TRIM(to_jsonb(d) ->> 'hq'), '') AS hq,
+          NULLIF(TRIM(to_jsonb(d) ->> 'developer_type'), '') AS developer_type,
+          COALESCE((to_jsonb(d) ->> 'total_projects')::int, 0) AS total_projects,
+          COALESCE((to_jsonb(d) ->> 'priced_projects')::int, 0) AS priced_projects
         FROM ${DEVELOPERS_TABLE_SQL} d
-        WHERE d.name <> 'Unknown Developer'
+        WHERE COALESCE(
+          NULLIF(TRIM(to_jsonb(d) ->> 'name'), ''),
+          NULLIF(TRIM(to_jsonb(d) ->> 'developer'), '')
+        ) <> 'Unknown Developer'
         ORDER BY project_count DESC
       `)
     : []

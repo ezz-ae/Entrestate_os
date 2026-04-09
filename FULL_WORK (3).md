@@ -15,8 +15,8 @@ Entrestate is a **separated data platform** for UAE real estate intelligence, wi
 
 | Schema | Purpose | Key Tables |
 |---|---|---|
-| `raw` | Unprocessed source data | `inventory_full` (7,015 projects), `dld_transactions_arvo` (36,841) |
-| `canonical` | Cleaned, scored, single source of truth | `inventory_clean` (2,813 projects), `dld_area_benchmarks_live` (183 areas) |
+| `raw` | Unprocessed source data | `inventory_full` (7,015 projects), `bayut_listings` (41,381), `dld_transactions` |
+| `canonical` | Cleaned, scored, single source of truth | `inventory_clean` (2,813 projects), `bayut_area_benchmarks` (275 areas) |
 | `api` | Read-optimized views for frontend/API | `entrestate_inventory`, `entrestate_developers_api`, `entrestate_areas_api` |
 | `entrestate_tx` | Transaction workspace layer | 40 tables, 9 functions, 9 API views |
 
@@ -25,8 +25,9 @@ Entrestate is a **separated data platform** for UAE real estate intelligence, wi
 | Source | Records | What It Provides |
 |---|---|---|
 | PropertyFinder | 2,813 projects | Prices, images, developers, unit configs, amenities |
-| DLD (Dubai Land Dept) | 36,841 transactions | Real transaction prices, volume, velocity |
-| Area Benchmarks | 183 areas | Median prices and rents by area |
+| Bayut | 41,381 listings | Sale listings across 7 UAE cities, lat/lng, building data |
+| DLD (Dubai Land Dept) | 0 transactions | Real transaction prices, volume, velocity |
+| Bayut Benchmarks | 275 areas | Median prices and rents by area |
 
 ### Signal Engine (V1 Scores)
 
@@ -127,7 +128,7 @@ rented → archived (lease ended)
 | Metric | Count |
 |---|---|
 | Total folders | 7,217 |
-| Sources | Live intake feeds |
+| Sources | PropertyFinder + Bayut |
 | Listing imports | 5,358 |
 | State transitions | 22 |
 | API views | 9 |
@@ -142,7 +143,7 @@ rented → archived (lease ended)
 
 ### The Strategic Pivot
 
-Based on external critique, the system was repackaged from a consumer app into a **white-labeled enterprise infrastructure layer** (Entrestate Transaction Layer).
+Based on external critique, the system was repackaged from a enterprise infrastructure (Entrestate Transaction Layer) to a **white-labeled enterprise infrastructure layer** (Entrestate Transaction Layer).
 
 ### Rebrand Map
 

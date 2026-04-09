@@ -17,6 +17,7 @@ type AreaCardProps = {
   confidence?: string | null
   image_url?: string | null
   top_projects?: string[] | null
+  apiPreview?: Record<string, unknown>
   locale?: AppLocale | string | null
 }
 
@@ -33,17 +34,19 @@ export function AreaCard(area: AreaCardProps) {
   const cityLabel = area.city ? pickLocalizedText(locale, null, area.city, area.city) : null
   const sourceCount = typeof area.source_count === "number" ? area.source_count : null
   const confidence = area.confidence ? String(area.confidence).toUpperCase() : null
+  const apiPreviewText = area.apiPreview ? JSON.stringify(area.apiPreview, null, 2) : null
   const copy = isArabic
     ? {
-        projects: "مشروع",
-        avgPrice: "متوسط السعر",
-        avgYield: "متوسط العائد",
-        topProjects: "أبرز المشاريع",
-        sources: "مصادر",
-        confidence: "موثوقية",
-        openArea: `افتح ملف ${areaLabel}`,
-        mapAlt: `خريطة ${areaLabel}`,
-      }
+      projects: "مشروع",
+      avgPrice: "متوسط السعر",
+      avgYield: "متوسط العائد",
+      topProjects: "أبرز المشاريع",
+      sources: "مصادر",
+      confidence: "موثوقية",
+      apiPayload: "حمولة API",
+      openArea: `افتح ملف ${areaLabel}`,
+      mapAlt: `خريطة ${areaLabel}`,
+    }
     : {
         projects: "projects",
         avgPrice: "Avg Price",
@@ -51,6 +54,7 @@ export function AreaCard(area: AreaCardProps) {
         topProjects: "Top Projects",
         sources: "sources",
         confidence: "confidence",
+        apiPayload: "API Payload",
         openArea: `Open ${areaLabel} area details`,
         mapAlt: `Map of ${areaLabel}`,
       }
@@ -136,6 +140,17 @@ export function AreaCard(area: AreaCardProps) {
               </div>
             </div>
           </div>
+        ) : null}
+
+        {apiPreviewText ? (
+          <details className="relative z-30 mt-3 rounded-lg border border-border/60 bg-background/40 p-2">
+            <summary className="cursor-pointer text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+              {copy.apiPayload}
+            </summary>
+            <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-relaxed text-foreground/80">
+              {apiPreviewText}
+            </pre>
+          </details>
         ) : null}
       </div>
 

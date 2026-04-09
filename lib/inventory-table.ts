@@ -1,9 +1,10 @@
 import "server-only"
 import { Prisma } from "@prisma/client"
 
-const DEFAULT_INVENTORY_TABLE = "public.entrestate_projects_api"
-const DEFAULT_AREAS_TABLE = "public.entrestate_areas_api"
-const DEFAULT_DEVELOPERS_TABLE = "api.entrestate_developers_api"
+const DEFAULT_INVENTORY_TABLE = "api.projects_v1"
+const DEFAULT_AREAS_TABLE = "api.areas_v1"
+const DEFAULT_DEVELOPERS_TABLE = "api.developers_v1"
+const DEFAULT_SEARCH_TABLE = "api.search_index"
 const DEFAULT_DETAIL_TABLE = "raw.inventory_full"
 const DEFAULT_STATUS_TABLE = "public.data_freshness"
 const IDENTIFIER_RE = /^[A-Za-z_][A-Za-z0-9_]*$/
@@ -58,6 +59,14 @@ export function getDevelopersTableName() {
 
 export function getDevelopersTableSql() {
   return Prisma.raw(getDevelopersTableName())
+}
+
+export function getSearchTableName() {
+  return getConfiguredTableName("SEARCH_TABLE", DEFAULT_SEARCH_TABLE)
+}
+
+export function getSearchTableSql() {
+  return Prisma.raw(getSearchTableName())
 }
 
 export function getDetailTableName() {

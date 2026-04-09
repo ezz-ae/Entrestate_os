@@ -2,8 +2,9 @@
 
 import Link from "next/link"
 import { Building2, ArrowUpRight } from "lucide-react"
+import { useMemo, useState } from "react"
 import { useLocale } from "next-intl"
-import { formatAed } from "@/components/decision/formatters"
+import { formatAed, formatYield } from "@/components/decision/formatters"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { formatInteger } from "@/lib/format/number"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
@@ -14,10 +15,13 @@ type DeveloperCardProps = {
   developer_ar?: string | null
   projects?: number | null
   reliability?: number | null
+  tier?: string | null
   avg_price?: number | null
+  avg_yield?: number | null
   logo_url?: string | null
   top_areas?: string[] | null
   top_projects?: string[] | null
+  apiPreview?: Record<string, unknown>
 }
 
 function slugify(value: string) {
@@ -33,12 +37,18 @@ function reliabilityConfig(score: number | null) {
 
 export function DeveloperCard(developer: DeveloperCardProps) {
   const locale = useLocale() as AppLocale
+  const [showApi, setShowApi] = useState(false)
   const topAreas = Array.isArray(developer.top_areas) ? developer.top_areas.slice(0, 3) : []
   const topProjects = Array.isArray(developer.top_projects) ? developer.top_projects.slice(0, 3) : []
   const relScore = typeof developer.reliability === "number" ? developer.reliability : null
   const relPct = relScore !== null ? Math.min(Math.max(relScore, 0), 100) : 0
   const rel = reliabilityConfig(relScore)
+  const tier = typeof developer.tier === "string" && developer.tier.trim().length > 0 ? developer.tier.toUpperCase() : null
   const developerLabel = pickLocalizedText(locale, developer.developer_ar, developer.developer)
+  const apiPreviewText = useMemo(() => {
+    if (!developer.apiPreview) return ""
+    return JSON.stringify(developer.apiPreview, null, 2)
+  }, [developer.apiPreview])
   const localizedTopAreas = topAreas.map((areaName) => ({
     slug: slugify(areaName),
     label: pickLocalizedText(locale, null, areaName, areaName),
@@ -48,17 +58,25 @@ export function DeveloperCard(developer: DeveloperCardProps) {
     ? {
         projects: "مشاريع مكتملة",
         deliveryReliability: "موثوقية التسليم",
+        tier: "الفئة",
         avgTicket: "متوسط حجم التذكرة",
+        avgYield: "متوسط العائد",
         activeAreas: "المناطق النشطة",
         keyProjects: "أهم المشاريع",
+        apiResponse: "استجابة API",
+        cardView: "عرض البطاقة",
         openDetails: `فتح تفاصيل المطور ${developerLabel}`,
       }
     : {
         projects: "completed projects",
         deliveryReliability: "Delivery Reliability",
+        tier: "Tier",
         avgTicket: "Avg Ticket Size",
+        avgYield: "Avg Yield",
         activeAreas: "Active Areas",
         keyProjects: "Key Projects",
+        apiResponse: "API Response",
+        cardView: "Card View",
         openDetails: `Open ${developerLabel} developer details`,
       }
 
@@ -76,14 +94,41 @@ export function DeveloperCard(developer: DeveloperCardProps) {
           </div>
           <div className="min-w-0">
             <p className="truncate text-base font-semibold text-foreground">{developerLabel}</p>
-            <p className="text-xs text-muted-foreground">
-              {formatInteger(developer.projects, locale)} {copy.projects}
-            </p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+              <p>
+                {formatInteger(developer.projects, locale)} {copy.projects}
+              </p>
+              {tier ? (
+                <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-wider text-foreground/80">
+                  {copy.tier}: {tier}
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
-        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-border bg-muted/40 opacity-0 transition-all duration-200 group-hover:opacity-100">
-          <ArrowUpRight className="h-3.5 w-3.5 text-foreground" />
-        </span>
+        <div className="flex items-center gap-1.5">
+          {apiPreviewText ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                setShowApi((prev) => !prev)
+              }}
+              className={`relative z-30 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest transition ${
+                showApi
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border/60 bg-muted/40 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+              }`}
+              aria-pressed={showApi}
+            >
+              {showApi ? copy.cardView : copy.apiResponse}
+            </button>
+          ) : null}
+          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-border bg-muted/40 opacity-0 transition-all duration-200 group-hover:opacity-100">
+            <ArrowUpRight className="h-3.5 w-3.5 text-foreground" />
+          </span>
+        </div>
       </div>
 
       {/* Body */}
@@ -107,14 +152,34 @@ export function DeveloperCard(developer: DeveloperCardProps) {
           </div>
         </div>
 
-        {/* Avg ticket — always visible */}
-        <div className="mt-4">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.avgTicket}</p>
-          <p className="mt-0.5 text-lg font-bold tabular-nums text-foreground">{formatAed(developer.avg_price, locale)}</p>
+        {/* Avg ticket + yield */}
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.avgTicket}</p>
+            <p className="mt-0.5 text-lg font-bold tabular-nums text-foreground">{formatAed(developer.avg_price, locale)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.avgYield}</p>
+            <p className="mt-0.5 text-lg font-bold tabular-nums text-emerald-500">{formatYield(developer.avg_yield, locale)}</p>
+          </div>
         </div>
 
+        {showApi && apiPreviewText ? (
+          <div
+            className="relative z-30 mt-3 rounded-lg border border-border/60 bg-background/40 p-3"
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+            }}
+          >
+            <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-relaxed text-foreground/80">
+              {apiPreviewText}
+            </pre>
+          </div>
+        ) : null}
+
         {/* Hover reveal — areas + projects */}
-        {(topAreas.length > 0 || topProjects.length > 0) ? (
+        {!showApi && (topAreas.length > 0 || topProjects.length > 0) ? (
           <div className="mt-3 translate-y-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
             <div className="border-t border-border/60 pt-3 space-y-3">
               {localizedTopAreas.length > 0 ? (

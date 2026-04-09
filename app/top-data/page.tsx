@@ -2,6 +2,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { getTopDataRows } from "@/lib/frontend-content"
 import { TopDataSection } from "@/components/top-data/top-data-section"
+import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { getRequestLocale } from "@/i18n/request"
 import { getTranslations } from "next-intl/server"
 
@@ -81,6 +82,8 @@ export default async function TopDataPage() {
 
   const availableSections = REQUIRED_SECTIONS.filter((sectionKey) => rowsBySection.has(sectionKey))
   const missingSections = REQUIRED_SECTIONS.filter((key) => !rowsBySection.has(key))
+  const syncMeta = buildDataSyncMeta("topData", topData.data_as_of)
+  const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
 
   return (
     <main id="main-content">
@@ -133,6 +136,11 @@ export default async function TopDataPage() {
                 : "Signal data is refreshing. Please check back in a few minutes."}
             </div>
           ) : null}
+          <div className="rounded-xl border border-border/60 bg-card/70 px-4 py-2.5 text-[11px] text-muted-foreground/70">
+            {isArabic
+              ? `مزامنة API · ${syncMeta.primaryView} · ${syncTimestamp}`
+              : `API sync · ${syncMeta.primaryView} · ${syncTimestamp}`}
+          </div>
         </section>
 
         <div className="grid grid-cols-1 gap-12">

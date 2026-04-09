@@ -122,6 +122,7 @@ function getSortOptions(locale: AppLocale) {
     { value: "god_metric", label: locale === "ar" ? "النتيجة" : "Score" },
     { value: "yield", label: locale === "ar" ? "العائد" : "Yield" },
     { value: "price", label: locale === "ar" ? "السعر" : "Price" },
+    { value: "timing", label: locale === "ar" ? "التوقيت" : "Timing" },
     { value: "reliability", label: locale === "ar" ? "الموثوقية" : "Reliability" },
   ]
 }
@@ -267,6 +268,7 @@ export default function SearchPage() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+  const [syncMeta, setSyncMeta] = useState<{ sourceView: string; syncedAt: string } | null>(null)
 
   const totalPages = Math.ceil(total / 24)
 
@@ -291,9 +293,14 @@ export default function SearchPage() {
       setResults(data.projects ?? [])
       setTotal(data.total ?? 0)
       setPage(queryPage)
+      setSyncMeta({
+        sourceView: data.source_view ?? data.sync?.primaryView ?? "api.search_index",
+        syncedAt: data.data_as_of ?? data.sync?.syncedAt ?? new Date().toISOString(),
+      })
     } catch {
       setResults([])
       setTotal(0)
+      setSyncMeta(null)
     } finally {
       setLoading(false)
     }
@@ -323,8 +330,19 @@ export default function SearchPage() {
     setPage(1)
     fetch(`/api/search?${params.toString()}`)
       .then((r) => (r.ok ? r.json() : { projects: [], total: 0 }))
-      .then((data: { projects?: Project[]; total?: number }) => { setResults(data.projects ?? []); setTotal(data.total ?? 0) })
-      .catch(() => { setResults([]); setTotal(0) })
+      .then((data: { projects?: Project[]; total?: number; source_view?: string; sync?: { primaryView?: string; syncedAt?: string }; data_as_of?: string }) => {
+        setResults(data.projects ?? [])
+        setTotal(data.total ?? 0)
+        setSyncMeta({
+          sourceView: data.source_view ?? data.sync?.primaryView ?? "api.search_index",
+          syncedAt: data.data_as_of ?? data.sync?.syncedAt ?? new Date().toISOString(),
+        })
+      })
+      .catch(() => {
+        setResults([])
+        setTotal(0)
+        setSyncMeta(null)
+      })
       .finally(() => setLoading(false))
   }
 
@@ -549,12 +567,19 @@ export default function SearchPage() {
           <>
             {/* Results count */}
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-xs text-muted-foreground/50">
-                <span className="font-semibold tabular-nums text-foreground">{formatInteger(total, locale)}</span> {copy.results}
-                {sortBy !== "god_metric" && (
-                  <span className="ml-2">· {copy.sortedBy} {sortOptions.find((s) => s.value === sortBy)?.label.toLowerCase()}</span>
-                )}
-              </p>
+              <div>
+                <p className="text-xs text-muted-foreground/50">
+                  <span className="font-semibold tabular-nums text-foreground">{formatInteger(total, locale)}</span> {copy.results}
+                  {sortBy !== "god_metric" && (
+                    <span className="ml-2">· {copy.sortedBy} {sortOptions.find((s) => s.value === sortBy)?.label.toLowerCase()}</span>
+                  )}
+                </p>
+                {syncMeta ? (
+                  <p className="mt-1 text-[10px] text-muted-foreground/40">
+                    API sync · {syncMeta.sourceView} · {new Date(syncMeta.syncedAt).toLocaleString(locale === "ar" ? "ar-AE" : "en-AE")}
+                  </p>
+                ) : null}
+              </div>
               <p className="text-[10px] text-muted-foreground/30 uppercase tracking-wider">{copy.clickCard}</p>
             </div>
 

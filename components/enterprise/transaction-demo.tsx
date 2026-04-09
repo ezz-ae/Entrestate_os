@@ -109,7 +109,7 @@ export function TransactionDemo() {
 
   const handlePublish = async () => {
     if (!folderId) {
-      setError("No folder available. Run Step 1 first.")
+      setError("No SDR workspace available. Run Step 1 first.")
       return
     }
     setError(null)

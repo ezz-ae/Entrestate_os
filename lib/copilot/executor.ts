@@ -38,12 +38,7 @@ const COPILOT_HAS_AR_COLUMNS =
   || COPILOT_TABLE_HINT.includes("projects_api")
   || COPILOT_TABLE_HINT.includes("projects_v1")
 
-const COPILOT_DEFAULT_PRICE_COLUMN =
-  COPILOT_TABLE_HINT.includes("projects_api")
-  || COPILOT_TABLE_HINT.includes("projects_v1")
-  || COPILOT_TABLE_HINT.includes("inventory_clean")
-    ? "price_from"
-    : "price_from_aed"
+const COPILOT_DEFAULT_PRICE_COLUMN = "price_from_aed"
 const COPILOT_PRICE_COLUMN = ((process.env.COPILOT_PRICE_COLUMN ?? "").trim() || COPILOT_DEFAULT_PRICE_COLUMN)
 const COPILOT_SAFE_PRICE_COLUMN = IDENTIFIER_RE.test(COPILOT_PRICE_COLUMN)
   ? COPILOT_PRICE_COLUMN

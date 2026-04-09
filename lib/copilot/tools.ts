@@ -284,8 +284,62 @@ Cached: DLD YTD AED 141.34B, 36,841 txns. Top velocity: JVC 37.6/day.
 - بلا حشو
 - لا تترجم حرفياً؛ صغ المحتوى كمنتج عربي أصيل.`
 
-export function getCopilotSystemPrompt(locale?: string | null) {
-  return locale === "ar" ? copilotSystemPromptArabic : copilotSystemPrompt
+export type CopilotPromptOverrides = {
+  voice?: string
+  constraints?: string[]
+  language?: string
+  brandName?: string
+  tone?: string
+}
+
+function buildRuntimePromptContext(locale: string | null | undefined, overrides?: CopilotPromptOverrides) {
+  if (!overrides) return ""
+
+  const constraints = (overrides.constraints ?? []).filter((entry) => entry.trim().length > 0)
+  if (
+    !overrides.voice
+    && !overrides.language
+    && !overrides.brandName
+    && !overrides.tone
+    && constraints.length === 0
+  ) {
+    return ""
+  }
+
+  if (locale === "ar") {
+    const lines = [
+      "",
+      "تهيئة وقت التشغيل:",
+      overrides.brandName ? `العلامة: ${overrides.brandName}` : null,
+      overrides.tone ? `النبرة: ${overrides.tone}` : null,
+      overrides.voice ? `الصوت: ${overrides.voice}` : null,
+      overrides.language ? `اللغة الافتراضية: ${overrides.language}` : null,
+      constraints.length > 0
+        ? `القيود: ${constraints.map((constraint) => `«${constraint}»`).join("، ")}`
+        : null,
+    ].filter(Boolean)
+
+    return lines.join("\n")
+  }
+
+  const lines = [
+    "",
+    "Runtime configuration:",
+    overrides.brandName ? `Brand: ${overrides.brandName}` : null,
+    overrides.tone ? `Tone: ${overrides.tone}` : null,
+    overrides.voice ? `Voice: ${overrides.voice}` : null,
+    overrides.language ? `Default language: ${overrides.language}` : null,
+    constraints.length > 0
+      ? `Constraints: ${constraints.map((constraint) => `\"${constraint}\"`).join(", ")}`
+      : null,
+  ].filter(Boolean)
+
+  return lines.join("\n")
+}
+
+export function getCopilotSystemPrompt(locale?: string | null, overrides?: CopilotPromptOverrides) {
+  const basePrompt = locale === "ar" ? copilotSystemPromptArabic : copilotSystemPrompt
+  return `${basePrompt}${buildRuntimePromptContext(locale, overrides)}`
 }
 
 export const copilotToolDescriptions = {

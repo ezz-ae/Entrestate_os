@@ -35,6 +35,7 @@ type ProjectCardProps = {
   rental_yield?: number | null
   stress_grade_v1?: string | null
   timing_label?: string | null
+  decision_label_v1?: string | null
   investor_score_v1?: number | null
   l1_canonical_price?: number | null
   l1_canonical_yield?: number | null
@@ -67,6 +68,21 @@ function formatCanonicalArabicLabel(locale: AppLocale, value: string, labels: Re
   return labels[value] ? `${value} · ${labels[value]}` : value
 }
 
+function normalizeVerdict(value: string | null | undefined) {
+  const normalized = (value ?? "").toUpperCase()
+  if (normalized === "STRONG_BUY") return "BUY"
+  if (["BUY", "HOLD", "WAIT", "AVOID"].includes(normalized)) return normalized
+  return null
+}
+
+function verdictTone(verdict: string | null) {
+  if (verdict === "BUY") return "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+  if (verdict === "HOLD") return "border-amber-500/40 bg-amber-500/10 text-amber-300"
+  if (verdict === "WAIT") return "border-red-500/40 bg-red-500/10 text-red-300"
+  if (verdict === "AVOID") return "border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300"
+  return "border-border/40 bg-muted/30 text-muted-foreground"
+}
+
 export function ProjectCard(project: ProjectCardProps) {
   const locale = useLocale() as AppLocale
   const [showApi, setShowApi] = useState(false)
@@ -85,6 +101,7 @@ export function ProjectCard(project: ProjectCardProps) {
         score: "النتيجة",
         apiResponse: "استجابة API",
         cardView: "عرض البطاقة",
+        verdict: "الحكم",
       }
     : {
         detailsPending: "Details pending",
@@ -93,6 +110,7 @@ export function ProjectCard(project: ProjectCardProps) {
         score: "Score",
         apiResponse: "API Response",
         cardView: "Card View",
+        verdict: "Verdict",
       }
 
   const accent = timingAccent(timing)
@@ -100,6 +118,7 @@ export function ProjectCard(project: ProjectCardProps) {
   const grade = stressGrade?.toUpperCase() ?? null
   const signalLabel = formatCanonicalArabicLabel(locale, signal, SIGNAL_LABELS_AR)
   const gradeLabel = grade ? formatCanonicalArabicLabel(locale, grade, STRESS_LABELS_AR) : "—"
+  const verdict = normalizeVerdict(project.decision_label_v1 ?? timing)
   const apiPreview = project.apiPreview
   const apiPreviewText = useMemo(() => {
     if (!apiPreview) return ""
@@ -114,33 +133,41 @@ export function ProjectCard(project: ProjectCardProps) {
       {/* Top section — always visible */}
       <div className="p-5 pb-4">
         <div className="flex items-start justify-between gap-2">
-          {/* Signal badge */}
-          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${accent.label}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} />
-            {signalLabel}
-          </span>
-          {apiPreview ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                setShowApi((prev) => !prev)
-              }}
-              className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest transition ${
-                showApi
-                  ? "border-primary/50 bg-primary/10 text-primary"
-                  : "border-border/60 bg-muted/40 text-muted-foreground hover:border-primary/30 hover:text-foreground"
-              }`}
-              aria-pressed={showApi}
-            >
-              {showApi ? copy.cardView : copy.apiResponse}
-            </button>
-          ) : null}
-          {/* Arrow — appears on hover */}
-          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-border bg-muted/40 opacity-0 transition-all duration-200 group-hover:opacity-100">
-            <ArrowUpRight className="h-3.5 w-3.5 text-foreground" />
-          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${accent.label}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} />
+              {signalLabel}
+            </span>
+            {verdict ? (
+              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${verdictTone(verdict)}`}>
+                {copy.verdict}: {verdict}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {apiPreview ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  setShowApi((prev) => !prev)
+                }}
+                className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest transition ${
+                  showApi
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-border/60 bg-muted/40 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                }`}
+                aria-pressed={showApi}
+              >
+                {showApi ? copy.cardView : copy.apiResponse}
+              </button>
+            ) : null}
+            <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-border bg-muted/40 opacity-0 transition-all duration-200 group-hover:opacity-100">
+              <ArrowUpRight className="h-3.5 w-3.5 text-foreground" />
+            </span>
+          </div>
         </div>
 
         {/* Project name */}
