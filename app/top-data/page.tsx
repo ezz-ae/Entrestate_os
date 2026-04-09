@@ -61,7 +61,16 @@ export default async function TopDataPage() {
   const locale = await getRequestLocale()
   const t = await getTranslations({ locale, namespace: "topData" })
   const isArabic = locale === "ar"
-  const topData = await getTopDataRows()
+  let topData: Awaited<ReturnType<typeof getTopDataRows>>
+  try {
+    topData = await getTopDataRows()
+  } catch (error) {
+    console.error("Top-data page failed to load; rendering empty state.", { error })
+    topData = {
+      data_as_of: new Date().toISOString(),
+      sections: [],
+    }
+  }
 
   const rowsBySection = new Map<RequiredSection, (typeof topData.sections)[number]>()
   for (const row of topData.sections) {
@@ -115,6 +124,13 @@ export default async function TopDataPage() {
           {missingSections.length > 0 ? (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-2.5 text-xs text-amber-400">
               <span className="font-medium">{missingSections.length}</span> {isArabic ? "أقسام قيد التجهيز" : "sections pending"}
+            </div>
+          ) : null}
+          {availableSections.length === 0 ? (
+            <div className="rounded-xl border border-border/60 bg-card/70 px-4 py-2.5 text-xs text-muted-foreground">
+              {isArabic
+                ? "يتم تحديث بيانات المؤشرات الآن. أعد المحاولة بعد دقائق."
+                : "Signal data is refreshing. Please check back in a few minutes."}
             </div>
           ) : null}
         </section>

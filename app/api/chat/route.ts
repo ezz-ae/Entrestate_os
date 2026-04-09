@@ -60,6 +60,7 @@ import { normalizeLocale } from "@/i18n/locale"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { formatAed as formatAedValue } from "@/lib/format/currency"
 import { formatDecimal, formatInteger } from "@/lib/format/number"
+import { getInventoryTableSql } from "@/lib/inventory-table"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -159,6 +160,37 @@ function sanitizeForAi<T>(value: T): T {
   }
 
   return value
+}
+
+function buildHardFallback(locale: string) {
+  return {
+    content: locale === "ar"
+      ? "البيانات غير متاحة مؤقتاً. حاول مرة أخرى خلال لحظات."
+      : "Market data is temporarily unavailable. Please try again shortly.",
+    dataCards: undefined,
+    evidence: {
+      sources_used: ["fallback"],
+    },
+    data_as_of: new Date().toISOString(),
+  }
+}
+
+async function safeDbQuery<T>(query: Prisma.Sql, label: string): Promise<T[]> {
+  try {
+    return await dbQuery<T>(query)
+  } catch (error) {
+    console.error("Chat fallback query failed:", { label, error })
+    return []
+  }
+}
+
+async function safeToolResult<T>(label: string, call: () => Promise<T>): Promise<T | null> {
+  try {
+    return await call()
+  } catch (error) {
+    console.error("Chat fallback tool failed:", { label, error })
+    return null
+  }
 }
 
 function withGuardrails<T extends Record<string, unknown>>(output: T): T & { guardrail_warnings: string[] } {
@@ -623,7 +655,10 @@ async function resolveProvenanceFast() {
 
 async function buildDeterministicFallback(message: string, locale: string, context?: { city?: string; area?: string }) {
   if (message.trim().toUpperCase().includes("PULSE")) {
-    const pulse = await executeDldMarketPulse()
+    const pulse = await safeToolResult("dld_market_pulse", () => executeDldMarketPulse())
+    if (!pulse) {
+      return buildHardFallback(locale)
+    }
     const pulseContent = buildPulseContentFromToolResults([pulse], locale)
     return {
       content: pulseContent ?? "Dubai Market Pulse is temporarily unavailable.",
@@ -637,7 +672,7 @@ async function buildDeterministicFallback(message: string, locale: string, conte
 
   const projectQuery = extractProjectQuery(message)
   if (projectQuery) {
-    const projectRows = await dbQuery<Record<string, unknown>>(Prisma.sql`
+    const projectRows = await safeDbQuery<Record<string, unknown>>(Prisma.sql`
       SELECT
         id,
         name AS project_name,
@@ -663,13 +698,13 @@ async function buildDeterministicFallback(message: string, locale: string, conte
         handover_reliability_score,
         area_stability_score,
         payment_plan_score
-      FROM inventory_clean
+      FROM ${getInventoryTableSql()}
       WHERE LOWER(name) LIKE LOWER('%' || ${projectQuery} || '%')
       ORDER BY
         CASE WHEN LOWER(name) = LOWER(${projectQuery}) THEN 0 ELSE 1 END,
         investor_score_v1 DESC NULLS LAST
       LIMIT 1
-    `)
+    `, "project_lookup")
 
     const project = projectRows[0]
     if (project) {
@@ -697,11 +732,14 @@ async function buildDeterministicFallback(message: string, locale: string, conte
   }
   if (timingLabel) filters.timing_label = timingLabel
 
-  const result = await executeDealScreener({
+  const result = await safeToolResult("deal_screener", () => executeDealScreener({
     filters,
     sort_by: "investor_score_v1",
     limit: 8,
-  })
+  }))
+  if (!result) {
+    return buildHardFallback(locale)
+  }
 
   const rows = toRows(result.rows)
   const cards = buildDataCardsFromRows(rows, locale)
@@ -714,6 +752,15 @@ async function buildDeterministicFallback(message: string, locale: string, conte
       sources_used: ["deal_screener"],
     },
     data_as_of: result.data_as_of,
+  }
+}
+
+async function buildSafeDeterministicFallback(message: string, locale: string, context?: { city?: string; area?: string }) {
+  try {
+    return await buildDeterministicFallback(message, locale, context)
+  } catch (error) {
+    console.error("Deterministic fallback failed:", { error })
+    return buildHardFallback(locale)
   }
 }
 
@@ -890,7 +937,7 @@ export async function POST(request: Request) {
     }
 
     if (!model) {
-      const fallback = await buildDeterministicFallback(message, locale, parsed.data.context)
+      const fallback = await buildSafeDeterministicFallback(message, locale, parsed.data.context)
       return NextResponse.json(
         {
           ...fallback,
@@ -987,7 +1034,7 @@ export async function POST(request: Request) {
       })
     } catch (error) {
       console.error("Chat route LLM execution failed:", { requestId, error })
-      const fallback = await buildDeterministicFallback(message, locale, parsed.data.context)
+      const fallback = await buildSafeDeterministicFallback(message, locale, parsed.data.context)
       return NextResponse.json(
         {
           ...fallback,

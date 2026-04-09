@@ -78,6 +78,30 @@ function isMissingRelationError(error: unknown, relation: string) {
   )
 }
 
+function isMissingColumnError(error: unknown) {
+  if (!error || typeof error !== "object") return false
+  const candidate = error as { code?: string; message?: string; meta?: { message?: string } }
+  const message = candidate.meta?.message ?? candidate.message ?? ""
+  return (
+    candidate.code === "42703"
+    || (candidate.code === "P2010" && message.includes("42703"))
+    || message.toLowerCase().includes("column")
+       && message.toLowerCase().includes("does not exist")
+  )
+}
+
+async function buildSafeTopDataFallback(inventoryTotal: number) {
+  try {
+    return await buildTopDataFallback(inventoryTotal)
+  } catch (error) {
+    console.error("Top-data fallback failed; returning empty sections.", { error })
+    return {
+      data_as_of: new Date().toISOString(),
+      sections: [],
+    }
+  }
+}
+
 type InventoryContext = {
   tableName: string
   tableSql: Prisma.Sql
@@ -385,8 +409,8 @@ export async function getTopDataRows() {
       ORDER BY display_order
     `)
   } catch (error) {
-    if (isMissingRelationError(error, "entrestate_top_data")) {
-      return buildTopDataFallback(inventoryTotal)
+    if (isMissingRelationError(error, "entrestate_top_data") || isMissingColumnError(error)) {
+      return buildSafeTopDataFallback(inventoryTotal)
     }
     throw error
   }

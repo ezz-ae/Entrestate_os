@@ -320,6 +320,28 @@ function isDatabaseUnavailable(error: unknown) {
   )
 }
 
+function isMissingRelationError(error: unknown) {
+  if (!error || typeof error !== "object") return false
+  const candidate = error as { code?: string; message?: string; meta?: { message?: string } }
+  const message = candidate.meta?.message ?? candidate.message ?? ""
+  return (
+    candidate.code === "42P01"
+    || (candidate.code === "P2010" && message.includes("42P01"))
+    || message.toLowerCase().includes("does not exist")
+  )
+}
+
+function isMissingColumnError(error: unknown) {
+  if (!error || typeof error !== "object") return false
+  const candidate = error as { code?: string; message?: string; meta?: { message?: string } }
+  const message = candidate.meta?.message ?? candidate.message ?? ""
+  return (
+    candidate.code === "42703"
+    || (candidate.code === "P2010" && message.includes("42703"))
+    || message.toLowerCase().includes("column") && message.toLowerCase().includes("does not exist")
+  )
+}
+
 async function runQuery<T extends DbRow = DbRow>(query: Prisma.Sql): Promise<T[]> {
   try {
     const rows = await withStatementTimeout((tx) => tx.$queryRaw<T[]>(query), STATEMENT_TIMEOUT_MS)
@@ -327,6 +349,10 @@ async function runQuery<T extends DbRow = DbRow>(query: Prisma.Sql): Promise<T[]
   } catch (error) {
     if (isDatabaseUnavailable(error)) {
       console.error("Decision infrastructure DB unavailable; returning empty result set.", { error })
+      return []
+    }
+    if (isMissingRelationError(error) || isMissingColumnError(error)) {
+      console.error("Decision infrastructure relation mismatch; returning empty result set.", { error })
       return []
     }
     throw error
@@ -362,8 +388,8 @@ function mapProjectRecord(record: DecisionRecord): DecisionProject {
   }
 }
 
-function buildPropertyClauses(filters?: PropertyFilters, locale?: string): Prisma.Sql[] {
-  const clauses: Prisma.Sql[] = USE_CURATED_PROPERTIES_VIEW
+function buildPropertyClauses(filters?: PropertyFilters, locale?: string, useCurated = USE_CURATED_PROPERTIES_VIEW): Prisma.Sql[] {
+  const clauses: Prisma.Sql[] = useCurated
     ? [
         Prisma.sql`TRIM(COALESCE(${CURATED_NAME_EXPR}, '')) <> ''`,
         Prisma.sql`COALESCE(${CURATED_PRICE_EXPR}, 0) >= 0`,
@@ -446,7 +472,7 @@ function buildPropertyClauses(filters?: PropertyFilters, locale?: string): Prism
   }
   if (filters.timingSignal) {
     clauses.push(
-      USE_CURATED_PROPERTIES_VIEW
+      useCurated
         ? Prisma.sql`timing_label = ${filters.timingSignal}`
         : Prisma.sql`l3_timing_signal = ${filters.timingSignal}`,
     )
@@ -455,14 +481,14 @@ function buildPropertyClauses(filters?: PropertyFilters, locale?: string): Prism
     const index = gradeOrder.indexOf(filters.stressGradeMin)
     const allowed = gradeOrder.slice(0, index + 1)
     clauses.push(
-      USE_CURATED_PROPERTIES_VIEW
+      useCurated
         ? Prisma.sql`stress_grade_v1 IN (${toSqlList([...allowed])})`
         : Prisma.sql`l2_stress_test_grade IN (${toSqlList([...allowed])})`,
     )
   }
   if (filters.goldenVisaRequired) {
     clauses.push(
-      USE_CURATED_PROPERTIES_VIEW
+      useCurated
         ? Prisma.sql`(
             COALESCE(${CURATED_PRICE_EXPR}, 0) >= 2000000
             OR LOWER(COALESCE(golden_visa, 'false')) IN ('true', 'yes', '1')
@@ -489,90 +515,133 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
   const offset = (page - 1) * pageSize
   const sortBy = input.sortBy ?? "god_metric"
 
-  const clauses = buildPropertyClauses(input.filters, input.locale)
-  const whereClause = clauses.length > 0 ? Prisma.sql`WHERE ${Prisma.join(clauses, " AND ")}` : Prisma.empty
-  const sortColumn = USE_CURATED_PROPERTIES_VIEW
-    ? CURATED_PROJECT_SORT_EXPRESSIONS[sortBy]
-    : Prisma.raw(PROJECT_SORT_COLUMNS[sortBy])
+  const hasFilters = Boolean(
+    input.filters
+      && Object.values(input.filters).some((value) => value !== undefined && value !== null && value !== ""),
+  )
 
-  const selectQuery = USE_CURATED_PROPERTIES_VIEW
-    ? Prisma.sql`
-        SELECT
-          ${CURATED_ID} AS id,
-          ${CURATED_NAME_EXPR} AS name,
-          ${CURATED_NAME_EXPR} AS project_name,
-          ${CURATED_DEVELOPER_EXPR} AS developer,
-          ${CURATED_DEVELOPER_AR_EXPR} AS developer_ar,
-          ${CURATED_AREA_EXPR} AS area,
-          ${CURATED_AREA_AR_EXPR} AS area_ar,
-          ${CURATED_AREA_EXPR} AS final_area,
-          NULL::numeric AS bedrooms_max,
-          NULL::numeric AS beds,
-          (${CURATED_PRICE_EXPR}) AS price_from_aed,
-          ${CURATED_RENTAL_YIELD} AS rental_yield,
-          ${CURATED_TIMING_SCORE} AS timing_score,
-          ${CURATED_TIMING_LABEL} AS timing_label,
-          ${CURATED_STRESS_SCORE} AS stress_score,
-          ${CURATED_STRESS_GRADE} AS stress_grade_v1,
-          ${CURATED_YIELD_SCORE} AS yield_score,
-          ${CURATED_YIELD_LABEL} AS yield_label,
-          ${CURATED_EVIDENCE_SCORE} AS evidence_score,
-          ${CURATED_EVIDENCE_LABEL} AS evidence_label_v1,
-          ${CURATED_INVESTOR_SCORE} AS investor_score_v1,
-          ${CURATED_DECISION_LABEL} AS decision_label_v1,
-          ${CURATED_HERO_IMAGE} AS hero_image,
-          ${CURATED_GOLDEN_VISA} AS golden_visa,
-          ${CURATED_SCORE_VERSION} AS score_version,
-          (${CURATED_PRICE_EXPR}) AS l1_canonical_price,
-          ${CURATED_RENTAL_YIELD} AS l1_canonical_yield,
-          NULL AS l1_canonical_status,
-          ${CURATED_PRICE_CONFIDENCE} AS l1_confidence,
-          ${CURATED_PRICE_SOURCE} AS l1_source_coverage,
-          ${CURATED_INVESTOR_SCORE} AS l2_investment_score,
-          ${CURATED_DEVELOPER_RELIABILITY} AS l2_developer_reliability,
-          ${CURATED_STRESS_GRADE} AS l2_stress_test_grade,
-          ${CURATED_TIMING_LABEL} AS l3_timing_signal,
-          NULL::jsonb AS engine_stress_test,
-          ${CURATED_INVESTOR_SCORE} AS engine_god_metric
-        FROM ${PROPERTIES_TABLE_SQL} t
-        ${whereClause}
-        ORDER BY ${sortColumn} DESC NULLS LAST
-        LIMIT ${pageSize}
-        OFFSET ${offset}
-      `
-    : Prisma.sql`
-        SELECT
-          name,
-          developer,
-          area,
-          final_area,
-          bedrooms_min,
-          bedrooms_max,
-          COALESCE(bedrooms_min, bedrooms_max) AS beds,
-          l1_canonical_price,
-          l1_canonical_yield,
-          l2_stress_test_grade,
-          l2_developer_reliability,
-          l3_timing_signal,
-          engine_stress_test,
-          engine_god_metric,
-          l1_confidence,
-          l1_source_coverage
-        FROM ${PROPERTIES_TABLE_SQL} t
-        ${whereClause}
-        ORDER BY ${sortColumn} DESC NULLS LAST
-        LIMIT ${pageSize}
-        OFFSET ${offset}
-      `
+  const curatedFallbackTables = [
+    "canonical.inventory_clean",
+    "public.inventory_clean",
+    "inventory_clean",
+  ]
 
-  const [rows, countRows] = await Promise.all([
-    runQuery(selectQuery),
-    runQuery<{ count: number }>(Prisma.sql`
-      SELECT COUNT(*)::int AS count
-      FROM ${PROPERTIES_TABLE_SQL} t
-      ${whereClause}
-    `),
-  ])
+  const candidates: Array<{ tableSql: Prisma.Sql; useCurated: boolean }> = [
+    { tableSql: PROPERTIES_TABLE_SQL, useCurated: USE_CURATED_PROPERTIES_VIEW },
+    ...(USE_CURATED_PROPERTIES_VIEW && !hasFilters
+      ? curatedFallbackTables
+          .filter((name) => name.toLowerCase() !== PROPERTIES_TABLE_NAME.toLowerCase())
+          .map((name) => ({ tableSql: Prisma.raw(name), useCurated: true }))
+      : []),
+  ]
+
+  if (!hasFilters && !USE_CURATED_PROPERTIES_VIEW) {
+    candidates.push({ tableSql: Prisma.raw("canonical.inventory_clean"), useCurated: true })
+  }
+
+  async function fetchFrom(tableSql: Prisma.Sql, useCurated: boolean) {
+    const clauses = buildPropertyClauses(input.filters, input.locale, useCurated)
+    const whereClause = clauses.length > 0 ? Prisma.sql`WHERE ${Prisma.join(clauses, " AND ")}` : Prisma.empty
+    const sortColumn = useCurated
+      ? CURATED_PROJECT_SORT_EXPRESSIONS[sortBy]
+      : Prisma.raw(PROJECT_SORT_COLUMNS[sortBy])
+
+    const selectQuery = useCurated
+      ? Prisma.sql`
+          SELECT
+            ${CURATED_ID} AS id,
+            ${CURATED_NAME_EXPR} AS name,
+            ${CURATED_NAME_EXPR} AS project_name,
+            ${CURATED_DEVELOPER_EXPR} AS developer,
+            ${CURATED_DEVELOPER_AR_EXPR} AS developer_ar,
+            ${CURATED_AREA_EXPR} AS area,
+            ${CURATED_AREA_AR_EXPR} AS area_ar,
+            ${CURATED_AREA_EXPR} AS final_area,
+            NULL::numeric AS bedrooms_max,
+            NULL::numeric AS beds,
+            (${CURATED_PRICE_EXPR}) AS price_from_aed,
+            ${CURATED_RENTAL_YIELD} AS rental_yield,
+            ${CURATED_TIMING_SCORE} AS timing_score,
+            ${CURATED_TIMING_LABEL} AS timing_label,
+            ${CURATED_STRESS_SCORE} AS stress_score,
+            ${CURATED_STRESS_GRADE} AS stress_grade_v1,
+            ${CURATED_YIELD_SCORE} AS yield_score,
+            ${CURATED_YIELD_LABEL} AS yield_label,
+            ${CURATED_EVIDENCE_SCORE} AS evidence_score,
+            ${CURATED_EVIDENCE_LABEL} AS evidence_label_v1,
+            ${CURATED_INVESTOR_SCORE} AS investor_score_v1,
+            ${CURATED_DECISION_LABEL} AS decision_label_v1,
+            ${CURATED_HERO_IMAGE} AS hero_image,
+            ${CURATED_GOLDEN_VISA} AS golden_visa,
+            ${CURATED_SCORE_VERSION} AS score_version,
+            (${CURATED_PRICE_EXPR}) AS l1_canonical_price,
+            ${CURATED_RENTAL_YIELD} AS l1_canonical_yield,
+            NULL AS l1_canonical_status,
+            ${CURATED_PRICE_CONFIDENCE} AS l1_confidence,
+            ${CURATED_PRICE_SOURCE} AS l1_source_coverage,
+            ${CURATED_INVESTOR_SCORE} AS l2_investment_score,
+            ${CURATED_DEVELOPER_RELIABILITY} AS l2_developer_reliability,
+            ${CURATED_STRESS_GRADE} AS l2_stress_test_grade,
+            ${CURATED_TIMING_LABEL} AS l3_timing_signal,
+            NULL::jsonb AS engine_stress_test,
+            ${CURATED_INVESTOR_SCORE} AS engine_god_metric
+          FROM ${tableSql} t
+          ${whereClause}
+          ORDER BY ${sortColumn} DESC NULLS LAST
+          LIMIT ${pageSize}
+          OFFSET ${offset}
+        `
+      : Prisma.sql`
+          SELECT
+            name,
+            developer,
+            area,
+            final_area,
+            bedrooms_min,
+            bedrooms_max,
+            COALESCE(bedrooms_min, bedrooms_max) AS beds,
+            l1_canonical_price,
+            l1_canonical_yield,
+            l2_stress_test_grade,
+            l2_developer_reliability,
+            l3_timing_signal,
+            engine_stress_test,
+            engine_god_metric,
+            l1_confidence,
+            l1_source_coverage
+          FROM ${tableSql} t
+          ${whereClause}
+          ORDER BY ${sortColumn} DESC NULLS LAST
+          LIMIT ${pageSize}
+          OFFSET ${offset}
+        `
+
+    const [rows, countRows] = await Promise.all([
+      runQuery(selectQuery),
+      runQuery<{ count: number }>(Prisma.sql`
+        SELECT COUNT(*)::int AS count
+        FROM ${tableSql} t
+        ${whereClause}
+      `),
+    ])
+
+    return {
+      rows,
+      total: countRows[0]?.count ?? 0,
+    }
+  }
+
+  let rows: DbRow[] = []
+  let total = 0
+
+  for (const candidate of candidates) {
+    const result = await fetchFrom(candidate.tableSql, candidate.useCurated)
+    rows = result.rows
+    total = result.total
+    if (rows.length > 0 || total > 0 || hasFilters) {
+      break
+    }
+  }
 
   const projects: DecisionProject[] = rows.map((row) => mapProjectRecord(row as DecisionRecord))
 
@@ -580,7 +649,7 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
     data_as_of: new Date().toISOString(),
     page,
     pageSize,
-    total: countRows[0]?.count ?? 0,
+    total,
     projects,
   }
 }
@@ -596,7 +665,7 @@ export async function getProjectBySlug(slug: string): Promise<{
   const normalizedSlug = slug.toLowerCase().trim()
   const candidateName = normalizedSlug.replace(/-/g, " ")
 
-  const candidates = USE_CURATED_PROPERTIES_VIEW
+  let candidates = USE_CURATED_PROPERTIES_VIEW
     ? await runQuery(Prisma.sql`
         SELECT
           ${CURATED_ID} AS id,
@@ -691,6 +760,79 @@ export async function getProjectBySlug(slug: string): Promise<{
         ORDER BY engine_god_metric DESC NULLS LAST
         LIMIT 30
       `)
+
+  if (USE_CURATED_PROPERTIES_VIEW && candidates.length === 0) {
+    const fallbackTables = [
+      "canonical.inventory_clean",
+      "public.inventory_clean",
+      "inventory_clean",
+    ]
+    for (const name of fallbackTables) {
+      if (name.toLowerCase() === PROPERTIES_TABLE_NAME.toLowerCase()) continue
+      candidates = await runQuery(Prisma.sql`
+        SELECT
+          ${CURATED_ID} AS id,
+          ${CURATED_NAME_EXPR} AS name,
+          ${CURATED_NAME_EXPR} AS project_name,
+          ${CURATED_DEVELOPER_EXPR} AS developer,
+          ${CURATED_DEVELOPER_AR_EXPR} AS developer_ar,
+          ${CURATED_AREA_EXPR} AS area,
+          ${CURATED_AREA_AR_EXPR} AS area_ar,
+          ${CURATED_AREA_EXPR} AS final_area,
+          NULL::numeric AS bedrooms_max,
+          NULL::numeric AS beds,
+          (${CURATED_PRICE_EXPR}) AS price_from_aed,
+          ${CURATED_RENTAL_YIELD} AS rental_yield,
+          ${CURATED_TIMING_SCORE} AS timing_score,
+          ${CURATED_TIMING_LABEL} AS timing_label,
+          ${CURATED_STRESS_SCORE} AS stress_score,
+          ${CURATED_STRESS_GRADE} AS stress_grade_v1,
+          ${CURATED_YIELD_SCORE} AS yield_score,
+          ${CURATED_YIELD_LABEL} AS yield_label,
+          ${CURATED_EVIDENCE_SCORE} AS evidence_score,
+          ${CURATED_EVIDENCE_LABEL} AS evidence_label_v1,
+          ${CURATED_INVESTOR_SCORE} AS investor_score_v1,
+          ${CURATED_DECISION_LABEL} AS decision_label_v1,
+          ${CURATED_HERO_IMAGE} AS hero_image,
+          ${CURATED_GOLDEN_VISA} AS golden_visa,
+          ${CURATED_SCORE_VERSION} AS score_version,
+          (${CURATED_PRICE_EXPR}) AS l1_canonical_price,
+          ${CURATED_RENTAL_YIELD} AS l1_canonical_yield,
+          NULL AS l1_canonical_status,
+          ${CURATED_PRICE_CONFIDENCE} AS l1_confidence,
+          ${CURATED_PRICE_SOURCE} AS l1_source_coverage,
+          ${CURATED_INVESTOR_SCORE} AS l2_investment_score,
+          ${CURATED_DEVELOPER_RELIABILITY} AS l2_developer_reliability,
+          ${CURATED_STRESS_GRADE} AS l2_stress_test_grade,
+          ${CURATED_TIMING_LABEL} AS l3_timing_signal,
+          NULL::numeric AS l3_supply_pressure,
+          NULL::numeric AS l3_demand_velocity,
+          NULL::numeric AS l3_price_drift_30d,
+          ${CURATED_INVESTOR_SCORE} AS engine_god_metric,
+          NULL::numeric AS engine_affordability,
+          ${CURATED_STRESS_SCORE} AS engine_stress_test,
+          NULL::jsonb AS payment_plan_structured,
+          NULL::jsonb AS evidence_sources,
+          NULL::jsonb AS evidence_exclusions,
+          NULL::jsonb AS evidence_assumptions,
+          NULL::jsonb AS hotness_factors,
+          NULL::jsonb AS units,
+          ${CURATED_DEVELOPER_RELIABILITY} AS developer_reliability_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'supply_resilience_score'`)} AS supply_resilience_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'liquidity_resilience_score'`)} AS liquidity_resilience_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'pricing_discipline_score'`)} AS pricing_discipline_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'handover_reliability_score'`)} AS handover_reliability_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'area_stability_score'`)} AS area_stability_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'payment_plan_score'`)} AS payment_plan_score
+        FROM ${Prisma.raw(name)} t
+        WHERE LOWER(${CURATED_NAME_EXPR}) LIKE LOWER('%' || ${candidateName} || '%')
+        ORDER BY CASE WHEN LOWER(${CURATED_NAME_EXPR}) = LOWER(${candidateName}) THEN 0 ELSE 1 END,
+                 ${CURATED_INVESTOR_SCORE} DESC NULLS LAST
+        LIMIT 30
+      `)
+      if (candidates.length > 0) break
+    }
+  }
 
   const project =
     (candidates.find((row) => slugifyName(String(row.name ?? "")) === normalizedSlug) as DecisionRecord | undefined) ??
