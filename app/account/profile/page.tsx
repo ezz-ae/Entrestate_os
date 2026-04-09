@@ -82,7 +82,7 @@ const CAPABILITIES = {
       id: "generate",
       icon: Sparkles,
       title: "توليد",
-      desc: "يولّد الذكاء الاصطناعي كتاب ذكاء كامل من اسم مشروع أو منطقة أو موضوع",
+      desc: "يولّد الذكاء الاصطناعي دفتر تحليل كامل من اسم مشروع أو منطقة أو موضوع",
       color: "group-hover:text-primary",
       href: "/notebook",
     },
@@ -544,11 +544,11 @@ export default function PersonalMarketBookPage() {
         <div className="rounded-2xl border border-primary/15 bg-primary/4 p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div>
             <p className="text-base font-semibold text-foreground mb-1">
-              {isArabic ? "اسأل — يُنشئ لك الذكاء الاصطناعي دفتراً كاملاً" : "Ask — AI builds you a complete book"}
+              {isArabic ? "اسأل — يُنشئ لك الذكاء الاصطناعي دفتراً تحليلياً كاملاً" : "Ask — AI builds you a complete book"}
             </p>
             <p className="text-sm text-muted-foreground/70 max-w-lg leading-relaxed">
               {isArabic
-                ? "اكتب أي سؤال عن مشروع أو منطقة أو مطور وسيوثّق مساعد القرار كل شيء في دفتر ذكاء منظّم."
+                ? "اكتب أي سؤال عن مشروع أو منطقة أو مطور وسيوثّق مساعد القرار كل شيء في دفتر تحليلي منظّم."
                 : "Type any question about a project, area, or developer and the copilot will document everything into a structured intelligence book."}
             </p>
           </div>

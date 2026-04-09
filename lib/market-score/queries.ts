@@ -128,8 +128,16 @@ export function buildSummaryBaseSql(
   return buildInventorySourceSql(columns, routing, overrideFlags, contract)
 }
 
-export function buildInventoryColumns(options?: { includeRank?: boolean }): Prisma.Sql {
+export function buildInventoryColumns(options?: {
+  includeRank?: boolean
+  includeDrivers?: boolean
+  includeReasonCodes?: boolean
+  includeRiskFlags?: boolean
+}): Prisma.Sql {
   const includeRank = options?.includeRank ?? false
+  const includeDrivers = options?.includeDrivers ?? false
+  const includeReasonCodes = options?.includeReasonCodes ?? false
+  const includeRiskFlags = options?.includeRiskFlags ?? false
   return Prisma.join(
     [
       Prisma.sql`asset_id::text AS asset_id`,
@@ -150,9 +158,9 @@ export function buildInventoryColumns(options?: { includeRank?: boolean }): Pris
       Prisma.sql`roi_band`,
       Prisma.sql`liquidity_band`,
       Prisma.sql`timeline_risk_band`,
-      Prisma.sql`drivers`,
-      Prisma.sql`reason_codes`,
-      Prisma.sql`risk_flags`,
+      includeDrivers ? Prisma.sql`drivers` : Prisma.sql`NULL::jsonb AS drivers`,
+      includeReasonCodes ? Prisma.sql`reason_codes` : Prisma.sql`NULL::jsonb AS reason_codes`,
+      includeRiskFlags ? Prisma.sql`risk_flags` : Prisma.sql`NULL::jsonb AS risk_flags`,
     ],
     ", ",
   )

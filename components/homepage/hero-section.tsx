@@ -2,90 +2,79 @@
 
 import Link from "next/link"
 import { useLocale } from "next-intl"
-import { ArrowRight, Sparkles, TrendingUp, ShieldCheck, BarChart3, Layers } from "lucide-react"
-import { formatAed } from "@/components/decision/formatters"
+import { ArrowRight, Code, Database, TerminalSquare } from "lucide-react"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type Props = {
   totalProjects: number
-  buySignals: number
-  avgPrice: number | null
-  avgYield: number | null
 }
 
 const COPY = {
   en: {
-    projectsScored: "projects scored",
-    buySignalsLive: "BUY signals live",
-    titleLineOne: "The Real Estate",
-    titleLineTwo: "Decision System",
-    description:
-      "Beyond portals. Entrestate is a proprietary intelligence engine that scores every project across timing, stress resilience, yield, and evidence quality through a five-layer data architecture — bringing precision to real estate investment.",
-    openDashboard: "Open Dashboard",
-    decisionCopilot: "DECISION COPILOT",
+    eyebrow: "Decision Infrastructure - Live Demo",
+    titleLineOne: "Entrestate Decision &",
+    titleLineTwo: "Execution Infrastructure",
+    description: "One truth layer. Proper API boundaries. Real estate decision and execution, unified.",
+    primaryCta: "Explore the Data",
+    secondaryCta: "Try the Decision Terminal",
+    tertiaryCta: "View API Docs",
+    apiPreview: "API Response Preview",
+    apiPreviewNote: "This is the exact JSON payload your frontend receives.",
     stats: {
-      projects: "Projects scored",
-      buy: "BUY signals",
-      yield: "Avg gross yield",
-      price: "Avg price",
+      projects: "PF-verified projects",
+      listings: "Bayut listings",
+      dld: "DLD transactions",
+      areas: "Areas",
+      developers: "Developers",
     },
-    sampleOutput: "Sample Output",
-    score: "score",
-    grossYield: "Gross Yield",
-    stressGrade: "Stress Grade",
-    priceSqft: "Price / sqft",
-    evidenceLayers: "Evidence layers",
-    developerNote: "Ellington · Grade A",
-    absorption: "Absorption 94%",
-    footerNote: "Scored across 5 data layers · Updated daily from DLD",
-    realOutput: "Real output format · Data is live",
-    evidenceLayerLabels: ["Canonical", "Derived", "Dynamic", "External", "Raw"],
   },
   ar: {
-    projectsScored: "مشروع مُقيَّم",
-    buySignalsLive: "إشارات BUY مباشرة",
-    titleLineOne: "القرار العقاري",
-    titleLineTwo: "يبدأ من هنا",
-    description:
-      "حلّل المشاريع والمناطق والمطورين بلغة واضحة مبنية على البيانات، واعرف التوقيت والعائد ومستوى المخاطرة قبل أي قرار شراء أو استثمار.",
-    openDashboard: "ادخل اللوحة",
-    decisionCopilot: "DECISION COPILOT",
+    eyebrow: "البنية التحتية للقرار - عرض مباشر",
+    titleLineOne: "منظومة القرار والتنفيذ",
+    titleLineTwo: "من Entrestate",
+    description: "طبقة واحدة للحقيقة. حدود واضحة للـ API. قرار وتنفيذ عقاري موحّد.",
+    primaryCta: "استكشف البيانات",
+    secondaryCta: "جرّب محطة القرار",
+    tertiaryCta: "وثائق الـ API",
+    apiPreview: "معاينة استجابة الـ API",
+    apiPreviewNote: "هذه هي نفس استجابة JSON التي يتلقاها واجهتك.",
     stats: {
-      projects: "المشاريع المقيمة",
-      buy: "إشارات BUY",
-      yield: "متوسط العائد",
-      price: "متوسط السعر",
+      projects: "مشروع موثق",
+      listings: "قائمة Bayut",
+      dld: "صفقة DLD",
+      areas: "منطقة",
+      developers: "مطور",
     },
-    sampleOutput: "مثال فعلي",
-    score: "النتيجة",
-    grossYield: "العائد",
-    stressGrade: "الضغط",
-    priceSqft: "السعر / قدم²",
-    evidenceLayers: "طبقات التحقق",
-    developerNote: "إلينغتون · تصنيف A",
-    absorption: "وتيرة البيع 94%",
-    footerNote: "مبني على 5 طبقات بيانات · تحديث يومي من DLD",
-    realOutput: "بيانات مباشرة · مخرجات فعلية",
-    evidenceLayerLabels: ["رسمي", "محسوب", "حركة السوق", "خارجي", "خام"],
   },
 } as const
 
-export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: Props) {
+export function HeroSection({ totalProjects }: Props) {
   const locale = useLocale() as AppLocale
   const copy = COPY[locale] ?? COPY.en
   const numberLocale = locale === "ar" ? "ar-AE-u-nu-latn" : "en-US"
-  const buyPct = totalProjects > 0 ? ((buySignals / totalProjects) * 100).toFixed(0) : "—"
-  const evidenceLayers = [
-    { id: "L1", label: copy.evidenceLayerLabels[0], color: "bg-primary" },
-    { id: "L2", label: copy.evidenceLayerLabels[1], color: "bg-blue-400" },
-    { id: "L3", label: copy.evidenceLayerLabels[2], color: "bg-violet-400" },
-    { id: "L4", label: copy.evidenceLayerLabels[3], color: "bg-amber-400" },
-    { id: "L5", label: copy.evidenceLayerLabels[4], color: "bg-muted-foreground/40" },
+  const bayutListings = 41381
+  const dldTransactions = 36841
+  const areasCount = 167
+  const developerCount = 481
+  const stats = [
+    { label: copy.stats.projects, value: totalProjects },
+    { label: copy.stats.listings, value: bayutListings },
+    { label: copy.stats.dld, value: dldTransactions },
+    { label: copy.stats.areas, value: areasCount },
+    { label: copy.stats.developers, value: developerCount },
   ]
+  const sampleResponse = {
+    project_id: 1284,
+    name: "Marina Gate",
+    timing_label: "BUY",
+    stress_grade: "A",
+    rental_yield: 6.8,
+    price_from_aed: 2100000,
+    evidence_level: "HIGH",
+  }
 
   return (
     <section className="relative">
-      {/* Subtle grid background */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.025]"
         style={{
@@ -96,17 +85,15 @@ export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: P
       />
 
       <div className="relative flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-16">
-
-        {/* ── Left: copy ── */}
         <div className="flex-1">
-          {/* Live badge */}
           <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/60 px-4 py-1.5 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.5)]" />
-            {totalProjects.toLocaleString(numberLocale)} {copy.projectsScored} · {buySignals.toLocaleString(numberLocale)} {copy.buySignalsLive}
+            {copy.eyebrow}
           </p>
 
           <h1 className="font-serif text-4xl font-medium leading-[1.1] tracking-tight text-foreground md:text-5xl lg:text-6xl">
-            {copy.titleLineOne}<br />
+            {copy.titleLineOne}
+            <br />
             <span className="text-primary">{copy.titleLineTwo}</span>
           </h1>
 
@@ -114,35 +101,36 @@ export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: P
             {copy.description}
           </p>
 
-          {/* CTAs */}
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
-              href={prefixLocalePath("/overview", locale)}
-              className="hidden md:flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
+              href={prefixLocalePath("/properties", locale)}
+              className="flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
             >
-              {copy.openDashboard}
+              <Database className="h-4 w-4" />
+              {copy.primaryCta}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href={prefixLocalePath("/chat", locale)}
               className="flex items-center gap-2 rounded-full border border-border bg-card px-7 py-3 text-sm font-semibold text-foreground transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
             >
-              <Sparkles className="h-4 w-4 text-primary" />
-              {copy.decisionCopilot}
+              <TerminalSquare className="h-4 w-4 text-primary" />
+              {copy.secondaryCta}
+            </Link>
+            <Link
+              href={prefixLocalePath("/enterprise#api", locale)}
+              className="flex items-center gap-2 rounded-full border border-dashed border-border/80 bg-background/60 px-6 py-3 text-sm font-semibold text-foreground transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+            >
+              <Code className="h-4 w-4 text-primary" />
+              {copy.tertiaryCta}
             </Link>
           </div>
 
-          {/* Proof strip */}
           <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2">
-            {[
-              { label: copy.stats.projects, value: totalProjects.toLocaleString(numberLocale) },
-              { label: copy.stats.buy, value: `${buySignals.toLocaleString(numberLocale)} (${buyPct}%)`, accent: true },
-              { label: copy.stats.yield, value: typeof avgYield === "number" ? `${avgYield.toFixed(1)}%` : "—" },
-              { label: copy.stats.price, value: formatAed(avgPrice) },
-            ].map((item) => (
+            {stats.map((item) => (
               <div key={item.label} className="flex items-baseline gap-1.5">
-                <span className={`text-sm font-semibold tabular-nums ${item.accent ? "text-emerald-400" : "text-foreground"}`}>
-                  {item.value}
+                <span className="text-sm font-semibold tabular-nums text-foreground">
+                  {item.value.toLocaleString(numberLocale)}
                 </span>
                 <span className="text-[11px] text-muted-foreground/50">{item.label}</span>
               </div>
@@ -150,102 +138,25 @@ export function HeroSection({ totalProjects, buySignals, avgPrice, avgYield }: P
           </div>
         </div>
 
-        {/* ── Right: decision output preview ── */}
-        <div className="w-full shrink-0 lg:w-[340px] xl:w-[380px]">
+        <div className="w-full shrink-0 lg:w-[360px] xl:w-[420px]">
           <div className="relative rounded-2xl border border-border/60 bg-card/50 p-5 shadow-2xl shadow-black/20 backdrop-blur-sm">
-            {/* Glow accent line */}
             <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-
-            {/* Header */}
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-                  <BarChart3 className="h-3.5 w-3.5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">{copy.sampleOutput}</p>
-                  <p className="text-xs font-medium text-foreground">JVC · Studio · AED 1.1M</p>
-                </div>
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                <Code className="h-3.5 w-3.5 text-primary" />
               </div>
-              <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400">
-                BUY
-              </span>
-            </div>
-
-            {/* Score ring + metrics */}
-            <div className="mb-4 flex items-center gap-4 rounded-xl border border-border/40 bg-background/40 p-4">
-              {/* Score circle */}
-              <div className="relative flex h-16 w-16 shrink-0 items-center justify-center">
-                <svg className="absolute inset-0 -rotate-90" viewBox="0 0 56 56">
-                  <circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="3" className="text-border/30" />
-                  <circle
-                    cx="28" cy="28" r="24"
-                    fill="none" stroke="currentColor" strokeWidth="3"
-                    strokeDasharray={`${(82 / 100) * 150.8} 150.8`}
-                    strokeLinecap="round"
-                    className="text-emerald-400"
-                  />
-                </svg>
-                <div className="text-center">
-                  <p className="text-lg font-bold tabular-nums text-foreground leading-none">82</p>
-                  <p className="text-[9px] text-muted-foreground/50">{copy.score}</p>
-                </div>
-              </div>
-
-              <div className="flex-1 space-y-2">
-                {[
-                  { label: copy.grossYield, value: "8.1%", color: "text-emerald-400" },
-                  { label: copy.stressGrade, value: "A", color: "text-emerald-400" },
-                  { label: copy.priceSqft, value: "AED 1,100", color: "text-foreground" },
-                ].map((m) => (
-                  <div key={m.label} className="flex items-center justify-between">
-                    <span className="text-[11px] text-muted-foreground/60">{m.label}</span>
-                    <span className={`text-xs font-semibold tabular-nums ${m.color}`}>{m.value}</span>
-                  </div>
-                ))}
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">{copy.apiPreview}</p>
+                <p className="text-xs font-medium text-foreground">{copy.apiPreviewNote}</p>
               </div>
             </div>
-
-            {/* Evidence layers */}
-            <div className="mb-3">
-              <div className="mb-2 flex items-center gap-1.5">
-                <Layers className="h-3 w-3 text-muted-foreground/40" />
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">{copy.evidenceLayers}</p>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {evidenceLayers.map((layer) => (
-                  <div key={layer.id} className="flex flex-1 flex-col items-center gap-1">
-                    <div className={`h-1.5 w-full rounded-full ${layer.color} opacity-80`} />
-                    <span className="text-[9px] font-mono text-muted-foreground/40">{layer.id}</span>
-                  </div>
-                ))}
-              </div>
+            <div className="mt-4 rounded-xl border border-border/60 bg-background/60 p-4">
+              <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed text-foreground/80">
+                {JSON.stringify(sampleResponse, null, 2)}
+              </pre>
             </div>
-
-            {/* Developer + timing */}
-            <div className="flex items-center justify-between rounded-lg border border-border/30 bg-background/20 px-3 py-2">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-3.5 w-3.5 text-primary/60" />
-                <span className="text-[11px] text-muted-foreground/60">{copy.developerNote}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <TrendingUp className="h-3 w-3 text-emerald-400/60" />
-                <span className="text-[11px] text-emerald-400/80 font-medium">{copy.absorption}</span>
-              </div>
-            </div>
-
-            {/* Footer note */}
-            <p className="mt-3 text-center text-[9px] text-muted-foreground/30">
-              {copy.footerNote}
-            </p>
           </div>
-
-          {/* Floating label */}
-          <p className="mt-3 text-center text-[10px] text-muted-foreground/30 uppercase tracking-widest">
-            {copy.realOutput}
-          </p>
         </div>
-
       </div>
     </section>
   )

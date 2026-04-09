@@ -147,6 +147,13 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
           })}
         </div>
 
+        <div className="mb-6 flex items-center gap-2 rounded-xl border border-border/60 bg-card/70 px-4 py-2 text-xs text-muted-foreground">
+          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+          {locale === "ar"
+            ? "معاينة استجابة الـ API: بدّل أي بطاقة لعرض JSON كما يصل للواجهة."
+            : "API response preview: toggle any card to view the JSON payload as delivered to the frontend."}
+        </div>
+
         {/* Filters */}
         <div className="mb-6 flex flex-wrap items-center gap-2">
           {/* Timing signal */}
@@ -257,6 +264,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
               l3_timing_signal={typeof project.l3_timing_signal === "string" ? project.l3_timing_signal : null}
               engine_god_metric={typeof project.engine_god_metric === "number" ? project.engine_god_metric : null}
               l1_confidence={typeof project.l1_confidence === "string" ? project.l1_confidence : null}
+              apiPreview={project as Record<string, unknown>}
             />
           ))}
           {projects.length === 0 && (

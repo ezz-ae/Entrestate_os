@@ -1,6 +1,8 @@
 {
   "nav": {
-    "chat": "AI Chat",
+    "chat": "Decision Terminal",
+    "enterprise": "Enterprise",
+    "signals": "Signal Engine",
     "overview": "Overview",
     "areas": "Areas",
     "developers": "Developers",
@@ -8,7 +10,7 @@
     "research": "Research",
     "workspace": "Workspace",
     "account": "Account",
-    "openAssistant": "Open assistant",
+    "openAssistant": "Open terminal",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "mainNavigation": "Main navigation"
@@ -55,8 +57,8 @@
     "subscriptionActivated": "Subscription activated. Your new tier is syncing now."
   },
   "chat": {
-    "heroPlaceholder": "What's on your mind? Tell me about your investment goals...",
-    "composerPlaceholder": "Ask me anything—try screening projects, checking prices, or generating a memo.",
+    "heroPlaceholder": "Run a structured query against the UAE data spine.",
+    "composerPlaceholder": "Try: \"Show me A-grade projects in Marina under 5M with >6% yield\"",
     "liveAnalysis": "Analyzing live market data...",
     "noMatchingCommands": "I couldn't find a matching command. Try 'screen' or 'project'.",
     "compareTitle": "Project Comparison",

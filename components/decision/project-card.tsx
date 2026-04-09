@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useMemo, useState } from "react"
 import { ArrowUpRight } from "lucide-react"
 import { useLocale } from "next-intl"
 import { formatAed, formatScore, formatYield } from "@/components/decision/formatters"
@@ -41,6 +42,7 @@ type ProjectCardProps = {
   l3_timing_signal?: string | null
   engine_god_metric?: number | null
   l1_confidence?: string | null
+  apiPreview?: Record<string, unknown>
 }
 
 function timingAccent(signal: string | null | undefined) {
@@ -67,6 +69,7 @@ function formatCanonicalArabicLabel(locale: AppLocale, value: string, labels: Re
 
 export function ProjectCard(project: ProjectCardProps) {
   const locale = useLocale() as AppLocale
+  const [showApi, setShowApi] = useState(false)
   const price = project.price_from ?? project.l1_canonical_price ?? null
   const yieldValue = project.rental_yield ?? project.l1_canonical_yield ?? null
   const score = project.investor_score_v1 ?? project.engine_god_metric ?? null
@@ -80,12 +83,16 @@ export function ProjectCard(project: ProjectCardProps) {
         yield: "العائد",
         grade: "الدرجة",
         score: "النتيجة",
+        apiResponse: "استجابة API",
+        cardView: "عرض البطاقة",
       }
     : {
         detailsPending: "Details pending",
         yield: "Yield",
         grade: "Grade",
         score: "Score",
+        apiResponse: "API Response",
+        cardView: "Card View",
       }
 
   const accent = timingAccent(timing)
@@ -93,6 +100,11 @@ export function ProjectCard(project: ProjectCardProps) {
   const grade = stressGrade?.toUpperCase() ?? null
   const signalLabel = formatCanonicalArabicLabel(locale, signal, SIGNAL_LABELS_AR)
   const gradeLabel = grade ? formatCanonicalArabicLabel(locale, grade, STRESS_LABELS_AR) : "—"
+  const apiPreview = project.apiPreview
+  const apiPreviewText = useMemo(() => {
+    if (!apiPreview) return ""
+    return JSON.stringify(apiPreview, null, 2)
+  }, [apiPreview])
 
   return (
     <Link
@@ -107,6 +119,24 @@ export function ProjectCard(project: ProjectCardProps) {
             <span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} />
             {signalLabel}
           </span>
+          {apiPreview ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                setShowApi((prev) => !prev)
+              }}
+              className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest transition ${
+                showApi
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border/60 bg-muted/40 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+              }`}
+              aria-pressed={showApi}
+            >
+              {showApi ? copy.cardView : copy.apiResponse}
+            </button>
+          ) : null}
           {/* Arrow — appears on hover */}
           <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-border bg-muted/40 opacity-0 transition-all duration-200 group-hover:opacity-100">
             <ArrowUpRight className="h-3.5 w-3.5 text-foreground" />
@@ -127,26 +157,44 @@ export function ProjectCard(project: ProjectCardProps) {
         </p>
       </div>
 
-      {/* Divider */}
-      <div className="mx-5 h-px bg-border/60" />
-
-      {/* Hover-reveal section */}
-      <div className="translate-y-2 overflow-hidden opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-        <div className="grid grid-cols-3 gap-px bg-border/40 border-t-0">
-          <div className="bg-card px-4 py-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.yield}</p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatYield(yieldValue, locale)}</p>
-          </div>
-          <div className="bg-card px-4 py-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.grade}</p>
-            <p className={`mt-0.5 text-sm font-bold tabular-nums ${gradeColor(grade)}`}>{gradeLabel}</p>
-          </div>
-          <div className="bg-card px-4 py-3">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.score}</p>
-            <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatScore(score, locale)}</p>
+      {showApi && apiPreviewText ? (
+        <div
+          className="px-5 pb-5"
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+          }}
+        >
+          <div className="rounded-xl border border-border/60 bg-background/60 p-4">
+            <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed text-foreground/80">
+              {apiPreviewText}
+            </pre>
           </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Divider */}
+          <div className="mx-5 h-px bg-border/60" />
+
+          {/* Hover-reveal section */}
+          <div className="translate-y-2 overflow-hidden opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+            <div className="grid grid-cols-3 gap-px bg-border/40 border-t-0">
+              <div className="bg-card px-4 py-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.yield}</p>
+                <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatYield(yieldValue, locale)}</p>
+              </div>
+              <div className="bg-card px-4 py-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.grade}</p>
+                <p className={`mt-0.5 text-sm font-bold tabular-nums ${gradeColor(grade)}`}>{gradeLabel}</p>
+              </div>
+              <div className="bg-card px-4 py-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.score}</p>
+                <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{formatScore(score, locale)}</p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </Link>
   )
 }

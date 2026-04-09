@@ -143,7 +143,7 @@ const ORG_FEATURES = {
   ],
   ar: [
     { icon: Building2, title: "مخرجات بعلامة الشركة", desc: "كل مذكرة وتقرير وملف يحمل هوية شركتك — لا هوية Entrestate." },
-    { icon: Users, title: "مساحة عمل الفريق", desc: "أدر ذكاء فريقك في مكان واحد: قوائم مشتركة، محافظ، وسجل متابعة." },
+    { icon: Users, title: "مساحة عمل الفريق", desc: "أدر عمل فريقك في مكان واحد: قوائم مشتركة، محافظ، وسجل متابعة." },
     { icon: Shield, title: "أمان API ثنائي المخطط", desc: "كل استجابة API مُتحقق منها ومُشفرة لكل مستلم — آمنة متعددة العقد." },
     { icon: BarChart3, title: "إشارات سوقية متقدمة", desc: "خرائط ضغط المعروض، متابعة المحافظ، وأدوات رقابة مخاطر المؤسسات." },
     { icon: Globe, title: "تكامل API", desc: "ترخيص سنوي لتكامل المنصات الخارجية باستجابات مُشفرة ومُتحقق منها." },
@@ -419,7 +419,7 @@ export default function PricingPage() {
             </div>
             <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
               {isArabic
-                ? "لوحة تنفيذ مخصصة للشركات والمكاتب المحترفة. تعمل تحت علامتك التجارية الكاملة، مع بنية متعددة المستخدمين، API آمن، وذكاء جماعي متكامل."
+                ? "لوحة تنفيذ مخصصة للشركات والمكاتب المحترفة. تعمل تحت علامتك التجارية الكاملة، مع بنية متعددة المستخدمين، API آمن، ورؤية جماعية متكاملة."
                 : "A fully branded execution dashboard for companies and professional firms. Your team operates under your identity, with multi-user infrastructure, secure API access, and institutional-grade intelligence built in."}
             </p>
           </div>

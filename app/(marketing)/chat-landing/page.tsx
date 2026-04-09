@@ -21,7 +21,7 @@ const NAV_LINKS = {
   ],
   ar: [
     { label: "المنصة", href: "/overview" },
-    { label: "الذكاء", href: "/ai" },
+    { label: "التحليل", href: "/ai" },
     { label: "المؤسسات", href: "/plans" },
     { label: "الأسعار", href: "/pricing" },
   ],
@@ -55,15 +55,15 @@ const commands = {
 const stats = {
   en: [
     { value: "2,813", label: "Scored Projects", icon: Building2 },
-    { value: "183",   label: "Areas Covered",   icon: MapPin },
-    { value: "36K+",  label: "DLD Transactions", icon: TrendingUp },
-    { value: "481",   label: "Developers Rated", icon: Users },
+    { value: "167",   label: "Areas Covered",   icon: MapPin },
+    { value: "36,841",  label: "DLD Transactions", icon: TrendingUp },
+    { value: "75",   label: "Developers Rated", icon: Users },
   ],
   ar: [
     { value: "٢٬٨١٣", label: "مشروع مُصنّف",       icon: Building2 },
-    { value: "١٨٣",   label: "منطقة مغطاة",        icon: MapPin },
-    { value: "+٣٦ ألف", label: "معاملة DLD",       icon: TrendingUp },
-    { value: "٤٨١",   label: "مطور مُقيَّم",        icon: Users },
+    { value: "١٦٧",   label: "منطقة مغطاة",        icon: MapPin },
+    { value: "٣٦٬٨٤١", label: "معاملة DLD",       icon: TrendingUp },
+    { value: "٧٥",   label: "مطور مُقيَّم",        icon: Users },
   ],
 }
 
@@ -81,8 +81,8 @@ const features = {
     },
     {
       icon: Building2,
-      title: "Developer Intelligence",
-      desc: "481 developers rated by delivery reliability, track record, and market positioning.",
+      title: "Developer Reliability",
+      desc: "75 developers rated by delivery reliability, track record, and market positioning.",
     },
   ],
   ar: [
@@ -98,8 +98,8 @@ const features = {
     },
     {
       icon: Building2,
-      title: "ذكاء المطورين",
-      desc: "٤٨١ مطوراً مُقيَّماً بموثوقية التسليم والسجل والموقع السوقي.",
+      title: "ملف المطورين",
+      desc: "٧٥ مطوراً مُقيَّماً بموثوقية التسليم والسجل والموقع السوقي.",
     },
   ],
 }
@@ -144,7 +144,7 @@ const COPY = {
     subtitle:     "ادخل مباشرة إلى قراءة المشاريع والمناطق والمخاطر والتوقيت من مكان واحد.",
     start:        "ابدأ جلسة التحليل",
     enterprise:   "استعرض خطط المؤسسات",
-    sectionTitle: "ذكاء يتفكر معك.",
+    sectionTitle: "تحليل يساند قرارك.",
     sectionBody:  "المنصة لا تعيد صفوفاً فحسب — بل تحلل السياق وتقيس المخاطر وتصيغ تقارير احترافية.",
     sectionLink:  "استكشف محرك المعرفة",
     chat:         "محادثة",

@@ -164,7 +164,7 @@ export default async function AccountPage() {
         <header className="mb-8 lg:mb-10">
           <h1 className="text-2xl font-semibold text-foreground md:text-4xl lg:text-5xl">{t("title")}</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            {isArabic ? "إدارة اشتراكك، بيانات الحساب، والوصول إلى أدوات ذكاء القرار." : "Manage your subscription, identity, and decision tool access."}
+            {isArabic ? "إدارة اشتراكك، بيانات الحساب، والوصول إلى أدوات القرار." : "Manage your subscription, identity, and decision tool access."}
           </p>
         </header>
 

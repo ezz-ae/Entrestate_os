@@ -423,6 +423,88 @@ function extractToolOutputs(messages: any[]): Record<string, unknown>[] {
   return outputs
 }
 
+function extractMessageToolOutputs(message: any): Record<string, unknown>[] {
+  const outputs: Record<string, unknown>[] = []
+
+  if (Array.isArray(message?.toolInvocations)) {
+    for (const invocation of message.toolInvocations) {
+      const result = toRecord(invocation?.result)
+      if (result) outputs.push(result)
+    }
+  }
+
+  if (Array.isArray(message?.parts)) {
+    for (const part of message.parts) {
+      if (part?.type === "dynamic-tool" && part.output) {
+        const output = toRecord(part.output)
+        if (output) outputs.push(output)
+      }
+      if (typeof part?.type === "string" && part.type.startsWith("tool-") && part.output) {
+        const output = toRecord(part.output)
+        if (output) outputs.push(output)
+      }
+    }
+  }
+
+  return outputs
+}
+
+function deriveToolTrace(message: any, locale: string): string | null {
+  const outputs = extractMessageToolOutputs(message)
+  if (outputs.length === 0) return null
+
+  const rows = outputs.flatMap((output) => toRows(output.rows))
+  let resultCount: number | null = rows.length > 0 ? rows.length : null
+  if (resultCount === null) {
+    for (const output of outputs) {
+      const candidate = toFiniteNumber(
+        output.resultCount ??
+          output.result_count ??
+          output.total ??
+          output.count ??
+          output.matches ??
+          output.items ??
+          output.row_count,
+      )
+      if (candidate !== null) {
+        resultCount = candidate
+        break
+      }
+    }
+  }
+
+  let durationMs: number | null = null
+  for (const output of outputs) {
+    const candidate = toFiniteNumber(
+      output.duration_ms ??
+        output.execution_ms ??
+        output.elapsed_ms ??
+        output.query_time_ms ??
+        output.time_ms ??
+        output.latency_ms,
+    )
+    if (candidate !== null) {
+      durationMs = candidate
+      break
+    }
+  }
+
+  const isArabic = locale === "ar"
+  const label = isArabic ? "محرك القرار" : "Decision Engine"
+  const queryLabel = isArabic ? "استعلام منظم" : "Structured Query"
+  const parts: string[] = []
+  if (resultCount !== null) {
+    parts.push(isArabic ? `${resultCount} نتيجة` : `${resultCount} results`)
+  }
+  if (durationMs !== null) {
+    const rounded = Math.round(durationMs)
+    parts.push(isArabic ? `${rounded}ms` : `in ${rounded}ms`)
+  }
+  const suffix = parts.length > 0 ? ` -> ${parts.join(" / ")}` : ""
+
+  return `${label} -> ${queryLabel}${suffix}`
+}
+
 function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: string, t: (key: string) => string): WorkspaceCard[] {
   const rows = toolOutputs
     .flatMap((output) => toRows(output.rows))
@@ -587,7 +669,7 @@ const CAPABILITY_CARDS: Record<AppLocale, Array<{ label: string; description: st
     {
       label: "Investor Memo",
       description: "Generate a structured due diligence brief with price reality, developer track record, and risk verdict.",
-      example: "Full memo: Marina Vista — pricing, risk, verdict",
+      example: "Full memo: Marina Vista - pricing, risk, verdict",
       prompt: "Generate a full investor memo for Marina Vista. Include: price reality check versus area average, developer reliability score, stress grade assessment, timing label context, and final investment verdict.",
       icon: FileText,
     },
@@ -804,30 +886,32 @@ export function ChatInterface({
   const goldenPaths = GOLDEN_PATHS[locale] ?? GOLDEN_PATHS.en
   const heroCopy = isArabic
     ? {
-        engine: "محرك القرار العقاري 4.2",
-        feed: "بيانات الإمارات مباشرة",
-        titleLineOne: "اسأل السوق",
-        titleLineTwo: "قبل القرار.",
-        subtitle: "حلّل المشاريع، قارن المناطق، وراجع الإشارات الفعلية قبل الشراء أو الاستثمار.",
+        engine: "محطة القرار",
+        feed: "محرك الاستعلامات المنظّم",
+        titleLineOne: "محطة القرار",
+        titleLineTwo: "استعلامات حتمية.",
+        subtitle: "استعلم عبر SQL حتمي على بيانات الإمارات. كل نتيجة تتضمن أثر الأدوات واستجابة الـ API.",
         dataLabel: "البيانات",
-        analysing: "جارٍ التحليل",
+        analysing: "جارٍ التنفيذ",
         ready: "جاهز",
         showCanvas: "إظهار اللوحة",
         hideCanvas: "إخفاء اللوحة",
-        emptyState: "اسأل عن مشروع أو منطقة أو مطور، أو اطلب مقارنة أو مذكرة استثمار أو اختبار ضغط.",
+        emptyState: "ابدأ باستعلام منظم: مثال \"مشاريع A في المارينا تحت 5M بعائد فوق 6%\".",
+        systemBadge: "Decision Engine - SQL حتمي - Zero Hallucination - MCP Protocol",
       }
     : {
-        engine: "Neural Decision Engine v4.2",
-        feed: "Live UAE Data Feed",
-        titleLineOne: "The future of real estate",
-        titleLineTwo: "is intelligent.",
-        subtitle: "Screen properties, compare markets, and review real V1 stress signals with institutional-grade intelligence.",
+        engine: "Decision Terminal",
+        feed: "Structured Query Engine",
+        titleLineOne: "Decision Terminal.",
+        titleLineTwo: "Deterministic queries.",
+        subtitle: "Run deterministic SQL against the UAE data spine. Every result includes tool traces and API payloads.",
         dataLabel: "Data",
-        analysing: "Analysing",
+        analysing: "Executing",
         ready: "Ready",
         showCanvas: "Show canvas",
         hideCanvas: "Hide canvas",
-        emptyState: "Ask for anything real estate. Compare projects, simulate scenarios, draft reports, and run live intelligence from one chat.",
+        emptyState: "Start with a structured query. Example: \"A-grade Marina projects under 5M with 6%+ yield.\"",
+        systemBadge: "Decision Engine - Deterministic SQL - Zero Hallucination - MCP Protocol",
       }
 
   useEffect(() => {
@@ -1103,13 +1187,13 @@ export function ChatInterface({
       return [
         t("slashExamples.screen"),
         t("slashExamples.yield"),
-        "Compare Emaar vs Damac reliability — which developer carries lower delivery risk?",
+        "Compare Emaar vs Damac reliability - which developer carries lower delivery risk?",
         "What does a BUY signal mean and how is it calculated in this platform?",
       ]
     }
 
     return [
-      `Generate a full investor memo for ${selectedRow.label} — pricing, risk, developer track record, and verdict.`,
+      `Generate a full investor memo for ${selectedRow.label} - pricing, risk, developer track record, and verdict.`,
       `How does ${selectedRow.label} compare to top alternatives in ${selectedRow.area} on yield and risk grade?`,
       `Show the real V1 stress profile for ${selectedRow.label}, including all resilience sub-scores.`,
       `What are the key investment risks for ${selectedRow.label} and what would change the outlook?`,
@@ -1336,7 +1420,7 @@ export function ChatInterface({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: `Chat Report — ${new Date().toLocaleString()}`,
+          title: `Chat Report - ${new Date().toLocaleString()}`,
           clientName: matchedMemoryEntry?.clientName,
           templateId: chosenTemplate?.id,
           audience,
@@ -1378,7 +1462,7 @@ export function ChatInterface({
         status: "saved",
         message:
           saveContextParts.length > 0
-            ? `Report saved (${saveContextParts.join(" · ")}).`
+            ? `Report saved (${saveContextParts.join(" / ")}).`
             : "Report saved.",
         reportId,
         enabledExports,
@@ -1710,6 +1794,12 @@ export function ChatInterface({
           ))}
         </div>
 
+        <div className="relative z-10 mb-3 flex flex-wrap gap-2">
+          <span className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            {heroCopy.systemBadge}
+          </span>
+        </div>
+
         <div id="chat-container" className="relative z-10 h-[58vh] space-y-3 overflow-y-auto rounded-xl border border-border/60 bg-background/55 p-3 backdrop-blur-sm md:h-[60vh] lg:h-[65vh]">
           {(messages as any[]).length === 0 ? (
             <div className="rounded-xl border border-dashed border-border/60 bg-background/75 p-4 text-sm text-muted-foreground">
@@ -1721,6 +1811,7 @@ export function ChatInterface({
             const cleanMessage = message.role === "assistant"
               ? stripThinkTags(messageText(message))
               : displayMessageText(message)
+            const toolTrace = message.role === "assistant" ? deriveToolTrace(message, locale) : null
 
             return (
               <div
@@ -1738,9 +1829,16 @@ export function ChatInterface({
                       <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                         <Sparkles className="h-3.5 w-3.5" />
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">Decision Engine</span>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                        {locale === "ar" ? "محطة القرار" : "Decision Terminal"}
+                      </span>
                     </div>
                     <ChatMarkdown text={cleanMessage || "Running analysis..."} />
+                    {toolTrace ? (
+                      <div className="mt-3 text-[10px] font-mono text-muted-foreground/70">
+                        [{toolTrace}]
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>

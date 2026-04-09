@@ -147,7 +147,7 @@ export function EnterpriseDashboard({ summary, intelligence }: EnterpriseDashboa
               <div className="space-y-4 max-w-2xl">
                 <div className="flex items-center gap-3">
                   <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">{isArabic ? "نظام الذكاء النشط" : "Active Intelligence Synthesis"}</span>
+                  <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest">{isArabic ? "نظام القرار النشط" : "Active Intelligence Synthesis"}</span>
                 </div>
                 <h2 className="text-2xl font-bold">{intelligence.marketRegime}</h2>
                 <p className="text-slate-400 leading-relaxed">

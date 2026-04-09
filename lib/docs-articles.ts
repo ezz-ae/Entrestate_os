@@ -412,7 +412,7 @@ const articleTitleArabicOverrides: Record<string, string> = {
   "Time Table (Atomic Intelligence Unit)": "الوحدة الذكية Time Table",
   "TableSpec (Query Blueprint)": "مخطط الاستعلام TableSpec",
   "Decision Objects (Outcome Artifacts)": "مخرجات القرار",
-  "Profile Intelligence (User Preferences)": "ذكاء الملف الشخصي",
+  "Profile Intelligence (User Preferences)": "ملف تفضيلات المستخدم",
   "Data & Information": "البيانات والمعلومات",
   "Dubai Land Department (DLD)": "دائرة الأراضي والأملاك",
   Stakeholders: "أصحاب العلاقة",

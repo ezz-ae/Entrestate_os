@@ -46,6 +46,10 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         canonicalYield: "العائد المرجعي",
         investorScore: "نتيجة المستثمر",
         stressEngine: "محرك الضغط",
+        liveCalculations: "حسابات مباشرة",
+        dldFee: "رسوم تسجيل دائرة الأراضي (4%)",
+        netYield: "العائد الصافي",
+        serviceCharge: "رسوم الخدمة",
         paymentPlan: "خطة الدفع",
         noPaymentPlan: "لا توجد خطة دفع منظمة حالياً.",
         milestone: "مرحلة",
@@ -67,6 +71,10 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         canonicalYield: "Canonical yield",
         investorScore: "Investor score",
         stressEngine: "Stress engine",
+        liveCalculations: "Live calculations",
+        dldFee: "DLD registration fee (4%)",
+        netYield: "Net yield",
+        serviceCharge: "Service charge",
         paymentPlan: "Payment plan",
         noPaymentPlan: "No structured payment plan available.",
         milestone: "Milestone",
@@ -127,6 +135,25 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
+            <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
+              <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/20" />
+              <h2 className="text-lg font-semibold text-foreground">{copy.liveCalculations}</h2>
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div className="rounded-lg border border-border/50 bg-background/50 p-3 text-xs">
+                  <p className="text-muted-foreground">{copy.dldFee}</p>
+                  <p className="mt-1 font-medium text-foreground">{formatAed(project.dld_registration_fee, locale)}</p>
+                </div>
+                <div className="rounded-lg border border-border/50 bg-background/50 p-3 text-xs">
+                  <p className="text-muted-foreground">{copy.netYield}</p>
+                  <p className="mt-1 font-medium text-foreground">{formatYield(project.yield_net_pct, locale)}</p>
+                </div>
+                <div className="rounded-lg border border-border/50 bg-background/50 p-3 text-xs">
+                  <p className="text-muted-foreground">{copy.serviceCharge}</p>
+                  <p className="mt-1 font-medium text-foreground">{formatYield(project.service_charge_pct, locale)}</p>
+                </div>
+              </div>
+            </div>
+
             <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
               <div className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/20" />
               <h2 className="text-lg font-semibold text-foreground">{copy.paymentPlan}</h2>

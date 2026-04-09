@@ -1,6 +1,8 @@
 {
   "nav": {
-    "chat": "مساعد القرار",
+    "chat": "محطة القرار",
+    "enterprise": "المؤسسات",
+    "signals": "محرك الإشارات",
     "overview": "نظرة عامة",
     "areas": "المناطق",
     "developers": "المطورون",
@@ -8,7 +10,7 @@
     "research": "الأبحاث",
     "workspace": "مساحة العمل",
     "account": "الحساب",
-    "openAssistant": "فتح المساعد",
+    "openAssistant": "فتح محطة القرار",
     "openMenu": "فتح القائمة",
     "closeMenu": "إغلاق القائمة",
     "mainNavigation": "التنقل الرئيسي"
@@ -50,7 +52,7 @@
   },
   "topData": {
     "title": "مركز بيانات السوق",
-    "subtitle": "مجموعة البيانات الكاملة: توزيع التوقيت، ملفات الضغط، مستويات العائد، وذكاء المناطق.",
+    "subtitle": "مجموعة البيانات الكاملة: توزيع التوقيت، ملفات الضغط، مستويات العائد، وملفات المناطق.",
     "sections": {
       "market-pulse": {
         "title": "نبض السوق",
@@ -89,7 +91,7 @@
         "subtitle": "جدول المشاريع المصنفة مع حقول السعر، العائد، الضغط، التوقيت، والتقييم."
       },
       "area-intelligence": {
-        "title": "ذكاء المناطق",
+        "title": "ملف المناطق",
         "subtitle": "عمق المشاريع على مستوى المنطقة، التسعير، الكفاءة، وضغط المعروض."
       },
       "developer-reliability": {
@@ -129,21 +131,21 @@
       "chatDesc": "جلسات القرار، تصفية الصفقات، والتقارير",
       "marketData": "بيانات السوق",
       "marketDataDesc": "جداول البيانات ونبض السوق",
-      "areas": "ذكاء المناطق",
+      "areas": "ملف المناطق",
       "areasDesc": "خرائط الثقة وضغط المعروض"
     }
   },
   "chatLanding": {
     "heroBadge": "محرك القرار V1.2",
     "liveFeed": "رصد مباشر للسوق",
-    "titleLineOne": "ذكاء قرار",
-    "titleLineTwo": "يفكر معك.",
+    "titleLineOne": "تحليل يدعم القرار",
+    "titleLineTwo": "معك خطوة بخطوة.",
     "subtitle": "أول محلل استثمار مستقل لسوق العقارات في الإمارات. مصنف، مؤكد، وجاهز للتنفيذ.",
     "exploreEngine": "اكتشف إمكانيات المحرك التحليلي",
     "analyze": "حلل",
     "verifiedData": "بيانات مؤكدة عالية الثقة (درجة A/B فقط)",
     "dldStat": "معاملات DLD اليوم: 4.2 مليار درهم",
-    "comprehensiveTitle": "مخرجات ذكاء اصطناعي متكاملة",
+    "comprehensiveTitle": "مخرجات تحليلية متكاملة",
     "outputMemoTitle": "مذكرات استثمارية",
     "outputMemoDesc": "تقارير تحليلية شاملة للمشاريع",
     "outputRiskTitle": "تقييم المخاطر V1",
@@ -153,7 +155,7 @@
   },
   "properties": {
     "liveFeed": "رصد مباشر للمشاريع",
-    "titleLead": "ذكاء",
+    "titleLead": "سجل",
     "titleAccent": "المشاريع",
     "freshness": "تحديث البيانات",
     "inventoryDepth": "عمق المخزون",
@@ -200,8 +202,8 @@
     "subscriptionActivated": "تم تفعيل الاشتراك. تتم الآن مزامنة باقتك الجديدة."
   },
   "chat": {
-    "heroPlaceholder": "كيف يمكنني مساعدتك في استثمارك اليوم؟ صف أهدافك...",
-    "composerPlaceholder": "اسألني عن أي شيء—جرب تحليل المشاريع، أو مراجعة الأسعار، أو طلب تقرير استثماري.",
+    "heroPlaceholder": "ابدأ باستعلام منظم على بيانات الإمارات.",
+    "composerPlaceholder": "جرّب: \"مشاريع A في المارينا تحت 5M بعائد فوق 6%\"",
     "liveAnalysis": "جارٍ تحليل بيانات السوق الحية...",
     "noMatchingCommands": "لم أتمكن من العثور على أمر مطابق. جرب 'screen' أو 'project'.",
     "compareTitle": "مقارنة المشاريع",
@@ -223,11 +225,11 @@
     "avgInvestorScore": "متوسط درجة المستثمر",
     "chatLanding": {
       "analyze": "حلل",
-      "titleLineOne": "ذكاء قرار",
-      "titleLineTwo": "يفكر معك.",
+      "titleLineOne": "تحليل يدعم القرار",
+      "titleLineTwo": "معك خطوة بخطوة.",
       "dldStat": "معاملات DLD اليوم: 4.2 مليار درهم",
       "verifiedData": "بيانات مؤكدة عالية الثقة (درجة A/B فقط)",
-      "comprehensiveTitle": "مخرجات ذكاء اصطناعي متكاملة",
+      "comprehensiveTitle": "مخرجات تحليلية متكاملة",
       "outputMemoTitle": "مذكرات استثمارية",
       "outputMemoDesc": "تقارير تحليلية شاملة للمشاريع",
       "outputRiskTitle": "تقييم المخاطر V1",
@@ -242,7 +244,7 @@
     }
   },
   "sidebar": {
-    "decisionIntelligence": "ذكاء القرار",
+    "decisionIntelligence": "منظومة القرار",
     "decisionSubtitle": "اسألني عن أي منطقة أو مشروع أو مطور في سوق الإمارات.",
     "quickReplies": {
       "more": "أعطني تفاصيل أكثر عن هذا",

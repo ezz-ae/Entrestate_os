@@ -23,12 +23,12 @@ export function Navbar() {
   const t = useTranslations("nav")
   const normalizedPathname = stripLocalePrefix(pathname)
   const navLinks = [
+    { label: t("enterprise"), href: "/enterprise" },
     { label: t("chat"), href: "/chat" },
-    { label: t("overview"), href: "/overview" },
-    { label: t("workspace"), href: "/workspace" },
     { label: t("areas"), href: "/areas" },
     { label: t("developers"), href: "/developers" },
     { label: t("properties"), href: "/properties" },
+    { label: t("signals"), href: "/top-data" },
     { label: t("research"), href: "/reports/library" },
   ]
   const isChatPage = normalizedPathname.startsWith("/chat")
@@ -37,7 +37,7 @@ export function Navbar() {
   const { data: session } = authClient.useSession()
   const isAuthenticated = Boolean(session?.user)
   const shouldRenderSidebar = !isChatPage && (isAuthenticated || isSidebarOpen || hasOpenChatIntent)
-  const logoHref = isChatPage || normalizedPathname === "/" ? "/?view=home" : "/"
+  const logoHref = "/"
 
   useEffect(() => {
     if (isMobileMenuOpen) {

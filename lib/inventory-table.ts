@@ -1,27 +1,27 @@
 import "server-only"
 import { Prisma } from "@prisma/client"
 
-const DEFAULT_INVENTORY_TABLE = "inventory_clean"
-const DEFAULT_AREAS_TABLE = "inventory_full"
-const DEFAULT_DEVELOPERS_TABLE = "entrestate_developers_api"
-const DEFAULT_DETAIL_TABLE = "inventory_full"
-const DEFAULT_STATUS_TABLE = "entrestate_data_freshness"
+const DEFAULT_INVENTORY_TABLE = "public.entrestate_projects_api"
+const DEFAULT_AREAS_TABLE = "public.entrestate_areas_api"
+const DEFAULT_DEVELOPERS_TABLE = "api.entrestate_developers_api"
+const DEFAULT_DETAIL_TABLE = "raw.inventory_full"
+const DEFAULT_STATUS_TABLE = "public.data_freshness"
 const IDENTIFIER_RE = /^[A-Za-z_][A-Za-z0-9_]*$/
 
-function normalizeInventoryTableName(rawValue: string | undefined) {
+function normalizeTableName(rawValue: string | undefined, fallback: string) {
   const trimmed = rawValue?.trim()
-  if (!trimmed) return DEFAULT_INVENTORY_TABLE
+  if (!trimmed) return fallback
 
   const parts = trimmed.split(".").map((part) => part.trim())
   if (parts.length === 0 || parts.some((part) => !IDENTIFIER_RE.test(part))) {
-    return DEFAULT_INVENTORY_TABLE
+    return fallback
   }
 
   return parts.join(".")
 }
 
 export function getInventoryTableName() {
-  return normalizeInventoryTableName(process.env.INVENTORY_TABLE)
+  return normalizeTableName(process.env.INVENTORY_TABLE, DEFAULT_INVENTORY_TABLE)
 }
 
 export function getInventoryTableSql() {
@@ -29,7 +29,19 @@ export function getInventoryTableSql() {
 }
 
 function getConfiguredTableName(envKey: string, fallback: string) {
-  return normalizeInventoryTableName(process.env[envKey] ?? fallback)
+  const envValue = process.env[envKey]
+  if (envValue && envValue.trim()) {
+    const trimmed = envValue.trim()
+    const parts = trimmed.split(".").map((part) => part.trim())
+    if (parts.length === 1) {
+      const fallbackParts = fallback.split(".").map((part) => part.trim())
+      if (fallbackParts.length === 2 && IDENTIFIER_RE.test(parts[0])) {
+        return `${fallbackParts[0]}.${parts[0]}`
+      }
+    }
+    return normalizeTableName(envValue, fallback)
+  }
+  return normalizeTableName(fallback, fallback)
 }
 
 export function getAreasTableName() {

@@ -26,6 +26,8 @@ const staticRoutes = [
   "/areas",
   "/developers",
   "/properties",
+  "/enterprise",
+  "/enterprise/demo",
   "/markets",
   "/reports/library",
   "/reports/generated",

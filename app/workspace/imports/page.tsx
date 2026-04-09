@@ -98,7 +98,7 @@ export default function ImportsPage() {
             href={prefixLocalePath("/workspace/data-scientist", locale)}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
           >
-              {isArabic ? "فتح مكتب ذكاء السوق" : "Open Market Intelligence Desk"}
+              {isArabic ? "فتح مكتب تحليل السوق" : "Open Market Intelligence Desk"}
               <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
           </Link>
         </div>

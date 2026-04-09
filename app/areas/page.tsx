@@ -27,9 +27,22 @@ export default async function AreasPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             {isArabic
               ? `قراءة مباشرة لـ ${formatInteger(data.areas.length, locale)} منطقة: السعر، العائد، كثافة المشاريع، وفرص الدخول.`
-              : `${formatInteger(data.areas.length, locale)} area profiles — pricing depth, yield averages, and market timing signals. Click any dot to explore.`}
+              : `${formatInteger(data.areas.length, locale)} area profiles - pricing depth, yield averages, and market timing signals. Click any dot to explore.`}
           </p>
         </header>
+
+        <div className="mb-8 rounded-2xl border border-border/70 bg-card/60 p-4">
+          <h2 className="text-sm font-semibold text-foreground">
+            {isArabic
+              ? `تغطية البيانات: ${formatInteger(data.areas.length, locale)} منطقة`
+              : `Data coverage: ${formatInteger(data.areas.length, locale)} areas`}
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {isArabic
+              ? "مصادر متقاطعة: PropertyFinder / Bayut / DLD / Entrestate Spine"
+              : "Cross-referenced: PropertyFinder / Bayut / DLD / Entrestate Spine"}
+          </p>
+        </div>
 
         <AreasView areas={data.areas} />
 
@@ -59,6 +72,8 @@ export default async function AreasPage() {
                 city={typeof area.city === "string" ? area.city : null}
                 avg_price={typeof area.avg_price === "number" ? area.avg_price : null}
                 avg_yield={typeof area.avg_yield === "number" ? area.avg_yield : null}
+                source_count={typeof area.source_count === "number" ? area.source_count : null}
+                confidence={typeof area.confidence === "string" ? area.confidence : null}
                 image_url={typeof area.image_url === "string" ? area.image_url : null}
                 top_projects={Array.isArray(area.top_projects) ? area.top_projects.filter((item): item is string => typeof item === "string") : []}
                 locale={locale}

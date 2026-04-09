@@ -13,6 +13,8 @@ type AreaCardProps = {
   city?: string | null
   avg_price?: number | null
   avg_yield?: number | null
+  source_count?: number | null
+  confidence?: string | null
   image_url?: string | null
   top_projects?: string[] | null
   locale?: AppLocale | string | null
@@ -29,12 +31,16 @@ export function AreaCard(area: AreaCardProps) {
   const topProjects = Array.isArray(area.top_projects) ? area.top_projects.slice(0, 4) : []
   const areaLabel = pickLocalizedText(locale, area.area_ar, area.area, area.area)
   const cityLabel = area.city ? pickLocalizedText(locale, null, area.city, area.city) : null
+  const sourceCount = typeof area.source_count === "number" ? area.source_count : null
+  const confidence = area.confidence ? String(area.confidence).toUpperCase() : null
   const copy = isArabic
     ? {
         projects: "مشروع",
         avgPrice: "متوسط السعر",
         avgYield: "متوسط العائد",
         topProjects: "أبرز المشاريع",
+        sources: "مصادر",
+        confidence: "موثوقية",
         openArea: `افتح ملف ${areaLabel}`,
         mapAlt: `خريطة ${areaLabel}`,
       }
@@ -43,6 +49,8 @@ export function AreaCard(area: AreaCardProps) {
         avgPrice: "Avg Price",
         avgYield: "Avg Yield",
         topProjects: "Top Projects",
+        sources: "sources",
+        confidence: "confidence",
         openArea: `Open ${areaLabel} area details`,
         mapAlt: `Map of ${areaLabel}`,
       }
@@ -95,6 +103,21 @@ export function AreaCard(area: AreaCardProps) {
             </p>
           </div>
         </div>
+
+        {(sourceCount || confidence) ? (
+          <div className="mt-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-wider text-muted-foreground/60">
+            {sourceCount ? (
+              <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-0.5">
+                {sourceCount} {copy.sources}
+              </span>
+            ) : null}
+            {confidence ? (
+              <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-0.5">
+                {confidence} {copy.confidence}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
 
         {topProjects.length > 0 ? (
           <div className="mt-3 translate-y-2 overflow-hidden opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">

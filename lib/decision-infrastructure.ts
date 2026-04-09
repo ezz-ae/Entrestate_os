@@ -23,11 +23,71 @@ const PROJECT_SORT_COLUMNS = {
   reliability: "l2_developer_reliability",
 } as const
 
-const CURATED_PRICE_FROM_AED = Prisma.sql`NULLIF(to_jsonb(t)->>'price_from_aed', '')::numeric`
-const CURATED_PRICE_FROM = Prisma.sql`NULLIF(to_jsonb(t)->>'price_from', '')::numeric`
-const CURATED_STARTING_PRICE = Prisma.sql`NULLIF(to_jsonb(t)->>'starting_price', '')::numeric`
-const CURATED_PRICE_START = Prisma.sql`NULLIF(to_jsonb(t)->>'price_start', '')::numeric`
-const CURATED_L1_CANONICAL_PRICE = Prisma.sql`NULLIF(to_jsonb(t)->>'l1_canonical_price', '')::numeric`
+function curatedNumeric(valueExpr: Prisma.Sql) {
+  return Prisma.sql`NULLIF(regexp_replace(${valueExpr}, '[^0-9\\.-]', '', 'g'), '')::numeric`
+}
+
+const CURATED_ID = Prisma.sql`
+  COALESCE(
+    NULLIF(to_jsonb(t)->>'id', ''),
+    NULLIF(to_jsonb(t)->>'project_id', '')
+  )
+`
+const CURATED_NAME_EXPR = Prisma.sql`
+  COALESCE(
+    NULLIF(to_jsonb(t)->>'name', ''),
+    NULLIF(to_jsonb(t)->>'project_name', ''),
+    NULLIF(to_jsonb(t)->>'title', '')
+  )
+`
+const CURATED_DEVELOPER_EXPR = Prisma.sql`
+  COALESCE(
+    NULLIF(to_jsonb(t)->>'developer', ''),
+    NULLIF(to_jsonb(t)->>'developer_name', '')
+  )
+`
+const CURATED_DEVELOPER_AR_EXPR = Prisma.sql`
+  COALESCE(
+    NULLIF(to_jsonb(t)->>'developer_ar', ''),
+    NULLIF(to_jsonb(t)->>'developer_name_ar', '')
+  )
+`
+const CURATED_AREA_EXPR = Prisma.sql`
+  COALESCE(
+    NULLIF(to_jsonb(t)->>'area', ''),
+    NULLIF(to_jsonb(t)->>'final_area', ''),
+    NULLIF(to_jsonb(t)->>'area_name', '')
+  )
+`
+const CURATED_AREA_AR_EXPR = Prisma.sql`
+  COALESCE(
+    NULLIF(to_jsonb(t)->>'area_ar', ''),
+    NULLIF(to_jsonb(t)->>'area_name_ar', '')
+  )
+`
+const CURATED_RENTAL_YIELD = curatedNumeric(Prisma.sql`to_jsonb(t)->>'rental_yield'`)
+const CURATED_TIMING_SCORE = curatedNumeric(Prisma.sql`to_jsonb(t)->>'timing_score'`)
+const CURATED_TIMING_LABEL = Prisma.sql`NULLIF(to_jsonb(t)->>'timing_label', '')`
+const CURATED_STRESS_SCORE = curatedNumeric(Prisma.sql`to_jsonb(t)->>'stress_score'`)
+const CURATED_STRESS_GRADE = Prisma.sql`NULLIF(to_jsonb(t)->>'stress_grade_v1', '')`
+const CURATED_YIELD_SCORE = curatedNumeric(Prisma.sql`to_jsonb(t)->>'yield_score'`)
+const CURATED_YIELD_LABEL = Prisma.sql`NULLIF(to_jsonb(t)->>'yield_label', '')`
+const CURATED_EVIDENCE_SCORE = curatedNumeric(Prisma.sql`to_jsonb(t)->>'evidence_score'`)
+const CURATED_EVIDENCE_LABEL = Prisma.sql`NULLIF(to_jsonb(t)->>'evidence_label_v1', '')`
+const CURATED_INVESTOR_SCORE = curatedNumeric(Prisma.sql`to_jsonb(t)->>'investor_score_v1'`)
+const CURATED_DECISION_LABEL = Prisma.sql`NULLIF(to_jsonb(t)->>'decision_label_v1', '')`
+const CURATED_HERO_IMAGE = Prisma.sql`NULLIF(to_jsonb(t)->>'hero_image', '')`
+const CURATED_GOLDEN_VISA = Prisma.sql`NULLIF(to_jsonb(t)->>'golden_visa', '')`
+const CURATED_SCORE_VERSION = Prisma.sql`NULLIF(to_jsonb(t)->>'score_version', '')`
+const CURATED_PRICE_CONFIDENCE = Prisma.sql`NULLIF(to_jsonb(t)->>'price_confidence', '')`
+const CURATED_PRICE_SOURCE = Prisma.sql`NULLIF(to_jsonb(t)->>'price_source', '')`
+const CURATED_DEVELOPER_RELIABILITY = curatedNumeric(Prisma.sql`to_jsonb(t)->>'developer_reliability_score'`)
+
+const CURATED_PRICE_FROM_AED = curatedNumeric(Prisma.sql`to_jsonb(t)->>'price_from_aed'`)
+const CURATED_PRICE_FROM = curatedNumeric(Prisma.sql`to_jsonb(t)->>'price_from'`)
+const CURATED_STARTING_PRICE = curatedNumeric(Prisma.sql`to_jsonb(t)->>'starting_price'`)
+const CURATED_PRICE_START = curatedNumeric(Prisma.sql`to_jsonb(t)->>'price_start'`)
+const CURATED_L1_CANONICAL_PRICE = curatedNumeric(Prisma.sql`to_jsonb(t)->>'l1_canonical_price'`)
 const CURATED_PRICE_EXPR = Prisma.sql`
   COALESCE(
     ${CURATED_PRICE_FROM_AED},
@@ -196,6 +256,57 @@ function normalizeValue(value: unknown): unknown {
   return value
 }
 
+function toNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "bigint") {
+    const asNumber = Number(value)
+    return Number.isFinite(asNumber) ? asNumber : null
+  }
+  if (typeof value === "string") {
+    const cleaned = value.replace(/,/g, "").trim()
+    if (!cleaned) return null
+    const parsed = Number(cleaned)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
+
+function firstNumber(...values: unknown[]): number | null {
+  for (const value of values) {
+    const numeric = toNumber(value)
+    if (numeric !== null) return numeric
+  }
+  return null
+}
+
+function applyLiveCalculations(record: DecisionRecord): DecisionRecord {
+  const computed: DecisionRecord = { ...record }
+  const existingDldFee = toNumber(computed.dld_registration_fee)
+  if (existingDldFee === null) {
+    const price = firstNumber(
+      computed.l1_canonical_price,
+      computed.price_from_aed,
+      computed.price_from,
+      computed.starting_price,
+      computed.price_start,
+    )
+    if (price !== null) {
+      computed.dld_registration_fee = Math.round(price * 0.04)
+    }
+  }
+
+  const existingNetYield = toNumber(computed.yield_net_pct)
+  if (existingNetYield === null) {
+    const rentalYield = firstNumber(computed.rental_yield, computed.l1_canonical_yield)
+    const serviceCharge = firstNumber(computed.service_charge_pct)
+    if (rentalYield !== null) {
+      computed.yield_net_pct = serviceCharge !== null ? Math.max(0, rentalYield - serviceCharge) : rentalYield
+    }
+  }
+
+  return computed
+}
+
 function isDatabaseUnavailable(error: unknown) {
   if (!error || typeof error !== "object") return false
   const candidate = error as { code?: string; message?: string }
@@ -238,13 +349,24 @@ export function slugifyName(value: string) {
     .replace(/^-+|-+$/g, "")
 }
 
+function getProjectSlug(record: DecisionRecord) {
+  const name = record.name ?? record.project_name ?? record.title ?? "project"
+  return slugifyName(String(name))
+}
+
+function mapProjectRecord(record: DecisionRecord): DecisionProject {
+  const computed = applyLiveCalculations(record)
+  return {
+    ...computed,
+    slug: getProjectSlug(computed),
+  }
+}
+
 function buildPropertyClauses(filters?: PropertyFilters, locale?: string): Prisma.Sql[] {
   const clauses: Prisma.Sql[] = USE_CURATED_PROPERTIES_VIEW
     ? [
-        Prisma.sql`name IS NOT NULL`,
-        Prisma.sql`COALESCE(${CURATED_PRICE_EXPR}, 0) > 0`,
-        Prisma.sql`TRIM(COALESCE(area, '')) <> ''`,
-        Prisma.sql`TRIM(COALESCE(developer, '')) <> ''`,
+        Prisma.sql`TRIM(COALESCE(${CURATED_NAME_EXPR}, '')) <> ''`,
+        Prisma.sql`COALESCE(${CURATED_PRICE_EXPR}, 0) >= 0`,
       ]
     : [
         Prisma.sql`name IS NOT NULL`,
@@ -262,11 +384,11 @@ function buildPropertyClauses(filters?: PropertyFilters, locale?: string): Prism
   const gradeOrder = ["A", "B", "C", "D"] as const
   const isArabic = locale === "ar"
   const curatedAreaExpr = isArabic
-    ? Prisma.sql`COALESCE(NULLIF(TRIM(area_ar), ''), area)`
-    : Prisma.sql`area`
+    ? Prisma.sql`COALESCE(NULLIF(TRIM(${CURATED_AREA_AR_EXPR}), ''), ${CURATED_AREA_EXPR})`
+    : CURATED_AREA_EXPR
   const curatedDeveloperExpr = isArabic
-    ? Prisma.sql`COALESCE(NULLIF(TRIM(developer_ar), ''), developer)`
-    : Prisma.sql`developer`
+    ? Prisma.sql`COALESCE(NULLIF(TRIM(${CURATED_DEVELOPER_AR_EXPR}), ''), ${CURATED_DEVELOPER_EXPR})`
+    : CURATED_DEVELOPER_EXPR
 
   if (!filters) return clauses
 
@@ -376,42 +498,42 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
   const selectQuery = USE_CURATED_PROPERTIES_VIEW
     ? Prisma.sql`
         SELECT
-          id,
-          name,
-          name AS project_name,
-          developer,
-          developer_ar,
-          area,
-          area_ar,
-          area AS final_area,
+          ${CURATED_ID} AS id,
+          ${CURATED_NAME_EXPR} AS name,
+          ${CURATED_NAME_EXPR} AS project_name,
+          ${CURATED_DEVELOPER_EXPR} AS developer,
+          ${CURATED_DEVELOPER_AR_EXPR} AS developer_ar,
+          ${CURATED_AREA_EXPR} AS area,
+          ${CURATED_AREA_AR_EXPR} AS area_ar,
+          ${CURATED_AREA_EXPR} AS final_area,
           NULL::numeric AS bedrooms_max,
           NULL::numeric AS beds,
           (${CURATED_PRICE_EXPR}) AS price_from_aed,
-          rental_yield,
-          timing_score,
-          timing_label,
-          stress_score,
-          stress_grade_v1,
-          yield_score,
-          yield_label,
-          evidence_score,
-          evidence_label_v1,
-          investor_score_v1,
-          decision_label_v1,
-          hero_image,
-          golden_visa,
-          score_version,
+          ${CURATED_RENTAL_YIELD} AS rental_yield,
+          ${CURATED_TIMING_SCORE} AS timing_score,
+          ${CURATED_TIMING_LABEL} AS timing_label,
+          ${CURATED_STRESS_SCORE} AS stress_score,
+          ${CURATED_STRESS_GRADE} AS stress_grade_v1,
+          ${CURATED_YIELD_SCORE} AS yield_score,
+          ${CURATED_YIELD_LABEL} AS yield_label,
+          ${CURATED_EVIDENCE_SCORE} AS evidence_score,
+          ${CURATED_EVIDENCE_LABEL} AS evidence_label_v1,
+          ${CURATED_INVESTOR_SCORE} AS investor_score_v1,
+          ${CURATED_DECISION_LABEL} AS decision_label_v1,
+          ${CURATED_HERO_IMAGE} AS hero_image,
+          ${CURATED_GOLDEN_VISA} AS golden_visa,
+          ${CURATED_SCORE_VERSION} AS score_version,
           (${CURATED_PRICE_EXPR}) AS l1_canonical_price,
-          rental_yield AS l1_canonical_yield,
+          ${CURATED_RENTAL_YIELD} AS l1_canonical_yield,
           NULL AS l1_canonical_status,
-          price_confidence AS l1_confidence,
-          price_source AS l1_source_coverage,
-          investor_score_v1 AS l2_investment_score,
-          developer_reliability_score AS l2_developer_reliability,
-          stress_grade_v1 AS l2_stress_test_grade,
-          timing_label AS l3_timing_signal,
+          ${CURATED_PRICE_CONFIDENCE} AS l1_confidence,
+          ${CURATED_PRICE_SOURCE} AS l1_source_coverage,
+          ${CURATED_INVESTOR_SCORE} AS l2_investment_score,
+          ${CURATED_DEVELOPER_RELIABILITY} AS l2_developer_reliability,
+          ${CURATED_STRESS_GRADE} AS l2_stress_test_grade,
+          ${CURATED_TIMING_LABEL} AS l3_timing_signal,
           NULL::jsonb AS engine_stress_test,
-          investor_score_v1 AS engine_god_metric
+          ${CURATED_INVESTOR_SCORE} AS engine_god_metric
         FROM ${PROPERTIES_TABLE_SQL} t
         ${whereClause}
         ORDER BY ${sortColumn} DESC NULLS LAST
@@ -452,10 +574,7 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
     `),
   ])
 
-  const projects: DecisionProject[] = rows.map((row) => ({
-    ...(row as DecisionRecord),
-    slug: slugifyName(String(row.name ?? "project")),
-  }))
+  const projects: DecisionProject[] = rows.map((row) => mapProjectRecord(row as DecisionRecord))
 
   return {
     data_as_of: new Date().toISOString(),
@@ -480,63 +599,63 @@ export async function getProjectBySlug(slug: string): Promise<{
   const candidates = USE_CURATED_PROPERTIES_VIEW
     ? await runQuery(Prisma.sql`
         SELECT
-          id,
-          name,
-          name AS project_name,
-          developer,
-          developer_ar,
-          area,
-          area_ar,
-          area AS final_area,
+          ${CURATED_ID} AS id,
+          ${CURATED_NAME_EXPR} AS name,
+          ${CURATED_NAME_EXPR} AS project_name,
+          ${CURATED_DEVELOPER_EXPR} AS developer,
+          ${CURATED_DEVELOPER_AR_EXPR} AS developer_ar,
+          ${CURATED_AREA_EXPR} AS area,
+          ${CURATED_AREA_AR_EXPR} AS area_ar,
+          ${CURATED_AREA_EXPR} AS final_area,
           NULL::numeric AS bedrooms_max,
           NULL::numeric AS beds,
           (${CURATED_PRICE_EXPR}) AS price_from_aed,
-          rental_yield,
-          timing_score,
-          timing_label,
-          stress_score,
-          stress_grade_v1,
-          yield_score,
-          yield_label,
-          evidence_score,
-          evidence_label_v1,
-          investor_score_v1,
-          decision_label_v1,
-          hero_image,
-          golden_visa,
-          score_version,
+          ${CURATED_RENTAL_YIELD} AS rental_yield,
+          ${CURATED_TIMING_SCORE} AS timing_score,
+          ${CURATED_TIMING_LABEL} AS timing_label,
+          ${CURATED_STRESS_SCORE} AS stress_score,
+          ${CURATED_STRESS_GRADE} AS stress_grade_v1,
+          ${CURATED_YIELD_SCORE} AS yield_score,
+          ${CURATED_YIELD_LABEL} AS yield_label,
+          ${CURATED_EVIDENCE_SCORE} AS evidence_score,
+          ${CURATED_EVIDENCE_LABEL} AS evidence_label_v1,
+          ${CURATED_INVESTOR_SCORE} AS investor_score_v1,
+          ${CURATED_DECISION_LABEL} AS decision_label_v1,
+          ${CURATED_HERO_IMAGE} AS hero_image,
+          ${CURATED_GOLDEN_VISA} AS golden_visa,
+          ${CURATED_SCORE_VERSION} AS score_version,
           (${CURATED_PRICE_EXPR}) AS l1_canonical_price,
-          rental_yield AS l1_canonical_yield,
+          ${CURATED_RENTAL_YIELD} AS l1_canonical_yield,
           NULL AS l1_canonical_status,
-          price_confidence AS l1_confidence,
-          price_source AS l1_source_coverage,
-          investor_score_v1 AS l2_investment_score,
-          developer_reliability_score AS l2_developer_reliability,
-          stress_grade_v1 AS l2_stress_test_grade,
-          timing_label AS l3_timing_signal,
+          ${CURATED_PRICE_CONFIDENCE} AS l1_confidence,
+          ${CURATED_PRICE_SOURCE} AS l1_source_coverage,
+          ${CURATED_INVESTOR_SCORE} AS l2_investment_score,
+          ${CURATED_DEVELOPER_RELIABILITY} AS l2_developer_reliability,
+          ${CURATED_STRESS_GRADE} AS l2_stress_test_grade,
+          ${CURATED_TIMING_LABEL} AS l3_timing_signal,
           NULL::numeric AS l3_supply_pressure,
           NULL::numeric AS l3_demand_velocity,
           NULL::numeric AS l3_price_drift_30d,
-          investor_score_v1 AS engine_god_metric,
+          ${CURATED_INVESTOR_SCORE} AS engine_god_metric,
           NULL::numeric AS engine_affordability,
-          stress_score AS engine_stress_test,
+          ${CURATED_STRESS_SCORE} AS engine_stress_test,
           NULL::jsonb AS payment_plan_structured,
           NULL::jsonb AS evidence_sources,
           NULL::jsonb AS evidence_exclusions,
           NULL::jsonb AS evidence_assumptions,
           NULL::jsonb AS hotness_factors,
           NULL::jsonb AS units,
-          developer_reliability_score,
-          supply_resilience_score,
-          liquidity_resilience_score,
-          pricing_discipline_score,
-          handover_reliability_score,
-          area_stability_score,
-          payment_plan_score
+          ${CURATED_DEVELOPER_RELIABILITY} AS developer_reliability_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'supply_resilience_score'`)} AS supply_resilience_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'liquidity_resilience_score'`)} AS liquidity_resilience_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'pricing_discipline_score'`)} AS pricing_discipline_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'handover_reliability_score'`)} AS handover_reliability_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'area_stability_score'`)} AS area_stability_score,
+          ${curatedNumeric(Prisma.sql`to_jsonb(t)->>'payment_plan_score'`)} AS payment_plan_score
         FROM ${PROPERTIES_TABLE_SQL} t
-        WHERE LOWER(name) LIKE LOWER('%' || ${candidateName} || '%')
-        ORDER BY CASE WHEN LOWER(name) = LOWER(${candidateName}) THEN 0 ELSE 1 END,
-                 investor_score_v1 DESC NULLS LAST
+        WHERE LOWER(${CURATED_NAME_EXPR}) LIKE LOWER('%' || ${candidateName} || '%')
+        ORDER BY CASE WHEN LOWER(${CURATED_NAME_EXPR}) = LOWER(${candidateName}) THEN 0 ELSE 1 END,
+                 ${CURATED_INVESTOR_SCORE} DESC NULLS LAST
         LIMIT 30
       `)
     : await runQuery(Prisma.sql`
@@ -579,60 +698,62 @@ export async function getProjectBySlug(slug: string): Promise<{
     null
   if (!project) return null
 
-  const areaName = String(project.final_area ?? project.area ?? "")
-  const developerName = String(project.developer ?? "")
+  const computedProject = applyLiveCalculations(project as DecisionRecord)
+  const projectWithSlug = mapProjectRecord(computedProject)
+  const areaName = String(computedProject.final_area ?? computedProject.area ?? "")
+  const developerName = String(computedProject.developer ?? "")
 
   const [areaContextRows, developerRows, similarRows] = USE_CURATED_PROPERTIES_VIEW
     ? await Promise.all([
         runQuery(Prisma.sql`
           SELECT
-            area,
+            ${CURATED_AREA_EXPR} AS area,
             COUNT(*)::int AS projects,
             ROUND(AVG(${CURATED_PRICE_EXPR}) FILTER (WHERE ${CURATED_PRICE_EXPR} > 0)) AS avg_price,
-            ROUND(AVG(rental_yield::numeric) FILTER (WHERE rental_yield > 0), 1) AS avg_yield,
-            ROUND(AVG(investor_score_v1::numeric), 1) AS avg_efficiency
+            ROUND(AVG(${CURATED_RENTAL_YIELD}) FILTER (WHERE ${CURATED_RENTAL_YIELD} > 0), 1) AS avg_yield,
+            ROUND(AVG(${CURATED_INVESTOR_SCORE}), 1) AS avg_efficiency
           FROM ${PROPERTIES_TABLE_SQL} t
-          WHERE LOWER(area) = LOWER(${areaName})
+          WHERE LOWER(${CURATED_AREA_EXPR}) = LOWER(${areaName})
           GROUP BY 1
         `),
         runQuery(Prisma.sql`
           SELECT
-            developer,
+            ${CURATED_DEVELOPER_EXPR} AS developer,
             COUNT(*)::int AS projects,
-            ROUND(AVG(developer_reliability_score::numeric), 1) AS reliability,
-            ROUND(AVG(investor_score_v1::numeric), 1) AS efficiency,
-            array_agg(DISTINCT area) AS areas
+            ROUND(AVG(${CURATED_DEVELOPER_RELIABILITY}), 1) AS reliability,
+            ROUND(AVG(${CURATED_INVESTOR_SCORE}), 1) AS efficiency,
+            array_agg(DISTINCT ${CURATED_AREA_EXPR}) AS areas
           FROM ${PROPERTIES_TABLE_SQL} t
-          WHERE LOWER(developer) = LOWER(${developerName})
+          WHERE LOWER(${CURATED_DEVELOPER_EXPR}) = LOWER(${developerName})
           GROUP BY 1
         `),
         runQuery(Prisma.sql`
           SELECT
-            id,
-            name,
-            name AS project_name,
-            developer,
-            developer_ar,
-            area,
-            area_ar,
-            area AS final_area,
+            ${CURATED_ID} AS id,
+            ${CURATED_NAME_EXPR} AS name,
+            ${CURATED_NAME_EXPR} AS project_name,
+            ${CURATED_DEVELOPER_EXPR} AS developer,
+            ${CURATED_DEVELOPER_AR_EXPR} AS developer_ar,
+            ${CURATED_AREA_EXPR} AS area,
+            ${CURATED_AREA_AR_EXPR} AS area_ar,
+            ${CURATED_AREA_EXPR} AS final_area,
             (${CURATED_PRICE_EXPR}) AS price_from_aed,
-            rental_yield,
-            timing_label,
-            stress_grade_v1,
-            investor_score_v1,
-            decision_label_v1,
-            price_confidence,
+            ${CURATED_RENTAL_YIELD} AS rental_yield,
+            ${CURATED_TIMING_LABEL} AS timing_label,
+            ${CURATED_STRESS_GRADE} AS stress_grade_v1,
+            ${CURATED_INVESTOR_SCORE} AS investor_score_v1,
+            ${CURATED_DECISION_LABEL} AS decision_label_v1,
+            ${CURATED_PRICE_CONFIDENCE} AS price_confidence,
             (${CURATED_PRICE_EXPR}) AS l1_canonical_price,
-            rental_yield AS l1_canonical_yield,
-            stress_grade_v1 AS l2_stress_test_grade,
-            timing_label AS l3_timing_signal,
-            investor_score_v1 AS engine_god_metric,
-            price_confidence AS l1_confidence
+            ${CURATED_RENTAL_YIELD} AS l1_canonical_yield,
+            ${CURATED_STRESS_GRADE} AS l2_stress_test_grade,
+            ${CURATED_TIMING_LABEL} AS l3_timing_signal,
+            ${CURATED_INVESTOR_SCORE} AS engine_god_metric,
+            ${CURATED_PRICE_CONFIDENCE} AS l1_confidence
           FROM ${PROPERTIES_TABLE_SQL} t
-          WHERE LOWER(area) = LOWER(${areaName})
-            AND LOWER(name) <> LOWER(${String(project.name)})
-          ORDER BY investor_score_v1 DESC NULLS LAST
+          WHERE LOWER(${CURATED_AREA_EXPR}) = LOWER(${areaName})
+            AND LOWER(${CURATED_NAME_EXPR}) <> LOWER(${String(project.name)})
+          ORDER BY ${CURATED_INVESTOR_SCORE} DESC NULLS LAST
           LIMIT 5
         `),
       ])
@@ -681,16 +802,10 @@ export async function getProjectBySlug(slug: string): Promise<{
   return {
     data_as_of: new Date().toISOString(),
     slug: normalizedSlug,
-    project: {
-      ...(project as DecisionRecord),
-      slug: slugifyName(String(project.name ?? "project")),
-    },
+    project: projectWithSlug,
     area_context: (areaContextRows[0] as DecisionRecord | undefined) ?? null,
     developer_profile: (developerRows[0] as DecisionRecord | undefined) ?? null,
-    similar_projects: similarRows.map((row) => ({
-      ...(row as DecisionRecord),
-      slug: slugifyName(String(row.name ?? "project")),
-    })),
+    similar_projects: similarRows.map((row) => mapProjectRecord(row as DecisionRecord)),
   }
 }
 
@@ -715,6 +830,15 @@ export async function listAreas(): Promise<{
             (to_jsonb(t) ->> 'avg_score')::numeric,
             (to_jsonb(t) ->> 'efficiency')::numeric
           ) AS efficiency,
+          COALESCE(
+            (to_jsonb(t) ->> 'source_count')::int,
+            (to_jsonb(t) ->> 'sources')::int
+          ) AS source_count,
+          COALESCE(
+            NULLIF(TRIM(to_jsonb(t) ->> 'confidence'), ''),
+            NULLIF(TRIM(to_jsonb(t) ->> 'confidence_level'), ''),
+            NULLIF(TRIM(to_jsonb(t) ->> 'evidence_level'), '')
+          ) AS confidence,
           NULL::numeric AS supply_pressure,
           COALESCE(
             (to_jsonb(t) ->> 'buy_signals')::int,
@@ -738,6 +862,8 @@ export async function listAreas(): Promise<{
           ROUND(AVG(l1_canonical_yield::numeric), 1) AS avg_yield,
           ROUND(AVG(engine_god_metric::numeric), 1) AS efficiency,
           ROUND(AVG(l3_supply_pressure::numeric), 2) AS supply_pressure,
+          NULL::int AS source_count,
+          NULL::text AS confidence,
           COUNT(CASE WHEN l3_timing_signal = 'BUY' THEN 1 END)::int AS buy_signals
         FROM ${DETAIL_TABLE_SQL}
         WHERE ${Prisma.join(
@@ -899,10 +1025,7 @@ export async function getAreaBySlug(slug: string): Promise<{
       slug: slugifyName(String(stat.area ?? "area")),
       profile: (profileRows[0] as DecisionRecord | undefined) ?? null,
     },
-    projects: projectsRows.map((row) => ({
-      ...(row as DecisionRecord),
-      slug: slugifyName(String(row.name ?? "project")),
-    })),
+    projects: projectsRows.map((row) => mapProjectRecord(row as DecisionRecord)),
     developers: developerRows as DecisionRecord[],
   }
 }
@@ -1209,10 +1332,7 @@ export async function getDeveloperBySlug(slug: string): Promise<{
       slug: typeof developer.slug === "string" ? developer.slug : slugifyName(String(developer.developer ?? "developer")),
       profile,
     },
-    projects: projectRows.map((row) => ({
-      ...(row as DecisionRecord),
-      slug: slugifyName(String(row.name ?? "project")),
-    })),
+    projects: projectRows.map((row) => mapProjectRecord(row as DecisionRecord)),
     area_presence: areaRows as DecisionRecord[],
   }
 }

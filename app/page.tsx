@@ -19,10 +19,6 @@ import { HeroSection } from "@/components/homepage/hero-section"
 import { DecisionTunnelStepper } from "@/components/homepage/decision-tunnel-stepper"
 import { getMarketPulseSummary } from "@/lib/frontend-content"
 import { SEO, absoluteUrl, getLocaleAlternates, getSeoCopy } from "@/lib/seo"
-import { ChatInterface } from "@/components/ChatInterface"
-import { getCurrentEntitlement } from "@/lib/account-entitlement"
-import { getCopilotDailyLimit, getCopilotDailyUsage } from "@/lib/copilot-usage"
-import { headers } from "next/headers"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 
@@ -56,55 +52,55 @@ function getSurfaces(locale: "en" | "ar") {
     ? [
         {
           icon: Sparkles,
-          label: "مساعد القرار الذكي",
-          description: "حدد ميزانيتك، أهدافك، وتطلعاتك، وسوف نساعدك في الوصول إلى أفضل الخيارات الاستثمارية بناءً على تحليل دقيق للبيانات.",
+          label: "محطة القرار",
+          description: "حوّل الاستعلامات إلى SQL حتمي مع أثر أدوات واضح - لا دردشة تسويقية.",
           href: "/chat",
-          cta: "ابدأ الآن",
+          cta: "جرّب محطة القرار",
           accent: "text-blue-400",
           bg: "bg-blue-500/5 border-blue-500/20 hover:border-blue-500/40",
         },
         {
           icon: Building2,
-          label: "قاعدة بيانات المشاريع",
-          description: "استعرض كافة المشاريع العقارية النشطة في الإمارات مع تقييمات شاملة، وتصفية متقدمة بناءً على إشارات الشراء والانتظار ومؤشرات الضغط والعائد.",
+          label: "طبقة المشاريع (API)",
+          description: "كل مشروع مع استجابة API مباشرة: التسعير، العائد، والضغط - بنفس شكل الـ JSON الذي يوصله لبوابتك.",
           href: "/properties",
-          cta: "تصفح المشاريع",
+          cta: "عرض البيانات",
           accent: "text-indigo-400",
           bg: "bg-indigo-500/5 border-indigo-500/20 hover:border-indigo-500/40",
         },
         {
           icon: Map,
-          label: "تحليل المناطق",
-          description: "تحليل شامل للعوائد الاستثمارية، وتوازن العرض والطلب، وتوجهات الأسعار، وأبرز المشاريع في كل منطقة داخل الإمارات.",
+          label: "ملف المناطق",
+          description: "تغطية موثّقة لمناطق الإمارات مع مؤشرات العرض والطلب والعائد.",
           href: "/areas",
-          cta: "استكشف المناطق",
+          cta: "استكشف التغطية",
           accent: "text-teal-400",
           bg: "bg-teal-500/5 border-teal-500/20 hover:border-teal-500/40",
         },
         {
           icon: Users2,
-          label: "تقييم المطورين",
-          description: "مراجعة سجل المطورين من حيث دقة مواعيد التسليم، الملاءة المالية، وتاريخ الإنجازات التشغيلية لكل مطور نشط.",
+          label: "موثوقية المطورين",
+          description: "تحقق من سجل التسليم والتقييمات الدقيقة لكل مطور.",
           href: "/developers",
-          cta: "عرض المطورين",
+          cta: "مراجعة المطورين",
           accent: "text-violet-400",
           bg: "bg-violet-500/5 border-violet-500/20 hover:border-violet-500/40",
         },
         {
           icon: TrendingUp,
-          label: "نبض السوق",
-          description: "إشارات التوقيت الحية، وتصنيف المناطق، وموثوقية المطورين في لوحة بيانات تفاعلية واحدة.",
+          label: "محرك الإشارات",
+          description: "إشارات التوقيت والضغط - نظام القرار V1 مباشر.",
           href: "/top-data",
-          cta: "عرض الإشارات",
+          cta: "لوحة الإشارات",
           accent: "text-amber-400",
           bg: "bg-amber-500/5 border-amber-500/20 hover:border-amber-500/40",
         },
         {
           icon: FileText,
-          label: "مكتبة الأبحاث",
-          description: "دراسات سوقية معمقة وتحليلات استراتيجية للمناطق والمطورين مصممة خصيصاً لدعم اتخاذ القرار الاستثماري.",
-          href: "/reports/library",
-          cta: "قراءة التقارير",
+          label: "دليل التكامل",
+          description: "وثائق API والربط المؤسسي - كيف تضيف Entrestate تحت بوابتك الحالية.",
+          href: "/enterprise",
+          cta: "افتح الدليل",
           accent: "text-rose-400",
           bg: "bg-rose-500/5 border-rose-500/20 hover:border-rose-500/40",
         },
@@ -112,89 +108,57 @@ function getSurfaces(locale: "en" | "ar") {
     : [
   {
     icon: Sparkles,
-    label: "AI Decision Chat",
-    description: "Describe your budget, goal, and constraints. Get a scored shortlist with clear reasoning — not listings.",
+    label: "Decision Terminal",
+    description: "Structured queries with deterministic SQL traces - no chatbot theater.",
     href: "/chat",
-    cta: "Start analysis",
+    cta: "Open terminal",
     accent: "text-blue-400",
     bg: "bg-blue-500/5 border-blue-500/20 hover:border-blue-500/40",
   },
   {
     icon: Building2,
-    label: "Project Inventory",
-    description: "Every active UAE project, fully scored. Filter by BUY/HOLD/WAIT signal, stress grade, yield, and area.",
+    label: "Project API Layer",
+    description: "Every project with the exact JSON your frontend would consume.",
     href: "/properties",
-    cta: "Browse projects",
+    cta: "Explore data",
     accent: "text-indigo-400",
     bg: "bg-indigo-500/5 border-indigo-500/20 hover:border-indigo-500/40",
   },
   {
     icon: Map,
     label: "Area Intelligence",
-    description: "Yield averages, supply pressure, pricing depth, and top projects across every UAE neighbourhood.",
+    description: "Coverage across UAE neighbourhoods with yield, supply pressure, and timing signals.",
     href: "/areas",
-    cta: "Explore areas",
+    cta: "View coverage",
     accent: "text-teal-400",
     bg: "bg-teal-500/5 border-teal-500/20 hover:border-teal-500/40",
   },
   {
     icon: Users2,
     label: "Developer Reliability",
-    description: "Delivery consistency, stress-grade distribution, and track record across every active developer.",
+    description: "Delivery consistency, stress-grade distribution, and track record per developer.",
     href: "/developers",
-    cta: "View developers",
+    cta: "Review developers",
     accent: "text-violet-400",
     bg: "bg-violet-500/5 border-violet-500/20 hover:border-violet-500/40",
   },
   {
     icon: TrendingUp,
-    label: "Market Intelligence",
-    description: "Live timing signals, affordability tiers, area rankings, and developer reliability in one board.",
+    label: "Signal Engine V1",
+    description: "Live timing signals, affordability tiers, and market pulse - evidence-backed.",
     href: "/top-data",
-    cta: "View signals",
+    cta: "Open signals",
     accent: "text-amber-400",
     bg: "bg-amber-500/5 border-amber-500/20 hover:border-amber-500/40",
   },
   {
     icon: FileText,
-    label: "Research Library",
-    description: "Long-form market deep-dives, area studies, and developer analyses — structured for decision-making.",
-    href: "/reports/library",
-    cta: "Read reports",
+    label: "Integration Guide",
+    description: "API docs + enterprise integration map. Plug the backend into your existing portal.",
+    href: "/enterprise",
+    cta: "View guide",
     accent: "text-rose-400",
     bg: "bg-rose-500/5 border-rose-500/20 hover:border-rose-500/40",
-  },
-]
-}
-
-function getWhoFor(locale: "en" | "ar") {
-  return locale === "ar"
-    ? [
-        {
-          audience: "المستثمرون",
-          description: "احصل على تحليل دقيق لنقاط الدخول، وموثوقية المطورين، والعوائد الاستثمارية الحقيقية قبل اتخاذ قرارك المالي.",
-        },
-        {
-          audience: "المستشارون والمحللون",
-          description: "زود اجتماعاتك مع العملاء ببيانات استثمارية قوية ومدققة، تتجاوز مجرد الكتيبات الترويجية التقليدية، لتقديم استشارات مبنية على الأدلة.",
-        },
-        {
-          audience: "المؤسسات الاستثمارية",
-          description: "اعتمد على تقييمات شاملة للمحافظ الاستثمارية، واختبارات الضغط المتقدمة، ودمج البيانات بسلاسة في سير العمل المؤسسي الخاص بك.",
-        },
-      ]
-    : [
-  {
-    audience: "Investors",
-    description: "You need to know if the entry point is right, if the developer delivers, and whether the yield is real — before committing capital.",
-  },
-  {
-    audience: "Advisors & Analysts",
-    description: "You need structured evidence you can stand behind in a client meeting. Not a PDF brochure. An auditable decision object.",
-  },
-  {
-    audience: "Institutions",
-    description: "You need portfolio-level scoring, stress resilience at scale, and a data layer that can integrate with your internal workflows.",
   },
 ]
 }
@@ -221,69 +185,16 @@ const structuredDataObj = {
   ],
 }
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>
-}) {
+export default async function HomePage() {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
   const surfaces = getSurfaces(locale)
-  const whoFor = getWhoFor(locale)
-  const headersList = await headers()
-  const userAgent = headersList.get("user-agent") || ""
-  const isMobile = /mobile|android|iphone|ipad|phone/i.test(userAgent)
-  const params = (await searchParams) ?? {}
-  const sessionId = Array.isArray(params.id) ? params.id[0] : params.id
-  const viewParam = Array.isArray(params.view) ? params.view[0] : params.view
-  const showMarketing = viewParam === "home"
-
-  if (!isMobile && !showMarketing) {
-    const entitlement = await getCurrentEntitlement()
-    const usage = entitlement.accountKey
-      ? await getCopilotDailyUsage(entitlement.accountKey, entitlement.tier)
-      : {
-          accountKey: "",
-          date: new Date().toISOString().slice(0, 10),
-          used: 0,
-          limit: getCopilotDailyLimit(entitlement.tier),
-          remaining: getCopilotDailyLimit(entitlement.tier),
-          blocked: false,
-          resetAt: null,
-          cooldownUntil: null,
-          cooldownSecondsRemaining: null,
-        }
-
-    return (
-      <main id="main-content">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredDataObj) }}
-        />
-        <Navbar />
-        <div className="mx-auto max-w-[1600px] px-6 pb-14 pt-28 md:pt-32">
-          <ChatInterface
-            id={sessionId || undefined}
-            initialLimit={usage.limit}
-            initialRemaining={usage.remaining}
-            initialBlocked={usage.blocked}
-            initialCooldownSecondsRemaining={usage.cooldownSecondsRemaining}
-          />
-        </div>
-        <Footer />
-      </main>
-    )
-  }
-
   const pulse = await getMarketPulseSummary().catch(() => ({
     data_as_of: new Date().toISOString(),
     summary: { total: 2813, avg_price: null, avg_yield: null, buy_signals: 136, high_confidence: 0 },
   }))
 
   const totalProjects = pulse.summary.total || 2813
-  const buySignals = pulse.summary.buy_signals || 136
-  const avgYield = pulse.summary.avg_yield
-  const avgPrice = pulse.summary.avg_price
 
   return (
     <main id="main-content">
@@ -296,19 +207,14 @@ export default async function HomePage({
       <div className="mx-auto max-w-[1100px] px-6 pb-28 pt-32 md:pt-44">
 
         {/* ── Hero ── */}
-        <HeroSection
-          totalProjects={totalProjects}
-          buySignals={buySignals}
-          avgPrice={avgPrice}
-          avgYield={avgYield}
-        />
+        <HeroSection totalProjects={totalProjects} />
 
         {/* ── Decision tunnel ── */}
         <section className="mt-20">
           <div className="mb-8 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{isArabic ? "كيف يعمل" : "How it works"}</p>
             <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
-              {isArabic ? "نفق القرار المكوّن من 4 مراحل" : "The 4-stage decision tunnel"}
+              {isArabic ? "سلسلة قرار من 4 مراحل" : "A 4-stage decision pipeline"}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
               {isArabic
@@ -324,12 +230,12 @@ export default async function HomePage({
           <div className="mb-8 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">{isArabic ? "المنصة" : "The platform"}</p>
             <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
-              {isArabic ? "ست واجهات تخدم القرار" : "Six intelligence surfaces"}
+              {isArabic ? "ست واجهات للبنية التحتية" : "Six infrastructure surfaces"}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
               {isArabic
                 ? "كل واجهة تقرّبك من نفس البيانات المقيّمة، لكن من زاوية مختلفة تناسب طريقة عملك."
-                : "Each surface is a different entry point into the same underlying scored dataset."}
+                : "Each surface is a different entry point into the same scored dataset and API response."}
             </p>
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -362,29 +268,29 @@ export default async function HomePage({
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-400 mb-6">
                 <Lock className="h-3 w-3" />
-                {isArabic ? "الفئة المؤسسية" : "Institutional Tier"}
+                {isArabic ? "مؤسسي" : "Enterprise Tier"}
               </div>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
-                {isArabic ? "نظام تشغيل المؤسسات" : "The Enterprise Operating System"}
+                {isArabic ? "طبقة القرار والتنفيذ" : "Decision + Execution Infrastructure"}
               </h2>
               <p className="text-lg text-muted-foreground mb-8">
                 {isArabic 
-                  ? "تجاوز مجرد البحث. قم ببناء بنية تحتية خاصة للقرار مع وصول كامل إلى الـ API، وأتمتة مخصصة، وبيانات مشفرة." 
-                  : "Move beyond search. Build private decision infrastructure with full API access, custom automation studio, and cryptographically signed L1 data."}
+                  ? "هذا الموقع هو بيئة العرض. كل ما تراه يعمل عبر API يمكنك توصيله تحت بوابتك الحالية." 
+                  : "This site is the live demo. Everything you see runs on an API that plugs invisibly under your existing portal."}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href={prefixLocalePath("/os", locale)}
+                  href={prefixLocalePath("/enterprise", locale)}
                   className="flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-8 py-4 text-sm font-bold text-white transition-all hover:bg-blue-600 shadow-lg shadow-blue-500/25"
                 >
-                  {isArabic ? "استكشاف لوحة التحكم" : "Explore Enterprise OS"}
+                  {isArabic ? "دليل التكامل" : "Integration Guide"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  href={prefixLocalePath("/docs", locale)}
+                  href={prefixLocalePath("/contact", locale)}
                   className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/50 px-8 py-4 text-sm font-semibold transition-all hover:bg-slate-900"
                 >
-                  {isArabic ? "وثائق المطورين" : "Developer Docs"}
+                  {isArabic ? "مبيعات المؤسسات" : "Enterprise Sales"}
                 </Link>
               </div>
             </div>
@@ -453,7 +359,7 @@ export default async function HomePage({
           <div className="flex flex-col gap-5 md:flex-row md:items-center">
             <ShieldCheck className="h-8 w-8 shrink-0 text-primary/60" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">{isArabic ? "طبقات الثقة الخمس — كل رقم أمامك ومعه مستوى موثوقيته" : "5-Layer Evidence Stack — you always know how reliable a number is"}</p>
+              <p className="text-sm font-semibold text-foreground">{isArabic ? "طبقات الثقة الخمس - كل رقم أمامك ومعه مستوى موثوقيته" : "5-Layer Evidence Stack - you always know how reliable a number is"}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {[
                   { tag: "L1 Canonical", color: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" },

@@ -196,9 +196,19 @@ export async function getMarketScoreInventory(
   db: DbClient = prisma,
 ): Promise<MarketScoreInventoryResponse> {
   const contract = await resolveInventoryContract(db)
-  const columns = buildInventoryColumns({ includeRank: Boolean(routing.ranked) })
+  const [hasPriceTier, hasDrivers, hasReasonCodes, hasRiskFlags] = await Promise.all([
+    hasColumn(db, contract.viewName, "price_tier"),
+    hasColumn(db, contract.viewName, "drivers"),
+    hasColumn(db, contract.viewName, "reason_codes"),
+    hasColumn(db, contract.viewName, "risk_flags"),
+  ])
+  const columns = buildInventoryColumns({
+    includeRank: Boolean(routing.ranked),
+    includeDrivers: hasDrivers,
+    includeReasonCodes: hasReasonCodes,
+    includeRiskFlags: hasRiskFlags,
+  })
   const baseSql = buildInventorySourceSql(columns, routing, overrideFlags, contract)
-  const hasPriceTier = await hasColumn(db, contract.viewName, "price_tier")
   const filterSql = buildFilterSql(filters, { includePriceTier: hasPriceTier && !routing.ranked })
   const limit = pagination.pageSize
   const offset = (pagination.page - 1) * pagination.pageSize

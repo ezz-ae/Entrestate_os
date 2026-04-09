@@ -148,7 +148,7 @@ const ONBOARDING_COPY = {
   ar: {
     step: (current: number) => `المرحلة ${current} من 3`,
     titleOne: "ما هو هدفك الاستثماري الأساسي؟",
-    bodyOne: "نقوم بضبط ذكاء النظام بناءً على النتيجة التي تسعى لتحقيقها.",
+    bodyOne: "نقوم بضبط منطق النظام بناءً على النتيجة التي تسعى لتحقيقها.",
     objectives: [
       { key: "yield" as const, label: "تعظيم العائد", description: "التركيز على عوائد إيجارية مرتفعة ومستقرة", icon: BarChart3 },
       { key: "growth" as const, label: "نمو رأس المال", description: "استهداف المناطق ذات الارتفاع العالي في القيمة", icon: TrendingUp },

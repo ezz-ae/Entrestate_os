@@ -126,9 +126,9 @@ export const MCP_RESOURCES = {
     updated: "daily",
   },
   developer_registry: {
-    description: "481 UAE developers with tiers, logos, and project counts",
+    description: "75 UAE developers with tiers, logos, and project counts",
     key_columns: ["name", "slug", "tier", "logo_url", "project_count", "avg_price", "min_price", "max_price", "hq", "established"],
-    row_count: 481,
+    row_count: 75,
     updated: "live",
   },
   entrestate_projects_api: {
@@ -144,9 +144,9 @@ export const MCP_RESOURCES = {
     updated: "live view",
   },
   entrestate_areas_api: {
-    description: "246 areas with full analytics",
+    description: "167 areas with full analytics",
     key_columns: ["name", "slug", "city", "project_count", "avg_price", "avg_yield", "area_score"],
-    row_count: 246,
+    row_count: 167,
     updated: "live view",
   },
   source_of_truth_registry: {

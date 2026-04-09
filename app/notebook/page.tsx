@@ -111,14 +111,14 @@ export default function NotebookPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary mb-4">
                 <Activity className="h-3 w-3 animate-pulse" />
-                {isArabic ? "دفاتر الذكاء" : "Intelligence Books"}
+                {isArabic ? "دفاتر التحليل" : "Intelligence Books"}
               </div>
               <h1 className="text-3xl md:text-5xl font-serif font-semibold text-foreground tracking-tight">
                 {isArabic ? "دفتر السوق الشخصي" : "Personal Market Book"}
               </h1>
               <p className="mt-3 text-base text-muted-foreground max-w-xl leading-relaxed">
                 {isArabic
-                  ? "كل مشروع أو منطقة أو محفظة — موثّقة كدفتر ذكاء حي. توليد، كتابة، مشاركة، تنفيذ."
+                  ? "كل مشروع أو منطقة أو محفظة — موثّقة كدفتر تحليلي حي. توليد، كتابة، مشاركة، تنفيذ."
                   : "Every project, area, or portfolio — documented as a living intelligence book. Generate, write, share, implement."}
               </p>
             </div>
@@ -192,7 +192,7 @@ export default function NotebookPage() {
                     value={form.type}
                     onChange={(e) => setForm({ ...form, type: e.target.value as BookType })}
                   >
-                    <option value="project">{isArabic ? "ذكاء مشروع" : "Project Intelligence"}</option>
+                    <option value="project">{isArabic ? "ملف مشروع" : "Project Intelligence"}</option>
                     <option value="area">{isArabic ? "أداء منطقة" : "Area Performance"}</option>
                     <option value="client">{isArabic ? "إحاطة عميل" : "Client Briefing"}</option>
                     <option value="portfolio">{isArabic ? "مراجعة محفظة" : "Portfolio Review"}</option>
@@ -262,7 +262,7 @@ export default function NotebookPage() {
             </h3>
             <p className="text-sm text-muted-foreground/60 max-w-xs mx-auto mb-8 leading-relaxed">
               {isArabic
-                ? "ابدأ بإنشاء دفتر ذكاء، أو اسأل مساعد القرار وسيبنيه لك تلقائياً."
+                ? "ابدأ بإنشاء دفتر تحليلي، أو اسأل مساعد القرار وسيبنيه لك تلقائياً."
                 : "Create an intelligence book, or ask the copilot and it'll build one automatically."}
             </p>
             <div className="flex items-center justify-center gap-3 flex-wrap">

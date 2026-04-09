@@ -78,10 +78,16 @@ export default async function TopDataPage() {
       <Navbar />
       <div className="mx-auto max-w-[1400px] px-6 pb-20 pt-28 md:pt-36">
         <header className="mb-8">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">{t("title")}</p>
-          <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{isArabic ? "رصد السوق العقاري الإماراتي" : "UAE Market Intelligence"}</h1>
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-emerald-400">
+            {isArabic
+              ? "محرك الإشارات V1 - 4 أبعاد تقييم - مبني على الأدلة"
+              : "Signal Engine V1 - 4 Score Dimensions - Evidence-Backed"}
+          </div>
+          <h1 className="mt-3 text-3xl font-semibold text-foreground md:text-5xl">
+            {isArabic ? "محرك الإشارات - بث مباشر" : "Signal Engine V1 - Live"}
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {t("subtitle")}
+            {isArabic ? "كل قسم يعرض مخرجات API كما تُستهلك في المنتجات المؤسسية." : "Every section renders the API outputs consumed by enterprise products."}
           </p>
         </header>
 
@@ -102,7 +108,7 @@ export default async function TopDataPage() {
               </>
             ) : (
               <>
-                Start with <span className="font-medium text-foreground">Market Pulse</span> → scan <span className="font-medium text-foreground">Timing</span> & <span className="font-medium text-foreground">Stress</span> → drill into <span className="font-medium text-foreground">Top Projects</span>
+                Start with <span className="font-medium text-foreground">Market Pulse</span> - scan <span className="font-medium text-foreground">Timing</span> & <span className="font-medium text-foreground">Stress</span> - drill into <span className="font-medium text-foreground">Top Projects</span>
               </>
             )}
           </div>
@@ -121,11 +127,13 @@ export default async function TopDataPage() {
             return (
               <TopDataSection
                 key={sectionId}
-                id={sectionId}
+                section={sectionId}
+                locale={locale}
                 title={t(`sections.${sectionId}.title`)}
                 subtitle={t(`sections.${sectionId}.subtitle`)}
-                rows={sectionData.rows}
-                isActive={true}
+                confidence={sectionData.confidence ?? null}
+                lastUpdated={sectionData.last_updated ?? null}
+                data={sectionData.data_json}
               />
             )
           })}

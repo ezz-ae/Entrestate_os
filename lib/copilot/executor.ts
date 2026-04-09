@@ -21,17 +21,39 @@ import {
 } from "@/lib/copilot/tools"
 import { getEnterpriseStrategicContext, getStrategicNarrative } from "@/lib/ai/enterprise/service"
 
-// Copilot always queries inventory_clean (V1 columns: timing_label, stress_grade_v1, investor_score_v1)
-// DETAIL_TABLE env may point to inventory_full (old columns) — override for copilot tools
-const COPILOT_INVENTORY_TABLE = process.env.COPILOT_INVENTORY_TABLE ?? "inventory_clean"
-const COPILOT_AREA_COLUMN = (process.env.COPILOT_AREA_COLUMN ?? "").trim()
-  || (COPILOT_INVENTORY_TABLE === "inventory_clean" ? "area" : "final_area")
+const IDENTIFIER_RE = /^[A-Za-z_][A-Za-z0-9_]*$/
+
+// Copilot runs against a curated inventory table with V1 columns.
+const COPILOT_INVENTORY_TABLE =
+  process.env.COPILOT_INVENTORY_TABLE
+  ?? "canonical.inventory_clean"
+const COPILOT_TABLE_HINT = COPILOT_INVENTORY_TABLE.toLowerCase()
+const COPILOT_DEFAULT_AREA_COLUMN =
+  COPILOT_TABLE_HINT.includes("inventory_full") || COPILOT_TABLE_HINT.includes("inventory_spine")
+    ? "final_area"
+    : "area"
+const COPILOT_AREA_COLUMN = ((process.env.COPILOT_AREA_COLUMN ?? "").trim() || COPILOT_DEFAULT_AREA_COLUMN)
+const COPILOT_HAS_AR_COLUMNS =
+  COPILOT_TABLE_HINT.includes("inventory_clean")
+  || COPILOT_TABLE_HINT.includes("projects_api")
+  || COPILOT_TABLE_HINT.includes("projects_v1")
+
+const COPILOT_DEFAULT_PRICE_COLUMN =
+  COPILOT_TABLE_HINT.includes("projects_api")
+  || COPILOT_TABLE_HINT.includes("projects_v1")
+  || COPILOT_TABLE_HINT.includes("inventory_clean")
+    ? "price_from"
+    : "price_from_aed"
+const COPILOT_PRICE_COLUMN = ((process.env.COPILOT_PRICE_COLUMN ?? "").trim() || COPILOT_DEFAULT_PRICE_COLUMN)
+const COPILOT_SAFE_PRICE_COLUMN = IDENTIFIER_RE.test(COPILOT_PRICE_COLUMN)
+  ? COPILOT_PRICE_COLUMN
+  : "price_from_aed"
 
 const STATEMENT_TIMEOUT_MS = 8000
 const STRESS_GRADE_ORDER = ["A", "B", "C", "D", "E"] as const
 const DEAL_SORT_COLUMNS = {
   investor_score_v1: "investor_score_v1",
-  price_from_aed: "price_from_aed",
+  price_from_aed: COPILOT_SAFE_PRICE_COLUMN,
   rental_yield: "rental_yield",
   developer_reliability_score: "developer_reliability_score",
 } as const
@@ -48,9 +70,10 @@ const UAE_CITIES = [
 ] as const
 
 const COPILOT_TABLE_SQL = Prisma.raw(COPILOT_INVENTORY_TABLE)
-const COPILOT_AREA_EXPR = COPILOT_AREA_COLUMN === "area"
-  ? Prisma.sql`area`
-  : Prisma.sql`COALESCE(final_area, area)`
+const COPILOT_PRICE_SQL = Prisma.raw(COPILOT_SAFE_PRICE_COLUMN)
+const COPILOT_AREA_EXPR = COPILOT_AREA_COLUMN === "final_area"
+  ? Prisma.sql`COALESCE(final_area, area)`
+  : Prisma.sql`area`
 
 type DbRow = Record<string, unknown>
 
@@ -103,7 +126,7 @@ function buildQualityClauses(options: QualityOptions = {}): Prisma.Sql[] {
   const clauses: Prisma.Sql[] = []
 
   if (options.requirePrice) {
-    clauses.push(Prisma.sql`COALESCE(price_from_aed, 0) > 0`)
+    clauses.push(Prisma.sql`COALESCE(${COPILOT_PRICE_SQL}, 0) > 0`)
   }
 
   if (options.requireStress) {
@@ -209,7 +232,7 @@ function buildDealScreenerFilters(
   }
 
   if (typeof filters.budget_max_aed === "number") {
-    clauses.push(Prisma.sql`price_from_aed <= ${filters.budget_max_aed}`)
+    clauses.push(Prisma.sql`${COPILOT_PRICE_SQL} <= ${filters.budget_max_aed}`)
   }
 
   if (includeBedroomColumns) {
@@ -277,11 +300,11 @@ function buildDealScreenerQuery(input: DealScreenerInput, includeBedroomColumns 
       name AS project_name,
       name,
       ${COPILOT_AREA_EXPR} AS area,
-      ${COPILOT_INVENTORY_TABLE === "inventory_clean" ? Prisma.sql`area_ar` : Prisma.sql`NULL::text`} AS area_ar,
+      ${COPILOT_HAS_AR_COLUMNS ? Prisma.sql`area_ar` : Prisma.sql`NULL::text`} AS area_ar,
       developer,
-      ${COPILOT_INVENTORY_TABLE === "inventory_clean" ? Prisma.sql`developer_ar` : Prisma.sql`NULL::text`} AS developer_ar,
-      price_from_aed,
-      price_from_aed AS price_from,
+      ${COPILOT_HAS_AR_COLUMNS ? Prisma.sql`developer_ar` : Prisma.sql`NULL::text`} AS developer_ar,
+      ${COPILOT_PRICE_SQL} AS price_from_aed,
+      ${COPILOT_PRICE_SQL} AS price_from,
       rental_yield,
       timing_score,
       timing_label,
@@ -357,7 +380,7 @@ export async function executePriceRealityCheck(input: PriceRealityCheckInput): P
   const query = Prisma.sql`
     SELECT
       name,
-      price_from_aed,
+      ${COPILOT_PRICE_SQL} AS price_from_aed,
       price_source,
       price_confidence,
       investor_score_v1,
@@ -395,7 +418,7 @@ export async function executeAreaRiskBrief(input: AreaRiskBriefInput): Promise<T
     SELECT
       ${COPILOT_AREA_EXPR} AS area,
       COUNT(*)::int AS projects,
-      ROUND(AVG(price_from_aed) FILTER (WHERE price_from_aed > 0)) AS avg_price,
+      ROUND(AVG(${COPILOT_PRICE_SQL}::numeric) FILTER (WHERE ${COPILOT_PRICE_SQL} > 0)) AS avg_price,
       ROUND(AVG(rental_yield::numeric), 1) AS avg_yield,
       ROUND(AVG(investor_score_v1::numeric), 1) AS avg_score,
       COUNT(CASE WHEN timing_label IN ('STRONG_BUY', 'BUY') THEN 1 END)::int AS buy_signals,
@@ -457,7 +480,7 @@ export async function executeDeveloperDueDiligence(
         ROUND(AVG(developer_reliability_score::numeric), 1) AS reliability,
         ROUND(AVG(investor_score_v1::numeric), 1) AS avg_score,
         COUNT(CASE WHEN stress_grade_v1 IN ('A', 'B') THEN 1 END)::int AS safe_projects,
-        ROUND(AVG(price_from_aed) FILTER (WHERE price_from_aed > 0)) AS avg_price,
+        ROUND(AVG(${COPILOT_PRICE_SQL}::numeric) FILTER (WHERE ${COPILOT_PRICE_SQL} > 0)) AS avg_price,
         array_agg(DISTINCT ${COPILOT_AREA_EXPR}) AS areas
       FROM ${COPILOT_TABLE_SQL}
       WHERE developer ILIKE '%' || ${developerName} || '%'
@@ -637,7 +660,7 @@ export async function executeCompareProjects(input: CompareProjectsInput): Promi
       name,
       developer,
       ${COPILOT_AREA_EXPR} AS area,
-      price_from_aed,
+      ${COPILOT_PRICE_SQL} AS price_from_aed,
       rental_yield,
       price_confidence,
       stress_grade_v1,
@@ -766,13 +789,13 @@ export async function executeGenerateStrategicReport(input: GenerateStrategicRep
     runQuery(Prisma.sql`
       SELECT
         COUNT(*)::int AS total_projects,
-        ROUND(AVG(price_from_aed) FILTER (WHERE price_from_aed > 0)) AS avg_price,
+        ROUND(AVG(${COPILOT_PRICE_SQL}::numeric) FILTER (WHERE ${COPILOT_PRICE_SQL} > 0)) AS avg_price,
         ROUND(AVG(rental_yield::numeric), 1) AS avg_yield,
         ROUND(AVG(investor_score_v1::numeric), 1) AS avg_score,
         COUNT(CASE WHEN timing_label IN ('STRONG_BUY', 'BUY') THEN 1 END)::int AS buy_count,
         COUNT(CASE WHEN stress_grade_v1 IN ('A', 'B') THEN 1 END)::int AS safe_count
       FROM ${COPILOT_TABLE_SQL}
-      WHERE price_from_aed > 0 AND price_confidence IN ('MEDIUM', 'HIGH')
+      WHERE ${COPILOT_PRICE_SQL} > 0 AND price_confidence IN ('MEDIUM', 'HIGH')
         ${focusFilter}
     `),
     runQuery(Prisma.sql`
@@ -782,7 +805,7 @@ export async function executeGenerateStrategicReport(input: GenerateStrategicRep
         ROUND(AVG(rental_yield::numeric), 1) AS avg_yield,
         ROUND(AVG(investor_score_v1::numeric), 1) AS avg_score
       FROM ${COPILOT_TABLE_SQL}
-      WHERE price_from_aed > 0 AND price_confidence IN ('MEDIUM', 'HIGH')
+      WHERE ${COPILOT_PRICE_SQL} > 0 AND price_confidence IN ('MEDIUM', 'HIGH')
         ${focusFilter}
       GROUP BY 1
       HAVING COUNT(*) >= 3
@@ -794,7 +817,7 @@ export async function executeGenerateStrategicReport(input: GenerateStrategicRep
         stress_grade_v1 AS grade,
         COUNT(*)::int AS count
       FROM ${COPILOT_TABLE_SQL}
-      WHERE price_from_aed > 0 AND stress_grade_v1 IS NOT NULL
+      WHERE ${COPILOT_PRICE_SQL} > 0 AND stress_grade_v1 IS NOT NULL
         ${focusFilter}
       GROUP BY 1
       ORDER BY count DESC
@@ -826,20 +849,20 @@ export async function executeGenerateInvestmentRoadmap(input: GenerateInvestment
   // Query real market data for budget-appropriate projects
   const [readyAssets, pipelineAssets, topYieldAreas] = await Promise.all([
     runQuery(Prisma.sql`
-      SELECT name, ${COPILOT_AREA_EXPR} AS area, price_from_aed, rental_yield,
+      SELECT name, ${COPILOT_AREA_EXPR} AS area, ${COPILOT_PRICE_SQL} AS price_from_aed, rental_yield,
              stress_grade_v1, investor_score_v1, timing_label
       FROM ${COPILOT_TABLE_SQL}
-      WHERE price_from_aed > 0 AND price_from_aed <= ${capital * 0.5}
+      WHERE ${COPILOT_PRICE_SQL} > 0 AND ${COPILOT_PRICE_SQL} <= ${capital * 0.5}
         AND price_confidence IN ('MEDIUM', 'HIGH')
         AND timing_label IN ('STRONG_BUY', 'BUY')
       ORDER BY ${isYieldFocused ? Prisma.sql`rental_yield` : Prisma.sql`investor_score_v1`} DESC NULLS LAST
       LIMIT 5
     `),
     runQuery(Prisma.sql`
-      SELECT name, ${COPILOT_AREA_EXPR} AS area, price_from_aed, rental_yield,
+      SELECT name, ${COPILOT_AREA_EXPR} AS area, ${COPILOT_PRICE_SQL} AS price_from_aed, rental_yield,
              stress_grade_v1, investor_score_v1, timing_label
       FROM ${COPILOT_TABLE_SQL}
-      WHERE price_from_aed > 0 AND price_from_aed <= ${capital * 0.4}
+      WHERE ${COPILOT_PRICE_SQL} > 0 AND ${COPILOT_PRICE_SQL} <= ${capital * 0.4}
         AND price_confidence IN ('MEDIUM', 'HIGH')
         AND stress_grade_v1 IN ('A', 'B')
       ORDER BY rental_yield DESC NULLS LAST
@@ -850,7 +873,7 @@ export async function executeGenerateInvestmentRoadmap(input: GenerateInvestment
              ROUND(AVG(rental_yield::numeric), 1) AS avg_yield,
              COUNT(*)::int AS projects
       FROM ${COPILOT_TABLE_SQL}
-      WHERE price_from_aed > 0 AND price_confidence IN ('MEDIUM', 'HIGH')
+      WHERE ${COPILOT_PRICE_SQL} > 0 AND price_confidence IN ('MEDIUM', 'HIGH')
       GROUP BY 1
       HAVING COUNT(*) >= 3
       ORDER BY avg_yield DESC NULLS LAST
@@ -892,7 +915,7 @@ export async function executeMonitorMarketSegments(input: MonitorMarketSegmentsI
       ROUND(AVG(investor_score_v1::numeric), 1) AS avg_score
     FROM ${COPILOT_TABLE_SQL}
     WHERE LOWER(${COPILOT_AREA_EXPR}) IN (${Prisma.join(input.areas.map(a => Prisma.sql`LOWER(${a})`), ", ")})
-      AND price_from_aed > 0
+      AND ${COPILOT_PRICE_SQL} > 0
       AND price_confidence IN ('MEDIUM', 'HIGH')
     GROUP BY 1
   `)
