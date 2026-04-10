@@ -40,7 +40,7 @@ export default function RoadmapPage() {
           <div className="max-w-2xl mb-12">
             <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">Roadmap</p>
             <h1 className="text-3xl md:text-5xl font-serif text-foreground leading-tight text-balance">
-              What we are building next
+              Roadmap overview
             </h1>
             <p className="mt-4 text-base text-muted-foreground leading-relaxed">
               Each phase tightens control, increases signal quality, and protects capital.

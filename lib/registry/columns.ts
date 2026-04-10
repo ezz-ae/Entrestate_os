@@ -789,12 +789,6 @@ const COLUMN_SEEDS: ColumnSeed[] = [
   },
 ]
 
-export const COLUMN_REGISTRY: ColumnDefinition[] = COLUMN_SEEDS.map((seed) => {
-  const baseLayer = SOURCE_LAYER_MAP[seed.source] ?? "L5"
-  const layer = GROUP_LAYER_OVERRIDE[seed.group] ?? baseLayer
-  return { ...seed, layer }
-})
-
 export const TIER_LABELS: Record<ColumnTier, string> = {
   free: "Free",
   pro: "Pro",
