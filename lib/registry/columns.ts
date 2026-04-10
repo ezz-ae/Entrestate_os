@@ -789,6 +789,33 @@ const COLUMN_SEEDS: ColumnSeed[] = [
   },
 ]
 
+export const COLUMN_REGISTRY: ColumnDefinition[] = COLUMN_SEEDS.map((seed) => {
+  const baseLayer = SOURCE_LAYER_MAP[seed.source] ?? "L5"
+  const layer = GROUP_LAYER_OVERRIDE[seed.group] ?? baseLayer
+  return { ...seed, layer }
+})
+
+export const TIER_LABELS: Record<ColumnTier, string> = {
+  free: "Free",
+  pro: "Pro",
+  team: "Team",
+  institutional: "Institutional",
+  business: "Business",
+  enterprise: "Enterprise",
+}
+
+export const LAYER_LABELS: Record<EvidenceLayer, string> = {
+  L1: "L1 · Canonical truth",
+  L2: "L2 · Cross-validated signals",
+  L3: "L3 · Temporal behavior",
+  L4: "L4 · External benchmarks",
+  L5: "L5 · Raw inputs",
+}
+
+export function getNormalizedTier(tier: ColumnTier): NormalizedTier {
+  return TIER_ALIASES[tier] ?? "institutional"
+}
+
 const resolveLayer = (entry: ColumnSeed): EvidenceLayer => {
   const override = GROUP_LAYER_OVERRIDE[entry.group]
   if (override) return override

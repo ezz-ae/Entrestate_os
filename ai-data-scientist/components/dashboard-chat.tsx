@@ -5,6 +5,13 @@ import { Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+function resolveChatLocale(): "en" | "ar" {
+  if (typeof document === "undefined") return "en"
+  const lang = document.documentElement.lang
+  if (!lang) return "en"
+  return lang.startsWith("ar") ? "ar" : "en"
+}
+
 type ChatMessage = {
   id: string
   role: "user" | "assistant"
@@ -60,7 +67,10 @@ export function DashboardChat({ datasetId }: DashboardChatProps) {
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-entrestate-locale": resolveChatLocale(),
+        },
         body: JSON.stringify({ datasetId, message: trimmed }),
       })
 

@@ -2,6 +2,13 @@
 
 import { useSyncExternalStore } from "react"
 
+function resolveChatLocaleHeader(): "en" | "ar" {
+  if (typeof document === "undefined") return "en"
+  const lang = document.documentElement.lang
+  if (!lang) return "en"
+  return lang.startsWith("ar") ? "ar" : "en"
+}
+
 export type ExplorerMessageRole = "user" | "assistant" | "system"
 
 export interface ExplorerDataCard {
@@ -133,7 +140,10 @@ async function fetchChatResponse(
 }> {
   const res = await fetch("/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-entrestate-locale": resolveChatLocaleHeader(),
+    },
     body: JSON.stringify({ message: query, context }),
   })
 

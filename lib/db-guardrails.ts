@@ -6,6 +6,11 @@ export const DEFAULT_STATEMENT_TIMEOUT_MS = 3000
 const MIN_STATEMENT_TIMEOUT_MS = 100
 const MAX_STATEMENT_TIMEOUT_MS = 30000
 
+type DatabaseUrlCandidate = {
+  source: string
+  value: string | undefined
+}
+
 function sanitizeDatabaseUrl(url: string | undefined) {
   if (!url) return url
   try {
@@ -44,19 +49,29 @@ function isUsableDatabaseUrl(url: string | undefined) {
   }
 }
 
-const readUrlCandidates = [
-  process.env.MARKET_DATABASE_URL,
-  process.env.NEON_READONLY_URL,
-  process.env.DATABASE_URL_READONLY,
-  process.env.NEON_DATABASE_URL,
-  process.env.DATABASE_URL,
-  process.env.NEON_DATABASE_URL_UNPOOLED,
-  process.env.DATABASE_URL_UNPOOLED,
+function getDatabaseHost(url: string | undefined) {
+  if (!url) return null
+  try {
+    return new URL(url).host
+  } catch {
+    return null
+  }
+}
+
+const readUrlCandidates: DatabaseUrlCandidate[] = [
+  { source: "MARKET_DATABASE_URL", value: process.env.MARKET_DATABASE_URL },
+  { source: "DATABASE_URL", value: process.env.DATABASE_URL },
+  { source: "NEON_DATABASE_URL", value: process.env.NEON_DATABASE_URL },
+  { source: "DATABASE_URL_UNPOOLED", value: process.env.DATABASE_URL_UNPOOLED },
+  { source: "NEON_DATABASE_URL_UNPOOLED", value: process.env.NEON_DATABASE_URL_UNPOOLED },
+  { source: "DATABASE_URL_READONLY", value: process.env.DATABASE_URL_READONLY },
+  { source: "NEON_READONLY_URL", value: process.env.NEON_READONLY_URL },
 ]
 
-const queryDatabaseUrl = enhanceDatabaseUrl(
-  readUrlCandidates.find((candidate) => isUsableDatabaseUrl(candidate)),
-)
+const activeReadUrlCandidate = readUrlCandidates.find((candidate) => isUsableDatabaseUrl(candidate.value))
+
+const queryDatabaseUrl = enhanceDatabaseUrl(activeReadUrlCandidate?.value)
+const queryDatabaseSource = activeReadUrlCandidate?.source ?? null
 
 declare global {
   // eslint-disable-next-line no-var
@@ -80,6 +95,18 @@ if (process.env.NODE_ENV !== "production") {
 function usesTransactionPooler(url: string | undefined) {
   if (!url) return false
   return url.includes("-pooler.") || url.includes("pgbouncer=true")
+}
+
+export function getQueryDatabaseDiagnostics() {
+  const fallbackUrl = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL
+
+  return {
+    querySource: queryDatabaseSource,
+    queryHost: getDatabaseHost(queryDatabaseUrl),
+    fallbackHost: getDatabaseHost(fallbackUrl),
+    hasDedicatedReadUrl: Boolean(queryDatabaseSource === "MARKET_DATABASE_URL"),
+    usesSeparateQueryClient: queryClient !== prisma,
+  }
 }
 
 export async function withStatementTimeout<T>(

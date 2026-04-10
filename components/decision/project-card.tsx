@@ -83,6 +83,17 @@ function verdictTone(verdict: string | null) {
   return "border-border/40 bg-muted/30 text-muted-foreground"
 }
 
+function normalizeEvidenceLevel(value: string | null | undefined) {
+  const normalized = value?.toUpperCase()
+  if (!normalized) return "L4"
+  return /^L[1-5]$/.test(normalized) ? normalized : "L4"
+}
+
+function buildEvidenceLink(slug?: string, name?: string) {
+  const base = slug || name || "decision"
+  return `/evidence/${encodeURIComponent(base)}`
+}
+
 export function ProjectCard(project: ProjectCardProps) {
   const locale = useLocale() as AppLocale
   const [showApi, setShowApi] = useState(false)
@@ -124,6 +135,8 @@ export function ProjectCard(project: ProjectCardProps) {
     if (!apiPreview) return ""
     return JSON.stringify(apiPreview, null, 2)
   }, [apiPreview])
+  const evidenceLevel = normalizeEvidenceLevel(project.apiPreview?.evidence_level ?? project.evidence_level)
+  const evidenceHref = prefixLocalePath(buildEvidenceLink(project.slug, project.name), locale)
 
   return (
     <Link
@@ -182,6 +195,17 @@ export function ProjectCard(project: ProjectCardProps) {
         <p className="mt-4 text-xl font-bold tabular-nums text-foreground">
           {formatAed(price, locale)}
         </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] leading-tight text-muted-foreground">
+          <span className="rounded-full border border-border/40 px-3 py-1 text-xs uppercase tracking-[0.2em]">
+            Evidence {evidenceLevel}
+          </span>
+          <Link
+            href={evidenceHref}
+            className="rounded-full border border-primary/40 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary transition hover:bg-primary/10"
+          >
+            View Evidence Drawer
+          </Link>
+        </div>
       </div>
 
       {showApi && apiPreviewText ? (

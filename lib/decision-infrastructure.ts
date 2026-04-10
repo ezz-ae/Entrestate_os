@@ -423,6 +423,352 @@ function mapProjectRecord(record: DecisionRecord): DecisionProject {
   }
 }
 
+const SNAPSHOT_PAGE_SIZE = 100
+const SNAPSHOT_MAX_PAGES = 40
+const SNAPSHOT_CACHE_TTL_MS = 30_000
+
+type PropertySnapshotCacheEntry = {
+  expiresAt: number
+  promise: Promise<DecisionProject[]>
+}
+
+let propertySnapshotCache: PropertySnapshotCacheEntry | null = null
+
+async function getPropertySnapshotProjects(): Promise<DecisionProject[]> {
+  const now = Date.now()
+  if (propertySnapshotCache && propertySnapshotCache.expiresAt > now) {
+    return propertySnapshotCache.promise
+  }
+
+  const promise = (async () => {
+    const projects: DecisionProject[] = []
+    let expectedTotal = 0
+
+    for (let page = 1; page <= SNAPSHOT_MAX_PAGES; page += 1) {
+      const result = await listProperties({
+        page,
+        pageSize: SNAPSHOT_PAGE_SIZE,
+        sortBy: "god_metric",
+      })
+
+      expectedTotal = Math.max(expectedTotal, result.total)
+
+      if (result.projects.length === 0) {
+        break
+      }
+
+      projects.push(...result.projects)
+
+      if (projects.length >= result.total) {
+        break
+      }
+    }
+
+    if (expectedTotal > 0 && projects.length > expectedTotal) {
+      return projects.slice(0, expectedTotal)
+    }
+
+    return projects
+  })()
+
+  propertySnapshotCache = {
+    expiresAt: now + SNAPSHOT_CACHE_TTL_MS,
+    promise,
+  }
+
+  try {
+    return await promise
+  } catch (error) {
+    propertySnapshotCache = null
+    throw error
+  }
+}
+
+function buildAreaRowsFromPropertySnapshot(projects: DecisionProject[]): DbRow[] {
+  type Accumulator = {
+    area: string
+    city: string
+    projects: number
+    priceSum: number
+    priceCount: number
+    yieldSum: number
+    yieldCount: number
+    efficiencySum: number
+    efficiencyCount: number
+    buySignals: number
+    topProjects: Array<{ key: string; name: string; score: number }>
+  }
+
+  const byArea = new Map<string, Accumulator>()
+
+  for (const project of projects) {
+    const areaName = String(project.final_area ?? project.area ?? "").trim()
+    if (!areaName) continue
+
+    const areaKey = areaName.toLowerCase()
+    const city = String(project.final_city ?? project.city ?? "Dubai").trim() || "Dubai"
+    const accumulator = byArea.get(areaKey) ?? {
+      area: areaName,
+      city,
+      projects: 0,
+      priceSum: 0,
+      priceCount: 0,
+      yieldSum: 0,
+      yieldCount: 0,
+      efficiencySum: 0,
+      efficiencyCount: 0,
+      buySignals: 0,
+      topProjects: [],
+    }
+
+    accumulator.projects += 1
+
+    const price = firstNumber(project.l1_canonical_price, project.price_from_aed, project.price_from)
+    if (price !== null && price > 0) {
+      accumulator.priceSum += price
+      accumulator.priceCount += 1
+    }
+
+    const rentalYield = firstNumber(project.l1_canonical_yield, project.rental_yield)
+    if (rentalYield !== null && rentalYield > 0) {
+      accumulator.yieldSum += rentalYield
+      accumulator.yieldCount += 1
+    }
+
+    const efficiency = firstNumber(project.engine_god_metric, project.investor_score_v1)
+    if (efficiency !== null) {
+      accumulator.efficiencySum += efficiency
+      accumulator.efficiencyCount += 1
+    }
+
+    const timingSignal = String(project.l3_timing_signal ?? project.timing_label ?? "").trim().toUpperCase()
+    if (timingSignal === "BUY" || timingSignal === "STRONG_BUY") {
+      accumulator.buySignals += 1
+    }
+
+    const projectName = String(project.name ?? project.project_name ?? "").trim()
+    if (projectName) {
+      const projectKey = projectName.toLowerCase()
+      if (!accumulator.topProjects.some((entry) => entry.key === projectKey)) {
+        accumulator.topProjects.push({
+          key: projectKey,
+          name: projectName,
+          score: efficiency ?? Number.NEGATIVE_INFINITY,
+        })
+      }
+
+      accumulator.topProjects.sort((left, right) => right.score - left.score)
+      if (accumulator.topProjects.length > 3) {
+        accumulator.topProjects = accumulator.topProjects.slice(0, 3)
+      }
+    }
+
+    byArea.set(areaKey, accumulator)
+  }
+
+  return Array.from(byArea.values())
+    .sort((left, right) => {
+      const rightEfficiency = right.efficiencyCount > 0 ? right.efficiencySum / right.efficiencyCount : Number.NEGATIVE_INFINITY
+      const leftEfficiency = left.efficiencyCount > 0 ? left.efficiencySum / left.efficiencyCount : Number.NEGATIVE_INFINITY
+      if (rightEfficiency !== leftEfficiency) return rightEfficiency - leftEfficiency
+      return right.projects - left.projects
+    })
+    .map((entry) => ({
+      area: entry.area,
+      city: entry.city,
+      projects: entry.projects,
+      avg_price: entry.priceCount > 0 ? Math.round(entry.priceSum / entry.priceCount) : null,
+      avg_yield: entry.yieldCount > 0 ? Number((entry.yieldSum / entry.yieldCount).toFixed(1)) : null,
+      efficiency: entry.efficiencyCount > 0 ? Number((entry.efficiencySum / entry.efficiencyCount).toFixed(1)) : null,
+      supply_pressure: null,
+      source_count: null,
+      confidence: null,
+      buy_signals: entry.buySignals,
+      top_projects: entry.topProjects.map((project) => project.name),
+    }))
+}
+
+function buildDeveloperRowsFromPropertySnapshot(projects: DecisionProject[]): DbRow[] {
+  type Accumulator = {
+    developer: string
+    projects: number
+    priceSum: number
+    priceCount: number
+    reliabilitySum: number
+    reliabilityCount: number
+    efficiencySum: number
+    efficiencyCount: number
+    safeProjects: number
+    areaCounts: Map<string, { label: string; count: number }>
+    topProjects: Array<{ key: string; name: string; score: number }>
+  }
+
+  const byDeveloper = new Map<string, Accumulator>()
+
+  for (const project of projects) {
+    const developerName = String(project.developer ?? "").trim()
+    if (!developerName || developerName.toLowerCase() === "unknown developer") continue
+
+    const developerKey = developerName.toLowerCase()
+    const accumulator = byDeveloper.get(developerKey) ?? {
+      developer: developerName,
+      projects: 0,
+      priceSum: 0,
+      priceCount: 0,
+      reliabilitySum: 0,
+      reliabilityCount: 0,
+      efficiencySum: 0,
+      efficiencyCount: 0,
+      safeProjects: 0,
+      areaCounts: new Map<string, number>(),
+      topProjects: [],
+    }
+
+    accumulator.projects += 1
+
+    const price = firstNumber(project.l1_canonical_price, project.price_from_aed, project.price_from)
+    if (price !== null && price > 0) {
+      accumulator.priceSum += price
+      accumulator.priceCount += 1
+    }
+
+    const reliability = firstNumber(project.l2_developer_reliability, project.developer_reliability_score)
+    if (reliability !== null) {
+      accumulator.reliabilitySum += reliability
+      accumulator.reliabilityCount += 1
+    }
+
+    const efficiency = firstNumber(project.engine_god_metric, project.investor_score_v1)
+    if (efficiency !== null) {
+      accumulator.efficiencySum += efficiency
+      accumulator.efficiencyCount += 1
+    }
+
+    const stressGrade = String(project.l2_stress_test_grade ?? project.stress_grade_v1 ?? "").trim().toUpperCase()
+    if (stressGrade === "A" || stressGrade === "B") {
+      accumulator.safeProjects += 1
+    }
+
+    const areaName = String(project.final_area ?? project.area ?? "").trim()
+    if (areaName) {
+      const areaKey = areaName.toLowerCase()
+      const current = accumulator.areaCounts.get(areaKey)
+      accumulator.areaCounts.set(areaKey, {
+        label: current?.label ?? areaName,
+        count: (current?.count ?? 0) + 1,
+      })
+    }
+
+    const projectName = String(project.name ?? project.project_name ?? "").trim()
+    if (projectName) {
+      const projectKey = projectName.toLowerCase()
+      if (!accumulator.topProjects.some((entry) => entry.key === projectKey)) {
+        accumulator.topProjects.push({
+          key: projectKey,
+          name: projectName,
+          score: efficiency ?? Number.NEGATIVE_INFINITY,
+        })
+      }
+
+      accumulator.topProjects.sort((left, right) => right.score - left.score)
+      if (accumulator.topProjects.length > 3) {
+        accumulator.topProjects = accumulator.topProjects.slice(0, 3)
+      }
+    }
+
+    byDeveloper.set(developerKey, accumulator)
+  }
+
+  return Array.from(byDeveloper.values())
+    .sort((left, right) => {
+      const rightReliability = right.reliabilityCount > 0 ? right.reliabilitySum / right.reliabilityCount : Number.NEGATIVE_INFINITY
+      const leftReliability = left.reliabilityCount > 0 ? left.reliabilitySum / left.reliabilityCount : Number.NEGATIVE_INFINITY
+      if (rightReliability !== leftReliability) return rightReliability - leftReliability
+      return right.projects - left.projects
+    })
+    .map((entry) => {
+      const topAreas = Array.from(entry.areaCounts.entries())
+        .sort((left, right) => right[1].count - left[1].count)
+        .slice(0, 3)
+        .map(([, area]) => area.label)
+
+      return {
+        developer: entry.developer,
+        projects: entry.projects,
+        reliability: entry.reliabilityCount > 0 ? Number((entry.reliabilitySum / entry.reliabilityCount).toFixed(1)) : null,
+        efficiency: entry.efficiencyCount > 0 ? Number((entry.efficiencySum / entry.efficiencyCount).toFixed(1)) : null,
+        avg_price: entry.priceCount > 0 ? Math.round(entry.priceSum / entry.priceCount) : null,
+        safe_projects: entry.safeProjects,
+        top_areas: topAreas,
+        top_projects: entry.topProjects.map((project) => project.name),
+      }
+    })
+}
+
+function buildMarketPulseFromPropertySnapshot(projects: DecisionProject[]) {
+  let priceSum = 0
+  let priceCount = 0
+  let yieldSum = 0
+  let yieldCount = 0
+  let efficiencySum = 0
+  let efficiencyCount = 0
+
+  const timingMap = new Map<string, number>()
+  const stressMap = new Map<string, number>()
+  const confidenceMap = new Map<string, number>()
+
+  for (const project of projects) {
+    const price = firstNumber(project.l1_canonical_price, project.price_from_aed, project.price_from)
+    if (price !== null && price > 0) {
+      priceSum += price
+      priceCount += 1
+    }
+
+    const rentalYield = firstNumber(project.l1_canonical_yield, project.rental_yield)
+    if (rentalYield !== null && rentalYield > 0) {
+      yieldSum += rentalYield
+      yieldCount += 1
+    }
+
+    const efficiency = firstNumber(project.engine_god_metric, project.investor_score_v1)
+    if (efficiency !== null) {
+      efficiencySum += efficiency
+      efficiencyCount += 1
+    }
+
+    const timingLabel = String(project.l3_timing_signal ?? project.timing_label ?? "").trim().toUpperCase()
+    if (timingLabel) {
+      timingMap.set(timingLabel, (timingMap.get(timingLabel) ?? 0) + 1)
+    }
+
+    const stressLabel = String(project.l2_stress_test_grade ?? project.stress_grade_v1 ?? "").trim().toUpperCase()
+    if (stressLabel) {
+      stressMap.set(stressLabel, (stressMap.get(stressLabel) ?? 0) + 1)
+    }
+
+    const confidenceLabel = String(project.l1_confidence ?? project.price_confidence ?? "").trim().toUpperCase()
+    if (confidenceLabel) {
+      confidenceMap.set(confidenceLabel, (confidenceMap.get(confidenceLabel) ?? 0) + 1)
+    }
+  }
+
+  const toLabelRows = (source: Map<string, number>) => Array.from(source.entries())
+    .sort((left, right) => right[1] - left[1])
+    .map(([label, count]) => ({ label, count }))
+
+  return {
+    summary: {
+      projects: projects.length,
+      avg_price: priceCount > 0 ? Math.round(priceSum / priceCount) : null,
+      avg_yield: yieldCount > 0 ? Number((yieldSum / yieldCount).toFixed(1)) : null,
+      avg_efficiency: efficiencyCount > 0 ? Number((efficiencySum / efficiencyCount).toFixed(1)) : null,
+    },
+    timing_signals: toLabelRows(timingMap),
+    stress_grades: toLabelRows(stressMap),
+    confidence_distribution: toLabelRows(confidenceMap),
+  }
+}
+
 function buildPropertyClauses(filters?: PropertyFilters, locale?: string, useCurated = USE_CURATED_PROPERTIES_VIEW): Prisma.Sql[] {
   const clauses: Prisma.Sql[] = useCurated
     ? [
@@ -552,8 +898,11 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
 
   const curatedFallbackTables = [
     "public.entrestate_projects_api",
+    "public.entrestate_projects_api_full",
     "api.entrestate_projects_api",
+    "api.entrestate_projects_api_full",
     "api.projects_v1",
+    "raw.inventory_full",
     "canonical.inventory_clean",
     "public.inventory_clean",
     "inventory_clean",
@@ -571,6 +920,8 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
   if (!USE_CURATED_PROPERTIES_VIEW) {
     candidates.push({ tableSql: Prisma.raw("canonical.inventory_clean"), useCurated: true })
     candidates.push({ tableSql: Prisma.raw("public.entrestate_projects_api"), useCurated: true })
+    candidates.push({ tableSql: Prisma.raw("public.entrestate_projects_api_full"), useCurated: true })
+    candidates.push({ tableSql: Prisma.raw("api.entrestate_projects_api_full"), useCurated: true })
   }
 
   async function fetchFrom(tableSql: Prisma.Sql, useCurated: boolean) {
@@ -1101,6 +1452,13 @@ export async function listAreas(): Promise<{
     rows = await runOptionalQuery(nonCuratedAreasQuery)
   }
 
+  if (rows.length === 0) {
+    const snapshotProjects = await getPropertySnapshotProjects()
+    if (snapshotProjects.length > 0) {
+      rows = buildAreaRowsFromPropertySnapshot(snapshotProjects)
+    }
+  }
+
   const profiles = await runOptionalQuery<{ area_name: string; area_ar: string | null; image_url: string | null; area_type: string | null }>(Prisma.sql`
     SELECT
       name AS area_name,
@@ -1146,7 +1504,10 @@ export async function listAreas(): Promise<{
     areas: rows.map((row) => {
       const key = String(row.area ?? "").toLowerCase()
       const profile = profileMap.get(key)
-      const topProjects = topProjectsMap.get(key) ?? []
+      const inlineTopProjects = Array.isArray((row as DecisionRecord).top_projects)
+        ? ((row as DecisionRecord).top_projects as string[])
+        : []
+      const topProjects = inlineTopProjects.length > 0 ? inlineTopProjects : topProjectsMap.get(key) ?? []
       return {
         ...row,
         area_ar: (row as DecisionRecord).area_ar ?? profile?.area_ar ?? null,
@@ -1345,7 +1706,7 @@ export async function listDevelopers(): Promise<{
     }
   }
 
-  const rows = curatedRows.length > 0
+  let rows = curatedRows.length > 0
     ? curatedRows.map((row) => ({
         ...row,
         developer: row.name,
@@ -1376,6 +1737,13 @@ export async function listDevelopers(): Promise<{
         HAVING COUNT(*) >= 3
         ORDER BY reliability DESC NULLS LAST
       `)
+
+  if (rows.length === 0) {
+    const snapshotProjects = await getPropertySnapshotProjects()
+    if (snapshotProjects.length > 0) {
+      rows = buildDeveloperRowsFromPropertySnapshot(snapshotProjects)
+    }
+  }
 
   const profiles = await runOptionalQuery<{ name: string; developer_ar: string | null; logo_url: string | null; founded_year: string | null; hq: string | null }>(Prisma.sql`
     SELECT
@@ -1615,7 +1983,7 @@ export async function getMarketPulse() {
     requireBedroomSanity: true,
   })
 
-  const [summaryRows, timingRows, gradeRows, confidenceRows] = await Promise.all([
+  let [summaryRows, timingRows, gradeRows, confidenceRows] = await Promise.all([
     runQuery(Prisma.sql`
       SELECT
         COUNT(*)::int AS projects,
@@ -1647,6 +2015,20 @@ export async function getMarketPulse() {
       ORDER BY count DESC
     `),
   ])
+
+  const primarySummary = (summaryRows[0] as DecisionRecord | undefined) ?? null
+  const primaryProjects = primarySummary ? toNumber(primarySummary.projects) ?? 0 : 0
+
+  if (primaryProjects <= 0) {
+    const snapshotProjects = await getPropertySnapshotProjects()
+    if (snapshotProjects.length > 0) {
+      const fallbackPulse = buildMarketPulseFromPropertySnapshot(snapshotProjects)
+      summaryRows = [fallbackPulse.summary]
+      timingRows = fallbackPulse.timing_signals
+      gradeRows = fallbackPulse.stress_grades
+      confidenceRows = fallbackPulse.confidence_distribution
+    }
+  }
 
   return {
     data_as_of: new Date().toISOString(),

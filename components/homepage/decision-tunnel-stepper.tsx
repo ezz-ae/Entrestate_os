@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useLocale } from "next-intl"
 import { Zap, BarChart3, ShieldCheck, FileText, ArrowRight, ChevronRight } from "lucide-react"
 import Link from "next/link"
@@ -12,147 +12,162 @@ type StepConfig = {
   tagline: string
   detail: string
   icon: typeof Zap
-  accent: string
   accentClass: string
   borderClass: string
   bgClass: string
   glowClass: string
-  badgeClass: string
   barClass: string
   example: string
+  proofLabel?: string
+  proofItems?: string[]
+  proofSequence?: boolean
 }
 
 const STEP_COPY: Record<AppLocale, StepConfig[]> = {
   en: [
-  {
-    step: "01",
-    label: "Intent",
-    tagline: "Define what success looks like",
-    detail:
-      "Set your goal — gross yield target, capital growth horizon, stress resilience threshold, or Golden Visa qualifying value. The platform structures ambiguity into a scorable brief before any data is touched.",
-    icon: Zap,
-    accent: "blue",
-    accentClass: "text-blue-400",
-    borderClass: "border-blue-500/30",
-    bgClass: "bg-blue-500/8",
-    glowClass: "shadow-blue-500/10",
-    badgeClass: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    barClass: "bg-blue-400",
-    example: "\"I want AED 2M apartments in Dubai with 7%+ gross yield and a developer with no delays.\"",
-  },
-  {
-    step: "02",
-    label: "Evidence",
-    tagline: "Five-layer data scoring",
-    detail:
-      "Every project is scored across a structured evidence stack — L1 Canonical DLD records, L2 Derived yield and pricing signals, L3 Dynamic supply and absorption data, L4 External sentiment, and L5 Raw transaction history. No single data point decides.",
-    icon: BarChart3,
-    accent: "violet",
-    accentClass: "text-violet-400",
-    borderClass: "border-violet-500/30",
-    bgClass: "bg-violet-500/8",
-    glowClass: "shadow-violet-500/10",
-    badgeClass: "bg-violet-500/10 text-violet-400 border-violet-500/20",
-    barClass: "bg-violet-400",
-    example: "L1 → L2 → L3 → L4 → L5 — each layer cross-validates the last.",
-  },
-  {
-    step: "03",
-    label: "Judgment",
-    tagline: "Structured signals, not gut feel",
-    detail:
-      "Composite scores replace intuition. Each project receives a BUY / HOLD / WAIT signal, a developer reliability grade (A–F), a stress resilience score, and an absorption rate. The system reasons — it does not recommend.",
-    icon: ShieldCheck,
-    accent: "emerald",
-    accentClass: "text-emerald-400",
-    borderClass: "border-emerald-500/30",
-    bgClass: "bg-emerald-500/8",
-    glowClass: "shadow-emerald-500/10",
-    badgeClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    barClass: "bg-emerald-400",
-    example: "BUY · Developer Grade A · Stress Score 82 · Absorption 94%",
-  },
-  {
-    step: "04",
-    label: "Action",
-    tagline: "Export-ready decision artifacts",
-    detail:
-      "Generate an investor memo, export a scored shortlist, or share a structured report — each with a full auditable evidence trail. Every output is signed to a specific data version, so decisions can be reviewed and reproduced.",
-    icon: FileText,
-    accent: "amber",
-    accentClass: "text-amber-400",
-    borderClass: "border-amber-500/30",
-    bgClass: "bg-amber-500/8",
-    glowClass: "shadow-amber-500/10",
-    badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    barClass: "bg-amber-400",
-    example: "Investor memo · PDF export · Shared shortlist · Evidence log",
-  },
+    {
+      step: "01",
+      label: "Intent",
+      tagline: "What does the investor want?",
+      detail:
+        "Stage 1 turns ambiguity into a structured mandate. Natural language intent compiles to a TableSpec JSON with objective, horizon, risk boundary, liquidity, and execution constraints before any scoring starts.",
+      icon: Zap,
+      accentClass: "text-blue-400",
+      borderClass: "border-blue-500/30",
+      bgClass: "bg-blue-500/8",
+      glowClass: "shadow-blue-500/10",
+      barClass: "bg-blue-400",
+      example: "Mandate: AED 2M–3M, resilient downside, BUY/HOLD only, no weak evidence.",
+      proofLabel: "Signal outputs",
+      proofItems: ["Natural-language intent", "Structured TableSpec JSON", "Risk guardrails"],
+    },
+    {
+      step: "02",
+      label: "Evidence",
+      tagline: "Is the data trustworthy?",
+      detail:
+        "Stage 2 houses the five-layer evidence stack so raw inputs never become recommendations. Only L2 and L1 evidence fed by L3-L5 validation enters the judgment engine.",
+      icon: BarChart3,
+      accentClass: "text-violet-400",
+      borderClass: "border-violet-500/30",
+      bgClass: "bg-violet-500/8",
+      glowClass: "shadow-violet-500/10",
+      barClass: "bg-violet-400",
+      example: "Only L1-L2 evidence can move a project into a decision queue.",
+      proofLabel: "Stage 2 evidence stack (L5 → L1)",
+      proofItems: [
+        "L5 Raw inputs (sparse/scraped)",
+        "L4 External benchmarks & crowds",
+        "L3 Dynamic market behavior",
+        "L2 Cross-validated signals",
+        "L1 Canonical truth (auditable)",
+      ],
+      proofSequence: true,
+    },
+    {
+      step: "03",
+      label: "Judgment",
+      tagline: "What should the investor do?",
+      detail:
+        "The V1 Signal Engine calculates timing, stress, yield, and evidence dimensions to deliver a deterministic BUY / HOLD / WAIT verdict with driver attribution and what-would-flip indicators.",
+      icon: ShieldCheck,
+      accentClass: "text-emerald-400",
+      borderClass: "border-emerald-500/30",
+      bgClass: "bg-emerald-500/8",
+      glowClass: "shadow-emerald-500/10",
+      barClass: "bg-emerald-400",
+      example: "BUY · Stress B · Timing 78 · Evidence 84 · Driver: DLD velocity + pricing discipline.",
+      proofLabel: "Signal dimensions",
+      proofItems: ["Timing (0–100)", "Stress (A–F)", "Yield (0–100)", "Evidence grade", "Verdict + drivers"],
+    },
+    {
+      step: "04",
+      label: "Action",
+      tagline: "How do they execute?",
+      detail:
+        "Stage 4 surfaces execution across six pathways—Screen, Compare, Memo, Monitor, Execute, Recover—so operators, analysts, and leadership all act from the same canonical dataset.",
+      icon: FileText,
+      accentClass: "text-amber-400",
+      borderClass: "border-amber-500/30",
+      bgClass: "bg-amber-500/8",
+      glowClass: "shadow-amber-500/10",
+      barClass: "bg-amber-400",
+      example: "One dataset, six operational paths, full evidence continuity.",
+      proofLabel: "Execution surfaces",
+      proofItems: ["Screen", "Compare", "Memo", "Monitor", "Execute", "Recover"],
+    },
   ],
   ar: [
     {
       step: "01",
       label: "الهدف",
-      tagline: "حدد ما تبحث عنه بدقة",
+      tagline: "ماذا يريد المستثمر؟",
       detail:
-        "ابدأ بالميزانية ونوع الأصل والعائد المستهدف وحدّ المخاطرة المقبول. بهذه الطريقة تتحول الفكرة العامة إلى طلب واضح يمكن تقييمه فعلياً.",
+        "المرحلة الأولى تحول الغموض إلى تفويض منظم: تُترجم النية باللغة الطبيعية إلى TableSpec JSON مع الهدف، والأفق، وحدود المخاطر، والسعر، وقيود التنفيذ قبل أي تقييم.",
       icon: Zap,
-      accent: "blue",
       accentClass: "text-blue-400",
       borderClass: "border-blue-500/30",
       bgClass: "bg-blue-500/8",
       glowClass: "shadow-blue-500/10",
-      badgeClass: "bg-blue-500/10 text-blue-400 border-blue-500/20",
       barClass: "bg-blue-400",
-      example: '"أبحث عن شقة تحت 2 مليون في دبي بعائد جيد ومطور موثوق."',
+      example: "تفويض: 2–3 مليون درهم، حماية هبوط، قرارات BUY/HOLD فقط.",
+      proofLabel: "مخرجات الإشارة",
+      proofItems: ["نية باللغة الطبيعية", "TableSpec JSON منظم", "ضوابط المخاطر"],
     },
     {
       step: "02",
-      label: "البيانات",
-      tagline: "نجمع الإشارات المؤثرة",
+      label: "الأدلة",
+      tagline: "هل البيانات موثوقة؟",
       detail:
-        "كل مشروع يمر عبر طبقات متتابعة من البيانات: السجلات الرسمية، مؤشرات السعر والعائد، حركة السوق، الإشارات الخارجية، وسجل الصفقات الخام. النتيجة لا تعتمد على نقطة واحدة فقط.",
+        "المرحلة الثانية تضم طبقة الأدلة الخمس حتى لا تتحول المدخلات الخام إلى توصية؛ فقط L1 و L2 المدعومة بـ L3-L5 تخرج للحكم.",
       icon: BarChart3,
-      accent: "violet",
       accentClass: "text-violet-400",
       borderClass: "border-violet-500/30",
       bgClass: "bg-violet-500/8",
       glowClass: "shadow-violet-500/10",
-      badgeClass: "bg-violet-500/10 text-violet-400 border-violet-500/20",
       barClass: "bg-violet-400",
-      example: "L1 → L2 → L3 → L4 → L5 — كل طبقة تؤكد أو تصحح ما قبلها.",
+      example: "فقط L1 و L2 يدخلان محرك القرار.",
+      proofLabel: "طبقة الأدلة في المرحلة 2 (L5 → L1)",
+      proofItems: [
+        "L5 مدخلات خام ومتفرقة",
+        "L4 معايير خارجية",
+        "L3 سلوك سوق ديناميكي",
+        "L2 إشارات متقاطعة",
+        "L1 حقيقة موثقة قابلة للتدقيق",
+      ],
+      proofSequence: true,
     },
     {
       step: "03",
-      label: "القراءة",
-      tagline: "إشارة واضحة بدل الانطباع",
+      label: "الحكم",
+      tagline: "ما الذي يجب فعله؟",
       detail:
-        "بدلاً من الاعتماد على الحدس، يحصل كل مشروع على إشارة BUY أو HOLD أو WAIT، مع قراءة للضغط وموثوقية المطور وسرعة البيع. هكذا ترى الصورة كما هي، لا كما تُسوَّق لك.",
+        "محرك V1 Signal يعطي التوقيت، والضغط، والعائد، ودرجة الأدلة، ثم يصدر حكم BUY / HOLD / WAIT مع توضيح محركات النتيجة وما يمكن أن يغيرها.",
       icon: ShieldCheck,
-      accent: "emerald",
       accentClass: "text-emerald-400",
       borderClass: "border-emerald-500/30",
       bgClass: "bg-emerald-500/8",
       glowClass: "shadow-emerald-500/10",
-      badgeClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
       barClass: "bg-emerald-400",
-      example: "BUY · تصنيف المطور A · الضغط 82 · وتيرة البيع 94%",
+      example: "BUY · ضغط B · توقيت 78 · أدلة 84 · السبب: سرعة DLD + انضباط التسعير.",
+      proofLabel: "أبعاد الإشارة",
+      proofItems: ["التوقيت (0–100)", "الضغط (A–F)", "العائد (0–100)", "درجة الأدلة", "الحكم + الأسباب"],
     },
     {
       step: "04",
-      label: "المخرجات",
-      tagline: "نتيجة جاهزة للمراجعة والمشاركة",
+      label: "التنفيذ",
+      tagline: "كيف ينفّذون؟",
       detail:
-        "بعد القراءة، يمكنك استخراج مذكرة استثمار أو قائمة مختصرة أو تقرير منظم يمكن الرجوع إليه ومشاركته مع الفريق أو العميل أو الشريك.",
+        "المرحلة الرابعة تعرض ستة مسارات تنفيذية (Screen، Compare، Memo، Monitor، Execute، Recover) كلها تعتمد نفس مجموعة البيانات الكنسية حتى يعمل الجميع على نفس الحقيقة.",
       icon: FileText,
-      accent: "amber",
       accentClass: "text-amber-400",
       borderClass: "border-amber-500/30",
       bgClass: "bg-amber-500/8",
       glowClass: "shadow-amber-500/10",
-      badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/20",
       barClass: "bg-amber-400",
-      example: "مذكرة استثمار · PDF · قائمة مختصرة · سجل الأدلة",
+      example: "بيانات واحدة، ستة مسارات تنفيذ، واستمرارية أدلة كاملة.",
+      proofLabel: "واجهات التنفيذ",
+      proofItems: ["Screen", "Compare", "Memo", "Monitor", "Execute", "Recover"],
     },
   ],
 }
@@ -196,6 +211,7 @@ export function DecisionTunnelStepper() {
       if (progressRef.current) clearInterval(progressRef.current)
       setProgress(0)
     }
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
       if (progressRef.current) clearInterval(progressRef.current)
@@ -203,8 +219,8 @@ export function DecisionTunnelStepper() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, paused])
 
-  const handleStepClick = (i: number) => {
-    setActive(i)
+  const handleStepClick = (index: number) => {
+    setActive(index)
     setPaused(false)
   }
 
@@ -212,66 +228,58 @@ export function DecisionTunnelStepper() {
 
   return (
     <div className="w-full">
-      {/* ── Step tabs ── */}
       <div className="relative mb-6 flex items-center justify-between gap-0">
-        {steps.map((s, i) => {
-          const SIcon = s.icon
-          const isActive = i === active
-          const isPast = i < active
+        {steps.map((currentStep, index) => {
+          const StepIcon = currentStep.icon
+          const isActive = index === active
+          const isPast = index < active
 
           return (
-            <div key={s.step} className="flex flex-1 items-center">
+            <div key={currentStep.step} className="flex flex-1 items-center">
               <button
-                onClick={() => handleStepClick(i)}
+                onClick={() => handleStepClick(index)}
                 className={`group relative flex flex-1 flex-col items-center gap-1.5 py-3 transition-all duration-300 ${isActive ? "opacity-100" : "opacity-40 hover:opacity-70"}`}
               >
-                {/* Circle */}
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 ${
                     isActive
-                      ? `${s.borderClass} ${s.bgClass} shadow-lg ${s.glowClass}`
+                      ? `${currentStep.borderClass} ${currentStep.bgClass} shadow-lg ${currentStep.glowClass}`
                       : isPast
                         ? "border-border/60 bg-card"
                         : "border-border/30 bg-background"
                   }`}
                 >
-                  <SIcon className={`h-4 w-4 ${isActive ? s.accentClass : "text-muted-foreground/50"} transition-colors duration-300`} />
+                  <StepIcon
+                    className={`h-4 w-4 ${isActive ? currentStep.accentClass : "text-muted-foreground/50"} transition-colors duration-300`}
+                  />
                 </div>
 
-                {/* Label */}
-                <span className={`text-[11px] font-semibold transition-colors duration-300 ${isActive ? s.accentClass : "text-muted-foreground/50"}`}>
-                  {s.label}
+                <span className={`text-[11px] font-semibold transition-colors duration-300 ${isActive ? currentStep.accentClass : "text-muted-foreground/50"}`}>
+                  {currentStep.label}
                 </span>
 
-                {/* Active progress bar */}
-                {isActive && !paused && (
+                {isActive && !paused ? (
                   <div className="absolute bottom-0 left-1/2 h-0.5 w-8 -translate-x-1/2 overflow-hidden rounded-full bg-border/40">
-                    <div
-                      className={`h-full transition-none ${s.barClass}`}
-                      style={{ width: `${progress}%` }}
-                    />
+                    <div className={`h-full transition-none ${currentStep.barClass}`} style={{ width: `${progress}%` }} />
                   </div>
-                )}
+                ) : null}
               </button>
 
-              {/* Arrow connector */}
-              {i < steps.length - 1 && (
-                <div className={`flex shrink-0 items-center transition-colors duration-500 ${i < active ? "text-muted-foreground/40" : "text-border/40"}`}>
+              {index < steps.length - 1 ? (
+                <div className={`flex shrink-0 items-center transition-colors duration-500 ${index < active ? "text-muted-foreground/40" : "text-border/40"}`}>
                   <ChevronRight className="h-4 w-4" />
                 </div>
-              )}
+              ) : null}
             </div>
           )
         })}
       </div>
 
-      {/* ── Active step panel ── */}
       <div
         className={`relative overflow-hidden rounded-2xl border ${step.borderClass} ${step.bgClass} p-6 md:p-8 shadow-xl ${step.glowClass} transition-all duration-500`}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        {/* Background step number */}
         <div
           className="pointer-events-none absolute -right-3 -top-4 select-none font-black leading-none opacity-[0.04]"
           aria-hidden
@@ -281,7 +289,6 @@ export function DecisionTunnelStepper() {
         </div>
 
         <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:gap-10">
-          {/* Left — icon + label */}
           <div className="flex shrink-0 flex-col items-start gap-3">
             <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border ${step.borderClass} ${step.bgClass}`}>
               <Icon className={`h-7 w-7 ${step.accentClass}`} />
@@ -293,28 +300,54 @@ export function DecisionTunnelStepper() {
             </div>
           </div>
 
-          {/* Right — detail */}
           <div className="flex-1">
             <p className="text-sm leading-relaxed text-foreground/80 md:text-[15px] md:leading-7">
               {step.detail}
             </p>
 
-            {/* Example callout */}
+            {step.proofItems && step.proofItems.length > 0 ? (
+              <div className={`mt-5 rounded-xl border ${step.borderClass} bg-background/45 px-4 py-3`}>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/45">
+                  {step.proofLabel ?? (isArabic ? "تفاصيل" : "Details")}
+                </p>
+
+                {step.proofSequence ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {step.proofItems.map((item, index) => (
+                      <div key={item} className="flex items-center gap-1.5">
+                        <span className={`rounded-full border ${step.borderClass} px-2.5 py-1 text-[10px] font-semibold ${step.accentClass}`}>
+                          {item}
+                        </span>
+                        {index < step.proofItems!.length - 1 ? <ArrowRight className="h-3 w-3 text-muted-foreground/50" /> : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {step.proofItems.map((item) => (
+                      <span key={item} className={`rounded-full border ${step.borderClass} px-2.5 py-1 text-[10px] font-semibold ${step.accentClass}`}>
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
             <div className={`mt-5 rounded-xl border ${step.borderClass} bg-background/40 px-4 py-3`}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 mb-1">{isArabic ? "مثال" : "Example"}</p>
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">{isArabic ? "مثال تشغيلي" : "Operating example"}</p>
               <p className={`text-xs font-mono leading-relaxed ${step.accentClass} opacity-80`}>{step.example}</p>
             </div>
           </div>
         </div>
 
-        {/* Bottom nav */}
         <div className="mt-6 flex items-center justify-between border-t border-border/20 pt-4">
           <div className="flex items-center gap-1.5">
-            {steps.map((_, i) => (
+            {steps.map((_, index) => (
               <button
-                key={i}
-                onClick={() => handleStepClick(i)}
-                className={`h-1 rounded-full transition-all duration-300 ${i === active ? `w-6 ${step.barClass}` : "w-1.5 bg-border/50"}`}
+                key={index}
+                onClick={() => handleStepClick(index)}
+                className={`h-1 rounded-full transition-all duration-300 ${index === active ? `w-6 ${step.barClass}` : "w-1.5 bg-border/50"}`}
               />
             ))}
           </div>
@@ -322,7 +355,7 @@ export function DecisionTunnelStepper() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => handleStepClick((active - 1 + steps.length) % steps.length)}
-              className="text-[11px] text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+              className="text-[11px] text-muted-foreground/40 transition-colors hover:text-muted-foreground"
             >
               {isArabic ? "السابق ←" : "← Prev"}
             </button>
@@ -331,7 +364,7 @@ export function DecisionTunnelStepper() {
                 onClick={() => handleStepClick(active + 1)}
                 className={`flex items-center gap-1.5 rounded-lg border ${step.borderClass} px-4 py-1.5 text-xs font-medium ${step.accentClass} transition-colors hover:bg-background/50`}
               >
-                {isArabic ? "الخطوة التالية" : "Next stage"}
+                {isArabic ? "المرحلة التالية" : "Next stage"}
                 <ArrowRight className="h-3 w-3" />
               </button>
             ) : (
@@ -339,7 +372,7 @@ export function DecisionTunnelStepper() {
                 href={prefixLocalePath("/chat", locale)}
                 className={`flex items-center gap-1.5 rounded-lg border ${step.borderClass} px-4 py-1.5 text-xs font-medium ${step.accentClass} transition-colors hover:bg-background/50`}
               >
-                {isArabic ? "جرّبه الآن" : "Try it now"}
+                {isArabic ? "جرّب التنفيذ" : "Run a live workflow"}
                 <ArrowRight className="h-3 w-3" />
               </Link>
             )}

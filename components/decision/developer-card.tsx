@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Building2, ArrowUpRight } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useLocale } from "next-intl"
 import { formatAed, formatYield } from "@/components/decision/formatters"
@@ -33,6 +33,18 @@ function reliabilityConfig(score: number | null) {
   if (score >= 80) return { bar: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", label: `${score.toFixed(0)}`, tier: "Excellent" }
   if (score >= 60) return { bar: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", label: `${score.toFixed(0)}`, tier: "Good" }
   return { bar: "bg-red-500", text: "text-red-600 dark:text-red-400", label: `${score.toFixed(0)}`, tier: "Watch" }
+}
+
+function getDeveloperInitials(name: string) {
+  const cleaned = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z\u0600-\u06FF\s]+/g, " ")
+    .trim()
+    .split(/\s+/)
+  if (cleaned.length === 0) return "ES"
+  if (cleaned.length === 1) return cleaned[0].slice(0, 2).toUpperCase()
+  return (cleaned[0][0] + cleaned[1][0]).toUpperCase()
 }
 
 export function DeveloperCard(developer: DeveloperCardProps) {
@@ -80,7 +92,7 @@ export function DeveloperCard(developer: DeveloperCardProps) {
         openDetails: `Open ${developerLabel} developer details`,
       }
 
-  return (
+ return (
     <article className="group relative isolate block overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_16px_40px_-12px_rgba(0,0,0,0.4)]">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 border-b border-border/60 p-5 pb-4">
@@ -90,7 +102,11 @@ export function DeveloperCard(developer: DeveloperCardProps) {
             className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted/50 bg-cover bg-center"
             style={{ backgroundImage: developer.logo_url ? `url(${developer.logo_url})` : undefined }}
           >
-            {!developer.logo_url ? <Building2 className="h-5 w-5 text-muted-foreground/50" /> : null}
+            {!developer.logo_url ? (
+              <span className="flex h-full w-full flex-col items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 text-xs font-semibold uppercase tracking-widest text-primary">
+                {getDeveloperInitials(developerLabel)}
+              </span>
+            ) : null}
           </div>
           <div className="min-w-0">
             <p className="truncate text-base font-semibold text-foreground">{developerLabel}</p>

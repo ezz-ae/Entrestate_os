@@ -31,8 +31,15 @@ export function proxy(request: NextRequest) {
     return new NextResponse(unavailableText, { status: 503 })
   }
 
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("x-entrestate-locale", activeLocale)
+
   if (internalPathname === "/api" || internalPathname.startsWith("/api/")) {
-    return NextResponse.next()
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
   }
 
   if (isLocale(pathLocale) && LOCALE_SHORTCUT_REDIRECTS[internalPathname]) {
@@ -47,10 +54,6 @@ export function proxy(request: NextRequest) {
 
     return response
   }
-
-  const requestHeaders = new Headers(request.headers)
-
-  requestHeaders.set("x-entrestate-locale", activeLocale)
 
   if (isLocale(pathLocale)) {
     const rewriteUrl = request.nextUrl.clone()

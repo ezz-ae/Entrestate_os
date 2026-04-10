@@ -62,6 +62,21 @@ async function getTableColumns(tableName: string) {
   return new Set(rows.map((row) => row.column_name))
 }
 
+async function getTableColumnsFromSample(tableSql: Prisma.Sql) {
+  const rows = await dbQuery<Array<{ row_json: Record<string, unknown> | null }>[number]>(Prisma.sql`
+    SELECT to_jsonb(t) AS row_json
+    FROM ${tableSql} t
+    LIMIT 1
+  `)
+
+  const rowJson = rows[0]?.row_json
+  if (!rowJson || typeof rowJson !== "object" || Array.isArray(rowJson)) {
+    return new Set<string>()
+  }
+
+  return new Set(Object.keys(rowJson))
+}
+
 function pickColumn(columns: Set<string>, ...candidates: string[]) {
   return candidates.find((candidate) => columns.has(candidate)) ?? null
 }
@@ -101,8 +116,11 @@ const DLD_FALLBACK_TABLES = [
 
 const INVENTORY_FALLBACK_TABLES = [
   "public.entrestate_projects_api",
+  "public.entrestate_projects_api_full",
   "api.entrestate_projects_api",
+  "api.entrestate_projects_api_full",
   "api.projects_v1",
+  "raw.inventory_full",
   "canonical.inventory_clean",
   "public.inventory_clean",
   "inventory_clean",
@@ -271,15 +289,30 @@ async function getInventoryContext(): Promise<InventoryContext> {
       : Prisma.raw(tableName)
 
     try {
-      const columns = await getTableColumns(tableName)
-      if (columns.size === 0) continue
-
       const countRows = await dbQuery<InventoryCountRow>(Prisma.sql`
         SELECT COUNT(*)::int AS total
         FROM ${tableSql}
       `)
 
       const total = countRows[0]?.total ?? 0
+      let columns = new Set<string>()
+
+      try {
+        columns = await getTableColumns(tableName)
+      } catch (columnError) {
+        if (!isMissingRelationError(columnError, tableName) && !isMissingColumnError(columnError)) {
+          throw columnError
+        }
+      }
+
+      if (columns.size === 0 && total > 0) {
+        try {
+          columns = await getTableColumnsFromSample(tableSql)
+        } catch {
+          columns = new Set<string>()
+        }
+      }
+
       const context: InventoryContext = {
         tableName,
         tableSql,
