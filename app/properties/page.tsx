@@ -166,8 +166,8 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
     : `Page ${formatInteger(currentPage, locale)} of ${formatInteger(totalPages || 1, locale)} · showing ${formatInteger(projects.length, locale)} of ${formatInteger(totalProjectsCount, locale)} projects`
 
   const headerBody = locale === "ar"
-      ? `${formatInteger(totalProjectsCount, locale)} مشروعاً نشطاً في الإمارات — مع تقييم دقيق لتوقيت السوق، مرونة الضغط، وموثوقية البيانات.`
-      : `${formatInteger(totalProjectsCount, locale)} active UAE projects — scored for market timing, stress resilience, and verified data confidence.`
+      ? `${formatInteger(totalProjectsCount, locale)} مشروعاً مقيّماً عبر التوقيت والضغط والعائد ومستوى الأدلة.`
+      : `${formatInteger(totalProjectsCount, locale)} UAE projects scored across timing, stress, yield, and evidence.`
 
   return (
     <main id="main-content">
@@ -179,10 +179,12 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
           <div>
             <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/5 rounded-full border border-primary/10">
               <Building2 className="w-3 h-3" />
-              {t("liveFeed")}
+              {locale === "ar" ? "مخزون المشاريع المقيّم" : "Scored Project Inventory"}
             </div>
             <h1 className="text-4xl md:text-6xl font-serif font-bold text-foreground leading-tight tracking-tight">
-              {t("titleLead")} <span className="text-muted-foreground/40 italic">{t("titleAccent")}</span>
+              {locale === "ar"
+                ? <>المشاريع <span className="text-muted-foreground/40 italic">الجاهزة للقرار</span></>
+                : <>Projects <span className="text-muted-foreground/40 italic">ready for decision</span></>}
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl font-medium leading-relaxed">
               {headerBody}
@@ -230,8 +232,8 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
         <div className="mb-6 flex items-center gap-2 rounded-xl border border-border/60 bg-card/70 px-4 py-2 text-xs text-muted-foreground">
           <span className="h-2 w-2 rounded-full bg-emerald-400" />
           {locale === "ar"
-            ? "معاينة استجابة الـ API: بدّل أي بطاقة لعرض JSON كما يصل للواجهة."
-            : "API response preview: toggle any card to view the JSON payload as delivered to the frontend."}
+            ? "افتح أي بطاقة لرؤية الحمولة كما تصل للواجهة."
+            : "Open any card to inspect the payload delivered to the frontend."}
         </div>
 
         <form

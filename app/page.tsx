@@ -81,7 +81,7 @@ function getAutomationCards(locale: "en" | "ar") {
           body:
             "حوّل الحقيقة الموثقة إلى مذكرات استثمار، تقارير استخبارات سوق، وتحديثات مؤسسية مع نفس استمرارية الأدلة التي تقود كل حكم.",
           cta: "عرض طبقة المخرجات",
-          href: "/enterprise",
+          href: "/infrastructure",
           accent: "text-violet-400",
         },
       ]
@@ -90,7 +90,7 @@ function getAutomationCards(locale: "en" | "ar") {
           icon: Zap,
           title: "ProAgent Studio",
           body:
-            "Deploy always-on autonomous analysts that monitor DLD velocity, listing drift, and mandate thresholds, and execute only when governance rules align.",
+            "Deploy autonomous market agents that monitor DLD and listing signals, then act when mandate rules align.",
           cta: "Launch execution stack",
           href: "/apps/agent-builder",
           accent: "text-blue-400",
@@ -99,9 +99,9 @@ function getAutomationCards(locale: "en" | "ar") {
           icon: FileText,
           title: "Institutional Output Layer",
           body:
-            "Transform canonical truth into investor briefs, market intelligence reports, and institutional updates with the same evidence continuity that drives every verdict.",
+            "Turn canonical market data into investor briefs and institutional updates backed by the same evidence spine.",
           cta: "View output layer",
-          href: "/enterprise",
+          href: "/infrastructure",
           accent: "text-violet-400",
         },
       ]
@@ -158,8 +158,8 @@ export default async function HomePage() {
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
               {isArabic
-                ? "كل قرار عقاري عالي المخاطر يبدأ بإشارة واحدة. يعرض هذا المسار الموحد الإشارة → الأدلة → الحكم → التنفيذ، حيث تستضيف المرحلة الثانية طبقة الأدلة الخمس وتؤدي المرحلة الرابعة إلى الواجهات التنفيذية الست."
-                : "Every high-stakes property decision starts with a signal. This unified tunnel keeps Signal → Evidence → Judgment → Action in one narrative, with Stage 2 holding the 5-layer evidence stack and Stage 4 flowing directly into the six execution surfaces."}
+                ? "قصة واحدة من الإشارة إلى التنفيذ، مع الأدلة داخل المسار نفسه."
+                : "One continuous story from signal to execution, with evidence nested inside the flow."}
             </p>
           </div>
           <DecisionTunnelStepper />
@@ -204,20 +204,20 @@ export default async function HomePage() {
               </div>
               <h2 className="mb-6 text-3xl font-bold tracking-tight md:text-5xl">
                 {isArabic
-                  ? "هندسة قرار قابلة للتدقيق وليست واجهة تسويقية"
-                  : "Auditable decision infrastructure, not dashboard theater"}
+                  ? "طبقة المنصة للنشر المؤسسي"
+                  : "The platform layer for institutional deployment"}
               </h2>
               <p className="mb-8 text-lg text-muted-foreground">
                 {isArabic
-                  ? "واجهة الموقع تعرض القدرات، لكن نفس العمود الفقري يُدمج تحت بوابتك الحالية كطبقة قرار وتنفيذ مع حوكمة مؤسسية."
-                  : "The site demonstrates the system, but the same decision spine deploys under your existing portal as governed infrastructure."}
+                  ? "يتم نشر Entrestate تحت بوابتك الحالية كطبقة قرار وتنفيذ محكومة."
+                  : "Deploy Entrestate under your existing portal as a governed decision and execution layer."}
               </p>
               <div className="flex flex-col gap-4 sm:flex-row">
                 <Link
-                  href={prefixLocalePath("/enterprise", locale)}
+                  href={prefixLocalePath("/infrastructure", locale)}
                   className="flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-8 py-4 text-sm font-bold text-white transition-all hover:bg-blue-600 shadow-lg shadow-blue-500/25"
                 >
-                  {isArabic ? "دليل التكامل المؤسسي" : "Integration architecture"}
+                  {isArabic ? "شرح البنية المؤسسية" : "See the full system"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
@@ -268,8 +268,8 @@ export default async function HomePage() {
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
               {isArabic
-                ? "يدير ProAgent Studio وكلاء دائمين يراقبون الإشارات الموثقة وينفّذون فقط عند توافق شروط التفويض، مع ضمان أن كل مخرج مثل مذكرات الاستثمار، تقارير استخبارات السوق، والتحديثات المؤسسية يعود لنفس الأدلّة."
-                : "ProAgent Studio orchestrates always-on agents that monitor canonical signals, trigger execution only when mandate controls align, and keep investor briefs, market intelligence reports, and institutional updates tied to the same evidence continuity."}
+                ? "وكلاء يراقبون الإشارات الموثقة ويشغلون التنفيذ والمخرجات المؤسسية داخل نفس طبقة الأدلة."
+                : "Agents monitor verified signals and power execution and institutional output from the same evidence layer."}
             </p>
           </div>
 
@@ -302,14 +302,13 @@ export default async function HomePage() {
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {isArabic
-                  ? "هذا JSON يربط الحكم، الثقة، وسلسلة الأدلة ولوجستيات التنفيذ، حتى تلتزم فرق العمليات والحوكمة بنفس الحقيقة."
-                  : "This JSON ties the verdict, confidence, and evidence lineage into one canonical record so operations, risk, and leadership act from the same truth."}
+                  ? "كل حكم يصل مع الثقة والأدلة والمحركات داخل حمولة واحدة."
+                  : "Every verdict arrives with confidence, evidence, and drivers in one payload."}
               </p>
 
               <div className="mt-5 space-y-2 text-sm text-muted-foreground">
-                <p>{isArabic ? "• يسرّع التنفيذ وراء حوكمة واضحة." : "• Speeds execution while respecting governance."}</p>
-                <p>{isArabic ? "• يربط كل حكم بمصادر معتمدة لتقليل المخاطر." : "• Links every verdict to documented sources to reduce risk."}</p>
-                <p>{isArabic ? "• يكشف ما الذي يغير النتيجة حتى يعرف التحالف ما يراقب." : "• Shows what would move the conclusion so teams know what to monitor."}</p>
+                <p>{isArabic ? "• يربط الحكم بمصادر موثقة." : "• Links every verdict to verified sources."}</p>
+                <p>{isArabic ? "• يحافظ على السرعة دون كسر الحوكمة." : "• Keeps teams fast without breaking governance."}</p>
               </div>
             </div>
 

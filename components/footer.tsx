@@ -37,7 +37,7 @@ const columns = [
     heading: "Platform",
     links: [
       { label: "API Docs", href: "/docs/partners-apis" },
-      { label: "Enterprise Integration", href: "/enterprise" },
+      { label: "Enterprise Integration", href: "/infrastructure" },
       { label: "Configuration Panel", href: "/settings/configuration" },
       { label: "Data Science Dashboard", href: "/workspace/data-scientist" },
       { label: "Agent Builder", href: "/apps/agent-builder" },

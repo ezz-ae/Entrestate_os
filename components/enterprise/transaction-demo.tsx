@@ -2,6 +2,8 @@
 
 import { useMemo, useState, type ReactNode } from "react"
 import { ArrowRight, CheckCircle2, Clock, ShieldCheck, Zap } from "lucide-react"
+import { useLocale } from "next-intl"
+import { formatAed } from "@/lib/format/currency"
 
 const CHANNELS = ["phone", "email", "whatsapp", "relay"] as const
 
@@ -74,6 +76,7 @@ function StepCard({
 }
 
 export function TransactionDemo() {
+  const locale = useLocale()
   const [ingestUrl, setIngestUrl] = useState("")
   const [ingestLoading, setIngestLoading] = useState(false)
   const [ingestResult, setIngestResult] = useState<ApiResult>(null)
@@ -318,7 +321,7 @@ export function TransactionDemo() {
               >
                 <p className="font-semibold text-foreground">{result.name}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {(result.area ?? "-") + " / " + (result.price ? `AED ${result.price.toLocaleString()}` : "Price -")}
+                  {(result.area ?? "-") + " / " + (result.price ? formatAed(result.price, locale, { compact: true, fallback: "—" }) : "Price -")}
                 </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   Queue depth: {result.queueDepth ?? 0}

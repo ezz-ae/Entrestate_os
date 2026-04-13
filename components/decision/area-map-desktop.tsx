@@ -10,9 +10,10 @@ import { getAreaCoordinates } from "@/lib/area-geo"
 import { DecisionRecord } from "@/lib/decision-infrastructure"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { formatAed } from "@/lib/format/currency"
+import { formatInteger } from "@/lib/format/number"
 import {
   MapPin,
-  TrendingUp,
   Building2,
   ArrowRight,
   Layers,
@@ -20,14 +21,6 @@ import {
 } from "lucide-react"
 
 type Area = DecisionRecord & { slug: string }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatAED(value: number): string {
-  if (value >= 1_000_000) return `AED ${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `AED ${(value / 1_000).toFixed(0)}K`
-  return `AED ${value.toLocaleString()}`
-}
 
 function yieldColor(y: number): string {
   if (y >= 7) return "#10b981"
@@ -130,8 +123,8 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground/70">
             {isArabic
-              ? `${areas.length} منطقة مع بيانات مباشرة للأسعار والعائد والمشاريع. اضغط على أي نقطة للاستكشاف.`
-              : `${areas.length} area profiles with live yield, pricing, and project data. Click any dot to explore.`}
+              ? `${formatInteger(areas.length, locale, "0")} منطقة مع السعر والعائد والمشاريع. اضغط على أي نقطة للاستكشاف.`
+              : `${formatInteger(areas.length, locale, "0")} area profiles with yield, pricing, and project data. Click any dot to explore.`}
           </p>
         </div>
 
@@ -144,11 +137,11 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">{isArabic ? "عدد المناطق" : "Areas tracked"}</p>
-                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{areas.length}</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{formatInteger(areas.length, locale, "0")}</p>
               </div>
               {globalAvgYield !== null && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">Avg yield</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">{isArabic ? "متوسط العائد" : "Avg yield"}</p>
                   <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-400">
                     {globalAvgYield.toFixed(1)}%
                   </p>
@@ -160,13 +153,13 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
           {/* Legend */}
           <div className="rounded-2xl border border-border/40 bg-card/40 p-5">
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/40">
-              Yield · Dot color
+              {isArabic ? "العائد · لون النقطة" : "Yield · Dot color"}
             </p>
             <div className="space-y-2">
               {[
-                { color: "#10b981", label: "7%+ gross yield", dot: "bg-emerald-500" },
-                { color: "#14b8a6", label: "5–7% gross yield", dot: "bg-teal-500" },
-                { color: "#f59e0b", label: "Below 5%", dot: "bg-amber-500" },
+                { color: "#10b981", label: isArabic ? "عائد 7%+" : "7%+ gross yield", dot: "bg-emerald-500" },
+                { color: "#14b8a6", label: isArabic ? "عائد 5–7%" : "5–7% gross yield", dot: "bg-teal-500" },
+                { color: "#f59e0b", label: isArabic ? "أقل من 5%" : "Below 5%", dot: "bg-amber-500" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-3">
                   <div
@@ -222,7 +215,7 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
           </h2>
           {typeof area.projects === "number" && (
             <p className="mt-1 text-sm text-muted-foreground/50">
-              {isArabic ? `${area.projects} مشروعاً خاضعاً للتقييم` : `${area.projects} active projects scored`}
+              {isArabic ? `${formatInteger(area.projects, locale, "0")} مشروعاً خاضعاً للتقييم` : `${formatInteger(area.projects, locale, "0")} active projects scored`}
             </p>
           )}
         </div>
@@ -232,7 +225,7 @@ function AreaDetailPanel({ area, areas }: { area: Area | null; areas: Area[] }) 
           <div className="rounded-xl border border-border/40 bg-card/40 p-4">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground/40">{isArabic ? "متوسط السعر" : "Avg Price"}</p>
             <p className="mt-1.5 text-lg font-bold tabular-nums text-foreground">
-              {typeof area.avg_price === "number" ? formatAED(area.avg_price) : "—"}
+              {typeof area.avg_price === "number" ? formatAed(area.avg_price, locale, { compact: true, fallback: "—" }) : "—"}
             </p>
           </div>
           <div className="rounded-xl border border-border/40 bg-card/40 p-4">

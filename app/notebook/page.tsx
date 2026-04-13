@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLocale } from "next-intl"
+import { formatDate } from "@/lib/format/date"
 
 type BookType = "client" | "area" | "project" | "portfolio"
 
@@ -37,6 +38,11 @@ const FILTERS: { id: BookType | "all"; labelEn: string; labelAr: string }[] = [
   { id: "portfolio", labelEn: "Portfolios",labelAr: "محافظ" },
   { id: "client",    labelEn: "Clients",   labelAr: "عملاء" },
 ]
+
+const BRAND_STRIP = {
+  en: "Outputs stay in Entrestate branding unless your workspace runs on the enterprise layer.",
+  ar: "تظل المخرجات بعلامة Entrestate ما لم تعمل مساحة العمل على طبقة المؤسسات.",
+}
 
 export default function NotebookPage() {
   const locale = useLocale()
@@ -135,12 +141,10 @@ export default function NotebookPage() {
           <div className="flex items-center gap-2.5 rounded-xl border border-border/40 bg-muted/20 px-4 py-2.5">
             <Shield className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
             <p className="text-[11px] text-muted-foreground/70">
-              {isArabic
-                ? "جميع الدفاتر والمخرجات تحمل علامة Entrestate ما لم تكن على منصة المؤسسات."
-                : "All books and outputs are branded with Entrestate unless you're on an Organisation Terminal."}
+              {isArabic ? BRAND_STRIP.ar : BRAND_STRIP.en}
             </p>
             <Link href="/pricing" className="text-[11px] font-semibold text-primary hover:underline underline-offset-2 ms-auto shrink-0">
-              {isArabic ? "منصة المؤسسات" : "Organisation Terminal"}
+              {isArabic ? "طبقة المؤسسات" : "Enterprise layer"}
             </Link>
           </div>
         </header>
@@ -340,7 +344,7 @@ export default function NotebookPage() {
                           <div className="flex items-center gap-3 text-[10px] text-muted-foreground/50">
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {new Date(book.updatedAt).toLocaleDateString()}
+                              {formatDate(book.updatedAt, locale, { month: "short", day: "numeric" })}
                             </span>
                             <span className="flex items-center gap-1">
                               <FileText className="h-3 w-3" />

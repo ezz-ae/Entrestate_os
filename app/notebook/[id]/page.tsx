@@ -95,6 +95,46 @@ type OutputDef = {
   accentColor: string
 }
 
+function buildSourceRecords(book: BookDetail, locale: string): Source[] {
+  const addedAtFormatter = new Intl.DateTimeFormat(locale === "ar" ? "ar-AE" : "en-AE", {
+    month: "short",
+    day: "numeric",
+  })
+
+  const pageSources = book.pages.map((page) => ({
+    id: `page-${page.id}`,
+    label: `${page.title} page`,
+    type: "text" as const,
+    addedAt: addedAtFormatter.format(new Date(page.updatedAt)),
+  }))
+
+  if (pageSources.length > 0) return pageSources
+
+  return [
+    {
+      id: `subject-${book.id}`,
+      label: book.subject,
+      type: "text" as const,
+      addedAt: locale === "ar" ? "مباشر" : "live",
+    },
+  ]
+}
+
+function mergePages(book: BookDetail, pages: BookPage[]): BookDetail {
+  const byType = new Map(book.pages.map((page) => [page.type, page]))
+  for (const page of pages) {
+    byType.set(page.type, page)
+  }
+
+  const mergedPages = Array.from(byType.values())
+  return {
+    ...book,
+    pages: mergedPages,
+    pageCount: mergedPages.length,
+    updatedAt: new Date().toISOString(),
+  }
+}
+
 // ─── Translations ─────────────────────────────────────────────────────────────
 
 const T = {
@@ -329,12 +369,6 @@ const OUTPUT_DEFS: OutputDef[] = [
   },
 ]
 
-const MOCK_SOURCES: Source[] = [
-  { id: "s1", label: "DLD Transaction Data — Q1 2025", type: "pdf",  addedAt: "2d ago" },
-  { id: "s2", label: "CBRE UAE Market Report",          type: "url",  addedAt: "1d ago" },
-  { id: "s3", label: "Area-level notes (pasted)",       type: "text", addedAt: "3h ago" },
-]
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function MarketBookDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -348,7 +382,7 @@ export default function MarketBookDetailPage({ params }: { params: Promise<{ id:
   const [activePanel, setActivePanel] = useState<"sources" | "chat" | "studio">("chat")
 
   // Sources
-  const [sources, setSources] = useState<Source[]>(MOCK_SOURCES)
+  const [sources, setSources] = useState<Source[]>([])
   const [showAddSource, setShowAddSource] = useState(false)
   const [sourceInput, setSourceInput] = useState("")
   const [sourceType, setSourceType] = useState<Source["type"]>("url")
@@ -367,9 +401,13 @@ export default function MarketBookDetailPage({ params }: { params: Promise<{ id:
   useEffect(() => {
     fetch(`/api/notebook/books/${id}`)
       .then((r) => r.json())
-      .then((d) => setBook(d.book ?? null))
+      .then((d) => {
+        const nextBook = (d.book ?? null) as BookDetail | null
+        setBook(nextBook)
+        setSources(nextBook ? buildSourceRecords(nextBook, locale) : [])
+      })
       .finally(() => setLoading(false))
-  }, [id])
+  }, [id, locale])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -401,11 +439,18 @@ export default function MarketBookDetailPage({ params }: { params: Promise<{ id:
     setGeneratingOutput(outputId)
     setOutputs((p) => p.map((o) => o.id === outputId ? { ...o, status: "generating" } : o))
     try {
-      await fetch(`/api/notebook/books/${id}/output`, {
+      const res = await fetch(`/api/notebook/books/${id}/output`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ outputType: outputId }),
       })
+      if (!res.ok) throw new Error("Output generation failed")
+      const data = await res.json()
+      if (book && Array.isArray(data?.pages) && data.pages.length > 0) {
+        const nextBook = mergePages(book, data.pages as BookPage[])
+        setBook(nextBook)
+        setSources(buildSourceRecords(nextBook, locale))
+      }
       setOutputs((p) => p.map((o) => o.id === outputId ? { ...o, status: "ready" } : o))
     } catch {
       setOutputs((p) => p.map((o) => o.id === outputId ? { ...o, status: "idle" } : o))

@@ -23,7 +23,7 @@ export function Navbar() {
   const t = useTranslations("nav")
   const normalizedPathname = stripLocalePrefix(pathname)
   const navLinks = [
-    { label: t("enterprise"), href: "/enterprise" },
+    { label: t("enterprise"), href: "/infrastructure" },
     { label: t("chat"), href: "/chat" },
     { label: t("areas"), href: "/areas" },
     { label: t("developers"), href: "/developers" },

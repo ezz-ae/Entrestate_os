@@ -1,5 +1,9 @@
+"use client"
+
 import { Building, Gem, Home, MapPin, ShieldCheck, Tag, TrendingUp, Trophy } from "lucide-react"
+import { useLocale } from "next-intl"
 import { getNotificationStyle } from "@/lib/dld/notification-styles"
+import { formatAed } from "@/lib/format/currency"
 
 type DldFeedEntry = {
   headline: string
@@ -23,6 +27,7 @@ const ICON_MAP = {
 } as const
 
 export function TransactionNotification({ txn }: { txn: DldFeedEntry }) {
+  const locale = useLocale()
   const style = getNotificationStyle(txn)
   const Icon = ICON_MAP[style.icon as keyof typeof ICON_MAP] || Tag
 
@@ -41,7 +46,7 @@ export function TransactionNotification({ txn }: { txn: DldFeedEntry }) {
         <p className="truncate text-xs opacity-70">{txn.subline}</p>
       </div>
       <span className="whitespace-nowrap text-xs font-mono">
-        {new Intl.NumberFormat("en-AE", { notation: "compact", style: "currency", currency: "AED" }).format(txn.amount)}
+        {formatAed(txn.amount, locale, { compact: true, fallback: "—" })}
       </span>
     </div>
   )

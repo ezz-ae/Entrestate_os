@@ -8,40 +8,34 @@ const partnerTracks = [
   {
     icon: Database,
     title: "Data Partners",
-    subtitle: "Feed the Evidence Stack",
+    subtitle: "Feed the platform",
     details:
-      "Integrate market, valuation, transaction, or geospatial feeds into the Evidence Stack with traceable source lineage. Every incoming data point is tagged to an L-layer (L4 External) and adjudicated through the 10-Phase Pipeline to reach L1 Canonical status.",
+      "Bring market, transaction, valuation, or geospatial feeds into the platform with traceable lineage.",
     examples: [
       "DLD transaction history feeds",
-      "RERA regulatory compliance data",
-      "Property Finder and Bayut listing sensors",
-      "Geospatial and satellite imagery providers",
+      "Bayut and Property Finder listing sensors",
     ],
   },
   {
     icon: Users,
     title: "Brokerage Partners",
-    subtitle: "Decision Desks for Advisory Teams",
+    subtitle: "Decision desks for advisory teams",
     details:
-      "Use Entrestate as decision infrastructure for advisory desks, investor memos, and lead qualification workflows. The Broker Empowerment Suite transforms brokerage operations from manual entry to intelligent sales coaching powered by the Evidence Stack.",
+      "Run advisory workflows, investor memos, and lead qualification on top of Entrestate.",
     examples: [
-      "Brochure-to-Listing AI automation (PDF to L1 data)",
-      "AI Lead Scoring (Hot/Warm/Cold prioritization)",
-      "Sales Communication Coach for international buyers",
-      "Profile-calibrated investor memo generation",
+      "Brochure-to-listing automation",
+      "Profile-based investor memo generation",
     ],
   },
   {
     icon: Code,
     title: "Distribution & Ecosystem",
-    subtitle: "Embed Intelligence Modules",
+    subtitle: "Embed intelligence modules",
     details:
-      "Embed selected intelligence modules into partner products via the Embed SDK and API integration surfaces. White-label capabilities allow partners to surface Entrestate evidence-backed scoring within their own platforms.",
+      "Embed Entrestate modules into partner products through the SDK and API surface.",
     examples: [
       "market_card: area-level intelligence snapshot",
-      "area_table: comparative market data grid",
-      "score_badge: investment score with confidence indicator",
-      "market_pulse: live market movement signals",
+      "score_badge: investment score with confidence",
     ],
   },
 ]
@@ -50,25 +44,22 @@ const apiCapabilities = [
   {
     category: "Market Intelligence",
     endpoints: [
-      "GET /api/markets — Market overview with scoring and traction signals",
-      "GET /api/market-score/summary — Composite scoring breakdown by area",
-      "GET /api/inventory — Full project inventory with L1-L5 provenance tags",
+      "GET /api/markets — Market overview",
+      "GET /api/market-score/summary — Area scoring breakdown",
     ],
   },
   {
     category: "Decision Engine",
     endpoints: [
-      "POST /api/chat — Intent resolution, evidence collection, and scored recommendations",
-      "POST /api/reports/generate — Decision Object factory (PDF memos with evidence footnotes)",
-      "GET /api/embed — White-label widget data with tier-gated column access",
+      "POST /api/chat — Scored recommendations",
+      "GET /api/embed — White-label widget payloads",
     ],
   },
   {
     category: "Profile & Scoring",
     endpoints: [
-      "Profile-aware ranking and recommendation flow",
-      "65/35 Market Score + Match Score weighting engine",
-      "Evidence drawer and confidence metadata per response",
+      "Profile-aware ranking",
+      "Evidence and confidence metadata per response",
     ],
   },
 ]
@@ -77,22 +68,22 @@ const integrationModel = [
   {
     step: "1",
     title: "Onboard & Authenticate",
-    description: "API key provisioning, tier selection, and data schema alignment. Partners receive sandbox access with full Evidence Stack visibility.",
+    description: "Provision access, tiers, and schemas.",
   },
   {
     step: "2",
     title: "Integrate Data Feeds",
-    description: "For data partners: establish ingestion pipeline with L-layer tagging. For brokerage partners: configure Decision Desk surfaces and profile templates.",
+    description: "Connect feeds or configure partner workflows.",
   },
   {
     step: "3",
     title: "Configure Embed Surfaces",
-    description: "Select widget types (market_card, area_table, score_badge, market_pulse), apply branding, and configure tier-gated column access.",
+    description: "Choose widgets, branding, and access rules.",
   },
   {
     step: "4",
     title: "Attribution & Analytics",
-    description: "Attribution engine tracks widget_view, widget_signup, and widget_upgrade events with 7-day and 90-day conversion windows.",
+    description: "Track usage, signup, and upgrade events.",
   },
 ]
 
@@ -109,10 +100,23 @@ export default async function PartnersApisDocsPage() {
         <p className="text-xs uppercase tracking-wider text-muted-foreground">Platform Docs / Partners & APIs</p>
         <h1 className="mt-3 text-3xl font-bold text-foreground md:text-5xl">Partners & APIs</h1>
         <p className="mt-4 max-w-3xl text-base text-muted-foreground leading-relaxed">
-          Partnership architecture, integration blueprint, and API surfaces for ecosystem collaboration. Entrestate is
-          designed as <strong className="text-foreground">infrastructure partners build on</strong> — not a closed
-          product competing with its ecosystem.
+          Partner on data, distribution, or white-label delivery. Entrestate provides the platform layer and API surface.
         </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href="/infrastructure"
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            See the full system
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            href="/enterprise"
+            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:border-accent/40"
+          >
+            Open API guide
+          </Link>
+        </div>
       </header>
 
       {/* Partnership Tracks */}
@@ -148,10 +152,9 @@ export default async function PartnersApisDocsPage() {
           <h2 className="text-xl font-semibold text-foreground">API Capability Coverage</h2>
         </div>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-          Every API response includes <code className="rounded bg-background/60 px-1.5 py-0.5 text-xs">request_id</code>,{" "}
+          Responses include <code className="rounded bg-background/60 px-1.5 py-0.5 text-xs">request_id</code>,{" "}
           <code className="rounded bg-background/60 px-1.5 py-0.5 text-xs">evidence</code>, and{" "}
-          <code className="rounded bg-background/60 px-1.5 py-0.5 text-xs">provenance</code> metadata. Tier gating is enforced
-          server-side — gated columns are removed silently with an upgrade CTA.
+          <code className="rounded bg-background/60 px-1.5 py-0.5 text-xs">provenance</code>. Access control stays server-side.
         </p>
         <div className="mt-5 space-y-4">
           {apiCapabilities.map((group) => (
@@ -176,8 +179,7 @@ export default async function PartnersApisDocsPage() {
           <h2 className="text-xl font-semibold text-foreground">Embed SDK</h2>
         </div>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-          Self-contained, CSP-safe embed widgets that surface Entrestate intelligence within partner products. No
-          eval(), no external dependencies. Four widget types with tier-gated column access.
+          CSP-safe embed widgets for partner products, with branding and tier-aware access.
         </p>
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           <div className="rounded-xl border border-border/60 bg-background/40 p-4">
@@ -229,17 +231,23 @@ export default async function PartnersApisDocsPage() {
           <h2 className="text-lg font-semibold text-foreground">Commercial Plans</h2>
         </div>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-          Plans are structured by throughput, data breadth, and support model. Partnership and investment discussions
-          can combine API access with strategic co-build lanes. Tier gating is enforced server-side via JWT — client
-          claims are never trusted.
+          Plans scale by throughput, data breadth, and support model. API access and co-build lanes can be combined.
         </p>
-        <Link
-          href="/pricing"
-          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-accent"
-        >
-          View plans and tiers
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-accent"
+          >
+            View plans and tiers
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link
+            href="/enterprise"
+            className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-accent"
+          >
+            API integration guide
+          </Link>
+        </div>
       </section>
 
       {/* Navigation */}
@@ -258,6 +266,12 @@ export default async function PartnersApisDocsPage() {
             className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:border-accent/40"
           >
             Platform Architecture
+          </Link>
+          <Link
+            href="/infrastructure"
+            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:border-accent/40"
+          >
+            System Overview
           </Link>
           <Link
             href="/docs/data-information"

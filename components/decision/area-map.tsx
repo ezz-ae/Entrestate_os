@@ -6,15 +6,11 @@ import { useLocale } from "next-intl"
 import { getAreaCoordinates } from "@/lib/area-geo"
 import { DecisionRecord } from "@/lib/decision-infrastructure"
 import { pickLocalizedText } from "@/lib/format/entities"
+import { formatAed } from "@/lib/format/currency"
+import { formatInteger } from "@/lib/format/number"
 
 type AreaMapProps = {
   areas: Array<DecisionRecord & { slug: string }>
-}
-
-function formatAED(value: number): string {
-  if (value >= 1_000_000) return `AED ${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `AED ${(value / 1_000).toFixed(0)}K`
-  return `AED ${value.toLocaleString()}`
 }
 
 function yieldColor(yieldVal: number): string {
@@ -80,7 +76,7 @@ export function AreaMap({ areas }: AreaMapProps) {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "20px" }}>
                       <span style={{ fontSize: "11px", color: "#475569" }}>{isArabic ? "متوسط السعر" : "Avg. price"}</span>
                       <span style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8" }}>
-                        {formatAED(area.avg_price as number)}
+                        {formatAed(area.avg_price as number, locale, { compact: true, fallback: "—" })}
                       </span>
                     </div>
                   )}
@@ -93,7 +89,7 @@ export function AreaMap({ areas }: AreaMapProps) {
                   {projectCount > 0 && (
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "20px" }}>
                       <span style={{ fontSize: "11px", color: "#475569" }}>{isArabic ? "عدد المشاريع" : "Projects"}</span>
-                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8" }}>{projectCount}</span>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8" }}>{formatInteger(projectCount, locale, "0")}</span>
                     </div>
                   )}
                 </div>

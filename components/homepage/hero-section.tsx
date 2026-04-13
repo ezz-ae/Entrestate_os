@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useLocale } from "next-intl"
 import { ArrowRight, Database, Lock, ShieldCheck } from "lucide-react"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { formatInteger } from "@/lib/format/number"
 
 type Props = {
   totalProjects: number
@@ -11,19 +12,19 @@ type Props = {
 
 const COPY = {
   en: {
-    eyebrow: "Enterprise decision intelligence",
+    eyebrow: "Decision infrastructure",
     titleLineOne: "Stop making billion-dirham decisions",
-    titleLineTwo: "on fragmented, unverified data.",
+    titleLineTwo: "on fragmented data.",
     descriptionLead:
-      "Entrestate unifies 36,841 DLD transactions, 41,381 verified listings, and 2,813 scored projects into one auditable decision infrastructure — so every investment verdict traces back to canonical truth.",
+      "36,841 DLD transactions. 41,381 verified listings. 2,813 scored projects. One auditable platform.",
     descriptionBody: "Structured API. Verified evidence. Execution-ready intelligence.",
     supporting:
-      "Decision packets ship with confidence, source lineage, and driver attribution so operations stay fast without breaking governance.",
+      "Built for operators, compliance, and leadership.",
     primaryCta: "See the Decision Engine",
-    secondaryCta: "View API",
-    trustTitle: "Designed for executive review, audit, and downside control.",
+    secondaryCta: "See Infrastructure",
+    trustTitle: "Built for review, audit, and rollout.",
     trustBody:
-      "Canonical data, evidence grading, and deterministic automation prove reliability for operators and leadership alike.",
+      "Canonical data, evidence grading, and governed automation in one layer.",
     trustPills: ["Canonical DLD", "Verified Records", "Auditable Lineage", "SOC 2 Ready"],
     stats: {
       projects: "Scored projects",
@@ -34,19 +35,19 @@ const COPY = {
     },
   },
   ar: {
-    eyebrow: "ذكاء قرار مؤسسي",
-    titleLineOne: "توقّف عن اتخاذ قرارات بمليارات الدراهم",
-    titleLineTwo: "استنادًا إلى بيانات متفرقة وغير موثوقة.",
+    eyebrow: "بنية القرار",
+    titleLineOne: "توقف عن اتخاذ قرارات بمليارات الدراهم",
+    titleLineTwo: "على بيانات مجزأة.",
     descriptionLead:
-      "Entrestate توحّد 36,841 معاملة DLD، و41,381 قائمة موثقة، و2,813 مشروعًا مقيّمًا في بنية قرار واحدة قابلة للتدقيق حتى يمكن تتبّع كل حكم إلى الحقيقة الكنسية.",
+      "36,841 معاملة DLD. و41,381 قائمة موثقة. و2,813 مشروعًا مقيّمًا. داخل منصة واحدة قابلة للتدقيق.",
     descriptionBody: "واجهة API منظمة. أدلة موثقة. استخبارات جاهزة للتنفيذ.",
     supporting:
-      "تصل حزم القرار مرفقة بثقة المصدر، وتدرج الأدلة، وأسباب الحكم لفرق العمليات والحوكمة.",
+      "مصممة لفرق التشغيل والحوكمة والقيادة.",
     primaryCta: "راجع منصة القرار",
-    secondaryCta: "عرض الـ API",
-    trustTitle: "مصمم لمراجعات القيادات والتدقيق والسيطرة على الهبوط.",
+    secondaryCta: "شاهد البنية التحتية",
+    trustTitle: "مبني للمراجعة والتدقيق والإطلاق.",
     trustBody:
-      "البيانات الكنسية، وتدرج الأدلة، والأتمتة الحتمية تثبت المصداقية للمشغلين والقيادات.",
+      "بيانات موثقة وتدرج أدلة وأتمتة محكومة داخل طبقة واحدة.",
     trustPills: ["DLD Canonical", "سجلات موثقة", "تتبّع كامل", "SOC 2 Ready"],
     stats: {
       projects: "مشروع مقيّم",
@@ -61,7 +62,6 @@ const COPY = {
 export function HeroSection({ totalProjects }: Props) {
   const locale = useLocale() as AppLocale
   const copy = COPY[locale] ?? COPY.en
-  const numberLocale = locale === "ar" ? "ar-AE-u-nu-latn" : "en-US"
 
   const bayutListings = 41381
   const dldTransactions = 36841
@@ -117,7 +117,7 @@ export function HeroSection({ totalProjects }: Props) {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href={prefixLocalePath("/enterprise#api", locale)}
+              href={prefixLocalePath("/infrastructure", locale)}
               className="flex items-center gap-2 rounded-full border border-dashed border-border/80 bg-background/60 px-6 py-3 text-sm font-semibold text-foreground transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
             >
               <Lock className="h-4 w-4 text-primary" />
@@ -129,7 +129,7 @@ export function HeroSection({ totalProjects }: Props) {
             {stats.map((item) => (
               <div key={item.label} className="flex items-baseline gap-1.5">
                 <span className="text-sm font-semibold tabular-nums text-foreground">
-                  {item.value.toLocaleString(numberLocale)}
+                  {formatInteger(item.value, locale)}
                 </span>
                 <span className="text-[11px] text-muted-foreground/60">{item.label}</span>
               </div>

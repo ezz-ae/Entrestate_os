@@ -2,12 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useLocale } from "next-intl"
 import { Activity, ArrowUpRight, ShieldCheck } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import type { MarketScoreSummary, SystemHealthcheckRow } from "@/lib/market-score/types"
+import { formatDate } from "@/lib/format/date"
+import { formatInteger } from "@/lib/format/number"
 
 export function MarketPulsePopover({ className, compact = false }: { className?: string; compact?: boolean }) {
+  const locale = useLocale()
   const [mounted, setMounted] = useState(false)
   const [summary, setSummary] = useState<MarketScoreSummary | null>(null)
   const [healthcheck, setHealthcheck] = useState<SystemHealthcheckRow | null>(null)
@@ -100,7 +104,7 @@ export function MarketPulsePopover({ className, compact = false }: { className?:
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">Assets scored</span>
                 <span className="text-sm font-semibold text-foreground">
-                  {summary?.totalAssets?.toLocaleString() ?? "—"}
+                  {formatInteger(summary?.totalAssets, locale)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -123,7 +127,14 @@ export function MarketPulsePopover({ className, compact = false }: { className?:
         </div>
 
         <p className="mt-3 text-xs text-muted-foreground">
-          Updated {healthcheck?.created_at ? new Date(healthcheck.created_at).toLocaleString() : "recently"}.
+          Updated {healthcheck?.created_at
+            ? formatDate(healthcheck.created_at, locale, {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })
+            : "recently"}.
         </p>
 
         <div className="mt-4 flex items-center justify-between">

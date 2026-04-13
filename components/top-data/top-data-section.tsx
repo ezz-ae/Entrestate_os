@@ -1,6 +1,7 @@
 import { ConfidenceBadge, StressGradeBadge, TimingSignalBadge } from "@/components/decision/badges"
 import { formatAed, formatScore, formatYield } from "@/components/decision/formatters"
 import { TransactionNotification } from "@/components/dld/transaction-notification"
+import { formatInteger } from "@/lib/format/number"
 
 type TopDataSectionProps = {
   section: string
@@ -69,6 +70,10 @@ function formatAedValue(value: number | null, locale?: string | null) {
 
 function formatYieldValue(value: number | null, locale?: string | null) {
   return value === null ? "—" : formatYield(value, locale)
+}
+
+function formatCount(value: number, locale?: string | null, fallback = "0") {
+  return formatInteger(value, locale, fallback)
 }
 
 function formatTimestamp(value: string | null, locale?: string | null) {
@@ -221,7 +226,7 @@ function MarketPulseView({ data, locale }: { data: unknown; locale?: string }) {
     <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
       <div className="rounded-lg border border-border/60 bg-background/40 p-3">
         <p className="text-[11px] text-muted-foreground">{isArabicLocale(locale) ? "المشاريع" : "Projects"}</p>
-        <p className="mt-1 text-lg font-semibold text-foreground">{total.toLocaleString(isArabicLocale(locale) ? "ar-AE" : "en-US")}</p>
+        <p className="mt-1 text-lg font-semibold text-foreground">{formatCount(total, locale)}</p>
       </div>
       <div className="rounded-lg border border-border/60 bg-background/40 p-3">
         <p className="text-[11px] text-muted-foreground">{isArabicLocale(locale) ? "متوسط السعر" : "Avg price"}</p>
@@ -233,13 +238,13 @@ function MarketPulseView({ data, locale }: { data: unknown; locale?: string }) {
       </div>
       <div className="rounded-lg border border-border/60 bg-background/40 p-3">
         <p className="text-[11px] text-muted-foreground">{isArabicLocale(locale) ? "إشارات BUY" : "BUY signals"}</p>
-        <p className="mt-1 text-lg font-semibold text-emerald-300">{buySignals.toLocaleString(isArabicLocale(locale) ? "ar-AE" : "en-US")}</p>
+        <p className="mt-1 text-lg font-semibold text-emerald-300">{formatCount(buySignals, locale)}</p>
       </div>
     </div>
   )
 }
 
-function TimingSignalsView({ data }: { data: unknown }) {
+function TimingSignalsView({ data, locale }: { data: unknown; locale?: string }) {
   const rows = dataToRecords(data)
   const bySignal = new Map<string, GenericObject>()
 
@@ -268,10 +273,10 @@ function TimingSignalsView({ data }: { data: unknown }) {
           <div key={signal.key} className={`rounded-lg border p-3 ${signal.tone}`}>
             <div className="flex items-center justify-between">
               <TimingSignalBadge signal={signal.key} />
-              <p className="text-base font-semibold text-foreground">{count.toLocaleString()}</p>
+              <p className="text-base font-semibold text-foreground">{formatCount(count, locale)}</p>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">Avg price: {formatAedValue(avgPrice)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Avg yield: {formatYieldValue(avgYield)}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{isArabicLocale(locale) ? `متوسط السعر: ${formatAedValue(avgPrice, locale)}` : `Avg price: ${formatAedValue(avgPrice, locale)}`}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{isArabicLocale(locale) ? `متوسط العائد: ${formatYieldValue(avgYield, locale)}` : `Avg yield: ${formatYieldValue(avgYield, locale)}`}</p>
           </div>
         )
       })}
@@ -279,7 +284,7 @@ function TimingSignalsView({ data }: { data: unknown }) {
   )
 }
 
-function StressGradesView({ data }: { data: unknown }) {
+function StressGradesView({ data, locale }: { data: unknown; locale?: string }) {
   const rows = dataToRecords(data)
   const byGrade = new Map<string, number>()
 
@@ -309,7 +314,7 @@ function StressGradesView({ data }: { data: unknown }) {
           <div key={entry.grade} className="rounded-lg border border-border/60 bg-background/40 p-3">
             <div className="flex items-center justify-between">
               <StressGradeBadge grade={entry.grade} />
-              <p className="text-sm font-semibold text-foreground">{count.toLocaleString()}</p>
+              <p className="text-sm font-semibold text-foreground">{formatCount(count, locale)}</p>
             </div>
             <div className="mt-2 h-2 rounded-full bg-muted">
               <div className={`h-2 rounded-full ${entry.barColor}`} style={{ width: `${pct}%` }} />
@@ -321,7 +326,7 @@ function StressGradesView({ data }: { data: unknown }) {
   )
 }
 
-function AffordabilityView({ data }: { data: unknown }) {
+function AffordabilityView({ data, locale }: { data: unknown; locale?: string }) {
   const rows = dataToRecords(data)
 
   if (rows.length === 0) {
@@ -340,9 +345,9 @@ function AffordabilityView({ data }: { data: unknown }) {
           <div key={`${tier}-${index}`} className="rounded-lg border border-border/60 bg-background/40 p-3">
             <p className="text-sm font-medium text-foreground">{tier}</p>
             <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span>{projects.toLocaleString()} projects</span>
-              <span>{formatYieldValue(avgYield)}</span>
-              {buySignals !== null ? <span>{buySignals.toLocaleString()} BUY</span> : null}
+              <span>{isArabicLocale(locale) ? `${formatCount(projects, locale)} مشروع` : `${formatCount(projects, locale)} projects`}</span>
+              <span>{formatYieldValue(avgYield, locale)}</span>
+              {buySignals !== null ? <span>{isArabicLocale(locale) ? `${formatCount(buySignals, locale)} BUY` : `${formatCount(buySignals, locale)} BUY`}</span> : null}
             </div>
           </div>
         )
@@ -351,7 +356,7 @@ function AffordabilityView({ data }: { data: unknown }) {
   )
 }
 
-function OutcomeIntentsView({ data }: { data: unknown }) {
+function OutcomeIntentsView({ data, locale }: { data: unknown; locale?: string }) {
   const rows = dataToRecords(data)
 
   if (rows.length === 0) {
@@ -367,7 +372,7 @@ function OutcomeIntentsView({ data }: { data: unknown }) {
         return (
           <div key={`${label}-${index}`} className="rounded-lg border border-border/60 bg-background/40 p-3">
             <p className="text-sm font-medium text-foreground">{label.replace(/_/g, " ")}</p>
-            <p className="mt-2 text-lg font-semibold text-foreground">{count.toLocaleString()}</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">{formatCount(count, locale)}</p>
           </div>
         )
       })}
@@ -375,7 +380,7 @@ function OutcomeIntentsView({ data }: { data: unknown }) {
   )
 }
 
-function LabelDistributionView({ data, emptyMessage }: { data: unknown; emptyMessage: string }) {
+function LabelDistributionView({ data, locale, emptyMessage }: { data: unknown; locale?: string; emptyMessage: string }) {
   const rows = dataToRecords(data)
 
   if (rows.length === 0) {
@@ -395,10 +400,10 @@ function LabelDistributionView({ data, emptyMessage }: { data: unknown; emptyMes
           <div key={`${label}-${index}`} className="rounded-lg border border-border/60 bg-background/40 p-3">
             <p className="text-sm font-medium text-foreground">{label}</p>
             <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span>{count.toLocaleString()} projects</span>
-              {avgPrice !== null ? <span>{formatAedValue(avgPrice)}</span> : null}
-              {avgYield !== null ? <span>{formatYieldValue(avgYield)}</span> : null}
-              {avgScore !== null ? <span>Score {formatScore(avgScore)}</span> : null}
+              <span>{isArabicLocale(locale) ? `${formatCount(count, locale)} مشروع` : `${formatCount(count, locale)} projects`}</span>
+              {avgPrice !== null ? <span>{formatAedValue(avgPrice, locale)}</span> : null}
+              {avgYield !== null ? <span>{formatYieldValue(avgYield, locale)}</span> : null}
+              {avgScore !== null ? <span>{isArabicLocale(locale) ? `النتيجة ${formatScore(avgScore, locale)}` : `Score ${formatScore(avgScore, locale)}`}</span> : null}
             </div>
           </div>
         )
@@ -407,11 +412,11 @@ function LabelDistributionView({ data, emptyMessage }: { data: unknown; emptyMes
   )
 }
 
-function TopProjectsTableView({ data }: { data: unknown }) {
+function TopProjectsTableView({ data, locale }: { data: unknown; locale?: string }) {
   const rows = dataToRecords(data)
 
   if (rows.length === 0) {
-    return <p className="text-sm text-muted-foreground">No top projects available.</p>
+    return <p className="text-sm text-muted-foreground">{isArabicLocale(locale) ? "لا توجد مشاريع متاحة في هذا المقطع." : "No top projects available."}</p>
   }
 
   return (
@@ -419,14 +424,14 @@ function TopProjectsTableView({ data }: { data: unknown }) {
       <table className="min-w-full text-left text-xs">
         <thead className="bg-background/85 text-muted-foreground">
           <tr>
-            <th className="px-3 py-2">Project</th>
-            <th className="px-3 py-2">Area</th>
-            <th className="px-3 py-2">Developer</th>
-            <th className="px-3 py-2">Price</th>
-            <th className="px-3 py-2">Yield</th>
-            <th className="px-3 py-2">Stress</th>
-            <th className="px-3 py-2">Timing</th>
-            <th className="px-3 py-2">God Metric</th>
+            <th className="px-3 py-2">{isArabicLocale(locale) ? "المشروع" : "Project"}</th>
+            <th className="px-3 py-2">{isArabicLocale(locale) ? "المنطقة" : "Area"}</th>
+            <th className="px-3 py-2">{isArabicLocale(locale) ? "المطور" : "Developer"}</th>
+            <th className="px-3 py-2">{isArabicLocale(locale) ? "السعر" : "Price"}</th>
+            <th className="px-3 py-2">{isArabicLocale(locale) ? "العائد" : "Yield"}</th>
+            <th className="px-3 py-2">{isArabicLocale(locale) ? "الضغط" : "Stress"}</th>
+            <th className="px-3 py-2">{isArabicLocale(locale) ? "التوقيت" : "Timing"}</th>
+            <th className="px-3 py-2">{isArabicLocale(locale) ? "النتيجة" : "God Metric"}</th>
           </tr>
         </thead>
         <tbody>
@@ -445,15 +450,15 @@ function TopProjectsTableView({ data }: { data: unknown }) {
                 <td className="px-3 py-2 font-medium text-foreground">{name}</td>
                 <td className="px-3 py-2 text-muted-foreground">{area}</td>
                 <td className="px-3 py-2 text-muted-foreground">{developer}</td>
-                <td className="px-3 py-2 text-muted-foreground">{formatAedValue(price)}</td>
-                <td className="px-3 py-2 text-muted-foreground">{formatYieldValue(yieldValue)}</td>
+                <td className="px-3 py-2 text-muted-foreground">{formatAedValue(price, locale)}</td>
+                <td className="px-3 py-2 text-muted-foreground">{formatYieldValue(yieldValue, locale)}</td>
                 <td className="px-3 py-2">
                   <StressGradeBadge grade={stressGrade} />
                 </td>
                 <td className="px-3 py-2">
                   <TimingSignalBadge signal={timing} />
                 </td>
-                <td className="px-3 py-2 text-muted-foreground">{formatScore(godMetric)}</td>
+                <td className="px-3 py-2 text-muted-foreground">{formatScore(godMetric, locale)}</td>
               </tr>
             )
           })}
@@ -463,11 +468,11 @@ function TopProjectsTableView({ data }: { data: unknown }) {
   )
 }
 
-function AreaIntelligenceView({ data }: { data: unknown }) {
+function AreaIntelligenceView({ data, locale }: { data: unknown; locale?: string }) {
   const rows = dataToRecords(data)
 
   if (rows.length === 0) {
-    return <p className="text-sm text-muted-foreground">No area intelligence records available.</p>
+    return <p className="text-sm text-muted-foreground">{isArabicLocale(locale) ? "لا توجد سجلات مناطق متاحة." : "No area intelligence records available."}</p>
   }
 
   return (
@@ -483,10 +488,10 @@ function AreaIntelligenceView({ data }: { data: unknown }) {
           <div key={`${area}-${index}`} className="rounded-lg border border-border/60 bg-background/40 p-3">
             <p className="text-sm font-medium text-foreground">{area}</p>
             <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span>{projects.toLocaleString()} projects</span>
-              <span>{formatAedValue(avgPrice)}</span>
-              <span>Eff {formatScore(efficiency)}</span>
-              <span>Supply {formatScore(supply)}</span>
+              <span>{isArabicLocale(locale) ? `${formatCount(projects, locale)} مشروع` : `${formatCount(projects, locale)} projects`}</span>
+              <span>{formatAedValue(avgPrice, locale)}</span>
+              <span>{isArabicLocale(locale) ? `الكفاءة ${formatScore(efficiency, locale)}` : `Eff ${formatScore(efficiency, locale)}`}</span>
+              <span>{isArabicLocale(locale) ? `المعروض ${formatScore(supply, locale)}` : `Supply ${formatScore(supply, locale)}`}</span>
             </div>
           </div>
         )
@@ -495,11 +500,11 @@ function AreaIntelligenceView({ data }: { data: unknown }) {
   )
 }
 
-function DeveloperReliabilityView({ data }: { data: unknown }) {
+function DeveloperReliabilityView({ data, locale }: { data: unknown; locale?: string }) {
   const rows = dataToRecords(data)
 
   if (rows.length === 0) {
-    return <p className="text-sm text-muted-foreground">No developer reliability records available.</p>
+    return <p className="text-sm text-muted-foreground">{isArabicLocale(locale) ? "لا توجد سجلات مطورين متاحة." : "No developer reliability records available."}</p>
   }
 
   return (
@@ -514,10 +519,12 @@ function DeveloperReliabilityView({ data }: { data: unknown }) {
           <div key={`${developer}-${index}`} className="rounded-lg border border-border/60 bg-background/40 p-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-foreground">{developer}</p>
-              <p className="text-xs text-muted-foreground">Score {formatScore(reliability)}</p>
+              <p className="text-xs text-muted-foreground">{isArabicLocale(locale) ? `النتيجة ${formatScore(reliability, locale)}` : `Score ${formatScore(reliability, locale)}`}</p>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              {projects.toLocaleString()} projects{typeof safeProjects === "number" ? ` · ${safeProjects.toLocaleString()} safe` : ""}
+              {isArabicLocale(locale)
+                ? `${formatCount(projects, locale)} مشروع${typeof safeProjects === "number" ? ` · ${formatCount(safeProjects, locale)} آمن` : ""}`
+                : `${formatCount(projects, locale)} projects${typeof safeProjects === "number" ? ` · ${formatCount(safeProjects, locale)} safe` : ""}`}
             </p>
           </div>
         )
@@ -526,7 +533,7 @@ function DeveloperReliabilityView({ data }: { data: unknown }) {
   )
 }
 
-function GoldenVisaView({ data }: { data: unknown }) {
+function GoldenVisaView({ data, locale }: { data: unknown; locale?: string }) {
   const payload = dataToRecords(data)[0] ?? {}
 
   const eligible = asNumber(valueFromKeys(payload, ["eligible_count", "eligible", "count", "projects"])) ?? 0
@@ -536,30 +543,30 @@ function GoldenVisaView({ data }: { data: unknown }) {
 
   return (
     <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-      <p className="text-sm font-semibold text-foreground">Golden Visa eligible projects</p>
+      <p className="text-sm font-semibold text-foreground">{isArabicLocale(locale) ? "المشاريع المؤهلة للإقامة الذهبية" : "Golden Visa eligible projects"}</p>
       <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
         <div>
-          <p className="text-[11px] text-muted-foreground">Eligible</p>
-          <p className="text-base font-semibold text-foreground">{eligible.toLocaleString()}</p>
+          <p className="text-[11px] text-muted-foreground">{isArabicLocale(locale) ? "المؤهل" : "Eligible"}</p>
+          <p className="text-base font-semibold text-foreground">{formatCount(eligible, locale)}</p>
         </div>
         <div>
-          <p className="text-[11px] text-muted-foreground">Avg price</p>
-          <p className="text-base font-semibold text-foreground">{formatAedValue(avgPrice)}</p>
+          <p className="text-[11px] text-muted-foreground">{isArabicLocale(locale) ? "متوسط السعر" : "Avg price"}</p>
+          <p className="text-base font-semibold text-foreground">{formatAedValue(avgPrice, locale)}</p>
         </div>
         <div>
-          <p className="text-[11px] text-muted-foreground">Safe count</p>
-          <p className="text-base font-semibold text-foreground">{(safeCount ?? 0).toLocaleString()}</p>
+          <p className="text-[11px] text-muted-foreground">{isArabicLocale(locale) ? "العدد الآمن" : "Safe count"}</p>
+          <p className="text-base font-semibold text-foreground">{formatCount(safeCount ?? 0, locale)}</p>
         </div>
         <div>
-          <p className="text-[11px] text-muted-foreground">BUY signals</p>
-          <p className="text-base font-semibold text-emerald-300">{(buySignals ?? 0).toLocaleString()}</p>
+          <p className="text-[11px] text-muted-foreground">{isArabicLocale(locale) ? "إشارات BUY" : "BUY signals"}</p>
+          <p className="text-base font-semibold text-emerald-300">{formatCount(buySignals ?? 0, locale)}</p>
         </div>
       </div>
     </div>
   )
 }
 
-function TrustBarView({ data }: { data: unknown }) {
+function TrustBarView({ data, locale }: { data: unknown; locale?: string }) {
   const payload = asObject(data)
   const confidenceRows = dataToRecords(payload.confidence_distribution)
   const hierarchyFromData = asArray(payload.hierarchy).filter((entry) => typeof entry === "string") as string[]
@@ -595,7 +602,7 @@ function TrustBarView({ data }: { data: unknown }) {
               <div key={`${label}-${index}`} className="rounded-lg border border-border/60 bg-background/40 p-3">
                 <div className="flex items-center justify-between">
                   <ConfidenceBadge confidence={label} />
-                  <p className="text-sm font-semibold text-foreground">{count.toLocaleString()}</p>
+                  <p className="text-sm font-semibold text-foreground">{formatCount(count, locale)}</p>
                 </div>
               </div>
             )
@@ -606,7 +613,7 @@ function TrustBarView({ data }: { data: unknown }) {
   )
 }
 
-function GenericListView({ data }: { data: unknown }) {
+function GenericListView({ data, locale }: { data: unknown; locale?: string }) {
   const rows = dataToRecords(data)
   if (rows.length === 0) {
     const obj = asObject(data)
@@ -625,7 +632,7 @@ function GenericListView({ data }: { data: unknown }) {
           <div key={`${label}-${index}`} className="rounded-lg border border-border/60 bg-background/40 p-3">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-medium text-foreground">{label}</p>
-              {count !== null ? <p className="text-sm font-semibold text-foreground">{count.toLocaleString()}</p> : null}
+              {count !== null ? <p className="text-sm font-semibold text-foreground">{formatCount(count, locale)}</p> : null}
             </div>
           </div>
         )
@@ -686,26 +693,26 @@ function DldMarketView({ data, locale }: { data: unknown; locale?: string }) {
 
 function renderSection(section: string, data: unknown, locale?: string) {
   if (section === "market-pulse") return <MarketPulseView data={data} locale={locale} />
-  if (section === "timing-signals") return <TimingSignalsView data={data} />
-  if (section === "stress-grades") return <StressGradesView data={data} />
+  if (section === "timing-signals") return <TimingSignalsView data={data} locale={locale} />
+  if (section === "stress-grades") return <StressGradesView data={data} locale={locale} />
   if (section === "yield-labels") {
-    return <LabelDistributionView data={data} emptyMessage={isArabicLocale(locale) ? "لا يوجد توزيع متاح للعائد." : "No yield distribution available."} />
+    return <LabelDistributionView data={data} locale={locale} emptyMessage={isArabicLocale(locale) ? "لا يوجد توزيع متاح للعائد." : "No yield distribution available."} />
   }
   if (section === "evidence-levels") {
-    return <LabelDistributionView data={data} emptyMessage={isArabicLocale(locale) ? "لا يوجد توزيع متاح للأدلة." : "No evidence distribution available."} />
+    return <LabelDistributionView data={data} locale={locale} emptyMessage={isArabicLocale(locale) ? "لا يوجد توزيع متاح للأدلة." : "No evidence distribution available."} />
   }
   if (section === "decision-labels") {
-    return <LabelDistributionView data={data} emptyMessage={isArabicLocale(locale) ? "لا يوجد توزيع متاح لتصنيفات القرار." : "No decision label distribution available."} />
+    return <LabelDistributionView data={data} locale={locale} emptyMessage={isArabicLocale(locale) ? "لا يوجد توزيع متاح لتصنيفات القرار." : "No decision label distribution available."} />
   }
-  if (section === "top-projects") return <TopProjectsTableView data={data} />
-  if (section === "area-intelligence") return <AreaIntelligenceView data={data} />
-  if (section === "developer-reliability") return <DeveloperReliabilityView data={data} />
-  if (section === "golden-visa") return <GoldenVisaView data={data} />
+  if (section === "top-projects") return <TopProjectsTableView data={data} locale={locale} />
+  if (section === "area-intelligence") return <AreaIntelligenceView data={data} locale={locale} />
+  if (section === "developer-reliability") return <DeveloperReliabilityView data={data} locale={locale} />
+  if (section === "golden-visa") return <GoldenVisaView data={data} locale={locale} />
   if (section === "dld-market") return <DldMarketView data={data} locale={locale} />
-  if (section === "affordability") return <AffordabilityView data={data} />
-  if (section === "outcome-intents") return <OutcomeIntentsView data={data} />
-  if (section === "trust-bar") return <TrustBarView data={data} />
-  return <GenericListView data={data} />
+  if (section === "affordability") return <AffordabilityView data={data} locale={locale} />
+  if (section === "outcome-intents") return <OutcomeIntentsView data={data} locale={locale} />
+  if (section === "trust-bar") return <TrustBarView data={data} locale={locale} />
+  return <GenericListView data={data} locale={locale} />
 }
 
 export function TopDataSection({ section, locale, title, subtitle, confidence, lastUpdated, data }: TopDataSectionProps) {

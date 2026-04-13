@@ -92,14 +92,14 @@ export default async function TopDataPage() {
         <header className="mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-emerald-400">
             {isArabic
-              ? "محرك الإشارات V1 - 4 أبعاد تقييم - مبني على الأدلة"
-              : "Signal Engine V1 - 4 Score Dimensions - Evidence-Backed"}
+              ? "محطة استخبارات السوق"
+              : "Market Intelligence Terminal"}
           </div>
           <h1 className="mt-3 text-3xl font-semibold text-foreground md:text-5xl">
-            {isArabic ? "محرك الإشارات - بث مباشر" : "Signal Engine V1 - Live"}
+            {isArabic ? "بث السوق المباشر" : "Live Market Signal Feed"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {isArabic ? "كل قسم يعرض مخرجات API كما تُستهلك في المنتجات المؤسسية." : "Every section renders the API outputs consumed by enterprise products."}
+            {isArabic ? "كل مقطع يعرض مخرجات API كما تصل إلى الأسطح التنفيذية." : "Each section shows the API outputs used across the execution surfaces."}
           </p>
         </header>
 
@@ -116,17 +116,17 @@ export default async function TopDataPage() {
           <div className="rounded-xl border border-border/60 bg-card/70 px-4 py-2.5 text-xs text-muted-foreground">
             {isArabic ? (
               <>
-                ابدأ بـ <span className="font-medium text-foreground">نبض السوق</span> ← افحص <span className="font-medium text-foreground">التوقيت</span> و <span className="font-medium text-foreground">الضغط</span> ← تعمّق في <span className="font-medium text-foreground">أفضل المشاريع</span>
+                ابدأ بـ <span className="font-medium text-foreground">نبض السوق</span> ثم افحص <span className="font-medium text-foreground">التوقيت</span> و <span className="font-medium text-foreground">الضغط</span>
               </>
             ) : (
               <>
-                Start with <span className="font-medium text-foreground">Market Pulse</span> - scan <span className="font-medium text-foreground">Timing</span> & <span className="font-medium text-foreground">Stress</span> - drill into <span className="font-medium text-foreground">Top Projects</span>
+                Start with <span className="font-medium text-foreground">Market Pulse</span>, then scan <span className="font-medium text-foreground">Timing</span> and <span className="font-medium text-foreground">Stress</span>
               </>
             )}
           </div>
           {missingSections.length > 0 ? (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] px-4 py-2.5 text-xs text-amber-400">
-              <span className="font-medium">{missingSections.length}</span> {isArabic ? "أقسام قيد التجهيز" : "sections pending"}
+              <span className="font-medium">{missingSections.length}</span> {isArabic ? "أقسام قيد المزامنة" : "sections syncing"}
             </div>
           ) : null}
           {availableSections.length === 0 ? (

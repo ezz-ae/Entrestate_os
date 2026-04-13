@@ -84,11 +84,11 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
 
   const copy = {
     audit: isArabic ? "تدقيق الأطراف المقابلة" : "Counterparty Audit",
-    titleLead: isArabic ? "موثوقية" : "Developer",
-    titleAccent: isArabic ? "المطورين" : "Reliability",
+    titleLead: isArabic ? "المطورون" : "Developer",
+    titleAccent: isArabic ? "الموثوقون" : "Reliability",
     headerBody: isArabic
-      ? `${formatInteger(developers.length, locale)} مطوراً نشطاً في الإمارات مع تقييم لثبات التسليم وتوزيع درجات الضغط وجودة التنفيذ التاريخية.`
-      : `${formatInteger(developers.length, locale)} active UAE developers scored for delivery consistency, stress-grade distribution, and historical execution quality.`,
+      ? `${formatInteger(developers.length, locale)} مطوراً مقيّماً عبر ثبات التسليم وجودة التنفيذ وسلامة المحفظة.`
+      : `${formatInteger(developers.length, locale)} UAE developers scored for delivery consistency, execution quality, and portfolio safety.`,
     freshness: isArabic ? "تحديث التدقيق" : "Audit Freshness",
     trackedDevelopers: isArabic ? "المطورون المتابعون" : "Tracked Developers",
     trackedDevelopersSub: isArabic ? "نشطون في سوق الإمارات" : "Active in UAE market",

@@ -6,15 +6,27 @@ import { listAreas } from "@/lib/decision-infrastructure"
 import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { getRequestLocale } from "@/i18n/request"
 import { formatInteger } from "@/lib/format/number"
+import Link from "next/link"
+import { prefixLocalePath } from "@/i18n/locale"
 
 export const dynamic = "force-dynamic"
 
-export default async function AreasPage() {
+type SearchParams = {
+  city?: string
+}
+
+export default async function AreasPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
   const data = await listAreas()
+  const params = await searchParams
   const syncMeta = buildDataSyncMeta("areas", data.data_as_of)
   const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
+  const cities = [...new Set(data.areas.map((area) => String(area.city ?? "").trim()).filter(Boolean))].sort()
+  const activeCity = cities.includes(String(params.city ?? "").trim()) ? String(params.city).trim() : ""
+  const visibleAreas = activeCity
+    ? data.areas.filter((area) => String(area.city ?? "").trim() === activeCity)
+    : data.areas
 
   return (
     <main id="main-content">
@@ -25,12 +37,12 @@ export default async function AreasPage() {
             {isArabic ? "المناطق" : "Areas"}
           </p>
           <h1 className="mt-2 font-serif text-3xl font-medium text-foreground md:text-5xl">
-            {isArabic ? "المناطق التي تُحرّك السوق" : "Area Intelligence Map"}
+            {isArabic ? "خريطة ذكاء المناطق" : "Area Intelligence Map"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isArabic
-              ? `قراءة مباشرة لـ ${formatInteger(data.areas.length, locale)} منطقة: السعر، العائد، كثافة المشاريع، وفرص الدخول.`
-              : `${formatInteger(data.areas.length, locale)} area profiles - pricing depth, yield averages, and market timing signals. Click any dot to explore.`}
+              ? `${formatInteger(visibleAreas.length, locale)} منطقة مع السعر والعائد وكثافة المشاريع داخل عرض واحد.`
+              : `${formatInteger(visibleAreas.length, locale)} area profiles with pricing, yield, and project density in one view.`}
           </p>
           <p className="mt-2 text-[11px] text-muted-foreground/60">
             {isArabic
@@ -39,20 +51,57 @@ export default async function AreasPage() {
           </p>
         </header>
 
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Link
+            href={prefixLocalePath("/areas", locale)}
+            className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
+              activeCity === ""
+                ? "border-foreground/30 bg-foreground text-background"
+                : "border-border/60 bg-card/70 text-muted-foreground hover:border-foreground/20 hover:text-foreground"
+            }`}
+          >
+            {isArabic ? "كل المدن" : "All cities"}
+            <span className={`ms-1 text-[10px] ${activeCity === "" ? "text-background/70" : "text-muted-foreground"}`}>
+              {formatInteger(data.areas.length, locale)}
+            </span>
+          </Link>
+          {cities.map((city) => {
+            const href = prefixLocalePath(`/areas?city=${encodeURIComponent(city)}`, locale)
+            const count = data.areas.filter((area) => String(area.city ?? "").trim() === city).length
+            const isActive = activeCity === city
+            return (
+              <Link
+                key={city}
+                href={href}
+                className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                  isActive
+                    ? "border-primary/40 bg-primary/10 text-foreground"
+                    : "border-border/60 bg-card/70 text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                }`}
+              >
+                {city}
+                <span className={`ms-1 text-[10px] ${isActive ? "text-foreground/60" : "text-muted-foreground"}`}>
+                  {formatInteger(count, locale)}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+
         <div className="mb-8 rounded-2xl border border-border/70 bg-card/60 p-4">
           <h2 className="text-sm font-semibold text-foreground">
             {isArabic
-              ? `تغطية البيانات: ${formatInteger(data.areas.length, locale)} منطقة`
-              : `Data coverage: ${formatInteger(data.areas.length, locale)} areas`}
+              ? `تغطية البيانات: ${formatInteger(visibleAreas.length, locale)} منطقة`
+              : `Data coverage: ${formatInteger(visibleAreas.length, locale)} areas`}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {isArabic
-              ? "مصادر متقاطعة: PropertyFinder / Bayut / DLD / Entrestate Spine"
-              : "Cross-referenced: PropertyFinder / Bayut / DLD / Entrestate Spine"}
+              ? `${activeCity ? `عرض مدينة: ${activeCity} · ` : ""}مصادر متقاطعة: PropertyFinder / Bayut / DLD / Entrestate Spine`
+              : `${activeCity ? `City filter: ${activeCity} · ` : ""}Cross-referenced: PropertyFinder / Bayut / DLD / Entrestate Spine`}
           </p>
         </div>
 
-        <AreasView areas={data.areas} />
+        <AreasView areas={visibleAreas} />
 
         <section className="mt-10">
           <div className="mb-5 flex items-end justify-between gap-4">
@@ -65,12 +114,12 @@ export default async function AreasPage() {
               </h2>
             </div>
             <p className="text-xs text-muted-foreground">
-              {isArabic ? "الواجهة العربية والإنجليزية تعرضان نفس البيانات مع اسم عرض مناسب لكل لغة." : "Arabic and English routes use the same records with locale-specific labels."}
+              {isArabic ? "نفس البيانات مع أسماء عرض مناسبة لكل لغة." : "The same records with locale-specific labels."}
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {data.areas.map((area) => (
+            {visibleAreas.map((area) => (
               <AreaCard
                 key={String(area.slug)}
                 slug={String(area.slug)}

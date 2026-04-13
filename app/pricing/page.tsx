@@ -19,7 +19,7 @@ const USER_TYPES = {
       title: "Solo Analyst",
       badge: "$299/mo",
       badgeColor: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-      description: "Professional-grade research for independent investors. Full access to the decision engine with institutional data provenance.",
+      description: "Research-grade access for independent investors and analysts.",
       features: [
         "AI Decision Copilot (unlimited)",
         "L1 Canonical data provenance",
@@ -37,7 +37,7 @@ const USER_TYPES = {
       title: "Realtor Pro",
       badge: "$499/mo",
       badgeColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-      description: "Convert leads with institutional evidence. Everything in Solo Analyst plus custom branding for your client deliverables.",
+      description: "Client-ready intelligence with branded outputs for advisory teams.",
       features: [
         "Everything in Solo Analyst",
         "Personal + Entrestate branded outputs",
@@ -55,7 +55,7 @@ const USER_TYPES = {
       title: "Entrestate OS",
       badge: "$2,500/mo+",
       badgeColor: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-      description: "The complete infrastructure for property funds and firms. Multi-user, API substrate, and Automation Studio.",
+      description: "White-label platform deployment for firms, teams, and API delivery.",
       features: [
         "Full firm branding (White-label)",
         "Automation Studio (Scheduled Workers)",
@@ -64,9 +64,8 @@ const USER_TYPES = {
         "Portfolio-level monitoring",
         "24/7 Priority institutional support",
       ],
-      cta: "Contact Sales",
-      href: "mailto:hello@entrestate.com",
-      isExternal: true,
+      cta: "See Infrastructure",
+      href: "/infrastructure",
       highlight: true,
     },
   ],
@@ -77,7 +76,7 @@ const USER_TYPES = {
       title: "المحلل المستقل",
       badge: "299$/شهرياً",
       badgeColor: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-      description: "أبحاث احترافية للمستثمرين المستقلين. وصول كامل لمحرك القرار مع توثيق البيانات المؤسسي.",
+      description: "وصول بحثي احترافي للمستثمرين والمحللين المستقلين.",
       features: [
         "مساعد القرار الذكي (غير محدود)",
         "توثيق بيانات L1 Canonical",
@@ -95,7 +94,7 @@ const USER_TYPES = {
       title: "الوسيط المحترف",
       badge: "499$/شهرياً",
       badgeColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-      description: "حوّل العملاء بأدلة مؤسسية. كل ما في المحلل المستقل بالإضافة إلى هوية مخصصة لمخرجات عملائك.",
+      description: "استخبارات جاهزة للعملاء مع مخرجات تحمل هويتك.",
       features: [
         "كل مميزات المحلل المستقل",
         "مخرجات بعلامتك + علامة Entrestate",
@@ -113,7 +112,7 @@ const USER_TYPES = {
       title: "Entrestate OS للمؤسسات",
       badge: "2,500$+ /شهرياً",
       badgeColor: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-      description: "البنية التحتية الكاملة للصناديق والشركات العقارية. أتمتة كاملة، وصول API، وإدارة فريق.",
+      description: "نشر White-label للشركات والفرق وحمولة API جاهزة للتكامل.",
       features: [
         "علامة تجارية كاملة (White-label)",
         "استوديو الأتمتة (عمال مجدولون)",
@@ -122,32 +121,31 @@ const USER_TYPES = {
         "مراقبة المحافظ الاستثمارية",
         "دعم مؤسسي ذو أولوية 24/7",
       ],
-      cta: "تواصل مع المبيعات",
-      href: "mailto:hello@entrestate.com",
-      isExternal: true,
+      cta: "شاهد البنية التحتية",
+      href: "/infrastructure",
       highlight: true,
     },
   ],
 }
 
-// ── Organisation Terminal feature highlights ──────────────────────────────────
+// ── Entrestate OS feature highlights ──────────────────────────────────────────
 
 const ORG_FEATURES = {
   en: [
-    { icon: Building2, title: "Company-Branded Outputs", desc: "Every memo, report, and export carries your firm's identity — not Entrestate's." },
-    { icon: Users, title: "Multi-User Team Workspace", desc: "Manage your team's intelligence in one place. Shared watchlists, portfolios, and audit trails." },
-    { icon: Shield, title: "Dual-Schema API Security", desc: "Every API response is validated, encrypted per recipient, and multi-node safe. No leaks, no race conditions." },
-    { icon: BarChart3, title: "Advanced Market Signals", desc: "Supply pressure heatmaps, portfolio-level monitoring, and institutional risk oversight tools." },
-    { icon: Globe, title: "API Integration", desc: "Annual license for third-party platform integration with encrypted, schema-verified responses." },
-    { icon: FileText, title: "Dedicated Onboarding", desc: "A real person walks your team through setup, custom workflows, and ongoing support." },
+    { icon: Building2, title: "Company-Branded Outputs", desc: "Memos, reports, and exports ship in your firm's identity." },
+    { icon: Users, title: "Multi-User Team Workspace", desc: "Shared watchlists, portfolios, and audit trails in one workspace." },
+    { icon: Shield, title: "Dual-Schema API Security", desc: "Validated, encrypted responses with governed access." },
+    { icon: BarChart3, title: "Advanced Market Signals", desc: "Portfolio monitoring and market oversight for operating teams." },
+    { icon: Globe, title: "API Integration", desc: "Headless delivery for third-party platforms and internal systems." },
+    { icon: FileText, title: "Dedicated Onboarding", desc: "Structured rollout, setup, and ongoing support." },
   ],
   ar: [
-    { icon: Building2, title: "مخرجات بعلامة الشركة", desc: "كل مذكرة وتقرير وملف يحمل هوية شركتك — لا هوية Entrestate." },
-    { icon: Users, title: "مساحة عمل الفريق", desc: "أدر عمل فريقك في مكان واحد: قوائم مشتركة، محافظ، وسجل متابعة." },
-    { icon: Shield, title: "أمان API ثنائي المخطط", desc: "كل استجابة API مُتحقق منها ومُشفرة لكل مستلم — آمنة متعددة العقد." },
-    { icon: BarChart3, title: "إشارات سوقية متقدمة", desc: "خرائط ضغط المعروض، متابعة المحافظ، وأدوات رقابة مخاطر المؤسسات." },
-    { icon: Globe, title: "تكامل API", desc: "ترخيص سنوي لتكامل المنصات الخارجية باستجابات مُشفرة ومُتحقق منها." },
-    { icon: FileText, title: "تهيئة مخصصة", desc: "شخص حقيقي يأخذ فريقك عبر الإعداد وسير العمل المخصص والدعم المستمر." },
+    { icon: Building2, title: "مخرجات بعلامة الشركة", desc: "المذكرات والتقارير والملفات تخرج بهوية شركتك." },
+    { icon: Users, title: "مساحة عمل الفريق", desc: "قوائم مشتركة ومحافظ وسجل متابعة داخل مساحة واحدة." },
+    { icon: Shield, title: "أمان API ثنائي المخطط", desc: "استجابات متحققة ومشفرة مع وصول محكوم." },
+    { icon: BarChart3, title: "إشارات سوقية متقدمة", desc: "متابعة المحافظ ورقابة السوق لفرق التشغيل." },
+    { icon: Globe, title: "تكامل API", desc: "تسليم Headless للمنصات الخارجية والأنظمة الداخلية." },
+    { icon: FileText, title: "تهيئة مخصصة", desc: "إطلاق منظم وإعداد ودعم مستمر." },
   ],
 }
 
@@ -160,36 +158,24 @@ const FAQ_GROUPS = {
       items: [
         {
           q: "Is Entrestate really free for individuals?",
-          a: "Yes — completely. Individual investors and realtors get full access to the decision engine, AI copilot, market intelligence, timing signals, DLD data, and file generation at no cost. There are no hidden limits, no trial periods, and no credit card required.",
+          a: "Yes. Individuals can start free with core intelligence, copilot access, and report generation.",
         },
         {
           q: "What's the difference between an investor and a realtor account?",
-          a: "Both get identical platform access. The only difference is branding: investor accounts generate files with Entrestate branding, while realtor accounts can add their personal branding alongside Entrestate on client-ready outputs like memos and reports.",
-        },
-        {
-          q: "Can I use the platform without signing up?",
-          a: "You can explore limited features without an account. To unlock the full AI copilot, file generation, and saved sessions, you'll need to create a free account.",
+          a: "Both use the same core engine. Realtor accounts add personal branding to client-ready outputs.",
         },
       ],
     },
     {
-      group: "Organisation Terminal",
+      group: "Entrestate OS",
       items: [
         {
-          q: "What is the Organisation Terminal?",
-          a: "The Organisation Terminal is Entrestate's branded execution dashboard for companies and professional firms. It's a multi-user workspace where your team operates under your company's identity — company-branded outputs, shared portfolios, API access, and institutional-grade risk oversight. It's not a subscription plan; it's a company-level product.",
+          q: "What is Entrestate OS?",
+          a: "It is the company deployment: branded workspace, team controls, API access, and guided rollout.",
         },
         {
-          q: "How is it different from a free individual account?",
-          a: "Individual accounts are single-user and output Entrestate or personal branding. The Organisation Terminal is multi-user, outputs your company brand exclusively, adds team features (shared watchlists, audit trails, portfolio monitoring), unlocks the dual-schema API, and comes with a dedicated onboarding and support setup.",
-        },
-        {
-          q: "How is the Organisation Terminal priced?",
-          a: "Pricing is set per company based on team size, API needs, and integration scope. Contact us at hello@entrestate.com for a tailored quote.",
-        },
-        {
-          q: "What is Dual-Schema API Security?",
-          a: "Every API response is validated against two schemas: an identity schema (who is requesting) and a permission schema (what they can receive). Responses are then encrypted specifically for the intended recipient. Multi-hop request chains (A → B → C) only succeed if every node's schema aligns. This prevents unauthorized access, race conditions, and data leakage — even under heavy parallel load.",
+          q: "How is enterprise priced?",
+          a: "Pricing is tailored by seats, API scope, and deployment requirements.",
         },
       ],
     },
@@ -198,19 +184,11 @@ const FAQ_GROUPS = {
       items: [
         {
           q: "What is Entrestate, exactly?",
-          a: "Entrestate is a real estate intelligence operating system — not a listing portal. It takes raw UAE property data and transforms it into institutional-grade investment intelligence through a multi-phase data pipeline and five-layer evidence stack. Think of it as a decision engine: it tells you not just what exists, but what to do and why.",
-        },
-        {
-          q: "What does a BUY signal mean?",
-          a: "A BUY signal means a project has passed through the full Decision Tunnel and scored high on timing, stress resilience, yield, and data confidence. Out of all UAE projects in the database, only a small percentage hold an active BUY or STRONG_BUY signal at any given time.",
+          a: "Entrestate turns UAE property data into verified decision and execution workflows.",
         },
         {
           q: "What can the AI Copilot actually do?",
-          a: "The AI Copilot screens properties by budget, area, and risk profile using live scored data; compares markets side-by-side; returns real V1 stress metrics; generates full investor memos with price reality checks and developer due diligence; and saves structured reports to your account.",
-        },
-        {
-          q: "What are slash commands?",
-          a: "Slash commands are quick shortcuts inside the AI chat: /screen runs a deal screener, /compare runs a market comparison, /memo generates an investor memo, /risk returns V1 stress metrics, /price runs a price reality check, /pulse shows the DLD market pulse, /bench runs an area benchmark, and /history searches DLD transactions.",
+          a: "It screens opportunities, compares markets, surfaces signals, and generates investor-ready reports.",
         },
       ],
     },
@@ -221,36 +199,24 @@ const FAQ_GROUPS = {
       items: [
         {
           q: "هل Entrestate مجاني حقاً للأفراد؟",
-          a: "نعم — بالكامل. المستثمرون الأفراد والوسطاء يحصلون على وصول كامل لمحرك القرار، مساعد القرار، رؤية السوق، إشارات التوقيت، بيانات DLD، وإنشاء الملفات — بدون أي تكلفة.",
+          a: "نعم. يمكن للأفراد البدء مجاناً مع الوصول إلى الاستخبارات الأساسية والمساعد والتقارير.",
         },
         {
           q: "ما الفرق بين حساب المستثمر وحساب الوسيط؟",
-          a: "كلاهما يحصل على نفس وصول المنصة. الفرق الوحيد في العلامة التجارية: حسابات المستثمرين تنشئ ملفات بعلامة Entrestate، بينما يمكن للوسطاء إضافة علامتهم الشخصية إلى المخرجات الجاهزة للعملاء.",
-        },
-        {
-          q: "هل يمكنني استخدام المنصة بدون تسجيل؟",
-          a: "يمكنك استكشاف ميزات محدودة بدون حساب. للحصول على وصول كامل لمساعد القرار وإنشاء الملفات والجلسات المحفوظة، ستحتاج إلى إنشاء حساب مجاني.",
+          a: "كلاهما يستخدم نفس المحرك. حساب الوسيط يضيف علامته إلى المخرجات الجاهزة للعملاء.",
         },
       ],
     },
     {
-      group: "منصة المؤسسات",
+      group: "Entrestate OS",
       items: [
         {
-          q: "ما هي منصة المؤسسات؟",
-          a: "منصة المؤسسات هي لوحة تنفيذ بعلامة الشركة للشركات والمكاتب المحترفة. مساحة عمل متعددة المستخدمين حيث يعمل فريقك تحت هوية شركتك — مخرجات بعلامة الشركة، محافظ مشتركة، وصول API، ورقابة مخاطر.",
+          q: "ما هو Entrestate OS؟",
+          a: "هو نشر الشركة: مساحة بعلامتك، وضوابط للفريق، ووصول API، وإطلاق منظم.",
         },
         {
-          q: "ما الفرق عن الحساب الفردي المجاني؟",
-          a: "الحسابات الفردية لمستخدم واحد وتخرج علامة Entrestate أو العلامة الشخصية. منصة المؤسسات متعددة المستخدمين، تخرج علامة شركتك حصراً، وتضيف ميزات الفريق والوصول لـ API وتهيئة مخصصة.",
-        },
-        {
-          q: "كيف يتم تسعير منصة المؤسسات؟",
-          a: "السعر محدد لكل شركة بحسب حجم الفريق، احتياجات API، ونطاق التكامل. تواصل معنا على hello@entrestate.com للحصول على عرض مخصص.",
-        },
-        {
-          q: "ما هو أمان API ثنائي المخطط؟",
-          a: "كل استجابة API تُتحقق من مخططين: مخطط الهوية (من يطلب) ومخطط الصلاحية (ما يمكن الوصول إليه). الاستجابات تُشفر خصيصاً للمستلم المقصود، مما يمنع الوصول غير المصرح والتسريبات.",
+          q: "كيف يتم التسعير للمؤسسات؟",
+          a: "يتم التسعير بحسب عدد المقاعد ونطاق الـ API ومتطلبات النشر.",
         },
       ],
     },
@@ -259,15 +225,11 @@ const FAQ_GROUPS = {
       items: [
         {
           q: "ما هو Entrestate بالضبط؟",
-          a: "Entrestate منصة قرار عقاري، وليست بوابة إعلانات. نجمع بيانات السوق، ننظفها، ثم نحولها إلى قراءة واضحة تساعدك على اختيار المشروع المناسب وتوقيت الدخول الصحيح.",
-        },
-        {
-          q: "ماذا يعني BUY؟",
-          a: "يعني أن المشروع اجتاز طبقات التقييم وحقق مستوى قويًا في التوقيت والمرونة والعائد وثقة البيانات. فقط نسبة صغيرة من المشاريع تحمل إشارة BUY أو STRONG_BUY في أي وقت.",
+          a: "تحول Entrestate بيانات السوق العقاري في الإمارات إلى تدفقات قرار وتنفيذ موثقة.",
         },
         {
           q: "ماذا يقدم مساعد القرار؟",
-          a: "يفرز المشاريع بحسب الميزانية والهدف، يقارن المناطق والمطورين، يعرض مؤشرات V1 الفعلية، ويكتب مذكرات الاستثمار والتقارير الجاهزة.",
+          a: "يفرز الفرص ويقارن الأسواق ويعرض الإشارات ويولد تقارير جاهزة للمستثمر.",
         },
       ],
     },
@@ -325,12 +287,12 @@ export default function PricingPage() {
             {isArabic ? "التسعير" : "Pricing"}
           </p>
           <h1 className="mt-3 text-3xl font-semibold text-foreground md:text-5xl leading-tight">
-            {isArabic ? "بنية تحتية للقرار، ليست مجرد أداة." : "Decision Infrastructure, not just a tool."}
+            {isArabic ? "اختر مستوى التشغيل المناسب لفريقك." : "Choose the operating level that fits your team."}
           </h1>
           <p className="mt-4 text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
             {isArabic
-              ? "اختر المستوى الذي يناسب حجم عملياتك. من التحليل المستقل إلى أنظمة تشغيل صناديق الاستثمار الكبرى."
-              : "Choose the tier that matches your scale. From solo research to full institutional fund operating systems."}
+              ? "من التحليل الفردي إلى نشر Entrestate OS على مستوى الشركة."
+              : "From solo research to full Entrestate OS deployment."}
           </p>
         </header>
 
@@ -401,7 +363,7 @@ export default function PricingPage() {
           })}
         </section>
 
-        {/* ── Organisation Terminal deep-dive ── */}
+        {/* ── Entrestate OS deep-dive ── */}
         <section className="mb-24 rounded-3xl border border-amber-500/20 bg-card/60 overflow-hidden">
           <div className="px-6 md:px-10 py-10 border-b border-border/50">
             <div className="flex items-center gap-3 mb-4">
@@ -413,14 +375,14 @@ export default function PricingPage() {
                   {isArabic ? "المنتج المدفوع الوحيد" : "The only paid product"}
                 </p>
                 <h2 className="text-xl font-semibold text-foreground">
-                  {isArabic ? "منصة المؤسسات" : "Organisation Terminal"}
+                  {isArabic ? "Entrestate OS للمؤسسات" : "Entrestate OS"}
                 </h2>
               </div>
             </div>
             <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
               {isArabic
-                ? "لوحة تنفيذ مخصصة للشركات والمكاتب المحترفة. تعمل تحت علامتك التجارية الكاملة، مع بنية متعددة المستخدمين، API آمن، ورؤية جماعية متكاملة."
-                : "A fully branded execution dashboard for companies and professional firms. Your team operates under your identity, with multi-user infrastructure, secure API access, and institutional-grade intelligence built in."}
+                ? "نشر كامل للشركة بعلامتك، مع ضوابط للفريق، وحمولة API Headless، وإطلاق منظم."
+                : "A full company deployment with your brand, team controls, headless API payloads, and structured rollout."}
             </p>
           </div>
 
@@ -445,12 +407,19 @@ export default function PricingPage() {
                 {isArabic ? "بحسب حجم الفريق، واحتياجات API، ونطاق التكامل." : "Based on team size, API needs, and integration scope."}
               </p>
             </div>
-            <Button asChild variant="default" className="gap-2 shrink-0">
-              <a href="mailto:hello@entrestate.com">
-                <Zap className="h-4 w-4" />
-                {isArabic ? "تواصل معنا" : "Contact us"}
-              </a>
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button asChild variant="outline" className="gap-2 shrink-0">
+                <Link href={prefixLocalePath("/enterprise", locale)}>
+                  {isArabic ? "دليل الـ API" : "API guide"}
+                </Link>
+              </Button>
+              <Button asChild variant="default" className="gap-2 shrink-0">
+                <a href="mailto:hello@entrestate.com">
+                  <Zap className="h-4 w-4" />
+                  {isArabic ? "تواصل معنا" : "Contact us"}
+                </a>
+              </Button>
+            </div>
           </div>
         </section>
 
@@ -458,7 +427,7 @@ export default function PricingPage() {
         <section>
           <div className="mb-12 text-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
-              {isArabic ? "كل ما تحتاج معرفته" : "Everything you need to know"}
+              {isArabic ? "أسئلة شائعة" : "Common questions"}
             </p>
             <h2 className="mt-3 text-2xl font-semibold text-foreground md:text-3xl">
               {isArabic ? "أسئلة متكررة" : "Frequently Asked Questions"}
@@ -480,13 +449,18 @@ export default function PricingPage() {
             </h3>
             <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
               {isArabic
-                ? "للاستفسارات المؤسسية أو تكامل API أو تهيئة مخصصة لفريقك — تواصل معنا مباشرة."
-                : "For Organisation Terminal inquiries, API integration, or custom enterprise setup — reach us directly."}
+                ? "للتسعير المؤسسي أو تكامل API أو الإطلاق المخصص، تواصل معنا مباشرة."
+                : "For enterprise pricing, API integration, or custom rollout, reach us directly."}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Button asChild variant="default">
                 <Link href={prefixLocalePath("/chat", locale)}>
                   {isArabic ? "افتح مساعد القرار" : "Open AI Copilot"}
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href={prefixLocalePath("/infrastructure", locale)}>
+                  {isArabic ? "شرح البنية" : "System overview"}
                 </Link>
               </Button>
               <Button asChild variant="outline">

@@ -230,6 +230,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               sources={project.evidence_sources}
               exclusions={project.evidence_exclusions}
               assumptions={project.evidence_assumptions}
+              locale={locale}
             />
 
             <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">

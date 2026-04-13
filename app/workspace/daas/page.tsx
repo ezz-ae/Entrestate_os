@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -18,6 +19,8 @@ import {
   Home,
   Wallet,
 } from "lucide-react"
+import { formatAed } from "@/lib/format/currency"
+import { formatInteger } from "@/lib/format/number"
 
 type DashboardResponse = {
   source: string
@@ -125,6 +128,7 @@ const requestTemplate = `POST /api/daas
 }`
 
 export default function MarketDataIntegrationPage() {
+  const locale = useLocale()
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
   const [dashboardError, setDashboardError] = useState<string | null>(null)
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true)
@@ -156,7 +160,7 @@ export default function MarketDataIntegrationPage() {
 
   const formatNumber = (value: number | null) => {
     if (value === null || !Number.isFinite(value)) return "—"
-    return value.toLocaleString()
+    return formatInteger(value, locale)
   }
 
   const formatPercent = (value: number | null) => {
@@ -188,11 +192,11 @@ export default function MarketDataIntegrationPage() {
                 Market Data Integration
               </p>
               <h1 className="text-3xl md:text-5xl font-serif text-foreground leading-tight text-balance">
-                A market data product built for real estate operators.
+                Structured market data for operating teams.
               </h1>
               <p className="mt-6 text-base md:text-lg text-muted-foreground leading-relaxed">
-                Use Entrestate data to power your website, your CRM, and your reports. This is not a subscription
-                dashboard. It is a data product you can integrate, download, and reuse across teams.
+                Use Entrestate data across your site, CRM, and reporting stack. Structured delivery, reusable outputs,
+                and live coverage in one layer.
               </p>
               <div className="mt-4">
                 <ExplainWithChat prompt="Explain the Market Data Integration product, what it includes, and who it is for." />
@@ -244,7 +248,7 @@ export default function MarketDataIntegrationPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
                     { label: "Projects covered", value: formatNumber(dashboard.overview.total_projects) },
-                    { label: "Average price (AED)", value: formatNumber(dashboard.overview.avg_price) },
+                    { label: "Average price", value: formatAed(dashboard.overview.avg_price, locale, { compact: true, fallback: "—" }) },
                     { label: "Average yield", value: formatPercent(dashboard.overview.avg_yield) },
                     { label: "Average appreciation", value: formatPercent(dashboard.overview.avg_appreciation) },
                   ].map((item, index) => (

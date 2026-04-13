@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -12,11 +12,22 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
+import { formatDate } from "@/lib/format/date"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 type BookType = "project" | "area" | "portfolio" | "client"
 type BookAction = "generate" | "report" | "rewrite" | "share" | "export"
+type BookSummary = {
+  id: string
+  title: string
+  subject: string
+  type: BookType
+  createdAt: string
+  updatedAt: string
+  pageCount: number
+  feedCount: number
+}
 
 const TYPE_META: Record<BookType, { label: string; labelAr: string; color: string; icon: any }> = {
   project:   { label: "Project",   labelAr: "مشروع",   color: "text-sky-400 border-sky-400/30 bg-sky-400/5",     icon: Building2 },
@@ -129,16 +140,9 @@ const CAPABILITIES = {
   ],
 }
 
-// Mock recent books — will be replaced by real API data
-const MOCK_BOOKS = [
-  { id: "1", title: "Dubai Marina Q2 Deep Dive", subject: "Price momentum + developer risk", type: "area" as BookType, updatedAt: "2026-03-15T10:00:00Z", pageCount: 8, status: "complete" },
-  { id: "2", title: "Emaar Investor Memo", subject: "Marina Vista stress profile V1", type: "project" as BookType, updatedAt: "2026-03-14T08:00:00Z", pageCount: 5, status: "complete" },
-  { id: "3", title: "Business Bay Portfolio", subject: "Yield vs safety weighting", type: "portfolio" as BookType, updatedAt: "2026-03-12T14:00:00Z", pageCount: 3, status: "draft" },
-]
-
 const BRAND_STRIP = {
-  en: "All outputs are branded with Entrestate unless you're on an Organisation Terminal.",
-  ar: "جميع المخرجات تحمل علامة Entrestate ما لم تكن على منصة المؤسسات.",
+  en: "Outputs stay in Entrestate branding unless your workspace runs on the enterprise layer.",
+  ar: "تظل المخرجات بعلامة Entrestate ما لم تعمل مساحة العمل على طبقة المؤسسات.",
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -148,46 +152,84 @@ export default function PersonalMarketBookPage() {
   const isArabic = locale === "ar"
   const caps = isArabic ? CAPABILITIES.ar : CAPABILITIES.en
 
-  const [books, setBooks] = useState(MOCK_BOOKS)
+  const [books, setBooks] = useState<BookSummary[]>([])
+  const [booksLoading, setBooksLoading] = useState(true)
+  const [booksError, setBooksError] = useState<string | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
   const [newBookTitle, setNewBookTitle] = useState("")
   const [newBookType, setNewBookType] = useState<BookType>("project")
   const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let active = true
+
+    fetch("/api/notebook/books")
+      .then((res) => {
+        if (!res.ok) throw new Error("Notebook fetch failed")
+        return res.json()
+      })
+      .then((data) => {
+        if (!active) return
+        setBooks((data?.books ?? []) as BookSummary[])
+        setBooksError(null)
+      })
+      .catch(() => {
+        if (!active) return
+        setBooks([])
+        setBooksError(isArabic ? "تعذر تحميل الدفاتر الآن." : "Unable to load books right now.")
+      })
+      .finally(() => {
+        if (active) setBooksLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [isArabic])
 
   async function handleCreateBook(e: React.FormEvent) {
     e.preventDefault()
     if (!newBookTitle.trim() || creating) return
     setCreating(true)
+    setCreateError(null)
     try {
       const res = await fetch("/api/notebook/books", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: newBookTitle.trim(), subject: newBookTitle.trim(), type: newBookType }),
       })
+      if (!res.ok) throw new Error("Notebook create failed")
       const data = await res.json()
       if (data?.book) {
-        setBooks((prev) => [{ ...data.book, status: "draft" }, ...prev])
+        setBooks((prev) => [data.book as BookSummary, ...prev])
         setShowNewForm(false)
         setNewBookTitle("")
       }
     } catch {
-      // silently handle — will use mock insert
-      const mockBook = {
-        id: String(Date.now()),
-        title: newBookTitle.trim(),
-        subject: newBookTitle.trim(),
-        type: newBookType,
-        updatedAt: new Date().toISOString(),
-        pageCount: 0,
-        status: "draft" as const,
-      }
-      setBooks((prev) => [mockBook, ...prev])
-      setShowNewForm(false)
-      setNewBookTitle("")
+      setCreateError(isArabic ? "تعذر إنشاء الدفتر الآن." : "Unable to create the book right now.")
     } finally {
       setCreating(false)
     }
   }
+
+  const recentActivity = books.slice(0, 4).map((book) => ({
+    id: book.id,
+    action: book.pageCount > 0
+      ? (isArabic ? "تم تحديث الدفتر" : "Book updated")
+      : (isArabic ? "تم إنشاء دفتر" : "Book created"),
+    subject: book.title,
+    time: formatDate(book.updatedAt, locale, { month: "short", day: "numeric" }),
+    icon: book.pageCount > 0 ? RefreshCcw : Sparkles,
+    color: book.pageCount > 0 ? "text-violet-400" : "text-primary",
+  }))
+
+  const outputRows = books.slice(0, 3).map((book) => ({
+    id: book.id,
+    title: book.title,
+    type: `${isArabic ? TYPE_META[book.type].labelAr : TYPE_META[book.type].label} · Entrestate`,
+    date: formatDate(book.updatedAt, locale, { month: "short", day: "numeric" }),
+  }))
 
   return (
     <main id="main-content" className="min-h-screen bg-background" dir={isArabic ? "rtl" : "ltr"}>
@@ -207,7 +249,7 @@ export default function PersonalMarketBookPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary mb-4">
                 <Activity className="h-3 w-3 animate-pulse" />
-                {isArabic ? "دفتر السوق الشخصي" : "Personal Market Book ML"}
+                {isArabic ? "دفتر السوق الشخصي" : "Personal Market Book"}
               </div>
               <h1 className="text-3xl md:text-5xl font-serif font-semibold text-foreground tracking-tight leading-tight">
                 {isArabic ? "كتبك الاستخباراتية" : "Your Intelligence Books"}
@@ -232,7 +274,7 @@ export default function PersonalMarketBookPage() {
             <Shield className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
             <p className="text-[11px] text-muted-foreground/70">{isArabic ? BRAND_STRIP.ar : BRAND_STRIP.en}</p>
             <Link href="/pricing" className="text-[11px] font-semibold text-primary hover:underline underline-offset-2 ms-auto shrink-0">
-              {isArabic ? "منصة المؤسسات" : "Organisation Terminal"}
+              {isArabic ? "طبقة المؤسسات" : "Enterprise layer"}
             </Link>
           </div>
         </header>
@@ -315,6 +357,9 @@ export default function PersonalMarketBookPage() {
                   {creating ? (isArabic ? "جاري الإنشاء…" : "Creating…") : (isArabic ? "تهيئة الدفتر" : "Initialize Book")}
                 </Button>
               </div>
+              {createError ? (
+                <p className="mt-3 text-xs text-amber-500">{createError}</p>
+              ) : null}
             </form>
           </motion.section>
         )}
@@ -331,12 +376,21 @@ export default function PersonalMarketBookPage() {
             </Link>
           </div>
 
-          {books.length === 0 ? (
+          {booksLoading ? (
+            <div className="rounded-2xl border border-border/40 py-16 text-center">
+              <p className="text-sm text-muted-foreground/70">
+                {isArabic ? "جاري تحميل الدفاتر…" : "Loading books…"}
+              </p>
+            </div>
+          ) : books.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-border/40 py-16 text-center">
               <BookOpen className="h-8 w-8 text-muted-foreground/30 mx-auto mb-4" />
               <p className="text-sm text-muted-foreground/70">
                 {isArabic ? "لا توجد دفاتر بعد. ابدأ بإنشاء دفترك الأول." : "No books yet. Create your first intelligence book."}
               </p>
+              {booksError ? (
+                <p className="mt-3 text-xs text-amber-500">{booksError}</p>
+              ) : null}
               <Button variant="outline" size="sm" className="mt-5" onClick={() => setShowNewForm(true)}>
                 {isArabic ? "إنشاء أول دفتر" : "Create first book"}
               </Button>
@@ -346,7 +400,7 @@ export default function PersonalMarketBookPage() {
               {books.map((book) => {
                 const meta = TYPE_META[book.type]
                 const Icon = meta.icon
-                const isDraft = book.status === "draft"
+                const isDraft = book.pageCount === 0
                 return (
                   <motion.div
                     key={book.id}
@@ -390,7 +444,7 @@ export default function PersonalMarketBookPage() {
                           <div className="flex items-center gap-3 text-[10px] text-muted-foreground/50">
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {new Date(book.updatedAt).toLocaleDateString()}
+                              {formatDate(book.updatedAt, locale, { month: "short", day: "numeric" })}
                             </span>
                             <span className="flex items-center gap-1">
                               <FileText className="h-3 w-3" />
@@ -457,15 +511,10 @@ export default function PersonalMarketBookPage() {
             {isArabic ? "النشاط الأخير" : "Recent activity"}
           </p>
           <div className="rounded-2xl border border-border/40 bg-card/50 divide-y divide-border/30">
-            {[
-              { action: isArabic ? "تم توليد تقرير" : "Report generated", subject: isArabic ? "دبي مارينا — ملخص المنطقة" : "Dubai Marina — Area brief", time: "2h ago", icon: FileText, color: "text-blue-400" },
-              { action: isArabic ? "تمت مشاركة دفتر" : "Book shared", subject: isArabic ? "مذكرة مستثمر إعمار" : "Emaar Investor Memo", time: "1d ago", icon: Share2, color: "text-emerald-400" },
-              { action: isArabic ? "تم تصدير ملف" : "File exported", subject: isArabic ? "محفظة الخليج التجاري — PDF" : "Business Bay Portfolio — PDF", time: "2d ago", icon: Download, color: "text-amber-400" },
-              { action: isArabic ? "تم تحديث الدفتر" : "Book updated", subject: isArabic ? "ملف ضغط مارينا فيستا V1" : "Marina Vista V1 stress profile", time: "3d ago", icon: RefreshCcw, color: "text-violet-400" },
-            ].map((item, i) => {
+            {recentActivity.length > 0 ? recentActivity.map((item) => {
               const Ic = item.icon
               return (
-                <div key={i} className="flex items-center gap-4 px-5 py-3.5">
+                <div key={item.id} className="flex items-center gap-4 px-5 py-3.5">
                   <div className={`shrink-0 ${item.color}`}>
                     <Ic className="h-4 w-4" />
                   </div>
@@ -477,7 +526,11 @@ export default function PersonalMarketBookPage() {
                   <span className="text-[10px] text-muted-foreground/40 shrink-0">{item.time}</span>
                 </div>
               )
-            })}
+            }) : (
+              <div className="px-5 py-6 text-sm text-muted-foreground/70">
+                {isArabic ? "سيظهر نشاط الدفاتر هنا عند البدء." : "Notebook activity will appear here as books start moving."}
+              </div>
+            )}
           </div>
         </section>
 
@@ -491,12 +544,8 @@ export default function PersonalMarketBookPage() {
               </Link>
             </div>
             <div className="space-y-2">
-              {[
-                { title: isArabic ? "مذكرة استثمار — مارينا فيستا" : "Investor Memo — Marina Vista", type: isArabic ? "PDF · Entrestate" : "PDF · Entrestate", date: "Mar 15" },
-                { title: isArabic ? "مقارنة المناطق — دبي مارينا vs JBR" : "Area Comparison — Dubai Marina vs JBR", type: isArabic ? "تقرير · Entrestate" : "Report · Entrestate", date: "Mar 14" },
-                { title: isArabic ? "فحص السعر — الخليج التجاري" : "Price Reality Check — Business Bay", type: isArabic ? "تحليل · Entrestate" : "Analysis · Entrestate", date: "Mar 12" },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between rounded-xl border border-border/30 bg-muted/10 px-4 py-3 hover:bg-muted/20 transition-colors">
+              {outputRows.length > 0 ? outputRows.map((item) => (
+                <div key={item.id} className="flex items-center justify-between rounded-xl border border-border/30 bg-muted/10 px-4 py-3 hover:bg-muted/20 transition-colors">
                   <div className="flex items-center gap-3 min-w-0">
                     <FileText className="h-4 w-4 shrink-0 text-muted-foreground/50" />
                     <div className="min-w-0">
@@ -510,7 +559,11 @@ export default function PersonalMarketBookPage() {
                     <Share2 className="h-3.5 w-3.5 text-muted-foreground/40 hover:text-emerald-400 cursor-pointer transition-colors" />
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="rounded-xl border border-border/30 bg-muted/10 px-4 py-5 text-sm text-muted-foreground/70">
+                  {isArabic ? "ستظهر المخرجات هنا بعد إنشاء أول دفتر." : "Generated outputs will appear here after the first book is created."}
+                </div>
+              )}
             </div>
           </div>
 
