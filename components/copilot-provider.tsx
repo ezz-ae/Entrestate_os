@@ -3,6 +3,8 @@
 import { createContext, useContext, ReactNode, useState, useCallback, useMemo } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
+import { useLocale } from "next-intl"
+import { normalizeLocale } from "@/i18n/locale"
 
 type ChatHelpers = ReturnType<typeof useChat>
 
@@ -17,6 +19,7 @@ const CopilotContext = createContext<CopilotContextValue | null>(null)
 
 export function CopilotProvider({ children, initialId }: { children: ReactNode; initialId?: string }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const locale = normalizeLocale(useLocale())
 
   // Memoize transport so it's not recreated on every render.
   const transport = useMemo(
@@ -24,8 +27,11 @@ export function CopilotProvider({ children, initialId }: { children: ReactNode; 
       new DefaultChatTransport({
         api: "/api/copilot",
         body: initialId != null ? { id: initialId } : {},
+        headers: {
+          "x-entrestate-locale": locale,
+        },
       }),
-    [initialId],
+    [initialId, locale],
   )
 
   // Only include `id` when it's defined — passing `id: undefined` triggers

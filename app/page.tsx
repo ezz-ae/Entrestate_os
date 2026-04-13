@@ -134,6 +134,9 @@ export default async function HomePage() {
   }))
 
   const totalProjects = pulse.summary.total || 2813
+  const avgMarketPrice = typeof pulse.summary.avg_price === "number" && Number.isFinite(pulse.summary.avg_price)
+    ? pulse.summary.avg_price
+    : null
 
   return (
     <main id="main-content">
@@ -144,7 +147,7 @@ export default async function HomePage() {
       <Navbar />
 
       <div className="mx-auto max-w-[1100px] px-6 pb-28 pt-32 md:pt-44">
-        <HeroSection totalProjects={totalProjects} />
+        <HeroSection avgMarketPrice={avgMarketPrice} totalProjects={totalProjects} />
 
         <section className="mt-20">
           <div className="mb-8 text-center">

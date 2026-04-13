@@ -4,9 +4,11 @@ import Link from "next/link"
 import { useLocale } from "next-intl"
 import { ArrowRight, Database, Lock, ShieldCheck } from "lucide-react"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { formatAed } from "@/lib/format/currency"
 import { formatInteger } from "@/lib/format/number"
 
 type Props = {
+  avgMarketPrice: number | null
   totalProjects: number
 }
 
@@ -28,6 +30,7 @@ const COPY = {
     trustPills: ["Canonical DLD", "Verified Records", "Auditable Lineage", "SOC 2 Ready"],
     stats: {
       projects: "Scored projects",
+      avgPrice: "Average market price",
       listings: "Verified listings",
       dld: "DLD transactions",
       areas: "Area profiles",
@@ -51,6 +54,7 @@ const COPY = {
     trustPills: ["DLD Canonical", "سجلات موثقة", "تتبّع كامل", "SOC 2 Ready"],
     stats: {
       projects: "مشروع مقيّم",
+      avgPrice: "متوسط السعر",
       listings: "قائمة موثقة",
       dld: "معاملة DLD",
       areas: "ملف منطقة",
@@ -59,7 +63,7 @@ const COPY = {
   },
 } as const
 
-export function HeroSection({ totalProjects }: Props) {
+export function HeroSection({ avgMarketPrice, totalProjects }: Props) {
   const locale = useLocale() as AppLocale
   const copy = COPY[locale] ?? COPY.en
 
@@ -69,11 +73,14 @@ export function HeroSection({ totalProjects }: Props) {
   const developerCount = 481
   const stats = [
     { label: copy.stats.projects, value: totalProjects },
+    avgMarketPrice && avgMarketPrice > 0
+      ? { label: copy.stats.avgPrice, value: formatAed(avgMarketPrice, locale, { compact: true }) }
+      : null,
     { label: copy.stats.listings, value: bayutListings },
     { label: copy.stats.dld, value: dldTransactions },
     { label: copy.stats.areas, value: areasCount },
     { label: copy.stats.developers, value: developerCount },
-  ]
+  ].filter(Boolean) as Array<{ label: string; value: number | string }>
 
   return (
     <section className="relative">
@@ -129,7 +136,7 @@ export function HeroSection({ totalProjects }: Props) {
             {stats.map((item) => (
               <div key={item.label} className="flex items-baseline gap-1.5">
                 <span className="text-sm font-semibold tabular-nums text-foreground">
-                  {formatInteger(item.value, locale)}
+                  {typeof item.value === "number" ? formatInteger(item.value, locale) : item.value}
                 </span>
                 <span className="text-[11px] text-muted-foreground/60">{item.label}</span>
               </div>

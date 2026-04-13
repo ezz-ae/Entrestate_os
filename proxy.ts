@@ -13,8 +13,15 @@ export function proxy(request: NextRequest) {
   const segments = pathname.split("/").filter(Boolean)
   const pathLocale = segments[0]
   const internalPathname = isLocale(pathLocale) ? stripLocalePrefix(pathname) : pathname
+  const headerLocale = request.headers.get("x-entrestate-locale")
   const cookieLocale = request.cookies.get(localeCookieName)?.value
-  const activeLocale = isLocale(pathLocale) ? pathLocale : isLocale(cookieLocale) ? cookieLocale : defaultLocale
+  const activeLocale = isLocale(pathLocale)
+    ? pathLocale
+    : isLocale(headerLocale)
+      ? headerLocale
+      : isLocale(cookieLocale)
+        ? cookieLocale
+        : defaultLocale
   const notFoundText = activeLocale === "ar" ? "غير موجود" : "Not Found"
   const unavailableText = activeLocale === "ar" ? "الخدمة غير متاحة" : "Service Unavailable"
   const isAutomationBuilderRoute = AUTOMATION_BUILDER_PATHS.some((path) => internalPathname.startsWith(path))
