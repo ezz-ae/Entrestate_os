@@ -678,8 +678,8 @@ const CAPABILITY_CARDS: Record<AppLocale, Array<{ label: string; description: st
     {
       label: "فرز المشاريع",
       description: "اعثر على المشاريع الأنسب حسب الميزانية والمنطقة والعائد باستخدام البيانات المباشرة.",
-      example: "شقق غرفتين تحت 2 مليون مع BUY ومخاطر A",
-      prompt: "اعرض شقق غرفتين تحت 2 مليون درهم بإشارة BUY ودرجة ضغط A أو B، ورتّبها حسب investor_score_v1 مع العائد.",
+      example: "شقق غرفتين تحت AED 2M مع BUY ومخاطر A",
+      prompt: "اعرض شقق غرفتين تحت AED 2M بإشارة BUY ودرجة ضغط A أو B، ورتّبها حسب investor_score_v1 مع العائد.",
       icon: Search,
     },
     {
@@ -732,7 +732,7 @@ const COMMAND_PROMPTS: Record<AppLocale, Array<{ label: string; prompt: string; 
   ar: [
     {
       label: "فرز",
-      prompt: "اعرض شقق غرفتين تحت 2 مليون درهم بإشارة BUY ودرجة ضغط A أو B، ورتّبها حسب investor_score_v1.",
+      prompt: "اعرض شقق غرفتين تحت AED 2M بإشارة BUY ودرجة ضغط A أو B، ورتّبها حسب investor_score_v1.",
       icon: Search,
     },
     {

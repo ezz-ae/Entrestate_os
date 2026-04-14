@@ -110,7 +110,7 @@ const STEP_COPY: Record<AppLocale, StepConfig[]> = {
       bgClass: "bg-blue-500/8",
       glowClass: "shadow-blue-500/10",
       barClass: "bg-blue-400",
-      example: "تفويض: 2–3 مليون درهم، حماية هبوط، قرارات BUY/HOLD فقط.",
+      example: "تفويض: AED 2M–3M، حماية هبوط، قرارات BUY/HOLD فقط.",
       proofLabel: "مخرجات الإشارة",
       proofItems: ["نية باللغة الطبيعية", "TableSpec JSON منظم", "ضوابط المخاطر"],
     },

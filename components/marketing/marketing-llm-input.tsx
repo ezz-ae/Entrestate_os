@@ -3,23 +3,41 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Send, Paperclip, Globe, Zap } from "lucide-react"
+import { useLocale } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { authClient } from "@/lib/auth/client"
+import { type AppLocale } from "@/i18n/locale"
+import { formatAed } from "@/lib/format/currency"
 
-const placeholders = [
-  "Ask anything about the real estate market...",
-  "Find 2BR projects under AED 2M in Dubai Marina...",
-  "Compare Emaar vs Damac reliability scores...",
-  "What is the rental yield in Business Bay today?",
-  "Show the V1 stress profile for Marina Vista...",
-]
+const PLACEHOLDERS: Record<AppLocale, string[]> = {
+  en: [
+    "Ask anything about the real estate market...",
+    "Find 2BR projects under AED 2M in Dubai Marina...",
+    "Compare Emaar vs Damac reliability scores...",
+    "What is the rental yield in Business Bay today?",
+    "Show the V1 stress profile for Marina Vista...",
+  ],
+  ar: [
+    "اسأل أي شيء عن سوق العقارات...",
+    "اعرض مشاريع غرفتين تحت AED 2M في دبي مارينا...",
+    "قارن موثوقية إعمار وداماك...",
+    "ما العائد الإيجاري في الخليج التجاري اليوم؟",
+    "اعرض ملف الضغط V1 لمارينا فيستا...",
+  ],
+}
 
 export function MarketingLLMInput() {
   const { data: session } = authClient.useSession()
+  const locale = useLocale() as AppLocale
   const canUpload = Boolean(session?.user)
   const [input, setInput] = useState("")
   const [placeholderIdx, setPlaceholderIdx] = useState(0)
+  const placeholders = PLACEHOLDERS[locale] ?? PLACEHOLDERS.en
+  const inventoryValue = formatAed(45_000_000_000, locale, { compact: true })
+  const attachTitle = canUpload
+    ? locale === "ar" ? "إرفاق ملف" : "Attach file"
+    : locale === "ar" ? "سجّل الدخول لإرفاق الملفات" : "Log in to attach files"
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -64,7 +82,7 @@ export function MarketingLLMInput() {
                 size="icon"
                 className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-accent/10 rounded-xl"
                 disabled={!canUpload}
-                title={canUpload ? "Attach file" : "Log in to attach files"}
+                title={attachTitle}
               >
                 <Paperclip className="h-4 w-4" />
               </Button>
@@ -74,7 +92,7 @@ export function MarketingLLMInput() {
               <div className="h-8 w-px bg-border/40 mx-1" />
               <Button variant="ghost" size="sm" className="h-9 gap-2 text-muted-foreground hover:text-primary hover:bg-primary/5 font-normal rounded-xl transition-all">
                 <Zap className="h-4 w-4" />
-                Deep Scan
+                {locale === "ar" ? "فحص عميق" : "Deep Scan"}
               </Button>
             </div>
             
@@ -93,10 +111,10 @@ export function MarketingLLMInput() {
       <div className="mt-4 flex items-center justify-center gap-4 text-xs text-muted-foreground/50">
         <span className="flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Live DLD Feed Active
+          {locale === "ar" ? "تغذية DLD المباشرة نشطة" : "Live DLD Feed Active"}
         </span>
         <span className="w-1 h-1 rounded-full bg-border" />
-        <span>Scored AED 45B in inventory</span>
+        <span>{locale === "ar" ? `تم تقييم مخزون بقيمة ${inventoryValue}` : `Scored ${inventoryValue} in inventory`}</span>
       </div>
     </div>
   )
