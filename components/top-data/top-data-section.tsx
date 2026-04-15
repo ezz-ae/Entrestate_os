@@ -80,12 +80,19 @@ function formatTimestamp(value: string | null, locale?: string | null) {
   if (!value) return "—"
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString(isArabicLocale(locale) ? "ar-AE" : "en-AE", {
+  return date.toLocaleString(isArabicLocale(locale) ? "ar-AE-u-nu-latn" : "en-AE", {
     month: "short",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Dubai",
   })
+}
+
+function formatLiveTimestamp(value: string | null, locale?: string | null) {
+  const timestamp = formatTimestamp(value, locale)
+  return timestamp === "—" ? timestamp : `${timestamp} GST`
 }
 
 function valueFromKeys(record: GenericObject, keys: string[]) {
@@ -166,9 +173,45 @@ function dataToRecords(data: unknown): GenericObject[] {
 
 function sectionSubtitle(confidence: string | null, lastUpdated: string | null, locale?: string | null) {
   const parts = []
-  if (lastUpdated) parts.push(lastUpdated)
-  if (confidence) parts.push(isArabicLocale(locale) ? `الثقة: ${confidence}` : `Confidence: ${confidence}`)
+  parts.push(isArabicLocale(locale) ? "مباشر" : "Live")
+  if (lastUpdated) parts.push(formatLiveTimestamp(lastUpdated, locale))
+  const normalizedConfidence = typeof confidence === "string" ? confidence.trim().toUpperCase() : ""
+  if (normalizedConfidence === "HIGH" || normalizedConfidence === "MEDIUM" || normalizedConfidence === "LOW") {
+    parts.push(isArabicLocale(locale) ? `الثقة: ${normalizedConfidence}` : `Confidence: ${normalizedConfidence}`)
+  }
   return parts.join(" · ")
+}
+
+export function shouldRenderTopDataSection(section: string, data: unknown) {
+  const rows = dataToRecords(data)
+
+  if (section === "golden-visa") {
+    const payload = rows[0] ?? asObject(data)
+    const eligible = asNumber(valueFromKeys(payload, ["eligible_count", "eligible", "count", "projects"])) ?? 0
+    const avgPrice = asNumber(valueFromKeys(payload, ["avg_price", "price"]))
+    const safeCount = asNumber(valueFromKeys(payload, ["safe_count", "safe_projects"])) ?? 0
+    const buySignals = asNumber(valueFromKeys(payload, ["buy_signals", "buy"])) ?? 0
+    return eligible > 0 || avgPrice !== null || safeCount > 0 || buySignals > 0
+  }
+
+  if (section === "trust-bar") {
+    const payload = asObject(data)
+    const confidenceRows = dataToRecords(payload.confidence_distribution)
+    const hierarchy = asArray(payload.hierarchy).filter((entry) => typeof entry === "string")
+    const engines = asArray(payload.engines).filter((entry) => typeof entry === "string")
+    return confidenceRows.length > 0 || hierarchy.length > 0 || engines.length > 0
+  }
+
+  if (section === "market-pulse") {
+    const payload = rows[0] ?? asObject(data)
+    const total = asNumber(valueFromKeys(payload, ["total", "projects", "totalProjects"])) ?? 0
+    const avgPrice = asNumber(valueFromKeys(payload, ["avg_price", "price_avg", "avgPrice"]))
+    const avgYield = asNumber(valueFromKeys(payload, ["avg_yield", "yield_avg", "avgYield"]))
+    const buySignals = asNumber(valueFromKeys(payload, ["buy_signals", "buy", "buySignals"])) ?? 0
+    return total > 0 || avgPrice !== null || avgYield !== null || buySignals > 0
+  }
+
+  return rows.length > 0
 }
 
 function SectionShell({
@@ -188,6 +231,9 @@ function SectionShell({
   lastUpdated: string | null
   children: React.ReactNode
 }) {
+  const syncLabel = isArabicLocale(locale) ? "مباشر" : "Live"
+  const syncTimestamp = formatLiveTimestamp(lastUpdated, locale)
+
   return (
     <article className="overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.10)] dark:hover:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.35)]">
 
@@ -200,10 +246,11 @@ function SectionShell({
           ) : null}
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
-          <ConfidenceBadge confidence={confidence} />
-          {lastUpdated ? (
-            <span className="text-[10px] text-muted-foreground">{formatTimestamp(lastUpdated, locale)}</span>
-          ) : null}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            {syncLabel}
+          </span>
+          {lastUpdated ? <span className="text-[10px] text-muted-foreground">{syncTimestamp}</span> : null}
         </div>
       </div>
 

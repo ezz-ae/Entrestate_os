@@ -21,7 +21,7 @@ const USER_TYPES = {
       badgeColor: "text-blue-500 bg-blue-500/10 border-blue-500/20",
       description: "Research-grade access for independent investors and analysts.",
       features: [
-        "AI Decision Copilot (unlimited)",
+        "Decision Terminal access",
         "L1 Canonical data provenance",
         "Unlimited investor memo generation",
         "BUY / HOLD / WAIT timing signals",
@@ -44,7 +44,7 @@ const USER_TYPES = {
         "Branded Infographic Mode",
         "Client-ready PDF exports",
         "Developer due diligence reports",
-        "Priority AI processing",
+        "Priority response processing",
       ],
       cta: "Subscribe Now",
       href: "/api/billing/checkout?tier=realtor",
@@ -78,7 +78,7 @@ const USER_TYPES = {
       badgeColor: "text-blue-500 bg-blue-500/10 border-blue-500/20",
       description: "وصول بحثي احترافي للمستثمرين والمحللين المستقلين.",
       features: [
-        "مساعد القرار الذكي (غير محدود)",
+        "وصول إلى محطة القرار",
         "توثيق بيانات L1 Canonical",
         "إنشاء مذكرات استثمار غير محدودة",
         "إشارات الشراء والانتظار",
@@ -101,7 +101,7 @@ const USER_TYPES = {
         "وضع الإنفوجرافيك المخصص",
         "تصدير ملفات PDF جاهزة للعملاء",
         "تقارير تدقيق المطورين",
-        "أولوية معالجة الذكاء الاصطناعي",
+        "أولوية في معالجة الطلبات",
       ],
       cta: "اشترك الآن",
       href: "/api/billing/checkout?tier=realtor",
@@ -187,7 +187,7 @@ const FAQ_GROUPS = {
           a: "Entrestate turns UAE property data into verified decision and execution workflows.",
         },
         {
-          q: "What can the AI Copilot actually do?",
+          q: "What can the Decision Terminal actually do?",
           a: "It screens opportunities, compares markets, surfaces signals, and generates investor-ready reports.",
         },
       ],
@@ -455,7 +455,7 @@ export default function PricingPage() {
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <Button asChild variant="default">
                 <Link href={prefixLocalePath("/chat", locale)}>
-                  {isArabic ? "افتح مساعد القرار" : "Open AI Copilot"}
+                  {isArabic ? "افتح المحطة" : "Open Terminal"}
                 </Link>
               </Button>
               <Button asChild variant="outline">

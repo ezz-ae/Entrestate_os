@@ -53,7 +53,7 @@ function getServices(locale: AppLocale) {
 
   return [
     {
-      name: "AI Copilot",
+      name: "Decision Terminal",
       status: "Operational",
       detail: "Streaming responses live · Claude Sonnet 4.6",
       icon: Zap,
@@ -65,7 +65,7 @@ function getServices(locale: AppLocale) {
       icon: Database,
     },
     {
-      name: "Decision engine",
+      name: "Scoring engine",
       status: "Operational",
       detail: "Properties, Areas, Developers scoring active",
       icon: BarChart3,

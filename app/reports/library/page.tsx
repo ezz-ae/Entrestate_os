@@ -6,10 +6,10 @@ import { getRequestLocale } from "@/i18n/request"
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
-  const title = isArabic ? "مكتبة التقارير" : "Reports Library"
+  const title = isArabic ? "أبحاث وتقارير عقارات دبي | Entrestate" : "Dubai Real Estate Research & Reports | Entrestate"
   const description = isArabic
-    ? "تقارير طويلة ودراسات سوقية وتحليلات للمطورين والمناطق من Entrestate."
-    : "Read long-form real estate intelligence reports, market deep-dives, and developer analysis from Entrestate."
+    ? "تقارير موقعة من محللي Entrestate، مبنية على بيانات DLD ومصادر القوائم الموثقة، من دون ملخصات عامة بلا مصدر."
+    : "Research and reports signed by Entrestate analysts, built from DLD data and verified listing feeds rather than generic AI summaries."
 
   return {
     title,

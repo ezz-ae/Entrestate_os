@@ -28,9 +28,9 @@ const STEP_COPY: Record<AppLocale, StepConfig[]> = {
     {
       step: "01",
       label: "Intent",
-      tagline: "What does the investor want?",
+      tagline: "What does this investor actually need?",
       detail:
-        "Stage 1 turns ambiguity into a structured mandate. Natural language intent compiles to a TableSpec JSON with objective, horizon, risk boundary, liquidity, and execution constraints before any scoring starts.",
+        "The terminal converts a natural language brief, budget, horizon, and risk tolerance into a structured mandate before any scoring begins. Ambiguity is resolved at the start, not after a result appears.",
       icon: Zap,
       accentClass: "text-blue-400",
       borderClass: "border-blue-500/30",
@@ -38,8 +38,8 @@ const STEP_COPY: Record<AppLocale, StepConfig[]> = {
       glowClass: "shadow-blue-500/10",
       barClass: "bg-blue-400",
       example: "Mandate: AED 2M–3M, resilient downside, BUY/HOLD only, no weak evidence.",
-      proofLabel: "Signal outputs",
-      proofItems: ["Natural-language intent", "Structured TableSpec JSON", "Risk guardrails"],
+      proofLabel: "What gets locked in first",
+      proofItems: ["Budget and target", "Horizon and liquidity", "Risk guardrails"],
     },
     {
       step: "02",
@@ -69,7 +69,7 @@ const STEP_COPY: Record<AppLocale, StepConfig[]> = {
       label: "Judgment",
       tagline: "What should the investor do?",
       detail:
-        "The V1 Signal Engine calculates timing, stress, yield, and evidence dimensions to deliver a deterministic BUY / HOLD / WAIT verdict with driver attribution and what-would-flip indicators.",
+        "The scoring engine weighs timing, stress, yield, and evidence to produce a ranked verdict with the drivers behind it and the conditions that could change it.",
       icon: ShieldCheck,
       accentClass: "text-emerald-400",
       borderClass: "border-emerald-500/30",
@@ -101,9 +101,9 @@ const STEP_COPY: Record<AppLocale, StepConfig[]> = {
     {
       step: "01",
       label: "الهدف",
-      tagline: "ماذا يريد المستثمر؟",
+      tagline: "ماذا يحتاج هذا المستثمر فعلاً؟",
       detail:
-        "المرحلة الأولى تحول الغموض إلى تفويض منظم: تُترجم النية باللغة الطبيعية إلى TableSpec JSON مع الهدف، والأفق، وحدود المخاطر، والسعر، وقيود التنفيذ قبل أي تقييم.",
+        "تحوّل المحطة الطلب المكتوب بلغة طبيعية، مع الميزانية والأفق وحدود المخاطر، إلى تفويض منظم قبل أي تقييم. يُحل الغموض في البداية لا بعد ظهور النتيجة.",
       icon: Zap,
       accentClass: "text-blue-400",
       borderClass: "border-blue-500/30",
@@ -111,8 +111,8 @@ const STEP_COPY: Record<AppLocale, StepConfig[]> = {
       glowClass: "shadow-blue-500/10",
       barClass: "bg-blue-400",
       example: "تفويض: AED 2M–3M، حماية هبوط، قرارات BUY/HOLD فقط.",
-      proofLabel: "مخرجات الإشارة",
-      proofItems: ["نية باللغة الطبيعية", "TableSpec JSON منظم", "ضوابط المخاطر"],
+      proofLabel: "ما يتم تثبيته أولاً",
+      proofItems: ["الميزانية والهدف", "الأفق والسيولة", "ضوابط المخاطر"],
     },
     {
       step: "02",
@@ -142,7 +142,7 @@ const STEP_COPY: Record<AppLocale, StepConfig[]> = {
       label: "الحكم",
       tagline: "ما الذي يجب فعله؟",
       detail:
-        "محرك V1 Signal يعطي التوقيت، والضغط، والعائد، ودرجة الأدلة، ثم يصدر حكم BUY / HOLD / WAIT مع توضيح محركات النتيجة وما يمكن أن يغيرها.",
+        "يقيس محرك التقييم التوقيت والضغط والعائد وقوة الأدلة ليخرج حكماً مرتباً مع الأسباب التي تقف خلفه وما الذي يمكن أن يغيره.",
       icon: ShieldCheck,
       accentClass: "text-emerald-400",
       borderClass: "border-emerald-500/30",

@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -29,6 +30,21 @@ type SearchParams = {
   bedsMin?: string
   bedsMax?: string
   page?: string
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale()
+
+  return {
+    title:
+      locale === "ar"
+        ? "مشاريع دبي المقيّمة — بيانات DLD موثقة | Entrestate"
+        : "2,812 Scored Dubai Projects — DLD Verified | Entrestate",
+    description:
+      locale === "ar"
+        ? "مشاريع مقيّمة عبر التوقيت والضغط والعائد والأدلة، مع أحكام قابلة للفحص وروابط إلى مصادرها."
+        : "Scored Dubai projects ranked across timing, stress, yield, and evidence, with inspectable verdicts linked back to named sources.",
+  }
 }
 
 function buildFilterHref(base: Record<string, string | undefined>, override: Record<string, string | undefined>) {
@@ -166,8 +182,8 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
     : `Page ${formatInteger(currentPage, locale)} of ${formatInteger(totalPages || 1, locale)} · showing ${formatInteger(projects.length, locale)} of ${formatInteger(totalProjectsCount, locale)} projects`
 
   const headerBody = locale === "ar"
-      ? `${formatInteger(totalProjectsCount, locale)} مشروعاً مقيّماً عبر التوقيت والضغط والعائد ومستوى الأدلة.`
-      : `${formatInteger(totalProjectsCount, locale)} UAE projects scored across timing, stress, yield, and evidence.`
+      ? `${formatInteger(totalProjectsCount, locale)} مشروعاً مقيّماً عبر التوقيت والضغط والعائد ومستوى الأدلة، مع أحكام قابلة للفحص قبل اتخاذ القرار.`
+      : `${formatInteger(totalProjectsCount, locale)} projects scored across timing, stress, yield, and evidence, with verdicts you can inspect before acting.`
 
   return (
     <main id="main-content">
@@ -179,12 +195,12 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
           <div>
             <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/5 rounded-full border border-primary/10">
               <Building2 className="w-3 h-3" />
-              {locale === "ar" ? "مخزون المشاريع المقيّم" : "Scored Project Inventory"}
+              {locale === "ar" ? "المشاريع المقيّمة" : "Scored projects"}
             </div>
             <h1 className="text-4xl md:text-6xl font-serif font-bold text-foreground leading-tight tracking-tight">
               {locale === "ar"
-                ? <>المشاريع <span className="text-muted-foreground/40 italic">الجاهزة للقرار</span></>
-                : <>Projects <span className="text-muted-foreground/40 italic">ready for decision</span></>}
+                ? <>المشاريع <span className="text-muted-foreground/40 italic">الجاهزة للفحص</span></>
+                : <>Projects <span className="text-muted-foreground/40 italic">ready for inspection</span></>}
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl font-medium leading-relaxed">
               {headerBody}

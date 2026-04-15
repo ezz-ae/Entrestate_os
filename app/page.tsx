@@ -21,14 +21,14 @@ export async function generateMetadata(): Promise<Metadata> {
     description: copy.homeDescription,
     alternates: getLocaleAlternates("/"),
     openGraph: {
-      title: copy.defaultTitle,
+      title: copy.homeTitle,
       description: copy.homeDescription,
       url: getLocaleAlternates("/").languages?.[locale],
       images: [absoluteUrl(SEO.defaultOgImagePath)],
     },
     twitter: {
       card: "summary_large_image",
-      title: copy.defaultTitle,
+      title: copy.homeTitle,
       description: copy.homeDescription,
       images: [absoluteUrl(SEO.defaultOgImagePath)],
     },
@@ -99,7 +99,7 @@ function getAutomationCards(locale: "en" | "ar") {
           icon: FileText,
           title: "Institutional Output Layer",
           body:
-            "Turn canonical market data into investor briefs and institutional updates backed by the same evidence spine.",
+            "Turn verified market data into investor briefs and institutional updates backed by the same evidence layer.",
           cta: "View output layer",
           href: "/infrastructure",
           accent: "text-violet-400",
@@ -130,10 +130,10 @@ export default async function HomePage() {
 
   const pulse = await getMarketPulseSummary().catch(() => ({
     data_as_of: new Date().toISOString(),
-    summary: { total: 2813, avg_price: null, avg_yield: null, buy_signals: 136, high_confidence: 0 },
+    summary: { total: 2812, avg_price: null, avg_yield: null, buy_signals: 136, high_confidence: 0 },
   }))
 
-  const totalProjects = pulse.summary.total || 2813
+  const totalProjects = pulse.summary.total || 2812
   const avgMarketPrice = typeof pulse.summary.avg_price === "number" && Number.isFinite(pulse.summary.avg_price)
     ? pulse.summary.avg_price
     : null
@@ -152,7 +152,7 @@ export default async function HomePage() {
         <section className="mt-20">
           <div className="mb-8 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
-              {isArabic ? "مسار القرار" : "Decision Narrative"}
+              {isArabic ? "كيف يعمل المحرك" : "How the engine works"}
             </p>
             <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
               {isArabic
@@ -161,8 +161,8 @@ export default async function HomePage() {
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
               {isArabic
-                ? "قصة واحدة من الإشارة إلى التنفيذ، مع الأدلة داخل المسار نفسه."
-                : "One continuous story from signal to execution, with evidence nested inside the flow."}
+                ? "كل حكم يعود إلى مصدره. ليست درجات غامضة؛ بل مخرجات قابلة للتدقيق من أول إشارة حتى التنفيذ."
+                : "Every verdict traces back to source. No black-box scores. Every output is auditable from first signal to execution."}
             </p>
           </div>
           <DecisionTunnelStepper />
@@ -203,31 +203,31 @@ export default async function HomePage() {
             <div>
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-400">
                 <Lock className="h-3 w-3" />
-                {isArabic ? "طبقة المؤسسات" : "Enterprise Layer"}
+                {isArabic ? "لفِرق المؤسسات" : "For enterprise teams"}
               </div>
               <h2 className="mb-6 text-3xl font-bold tracking-tight md:text-5xl">
                 {isArabic
-                  ? "طبقة المنصة للنشر المؤسسي"
-                  : "The platform layer for institutional deployment"}
+                  ? "واجهتك كما هي. ومحركنا الاستخباراتي يعمل تحتها."
+                  : "Your interface. Our intelligence engine underneath it."}
               </h2>
               <p className="mb-8 text-lg text-muted-foreground">
                 {isArabic
-                  ? "يتم نشر Entrestate تحت بوابتك الحالية كطبقة قرار وتنفيذ محكومة."
-                  : "Deploy Entrestate under your existing portal as a governed decision and execution layer."}
+                  ? "انشر Entrestate خلف بوابتك الحالية. أنت تحتفظ بالعلامة والواجهة، ونحن نشغّل طبقة البيانات والتقييم والتنفيذ تحتها."
+                  : "Deploy Entrestate behind your existing portal. You keep the brand and interface. We run the data, scoring, and execution layer underneath it."}
               </p>
               <div className="flex flex-col gap-4 sm:flex-row">
                 <Link
                   href={prefixLocalePath("/infrastructure", locale)}
                   className="flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-8 py-4 text-sm font-bold text-white transition-all hover:bg-blue-600 shadow-lg shadow-blue-500/25"
                 >
-                  {isArabic ? "شرح البنية المؤسسية" : "See the full system"}
+                  {isArabic ? "اعرض طبقات المنصة" : "See the full system"}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   href={prefixLocalePath("/contact", locale)}
                   className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/50 px-8 py-4 text-sm font-semibold transition-all hover:bg-slate-900"
                 >
-                  {isArabic ? "التحدث مع فريق المؤسسات" : "Talk to enterprise team"}
+                  {isArabic ? "استفسار مؤسسي" : "Enterprise enquiry"}
                 </Link>
               </div>
             </div>
@@ -238,7 +238,7 @@ export default async function HomePage() {
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
                     <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
-                      {isArabic ? "مسار القرار النشط" : "Decision spine active"}
+                      {isArabic ? "مسار التكامل النشط" : "Integration flow active"}
                     </span>
                   </div>
                   <Activity className="h-4 w-4 text-blue-500" />
@@ -298,20 +298,20 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
-                {isArabic ? "سجل تشغيلي" : "Operational record"}
+                {isArabic ? "كيف تبدو النتيجة" : "What a verdict looks like"}
               </p>
               <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
-                {isArabic ? "حزمة القرار الموثقة" : "Verified payload for trusted execution"}
+                {isArabic ? "كل مخرج قابل للتفسير" : "Every output is explainable"}
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {isArabic
-                  ? "كل حكم يصل مع الثقة والأدلة والمحركات داخل حمولة واحدة."
-                  : "Every verdict arrives with confidence, evidence, and drivers in one payload."}
+                  ? "درجة الثقة، ومستوى الأدلة، والمصادر، والعائد، والتوقيت، ومحركات النتيجة تظهر معاً في حمولة واحدة. ليست صندوقاً أسود."
+                  : "Confidence score, evidence level, data sources, yield, timing, and drivers appear in one structured payload. Not a black box."}
               </p>
 
               <div className="mt-5 space-y-2 text-sm text-muted-foreground">
-                <p>{isArabic ? "• يربط الحكم بمصادر موثقة." : "• Links every verdict to verified sources."}</p>
-                <p>{isArabic ? "• يحافظ على السرعة دون كسر الحوكمة." : "• Keeps teams fast without breaking governance."}</p>
+                <p>{isArabic ? "• كل BUY أو AVOID مرتبط بمصدر بيانات مسمّى وواضح." : "• Every BUY or AVOID is linked to a specific, named data source."}</p>
+                <p>{isArabic ? "• الفرق تتحرك بسرعة لأن سلسلة الأدلة جاهزة معهم مسبقاً." : "• Teams move quickly because the evidence chain is already done for them."}</p>
               </div>
             </div>
 

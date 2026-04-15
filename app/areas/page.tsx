@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { AreasView } from "@/components/decision/areas-view"
@@ -13,6 +14,21 @@ export const dynamic = "force-dynamic"
 
 type SearchParams = {
   city?: string
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale()
+
+  return {
+    title:
+      locale === "ar"
+        ? "ملفات مناطق دبي — العائد والسعر وبيانات العرض | Entrestate"
+        : "167 Dubai Area Profiles — Yield, Price & Supply Data | Entrestate",
+    description:
+      locale === "ar"
+        ? "ملفات مناطق مع متوسط السعر والعائد وسرعة المعاملات وضغط المعروض والمشاريع المقارنة، معززة ببيانات DLD."
+        : "Area profiles with average price, yield, transaction velocity, supply pressure, and comparable projects sourced from DLD and verified listing data.",
+  }
 }
 
 export default async function AreasPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
@@ -37,12 +53,12 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
             {isArabic ? "المناطق" : "Areas"}
           </p>
           <h1 className="mt-2 font-serif text-3xl font-medium text-foreground md:text-5xl">
-            {isArabic ? "خريطة ذكاء المناطق" : "Area Intelligence Map"}
+            {isArabic ? "167 ملف منطقة. وكل رقم له مصدر." : "167 area profiles. Every number is sourced."}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isArabic
-              ? `${formatInteger(visibleAreas.length, locale)} منطقة مع السعر والعائد وكثافة المشاريع داخل عرض واحد.`
-              : `${formatInteger(visibleAreas.length, locale)} area profiles with pricing, yield, and project density in one view.`}
+              ? "متوسط السعر، والعائد، وسرعة المعاملات، وضغط المعروض، والمشاريع المقارنة لكل منطقة، ولكل ربع، معززة ببيانات DLD."
+              : "Average price, yield, transaction velocity, supply pressure, and comparable projects per area, per quarter, traced to DLD."}
           </p>
           <p className="mt-2 text-[11px] text-muted-foreground/60">
             {isArabic

@@ -39,11 +39,11 @@ const scoreCategories: {
     category: "Product Deployment Status",
     score: "green",
     rating: "8 / 10",
-    summary: "Production surface is live, multi-surface, and interconnected. Core modules — AI Copilot, Properties, Developers, Areas, Reports, Docs, Roadmap, Changelog — are all deployed and publicly reachable.",
+    summary: "Production surface is live, multi-surface, and interconnected. Core modules — Decision Terminal, Projects, Developers, Areas, Reports, Docs, Roadmap, Changelog — are all deployed and publicly reachable.",
     evidence: [
       "2,813+ active UAE projects indexed and queryable",
       "481 canonical developers with reliability scoring",
-      "AI Copilot streaming in production with cooldown-based rate limiting",
+      "Decision Terminal streaming in production with cooldown-based rate limiting",
       "Report generation pipeline persisting to Neon assistant_reports table",
       "Public changelog with entries through Feb 2026",
     ],

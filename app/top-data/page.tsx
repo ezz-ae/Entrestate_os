@@ -1,12 +1,28 @@
+import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { getTopDataRows } from "@/lib/frontend-content"
-import { TopDataSection } from "@/components/top-data/top-data-section"
+import { TopDataSection, shouldRenderTopDataSection } from "@/components/top-data/top-data-section"
 import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { getRequestLocale } from "@/i18n/request"
 import { getTranslations } from "next-intl/server"
 
 export const dynamic = "force-dynamic"
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale()
+
+  return {
+    title:
+      locale === "ar"
+        ? "إشارات سوق دبي المباشرة — بث BUY/HOLD/AVOID | Entrestate"
+        : "Live Dubai Market Signals — BUY/HOLD/AVOID Feed | Entrestate",
+    description:
+      locale === "ar"
+        ? "بيانات سوق دبي الحية: المشاريع المصنفة، إشارات التوقيت، درجات الضغط، ومستويات الأدلة من مخزون يتم تحديثه طوال اليوم."
+        : "Live Dubai market data across scored projects, timing signals, stress grades, and evidence levels, refreshed throughout the day.",
+  }
+}
 
 const REQUIRED_SECTIONS = [
   "market-pulse",
@@ -80,10 +96,23 @@ export default async function TopDataPage() {
     rowsBySection.set(sectionKey, row)
   }
 
-  const availableSections = REQUIRED_SECTIONS.filter((sectionKey) => rowsBySection.has(sectionKey))
-  const missingSections = REQUIRED_SECTIONS.filter((key) => !rowsBySection.has(key))
+  const availableSections = REQUIRED_SECTIONS.filter((sectionKey) => {
+    const sectionData = rowsBySection.get(sectionKey)
+    return sectionData ? shouldRenderTopDataSection(sectionKey, sectionData.data_json) : false
+  })
+  const missingSections = REQUIRED_SECTIONS.filter((key) => {
+    const sectionData = rowsBySection.get(key)
+    return !sectionData || !shouldRenderTopDataSection(key, sectionData.data_json)
+  })
   const syncMeta = buildDataSyncMeta("topData", topData.data_as_of)
-  const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
+  const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE-u-nu-latn" : "en-AE", {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Dubai",
+  })
 
   return (
     <main id="main-content">
@@ -92,14 +121,16 @@ export default async function TopDataPage() {
         <header className="mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-emerald-400">
             {isArabic
-              ? "محطة استخبارات السوق"
-              : "Market Intelligence Terminal"}
+              ? "محرك إشارات السوق"
+              : "Market Signal Engine"}
           </div>
           <h1 className="mt-3 text-3xl font-semibold text-foreground md:text-5xl">
-            {isArabic ? "بث السوق المباشر" : "Live Market Signal Feed"}
+            {isArabic ? "بيانات السوق المباشرة، الآن" : "Live market data, right now"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {isArabic ? "كل مقطع يعرض مخرجات API كما تصل إلى الأسطح التنفيذية." : "Each section shows the API outputs used across the execution surfaces."}
+            {isArabic
+              ? "كل مقطع أدناه يعكس الحالة الحالية للمخزون المصنّف، ويتم تحديثه طوال اليوم من بيانات DLD ومصادر القوائم."
+              : "Every section below reflects the current state of scored inventory, updated throughout the day from DLD and listing sources."}
           </p>
         </header>
 
@@ -138,8 +169,8 @@ export default async function TopDataPage() {
           ) : null}
           <div className="rounded-xl border border-border/60 bg-card/70 px-4 py-2.5 text-[11px] text-muted-foreground/70">
             {isArabic
-              ? `مزامنة API · ${syncMeta.primaryView} · ${syncTimestamp}`
-              : `API sync · ${syncMeta.primaryView} · ${syncTimestamp}`}
+              ? `مزامنة API · ${syncMeta.primaryView} · ${syncTimestamp} GST`
+              : `API sync · ${syncMeta.primaryView} · ${syncTimestamp} GST`}
           </div>
         </section>
 
@@ -147,6 +178,8 @@ export default async function TopDataPage() {
           {REQUIRED_SECTIONS.map((sectionId) => {
             const sectionData = rowsBySection.get(sectionId)
             if (!sectionData) return null
+
+            if (!shouldRenderTopDataSection(sectionId, sectionData.data_json)) return null
 
             return (
               <TopDataSection

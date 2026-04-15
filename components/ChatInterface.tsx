@@ -490,7 +490,7 @@ function deriveToolTrace(message: any, locale: string): string | null {
   }
 
   const isArabic = locale === "ar"
-  const label = isArabic ? "محرك القرار" : "Decision Engine"
+  const label = isArabic ? "محطة القرار" : "Decision Terminal"
   const queryLabel = isArabic ? "استعلام منظم" : "Structured Query"
   const parts: string[] = []
   if (resultCount !== null) {
@@ -890,28 +890,28 @@ export function ChatInterface({
         feed: "محرك الاستعلامات المنظّم",
         titleLineOne: "محطة القرار",
         titleLineTwo: "استعلامات حتمية.",
-        subtitle: "استعلم عبر SQL حتمي على بيانات الإمارات. كل نتيجة تتضمن أثر الأدوات واستجابة الـ API.",
+        subtitle: "استعلم عبر SQL حتمي على بيانات العقار في الإمارات. كل نتيجة تتضمن أثر الأدوات واستجابة الـ API.",
         dataLabel: "البيانات",
         analysing: "جارٍ التنفيذ",
         ready: "جاهز",
         showCanvas: "إظهار اللوحة",
         hideCanvas: "إخفاء اللوحة",
         emptyState: "ابدأ باستعلام منظم: مثال \"مشاريع A في المارينا تحت 5M بعائد فوق 6%\".",
-        systemBadge: "Decision Engine - SQL حتمي - Zero Hallucination - MCP Protocol",
+        systemBadge: "Decision Terminal - SQL حتمي - Zero Hallucination - MCP Protocol",
       }
     : {
         engine: "Decision Terminal",
         feed: "Structured Query Engine",
         titleLineOne: "Decision Terminal.",
         titleLineTwo: "Deterministic queries.",
-        subtitle: "Run deterministic SQL against the UAE data spine. Every result includes tool traces and API payloads.",
+        subtitle: "Run deterministic SQL against the UAE real estate data layer. Every result includes tool traces and API payloads.",
         dataLabel: "Data",
         analysing: "Executing",
         ready: "Ready",
         showCanvas: "Show canvas",
         hideCanvas: "Hide canvas",
         emptyState: "Start with a structured query. Example: \"A-grade Marina projects under 5M with 6%+ yield.\"",
-        systemBadge: "Decision Engine - Deterministic SQL - Zero Hallucination - MCP Protocol",
+        systemBadge: "Decision Terminal - Deterministic SQL - Zero Hallucination - MCP Protocol",
       }
 
   useEffect(() => {

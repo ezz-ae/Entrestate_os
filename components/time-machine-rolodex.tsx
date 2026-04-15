@@ -799,11 +799,14 @@ export function TimeMachineRolodex() {
   const copy = {
     back: isArabic ? "العودة" : "Back",
     research: isArabic ? "الأبحاث" : "Research",
-    byEngine: isArabic ? "من قراءة Entrestate" : "by Entrestate Decision Engine",
+    byEngine: isArabic ? "بحث موقّع من Entrestate" : "Signed by Entrestate Research",
     openReport: isArabic ? "افتح التقرير" : "Open report",
     topics: isArabic ? "المحاور" : "Topics",
     now: isArabic ? "الآن" : "Now",
     timelineHint: isArabic ? "مرّر أو اختر من الخط الزمني للتنقّل" : "Scroll or click timeline to navigate",
+    trustNote: isArabic
+      ? "كل تقرير في هذه المكتبة يُبحث ويُوقّع من محللي Entrestate. البيانات من DLD ومصادر القوائم الموثقة."
+      : "Every report in this library is researched and signed by Entrestate analysts, using DLD and verified listing data.",
   }
 
   const [position, setPosition] = useState(0)
@@ -911,6 +914,10 @@ export function TimeMachineRolodex() {
           </span>
           <span className="text-border">/</span>
           <span className="text-xs text-muted-foreground">{copy.research}</span>
+        </div>
+
+        <div className="absolute start-6 top-20 z-40 hidden max-w-xl rounded-xl border border-border/70 bg-card/80 px-4 py-3 text-xs leading-relaxed text-muted-foreground shadow-sm backdrop-blur-sm md:block">
+          {copy.trustNote}
         </div>
 
         {viewMode === "stack" ? (

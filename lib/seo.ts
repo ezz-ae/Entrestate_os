@@ -14,18 +14,18 @@ const SEO_COPY: Record<AppLocale, { defaultTitle: string; defaultDescription: st
   en: {
     defaultTitle: SEO.defaultTitle,
     defaultDescription: SEO.defaultDescription,
-    homeTitle: "UAE Real Estate Decision Intelligence",
+    homeTitle: "Dubai Real Estate Intelligence — DLD Data, Scored Projects | Entrestate",
     homeDescription:
-      "Analyze UAE property markets with evidence-backed scoring, developer reliability signals, and investor-grade decision workflows.",
+      "36,841 DLD transactions, 2,812 scored projects, and 167 area profiles in one Dubai real estate intelligence platform with evidence-backed verdicts.",
     ogAlt: "Entrestate platform overview",
   },
   ar: {
     defaultTitle: "Entrestate | منصة قرار واستثمار عقاري في الإمارات",
     defaultDescription:
       "حلّل أسواق العقارات في الإمارات عبر تقييمات مدعومة بالأدلة، مؤشرات موثوقية المطورين، ومسارات قرار استثمارية احترافية.",
-    homeTitle: "قرار استثماري أوضح في الإمارات",
+    homeTitle: "استخبارات عقارات دبي — بيانات DLD ومشاريع مقيّمة | Entrestate",
     homeDescription:
-      "حلّل أسواق العقارات في الإمارات عبر تقييمات مدعومة بالأدلة، مؤشرات موثوقية المطورين، ومسارات قرار استثمارية احترافية.",
+      "بيانات DLD، ومشاريع مقيّمة، وملفات مناطق في منصة واحدة تحول ضوضاء السوق إلى أحكام مدعومة بالأدلة في سوق دبي العقاري.",
     ogAlt: "نظرة عامة على منصة Entrestate",
   },
 }

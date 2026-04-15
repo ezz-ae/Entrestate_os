@@ -105,18 +105,18 @@ export default async function ReportsPage() {
               ∅
             </div>
             <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/35">
-              Entrestate Decision Engine
+              Entrestate Research
             </p>
             <h3 className="text-xl font-medium text-foreground">No reports yet</h3>
             <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-              Start a decision session in AI Copilot to generate your first institutional report.
+              Start a decision session in the terminal to generate your first institutional report.
             </p>
             <a
               href="/chat"
               className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <MessageSquare className="h-4 w-4" />
-              Open Copilot
+              Open Terminal
             </a>
           </div>
         ) : (
@@ -157,7 +157,7 @@ export default async function ReportsPage() {
 
                     {/* Byline */}
                     <p className="mb-4 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/30 transition-colors duration-300 group-hover:text-muted-foreground/50">
-                      by Entrestate Decision Engine
+                      by Entrestate Research
                     </p>
 
                     {/* Title — typography hero */}

@@ -538,7 +538,7 @@ ${firstPara.slice(0, 200)}${firstPara.length > 200 ? "..." : ""}
 
 Full report: ${reportUrl}
 
-_Entrestate Decision Engine — Objective Market Intelligence_`,
+_Entrestate Research — Objective Market Intelligence_`,
 
     instagram: `${report.title}
 
@@ -1470,7 +1470,7 @@ export function ReportReader({
                   className="text-[9px] font-semibold uppercase tracking-[0.2em]"
                   style={{ color: "var(--reader-muted)", opacity: 0.5 }}
                 >
-                  {locale === "ar" ? "من قراءة Entrestate" : "by Entrestate Decision Engine"}
+                  {locale === "ar" ? "بحث موقّع من Entrestate" : "Signed by Entrestate Research"}
                 </span>
               </div>
 

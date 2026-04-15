@@ -57,7 +57,7 @@ export default function ArtifactsPage() {
                 <FileOutput className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">No artifacts generated yet.</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Use the Copilot to generate PDFs, decks, or widgets from your Time Tables.
+                  Use the terminal to generate PDFs, decks, or widgets from your Time Tables.
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

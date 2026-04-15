@@ -176,7 +176,7 @@ export default async function OverviewPage() {
                 <span className="text-muted-foreground/30">·</span>
                 <p className="text-xs text-muted-foreground">{updatedLabel}</p>
               </div>
-              <h1 className="mt-1.5 text-2xl font-bold text-foreground md:text-3xl tracking-tight">{isArabic ? "محرك القرار" : "Decision Engine"}</h1>
+              <h1 className="mt-1.5 text-2xl font-bold text-foreground md:text-3xl tracking-tight">{isArabic ? "محطة القرار" : "Decision Terminal"}</h1>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <span className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wider ${sentiment.color} backdrop-blur-sm shadow-sm`}>
@@ -186,7 +186,7 @@ export default async function OverviewPage() {
               <Button variant="intelligent" size="sm" asChild className="h-9 shadow-lg">
                 <Link href={prefixLocalePath("/chat", locale)}>
                   <Sparkles className="h-3.5 w-3.5 me-1" />
-                  {isArabic ? "اسأل المساعد" : "Ask AI"}
+                  {isArabic ? "افتح المحطة" : "Open Terminal"}
                 </Link>
               </Button>
             </div>

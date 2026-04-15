@@ -14,51 +14,41 @@ type Props = {
 
 const COPY = {
   en: {
-    eyebrow: "Decision infrastructure",
-    titleLineOne: "Stop making billion-dirham decisions",
-    titleLineTwo: "on fragmented data.",
-    descriptionLead:
-      "36,841 DLD transactions. 41,381 verified listings. 2,813 scored projects. One auditable platform.",
-    descriptionBody: "Structured API. Verified evidence. Execution-ready intelligence.",
-    supporting:
-      "Built for operators, compliance, and leadership.",
-    primaryCta: "See the Decision Engine",
-    secondaryCta: "See Infrastructure",
-    trustTitle: "Built for review, audit, and rollout.",
+    eyebrow: "UAE Real Estate Intelligence",
+    titleLineOne: "Dubai real estate is moving fast.",
+    titleLineTwo: "Your data should too.",
+    primaryCta: "Open Terminal",
+    secondaryCta: "Enterprise Integration",
+    trustTitle: "Every verdict links back to source.",
     trustBody:
-      "Canonical data, evidence grading, and governed automation in one layer.",
+      "Confidence, timing, yield, and drivers stay visible so the output can be reviewed before it is used.",
     trustPills: ["Canonical DLD", "Verified Records", "Auditable Lineage", "SOC 2 Ready"],
     stats: {
-      projects: "Scored projects",
-      avgPrice: "Average market price",
+      projects: "Projects scored",
+      avgPrice: "Avg. entry price",
       listings: "Verified listings",
       dld: "DLD transactions",
       areas: "Area profiles",
-      developers: "Developer profiles",
+      developers: "Tracked developers",
     },
   },
   ar: {
-    eyebrow: "بنية القرار",
-    titleLineOne: "توقف عن اتخاذ قرارات بمليارات الدراهم",
-    titleLineTwo: "على بيانات مجزأة.",
-    descriptionLead:
-      "36,841 معاملة DLD. و41,381 قائمة موثقة. و2,813 مشروعًا مقيّمًا. داخل منصة واحدة قابلة للتدقيق.",
-    descriptionBody: "واجهة API منظمة. أدلة موثقة. استخبارات جاهزة للتنفيذ.",
-    supporting:
-      "مصممة لفرق التشغيل والحوكمة والقيادة.",
-    primaryCta: "راجع منصة القرار",
-    secondaryCta: "شاهد البنية التحتية",
-    trustTitle: "مبني للمراجعة والتدقيق والإطلاق.",
+    eyebrow: "استخبارات العقار في الإمارات",
+    titleLineOne: "سوق دبي العقاري يتحرك بسرعة.",
+    titleLineTwo: "ويجب أن تتحرك بياناتك بالسرعة نفسها.",
+    primaryCta: "افتح المحطة",
+    secondaryCta: "تكامل المؤسسات",
+    trustTitle: "كل حكم مرتبط بمصدره.",
     trustBody:
-      "بيانات موثقة وتدرج أدلة وأتمتة محكومة داخل طبقة واحدة.",
+      "الثقة والتوقيت والعائد ومحركات النتيجة تبقى ظاهرة حتى يمكن مراجعة المخرج قبل استخدامه.",
     trustPills: ["DLD Canonical", "سجلات موثقة", "تتبّع كامل", "SOC 2 Ready"],
     stats: {
       projects: "مشروع مقيّم",
-      avgPrice: "متوسط السعر",
+      avgPrice: "متوسط سعر الدخول",
       listings: "قائمة موثقة",
       dld: "معاملة DLD",
       areas: "ملف منطقة",
-      developers: "ملف مطوّر",
+      developers: "مطور متابع",
     },
   },
 } as const
@@ -71,6 +61,13 @@ export function HeroSection({ avgMarketPrice, totalProjects }: Props) {
   const dldTransactions = 36841
   const areasCount = 167
   const developerCount = 481
+  const totalProjectsDisplay = formatInteger(totalProjects, locale)
+  const descriptionLead = locale === "ar"
+    ? `${formatInteger(dldTransactions, locale)} معاملة DLD. ${totalProjectsDisplay} مشروعاً مقيّماً. ${formatInteger(areasCount, locale)} ملف منطقة.`
+    : `${formatInteger(dldTransactions, locale)} DLD transactions. ${totalProjectsDisplay} scored projects. ${formatInteger(areasCount, locale)} area profiles.`
+  const descriptionBody = locale === "ar"
+    ? "منصة واحدة تحول ضوضاء السوق إلى حكم منظم، مع الأدلة التي تدعم كل نتيجة."
+    : "One platform that turns market noise into a structured verdict, with the evidence to back every call."
   const stats = [
     { label: copy.stats.projects, value: totalProjects },
     avgMarketPrice && avgMarketPrice > 0
@@ -107,16 +104,14 @@ export function HeroSection({ avgMarketPrice, totalProjects }: Props) {
           </h1>
 
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-[17px]">
-            {copy.descriptionLead}
+            {descriptionLead}
             <br />
-            {copy.descriptionBody}
+            {descriptionBody}
           </p>
-
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground/90 md:text-[15px]">{copy.supporting}</p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
-              href={prefixLocalePath("/properties", locale)}
+              href={prefixLocalePath("/chat", locale)}
               className="flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
             >
               <Database className="h-4 w-4" />

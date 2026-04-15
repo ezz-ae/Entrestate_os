@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useLocale } from "next-intl"
 import { ThemeSwitcher } from "@/components/theme-switcher"
@@ -26,10 +26,10 @@ const columns = [
     heading: "Product",
     links: [
       { label: "Decision Terminal", href: "/chat" },
-      { label: "Project API Layer", href: "/properties" },
+      { label: "Projects & Scoring", href: "/properties" },
       { label: "Area Intelligence", href: "/areas" },
       { label: "Developer Reliability", href: "/developers" },
-      { label: "Signal Engine", href: "/top-data" },
+      { label: "Signal Feed", href: "/top-data" },
       { label: "Integration Guide", href: "/enterprise" },
     ],
   },
@@ -113,10 +113,10 @@ export function Footer() {
         link.label,
         {
           "Decision Terminal": "محطة القرار",
-          "Project API Layer": "طبقة المشاريع (API)",
+          "Projects & Scoring": "المشاريع والتقييم",
           "Area Intelligence": "ملف المناطق",
           "Developer Reliability": "موثوقية المطورين",
-          "Signal Engine": "محرك الإشارات",
+          "Signal Feed": "بث الإشارات",
           "Integration Guide": "دليل التكامل",
           "API Docs": "وثائق الـ API",
           "Enterprise Integration": "تكامل المؤسسات",
@@ -172,11 +172,37 @@ export function Footer() {
   const { report, dismiss } = useNewReport()
   const [reportEmailSent, setReportEmailSent] = useState(false)
   const [reportSending, setReportSending] = useState(false)
+  const [projectCount, setProjectCount] = useState<number | null>(null)
 
   // Library report email state
   const [libraryEmail, setLibraryEmail] = useState("")
   const [libraryEmailSent, setLibraryEmailSent] = useState(false)
   const [libraryEmailSending, setLibraryEmailSending] = useState(false)
+  const projectCountText = projectCount !== null
+    ? new Intl.NumberFormat(isArabic ? "ar-AE" : "en-US").format(projectCount)
+    : t("Live", "مباشر")
+
+  useEffect(() => {
+    let active = true
+
+    fetch("/api/market-pulse")
+      .then((res) => {
+        if (!res.ok) throw new Error("Market pulse unavailable")
+        return res.json()
+      })
+      .then((data) => {
+        if (!active) return
+        const total = data?.summary?.total
+        setProjectCount(typeof total === "number" && Number.isFinite(total) ? total : null)
+      })
+      .catch(() => {
+        if (active) setProjectCount(null)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   const handleEmailReport = async () => {
     if (!report || reportSending) return
@@ -221,15 +247,18 @@ export function Footer() {
             {/* Left */}
             <div className="max-w-lg">
               <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-primary">
-                {t("Decision Intelligence Platform", "منصة القرار")}
+                {t("Start anywhere", "ابدأ من أي سؤال")}
               </p>
               <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-                {t("Built for professionals who need precision, not noise.", "مبنية للمهنيين الذين يحتاجون إلى الدقة.")}
+                {t(
+                  "Start with any question. The evidence is already in the system.",
+                  "ابدأ بأي سؤال. الأدلة موجودة بالفعل داخل النظام.",
+                )}
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {t(
-                  "Market coverage, project evidence, and investor-first workflows for UAE real estate operators. Backed by live DLD data.",
-                  "تغطية السوق، وأدلة المشاريع، وسير عمل يركز على المستثمر لمشغلي العقار في الإمارات. مدعومة ببيانات دائرة الأراضي والأملاك في دبي المباشرة.",
+                  `36,841 DLD transactions. ${projectCountText} scored projects. Ask the terminal anything about Dubai real estate.`,
+                  `36,841 معاملة DLD. ${projectCountText} مشروعاً مقيّماً. اسأل المحطة أي شيء عن عقارات دبي.`,
                 )}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
@@ -237,7 +266,7 @@ export function Footer() {
                   href={toHref("/chat")}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20"
                 >
-                  {t("Open Copilot", "افتح المساعد")}
+                  {t("Open Terminal", "افتح المحطة")}
                   <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
                 </Link>
                 <Link
@@ -250,7 +279,7 @@ export function Footer() {
                   href={toHref("/contact")}
                   className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  {t("Talk to Sales", "تحدث إلى المبيعات")}
+                  {t("Enterprise enquiry", "استفسار مؤسسي")}
                   <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
               </div>
@@ -344,7 +373,7 @@ export function Footer() {
                       <BookOpen className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">{t("Latest Report", "أحدث تقرير")}</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-primary">{t("Latest Research", "أحدث الأبحاث")}</p>
                       <p className="mt-0.5 text-[10px] text-muted-foreground/50">{LATEST_LIBRARY_REPORT.date} · {LATEST_LIBRARY_REPORT.category}</p>
                     </div>
                   </div>
@@ -362,7 +391,7 @@ export function Footer() {
                     className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-border/60 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-border hover:bg-secondary/60"
                   >
                     <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                    {t("Open & read report", "افتح التقرير واقرأه")}
+                    {t("Read the report", "اقرأ التقرير")}
                   </Link>
 
                   {/* Email form */}
@@ -387,7 +416,7 @@ export function Footer() {
                         className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
                       >
                         <Mail className="h-3 w-3 shrink-0" />
-                        {libraryEmailSending ? "…" : t("Email me", "أرسل لي")}
+                        {libraryEmailSending ? "…" : t("Send to my email", "أرسل إلى بريدي")}
                       </button>
                     </form>
                   )}

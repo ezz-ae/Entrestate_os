@@ -2,15 +2,15 @@
   "nav": {
     "chat": "Decision Terminal",
     "enterprise": "Enterprise",
-    "signals": "Signal Engine",
+    "signals": "Signal Feed",
     "overview": "Overview",
     "areas": "Areas",
     "developers": "Developers",
-    "properties": "Properties",
+    "properties": "Projects",
     "research": "Research",
     "workspace": "Workspace",
     "account": "Account",
-    "openAssistant": "Open terminal",
+    "openAssistant": "Open Terminal",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "mainNavigation": "Main navigation"
@@ -24,8 +24,8 @@
     "skipToMain": "Skip to main content"
   },
   "system": {
-    "loadingTitle": "Loading experience",
-    "loadingBody": "We’re preparing the latest page state and market context.",
+    "loadingTitle": "Loading…",
+    "loadingBody": "Fetching the latest page state and market context.",
     "loadingShort": "Loading…",
     "errorTitle": "Something went wrong",
     "errorBody": "This view failed to render. You can retry now or return to the homepage.",
@@ -187,7 +187,7 @@
     "sections": {
       "market-pulse": {
         "title": "Market Pulse",
-        "subtitle": "Big-picture snapshot: active projects, average price, average yield, and BUY opportunities."
+        "subtitle": "Current state of scored inventory: projects, average entry price, yield, and active BUY signals."
       },
       "timing-signals": {
         "title": "Timing Signals",
@@ -218,8 +218,8 @@
         "subtitle": "What investor goals the current inventory best serves."
       },
       "top-projects": {
-        "title": "Top Projects",
-        "subtitle": "Ranked projects table with price, yield, stress, timing, and score fields."
+        "title": "Highest-scored projects",
+        "subtitle": "Ranked by the God Metric composite score, with yield, stress grade, and timing signal per project."
       },
       "area-intelligence": {
         "title": "Area Intelligence",
@@ -234,8 +234,8 @@
         "subtitle": "Eligible inventory counts and quality profile for AED 2M+ buyers."
       },
       "trust-bar": {
-        "title": "Trust Bar",
-        "subtitle": "Data hierarchy, engine stack, and confidence distribution across the dataset."
+        "title": "Data confidence overview",
+        "subtitle": "How evidence is graded, from L1 Canonical through L5 Raw, and how much of the inventory carries stronger proof."
       },
       "dld-market": {
         "title": "DLD Market Transactions",

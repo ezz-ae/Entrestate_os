@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -15,6 +16,21 @@ import { formatInteger } from "@/lib/format/number"
 export const dynamic = "force-dynamic"
 
 type SearchParams = { filter?: string; sort?: string }
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale()
+
+  return {
+    title:
+      locale === "ar"
+        ? "موثوقية مطوري دبي — 481 مطوراً متابعاً | Entrestate"
+        : "Dubai Developer Reliability Scores — 481 Tracked | Entrestate",
+    description:
+      locale === "ar"
+        ? "تتبّع أداء المطورين عبر الاتساق ومعدل التسليم وسلامة المشاريع وجودة التنفيذ، مع درجات موثوقية للمطورين أصحاب السجل الموثق."
+        : "Track developers across consistency, delivery, safe-project count, and execution quality, with reliability scores for developers backed by verified records.",
+  }
+}
 
 function tierOf(score: number | null): "excellent" | "good" | "watch" | "unknown" {
   if (score === null) return "unknown"
@@ -83,12 +99,12 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
   const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
 
   const copy = {
-    audit: isArabic ? "تدقيق الأطراف المقابلة" : "Counterparty Audit",
+    audit: isArabic ? "موثوقية المطور" : "Developer Reliability",
     titleLead: isArabic ? "المطورون" : "Developer",
     titleAccent: isArabic ? "الموثوقون" : "Reliability",
     headerBody: isArabic
-      ? `${formatInteger(developers.length, locale)} مطوراً مقيّماً عبر ثبات التسليم وجودة التنفيذ وسلامة المحفظة.`
-      : `${formatInteger(developers.length, locale)} UAE developers scored for delivery consistency, execution quality, and portfolio safety.`,
+      ? `${formatInteger(developers.length, locale)} مطوراً متابعاً. و${formatInteger(withRel.length, locale)} منهم يملكون سجلات موثقة بدرجات موثوقية قابلة للفحص.`
+      : `${formatInteger(developers.length, locale)} developers tracked. ${formatInteger(withRel.length, locale)} with verified records and reliability scores you can inspect.`,
     freshness: isArabic ? "تحديث التدقيق" : "Audit Freshness",
     trackedDevelopers: isArabic ? "المطورون المتابعون" : "Tracked Developers",
     trackedDevelopersSub: isArabic ? "نشطون في سوق الإمارات" : "Active in UAE market",
@@ -124,7 +140,9 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
               {copy.audit}
             </div>
             <h1 className="text-4xl md:text-6xl font-serif font-bold text-foreground leading-tight tracking-tight">
-              {copy.titleLead} <span className="text-muted-foreground/40 italic">{copy.titleAccent}</span>
+              {isArabic
+                ? <>{formatInteger(developers.length, locale)} مطوراً. <span className="text-muted-foreground/40 italic">ودرجات موثوقية على أصحاب السجل الموثق.</span></>
+                : <>{formatInteger(developers.length, locale)} developers. <span className="text-muted-foreground/40 italic">Reliability scores on the verified track records.</span></>}
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl font-medium leading-relaxed">
               {copy.headerBody}

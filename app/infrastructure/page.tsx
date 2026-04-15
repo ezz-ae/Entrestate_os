@@ -27,12 +27,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title:
       locale === "ar"
-        ? "البنية التحتية للقرار والتنفيذ - Entrestate"
-        : "Decision Infrastructure - Entrestate",
+        ? "تكامل المؤسسات العقارية — طبقة قرار Headless | Entrestate"
+        : "Enterprise Real Estate API — Headless Decision Layer | Entrestate",
     description:
       locale === "ar"
-        ? "صفحة تشرح طبقة Entrestate الموحدة للقرار والتنفيذ: العمود الفقري للحقيقة، غرف الصفقات، الحدود الصحيحة للـ API، والتحكم الحتمي في سير العمل."
-        : "The primary system page for Entrestate's unified decision and execution layer: truth spine, deal rooms, API boundaries, and deterministic workflow control.",
+        ? "أوصل Entrestate ببوابتك الحالية كطبقة استخبارات وتنفيذ محكومة، مع بيانات موثقة، وغرف صفقات منظمة، ووصول عبر API."
+        : "Plug Entrestate into your existing portal as a governed intelligence and execution layer with verified data, scored outputs, deal rooms, and API access.",
   }
 }
 
@@ -43,28 +43,28 @@ export default async function InfrastructurePage() {
 
   const systemIncludes = [
     {
-      title: t("Truth spine", "عمود الحقيقة"),
+      title: t("Verified property spine", "العمود العقاري الموثق"),
       body: t(
-        "One verified property layer for inventory, pricing, media, and lineage.",
-        "طبقة موحدة وموثقة للمخزون والسعر والوسائط وتتبع المصدر.",
+        "A verified property layer for inventory, pricing, media, and source lineage.",
+        "طبقة عقارية موثقة للمخزون والسعر والوسائط وتتبع المصدر.",
       ),
     },
     {
-      title: t("Decision layer", "طبقة القرار"),
+      title: t("Scored intelligence layer", "طبقة الاستخبارات المصنفة"),
       body: t(
-        "Signals become ranked outputs only after evidence and scoring.",
-        "تتحول الإشارات إلى مخرجات مرتبة بعد الأدلة والتقييم فقط.",
+        "Signals become ranked outputs only after evidence, validation, and scoring.",
+        "تتحول الإشارات إلى مخرجات مرتبة بعد الأدلة والتحقق والتقييم.",
       ),
     },
     {
-      title: t("Deal rooms", "غرف الصفقات"),
+      title: t("Governed deal rooms", "غرف الصفقات المحكومة"),
       body: t(
         "Every transaction moves inside one governed workspace.",
         "كل معاملة تتحرك داخل مساحة عمل واحدة ومحكومة.",
       ),
     },
     {
-      title: t("Headless deployment", "نشر Headless"),
+      title: t("API-first, headless", "تكامل API أولاً وHeadless"),
       body: t(
         "Your interface stays in place while Entrestate runs underneath it.",
         "تبقى واجهتك كما هي بينما تعمل Entrestate تحتها.",
@@ -75,7 +75,7 @@ export default async function InfrastructurePage() {
   const modules = [
     {
       icon: Database,
-      title: t("Canonical property spine", "العمود الفقري العقاري"),
+      title: t("Verified property spine", "العمود العقاري الموثق"),
       body: t(
         "One verified property layer across sources, stock, and media.",
         "طبقة عقارية موثقة واحدة عبر المصادر والمخزون والوسائط.",
@@ -84,7 +84,7 @@ export default async function InfrastructurePage() {
     },
     {
       icon: Blocks,
-      title: t("Decision infrastructure", "بنية القرار"),
+      title: t("Scored intelligence layer", "طبقة الاستخبارات المصنفة"),
       body: t(
         "Evidence, lineage, and scoring turn signals into usable verdicts.",
         "الأدلة وتتبع المصدر والتقييم تحول الإشارات إلى أحكام قابلة للاستخدام.",
@@ -102,7 +102,7 @@ export default async function InfrastructurePage() {
     },
     {
       icon: Workflow,
-      title: t("Structured deal rooms", "غرف الصفقات المنظمة"),
+      title: t("Governed deal rooms", "غرف الصفقات المحكومة"),
       body: t(
         "Documents, consent, workflow, and contracts stay in one stateful room.",
         "الوثائق والموافقات وسير العمل والعقود تبقى داخل غرفة واحدة ذات حالة.",
@@ -133,53 +133,53 @@ export default async function InfrastructurePage() {
     {
       title: t("Raw URL ingest", "إدخال عبر الرابط"),
       body: t(
-        "Drop in a listing URL and let the system read what already exists.",
-        "ضع رابط القائمة ودع النظام يقرأ ما هو موجود بالفعل.",
+        "Drop in a listing URL.",
+        "أدخل رابط القائمة.",
       ),
     },
     {
       title: t("Spine check", "فحص العمود الفقري"),
       body: t(
-        "Project, media, and pricing context are filled from the truth spine.",
-        "يتم ملء المشروع والوسائط والسياق السعري من عمود الحقيقة.",
+        "We fill project, media, and pricing context from the verified spine.",
+        "نملأ المشروع والوسائط والسياق السعري من العمود الموثق.",
       ),
     },
     {
-      title: t("Delta-first orchestration", "تنسيق يعتمد على الفجوات"),
+      title: t("Only the missing data", "فقط البيانات الناقصة"),
       body: t(
-        "The system asks only for what is missing.",
-        "يطلب النظام فقط ما هو ناقص.",
+        "We ask only for what is still missing.",
+        "نطلب فقط ما لا يزال ناقصاً.",
       ),
     },
     {
-      title: t("Deterministic publish", "نشر حتمي"),
+      title: t("Verified state change", "تغيير حالة موثّق"),
       body: t(
-        "Publishing becomes a verified state change.",
-        "يصبح النشر انتقال حالة متحققاً منه.",
+        "Publishing lands as a verified state change.",
+        "يصبح النشر تغيير حالة موثّقاً.",
       ),
     },
   ]
 
   const roiPillars = [
     {
-      title: t("Cleaner inventory", "مخزون أنظف"),
+      title: t("Cleaner stock", "مخزون أنظف"),
       body: t(
-        "Duplicates and fake stock are filtered before they spread.",
-        "يتم تصفية التكرار والمخزون الوهمي قبل أن ينتشرا.",
+        "Duplicate and unverified listings are filtered before reaching search or agents.",
+        "تتم تصفية القوائم المكررة وغير الموثقة قبل أن تصل إلى البحث أو الوكلاء.",
       ),
     },
     {
-      title: t("Recovered demand", "طلب مستعاد"),
+      title: t("No demand leakage", "لا تسرّب في الطلب"),
       body: t(
-        "Queues and timed holds keep good demand inside the flow.",
-        "الطوابير والحجوزات المؤقتة تحافظ على الطلب الجيد داخل التدفق.",
+        "Timed holds and queue logic keep qualified buyers inside the transaction flow.",
+        "الحجوزات المؤقتة ومنطق الطوابير يحافظان على المشترين المؤهلين داخل مسار المعاملة.",
       ),
     },
     {
-      title: t("Faster rollout", "إطلاق أسرع"),
+      title: t("Zero re-platforming", "دون إعادة بناء المنصة"),
       body: t(
-        "You launch on top of the interface you already run.",
-        "تنطلق فوق الواجهة التي تشغلها بالفعل.",
+        "You deploy on your existing interface with no migration and no retraining.",
+        "تنشر على واجهتك الحالية من دون هجرة ومن دون إعادة تدريب.",
       ),
     },
   ]
@@ -197,21 +197,21 @@ export default async function InfrastructurePage() {
               <div>
                 <p className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-200">
                   <Network className="h-3.5 w-3.5" />
-                  {t("Decision and execution infrastructure", "بنية القرار والتنفيذ")}
+                  {t("For enterprise teams", "لفرق المؤسسات")}
                 </p>
                 <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-tight text-white md:text-6xl">
-                  {t("Deploy the infrastructure. Own the transaction.", "انشر البنية التحتية. وامتلك المعاملة.")}
+                  {t("Your portal, our intelligence layer underneath it.", "بوابتك كما هي، وطبقة الاستخبارات تعمل تحتها.")}
                 </h1>
                 <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300 md:text-lg">
                   {t(
-                    "Entrestate is the operating layer for real estate decisioning, execution, and transaction control.",
-                    "Entrestate هي طبقة التشغيل لقرارات العقار والتنفيذ والتحكم في المعاملة.",
+                    "Plug Entrestate into your existing portal as a governed intelligence and execution layer. Your team keeps the interface they already know.",
+                    "أوصل Entrestate ببوابتك الحالية كطبقة استخبارات وتنفيذ محكومة. يحتفظ فريقك بالواجهة التي يعرفها بالفعل.",
                   )}
                 </p>
                 <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400 md:text-base">
                   {t(
-                    "One truth spine. Clean API boundaries. Structured deal rooms. Deterministic state control.",
-                    "عمود حقيقة واحد. حدود API واضحة. غرف صفقات منظمة. تحكم حتمي بالحالة.",
+                    "The data, scoring, deal rooms, and transaction logic run underneath, verified, auditable, and API-accessible.",
+                    "تعمل البيانات والتقييم وغرف الصفقات ومنطق المعاملة تحتها بشكل موثّق وقابل للتدقيق ومتاح عبر API.",
                   )}
                 </p>
 
@@ -220,7 +220,7 @@ export default async function InfrastructurePage() {
                     href={prefixLocalePath("/enterprise", locale)}
                     className="inline-flex items-center gap-2 rounded-full bg-emerald-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
                   >
-                    {t("Explore the API space", "استكشف مساحة الـ API")}
+                    {t("Review the API docs", "راجع وثائق الـ API")}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link
@@ -233,10 +233,10 @@ export default async function InfrastructurePage() {
 
                 <div className="mt-8 flex flex-wrap gap-3 text-xs text-slate-300">
                   {[
-                    t("Canonical truth spine", "عمود حقيقة موحد"),
-                    t("Verified execution boundary", "حد تنفيذ متحقق"),
-                    t("Structured deal rooms", "غرف صفقات منظمة"),
-                    t("Headless deployment model", "نموذج نشر Headless"),
+                    t("Verified property layer", "طبقة عقارية موثقة"),
+                    t("API boundary", "حد API واضح"),
+                    t("Governed deal rooms", "غرف صفقات محكومة"),
+                    t("Headless deployment", "نشر Headless"),
                   ].map((item) => (
                     <span key={item} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
                       {item}
@@ -247,7 +247,7 @@ export default async function InfrastructurePage() {
 
               <div className="rounded-[28px] border border-white/10 bg-[#071623] p-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                  {t("Unified architecture", "الهندسة الموحدة")}
+                  {t("How the integration works", "كيف يعمل التكامل")}
                 </p>
                 <div className="mt-5 space-y-4">
                   {[
@@ -258,11 +258,11 @@ export default async function InfrastructurePage() {
                     },
                     {
                       label: t("Entrestate API boundary", "حد Entrestate API"),
-                      detail: t("Typed payloads on /api/intel and /api/tx", "حمولات معيارية عبر /api/intel و /api/tx"),
+                      detail: t("Structured payloads on /api/intel and /api/tx", "حمولات منظمة عبر /api/intel و /api/tx"),
                       tone: "border-amber-400/30 bg-amber-400/10 text-amber-100",
                     },
                     {
-                      label: t("Decision infrastructure", "بنية القرار"),
+                      label: t("Scored intelligence layer", "طبقة الاستخبارات المصنفة"),
                       detail: t("Evidence, scoring, and mapped city logic", "الأدلة والتقييم ومنطق المدينة المرسومة"),
                       tone: "border-orange-400/30 bg-orange-400/10 text-orange-100",
                     },
@@ -272,7 +272,7 @@ export default async function InfrastructurePage() {
                       tone: "border-emerald-400/30 bg-emerald-400/10 text-emerald-100",
                     },
                     {
-                      label: t("Canonical property spine", "عمود عقاري كنسي"),
+                      label: t("Verified property layer", "الطبقة العقارية الموثقة"),
                       detail: t("Shared truth under both layers", "الحقيقة المشتركة أسفل الطبقتين"),
                       tone: "border-white/15 bg-white/5 text-slate-100",
                     },
@@ -285,8 +285,8 @@ export default async function InfrastructurePage() {
                 </div>
                 <p className="mt-5 text-sm leading-7 text-slate-300">
                   {t(
-                    "Keep the interface. Add the operating layer.",
-                    "احتفظ بالواجهة. وأضف طبقة التشغيل.",
+                    "Your frontend stays exactly as-is. Entrestate connects at the API boundary.",
+                    "تبقى الواجهة كما هي. وتتصل Entrestate عند حد الـ API.",
                   )}
                 </p>
               </div>
@@ -297,16 +297,16 @@ export default async function InfrastructurePage() {
             <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                  {t("Platform view", "نظرة المنصة")}
+                  {t("Core modules", "الوحدات الأساسية")}
                 </p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-                  {t("What the platform includes", "ما الذي تتضمنه المنصة")}
+                  {t("Four layers, one governed stack", "أربع طبقات، ومكدس محكوم واحد")}
                 </h2>
               </div>
               <p className="max-w-xl text-sm leading-7 text-slate-400">
                 {t(
-                  "A short view of the core layers teams deploy first.",
-                  "عرض مختصر للطبقات الأساسية التي تنشرها الفرق أولاً.",
+                  "Most enterprise teams start with two layers and expand from there.",
+                  "تبدأ أغلب الفرق المؤسسية بطبقتين ثم تتوسع بعد ذلك.",
                 )}
               </p>
             </div>
@@ -328,7 +328,7 @@ export default async function InfrastructurePage() {
                   {t("System map", "خريطة النظام")}
                 </p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-                  {t("The brain, the hands, and the truth spine underneath them", "الدماغ واليدين وعمود الحقيقة أسفلهما")}
+                  {t("The scoring layer, execution layer, and verified data underneath them", "طبقة التقييم وطبقة التنفيذ والبيانات الموثقة تحتها")}
                 </h2>
               </div>
               <p className="max-w-xl text-sm leading-7 text-slate-400">
@@ -367,7 +367,7 @@ export default async function InfrastructurePage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                       {t("Stage 1", "المرحلة 1")}
                     </p>
-                    <h3 className="text-xl font-semibold text-white">{t("Generative area", "المنطقة التوليدية")}</h3>
+                    <h3 className="text-xl font-semibold text-white">{t("Intent routing", "توجيه النية")}</h3>
                   </div>
                 </div>
                 <p className="mt-4 text-sm leading-7 text-slate-300">
@@ -394,7 +394,7 @@ export default async function InfrastructurePage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                       {t("Stage 2", "المرحلة 2")}
                     </p>
-                    <h3 className="text-xl font-semibold text-white">{t("Deterministic area", "المنطقة الحتمية")}</h3>
+                    <h3 className="text-xl font-semibold text-white">{t("Verified execution", "تنفيذ موثّق")}</h3>
                   </div>
                 </div>
                 <p className="mt-4 text-sm leading-7 text-slate-300">
@@ -483,7 +483,7 @@ export default async function InfrastructurePage() {
                   {t("Deployment model", "نموذج النشر")}
                 </p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-                  {t("Headless underneath your existing portal", "Headless تحت بوابتك الحالية")}
+                  {t("Headless underneath your existing portal", "طبقة Headless تحت بوابتك الحالية")}
                 </h2>
               </div>
               <p className="max-w-xl text-sm leading-7 text-slate-400">
@@ -544,16 +544,16 @@ export default async function InfrastructurePage() {
             <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                  {t("Operator outcomes", "نتائج التشغيل")}
+                  {t("Operational outcomes", "النتائج التشغيلية")}
                 </p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-                  {t("Why teams adopt the platform", "لماذا تعتمد الفرق هذه المنصة")}
+                  {t("What changes after deployment", "ما الذي يتغير بعد النشر")}
                 </h2>
               </div>
               <p className="max-w-xl text-sm leading-7 text-slate-400">
                 {t(
-                  "The value comes from cleaner inventory, recovered demand, and faster rollout.",
-                  "القيمة تأتي من مخزون أنظف وطلب مستعاد وإطلاق أسرع.",
+                  "Teams typically report three gains in the first 90 days.",
+                  "تذكر الفرق عادة ثلاثة مكاسب واضحة في أول 90 يوماً.",
                 )}
               </p>
             </div>
@@ -570,18 +570,18 @@ export default async function InfrastructurePage() {
 
           <section className="mt-20 rounded-[32px] border border-emerald-300/15 bg-[linear-gradient(135deg,rgba(16,185,129,0.12),rgba(8,14,24,0.94))] px-8 py-10 text-center md:px-12">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-100/80">
-              {t("Next step", "الخطوة التالية")}
+              {t("Ready to scope deployment?", "جاهز لتحديد نطاق النشر؟")}
             </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white md:text-5xl">
               {t(
-                "Start with the API space. Expand into the full platform.",
-                "ابدأ بمساحة الـ API ثم توسع إلى المنصة الكاملة.",
+                "Two ways to start",
+                "طريقتان للبداية",
               )}
             </h2>
             <p className="mx-auto mt-4 max-w-3xl text-sm leading-8 text-slate-200 md:text-base">
               {t(
-                "See the integration surface first, then plan rollout and deployment with the enterprise team.",
-                "شاهد سطح التكامل أولاً ثم خطط الإطلاق والنشر مع فريق المؤسسات.",
+                "Review the API surface independently, or bring your team to a scoping call.",
+                "راجع سطح الـ API بنفسك، أو أحضر فريقك إلى مكالمة تحديد نطاق.",
               )}
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -596,7 +596,7 @@ export default async function InfrastructurePage() {
                 href={prefixLocalePath("/contact", locale)}
                 className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
               >
-                {t("Contact enterprise sales", "تواصل مع فريق المؤسسات")}
+                {t("Book a scoping call", "احجز مكالمة نطاق")}
               </Link>
             </div>
           </section>

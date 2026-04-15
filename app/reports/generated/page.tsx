@@ -47,7 +47,7 @@ export default function ReportsPage() {
                 <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">No reports generated yet.</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Use the Copilot to generate investor memos, strategic reports, or underwriting briefs.
+                  Use the terminal to generate investor memos, strategic reports, or underwriting briefs.
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

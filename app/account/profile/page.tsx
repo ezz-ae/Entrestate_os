@@ -601,14 +601,14 @@ export default function PersonalMarketBookPage() {
             </p>
             <p className="text-sm text-muted-foreground/70 max-w-lg leading-relaxed">
               {isArabic
-                ? "اكتب أي سؤال عن مشروع أو منطقة أو مطور وسيوثّق مساعد القرار كل شيء في دفتر تحليلي منظّم."
-                : "Type any question about a project, area, or developer and the copilot will document everything into a structured intelligence book."}
+                ? "اكتب أي سؤال عن مشروع أو منطقة أو مطور وستوثّق المحطة كل شيء في دفتر تحليلي منظّم."
+                : "Type any question about a project, area, or developer and the terminal will document everything into a structured intelligence book."}
             </p>
           </div>
           <Button asChild className="gap-2 h-11 rounded-full px-7 shrink-0 shadow-lg shadow-primary/20">
             <Link href="/chat">
               <Sparkles className="h-4 w-4" />
-              {isArabic ? "افتح مساعد القرار" : "Open Copilot"}
+              {isArabic ? "افتح المحطة" : "Open Terminal"}
             </Link>
           </Button>
         </div>

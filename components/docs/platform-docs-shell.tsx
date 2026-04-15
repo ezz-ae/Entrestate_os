@@ -94,7 +94,7 @@ export function PlatformDocsShell({ children }: { children: ReactNode }) {
     aiWorkflowBody: isArabic
       ? "اطلب من المساعد تلخيص أي صفحة أو تجهيز موجز سريع للشركاء أو المستثمرين."
       : "Ask AI to summarize any section into partner or investor-ready briefs.",
-    openAssistant: isArabic ? "فتح المساعد" : "Open assistant",
+    openAssistant: isArabic ? "افتح المحطة" : "Open Terminal",
   }
 
   return (

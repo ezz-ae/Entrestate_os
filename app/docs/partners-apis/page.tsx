@@ -49,7 +49,7 @@ const apiCapabilities = [
     ],
   },
   {
-    category: "Decision Engine",
+    category: "Decision Terminal",
     endpoints: [
       "POST /api/chat — Scored recommendations",
       "GET /api/embed — White-label widget payloads",
@@ -100,7 +100,7 @@ export default async function PartnersApisDocsPage() {
         <p className="text-xs uppercase tracking-wider text-muted-foreground">Platform Docs / Partners & APIs</p>
         <h1 className="mt-3 text-3xl font-bold text-foreground md:text-5xl">Partners & APIs</h1>
         <p className="mt-4 max-w-3xl text-base text-muted-foreground leading-relaxed">
-          Partner on data, distribution, or white-label delivery. Entrestate provides the platform layer and API surface.
+          Partner on data, distribution, or white-label delivery. Your interface stays yours. Entrestate provides the intelligence and API layer underneath it.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link

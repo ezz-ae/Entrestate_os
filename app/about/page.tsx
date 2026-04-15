@@ -1,9 +1,30 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ArrowRight, Shield, Eye, Scale, BookOpen } from "lucide-react"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { getMarketPulseSummary } from "@/lib/frontend-content"
+import { listDevelopers } from "@/lib/decision-infrastructure"
+import { formatInteger } from "@/lib/format/number"
+
+export const dynamic = "force-dynamic"
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale()
+
+  return {
+    title:
+      locale === "ar"
+        ? "عن Entrestate — منصة استخبارات عقارية في الإمارات"
+        : "About Entrestate — UAE Real Estate Intelligence Platform",
+    description:
+      locale === "ar"
+        ? "تعرف على كيف تبني Entrestate إشارات وتقييمات ومخرجات استخباراتية مرتبطة بالأدلة لسوق العقارات في الإمارات."
+        : "Learn how Entrestate produces evidence-linked real estate signals, scoring, and decision inputs for the UAE market.",
+  }
+}
 
 function getPrinciples(locale: AppLocale) {
   return locale === "ar"
@@ -11,61 +32,45 @@ function getPrinciples(locale: AppLocale) {
         {
           icon: Eye,
           title: "الوضوح قبل الإقناع",
-          description: "نقدّم بيانات وقراءة سوقية واضحة. لا نملي القرار على المستخدم ولا نوجّه خياره بالنيابة عنه.",
+          description: "تعرض المنصة البيانات والإشارات والمخرجات المصنفة حسب الأدلة. منطق التقييم موثق. والأدلة مذكورة. والحكم النهائي لك.",
         },
         {
           icon: Shield,
-          title: "النظام قبل السرعة",
-          description: "كل خطوة في المنصة مبنية على قواعد واضحة ومسار تنفيذي منضبط، وليس على الارتجال أو الضغط البيعي.",
+          title: "الهيكل قبل السرعة",
+          description: "كل مسار داخل Entrestate يربط النتيجة بالمصدر وبحالة تنفيذ واضحة، حتى لا تتحول السرعة إلى فوضى.",
         },
         {
           icon: Scale,
-          title: "فصل الأدوار يحفظ العدالة",
-          description: "المستخدم يقرأ السوق، والمختص ينفّذ عند الحاجة. المنصة تربط الطرفين بدون تضارب مصالح.",
+          title: "الإنصاف عبر الفصل الواضح",
+          description: "المنصة تنتج قراءة منظمة للسوق. المستخدم يفحص الأدلة. والتنفيذ يتم ضمن أدوار واضحة بدون تضارب مصالح.",
         },
         {
           icon: BookOpen,
-          title: "المعرفة مسؤولية",
-          description: "كل تقرير أو قراءة منشورة على المنصة يمر بمنهج واضح ويصدر تحت اسم Entrestate، ونحن نتحمل ما ننشره.",
+          title: "المعرفة موقعة",
+          description: "كل تقرير في المكتبة يُراجع ويُوقّع باسم Entrestate، ويعتمد على DLD ومصادر القوائم الموثقة لا على ملخصات مولدة آلياً فقط.",
         },
       ]
     : [
         {
           icon: Eye,
           title: "Clarity over persuasion",
-          description: "We show data and analysis. We do not recommend, persuade, or guide decisions. Users think for themselves.",
+          description: "The platform shows data, signals, and evidence-graded outputs. The scoring logic is documented. The evidence is cited. The judgment is yours.",
         },
         {
           icon: Shield,
           title: "Structure over speed",
-          description: "Every contract, session, and transaction follows defined rules. Execution is handled by verified professionals.",
+          description: "Every workflow ties a result back to source, evidence level, and a clear execution state so speed never comes at the cost of control.",
         },
         {
           icon: Scale,
           title: "Fairness through separation",
-          description: "Users study. Advisors execute. The platform connects the two without conflicts of interest.",
+          description: "Entrestate produces structured market intelligence. Users examine the evidence. Execution happens inside clear roles and governed flows.",
         },
         {
           icon: BookOpen,
           title: "Knowledge is signed",
-          description: "Every report and insight in the Library is researched, written, and signed by Entrestate analysts. We stand behind what we publish.",
+          description: "Every report in the library is researched and signed by Entrestate analysts, using DLD and verified listing feeds rather than generic AI summaries.",
         },
-      ]
-}
-
-function getStats(locale: AppLocale) {
-  return locale === "ar"
-    ? [
-        { value: "8", label: "أسواق" },
-        { value: "246", label: "منطقة تحت المتابعة" },
-        { value: "2,813", label: "مشروع مُقيَّم" },
-        { value: "75", label: "مطور نشط" },
-      ]
-    : [
-        { value: "8", label: "Markets" },
-        { value: "246", label: "Areas Tracked" },
-        { value: "2,813", label: "Projects Scored" },
-        { value: "75", label: "Active Developers" },
       ]
 }
 
@@ -73,27 +78,53 @@ export default async function AboutPage() {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
   const principles = getPrinciples(locale)
-  const stats = getStats(locale)
+
+  const [pulse, developerData] = await Promise.all([
+    getMarketPulseSummary().catch(() => ({
+      data_as_of: new Date().toISOString(),
+      summary: { total: 0, avg_price: null, avg_yield: null, buy_signals: 0, high_confidence: 0 },
+    })),
+    listDevelopers().catch(() => ({ developers: [], data_as_of: null })),
+  ])
+
+  const projectsScored = pulse.summary.total > 0 ? pulse.summary.total : 0
+  const scoredDevelopers = developerData.developers.length
+
+  const stats = isArabic
+    ? [
+        { value: formatInteger(3, locale), label: "إمارات" },
+        { value: formatInteger(projectsScored, locale), label: "مشروع مُقيَّم" },
+        { value: formatInteger(scoredDevelopers, locale), label: "مطور بدرجة موثوقية" },
+        { value: formatInteger(36841, locale), label: "معاملة DLD" },
+      ]
+    : [
+        { value: formatInteger(3, locale), label: "Emirates" },
+        { value: formatInteger(projectsScored, locale), label: "Projects scored" },
+        { value: formatInteger(scoredDevelopers, locale), label: "Reliability-scored developers" },
+        { value: formatInteger(36841, locale), label: "DLD transactions" },
+      ]
 
   return (
     <main id="main-content">
       <Navbar />
       <div className="pt-28 pb-20 md:pt-36 md:pb-32">
         <div className="container mx-auto px-6">
-          {/* Hero */}
-          <div className="max-w-2xl mb-20">
-            <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">{isArabic ? "عن Entrestate" : "About"}</p>
+          <div className="max-w-3xl mb-20">
+            <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">
+              {isArabic ? "عن Entrestate" : "About Entrestate"}
+            </p>
             <h1 className="text-3xl md:text-5xl font-serif text-foreground leading-tight text-balance">
-              {isArabic ? "منصة لفهم السوق العقاري واتخاذ القرار بثقة" : "A real estate market research and decision firm"}
+              {isArabic
+                ? "استخبارات عقارية منظمة، قابلة للتفسير، ومرتبطة بالأدلة."
+                : "Structured real estate intelligence, linked to evidence."}
             </h1>
             <p className="mt-6 text-base md:text-lg text-muted-foreground leading-relaxed">
               {isArabic
-                ? "Entrestate تبني بيئة عمل مهنية لفهم السوق العقاري، وقراءة المخاطر، ثم الانتقال إلى التنفيذ عبر مختصين موثوقين عند الحاجة. نحن لا نبيع وحدات ولا نعمل كواجهة تسويق عقاري؛ دورنا هو الوضوح، والانضباط، ورفع جودة القرار."
-                : "Entrestate builds professional workflows for understanding real estate markets and executing decisions through verified advisors. We do not sell properties, list units, or broker deals directly. We focus on market clarity and structured execution."}
+                ? "تنتج Entrestate مخرجات استخباراتية منظمة لسوق العقارات في الإمارات: إشارات توقيت، درجات أدلة، وتقييمات مرتبة. هذه المخرجات هي مدخلات قرار، وليست نصيحة مالية. كل حكم مرتبط بمصدره، وكل مستخدم يفحص الأدلة ثم يتخذ حكمه."
+                : "Entrestate produces structured intelligence outputs for UAE real estate: timing signals, evidence scores, and ranked verdicts. These are decision inputs, not financial advice. Every verdict links to its evidence. Users inspect the evidence and make their own judgment."}
             </p>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-20">
             {stats.map((stat) => (
               <div key={stat.label} className="p-6 bg-card border border-border rounded-lg text-center">
@@ -103,40 +134,46 @@ export default async function AboutPage() {
             ))}
           </div>
 
-          {/* Mission */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-20">
             <div className="p-8 md:p-10 bg-primary rounded-lg">
-              <p className="text-xs font-medium uppercase tracking-wider text-primary-foreground/60 mb-3">{isArabic ? "الرسالة" : "Mission"}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-primary-foreground/60 mb-3">
+                {isArabic ? "الرسالة" : "Mission"}
+              </p>
               <h2 className="text-2xl md:text-3xl font-serif text-primary-foreground leading-tight mb-4">
-                {isArabic ? "نجعل السوق العقاري مفهومًا وقابلًا للتنفيذ" : "Make real estate markets understandable and actionable"}
+                {isArabic
+                  ? "نجعل سوق العقار قابلاً للقراءة قبل أن يصبح قابلاً للتنفيذ"
+                  : "Make the market readable before it becomes executable"}
               </h2>
               <p className="text-sm text-primary-foreground/70 leading-relaxed">
                 {isArabic
-                  ? "القرار العقاري غالبًا يُتخذ وسط معلومات ناقصة وتسعير غير واضح وسير عمل مرتبك. Entrestate وُجدت لتغيّر ذلك: نجمع البيانات، والقراءة التحليلية، وأدوات التنفيذ ضمن منصة واحدة. المستخدم يحصل على وضوح، والمختص يعمل ضمن إطار منظم، والجميع يتحرك بشفافية أعلى."
-                  : "Real estate decisions are often made with incomplete information, opaque pricing, and unclear processes. Entrestate exists to change that. We bring data, analysis, and professional execution into one platform. Users get market clarity. Advisors get structure. Both get transparency."}
+                  ? "الفوضى في السوق لا تأتي فقط من قلة البيانات، بل من غياب المسار الذي يربط النتيجة بمصدرها. Entrestate تجمع البيانات، والتقييم، والأدلة، وطبقة التنفيذ في منظومة واحدة قابلة للتدقيق."
+                  : "Market noise is not just a data problem. It is a traceability problem. Entrestate brings together data, scoring, evidence, and execution layers into one system that can be audited end to end."}
               </p>
             </div>
             <div className="p-8 md:p-10 bg-card border border-border rounded-lg flex flex-col justify-between">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">{isArabic ? "المنهج" : "Approach"}</p>
+                <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">
+                  {isArabic ? "كيف تعمل المنصة" : "How the platform works"}
+                </p>
                 <h2 className="text-2xl md:text-3xl font-serif text-foreground leading-tight mb-4">
-                  {isArabic ? "الدليل أولًا، والرأي ليس منتجنا" : "Evidence first, opinion never"}
+                  {isArabic ? "الأدلة أولاً، والتفسير ثانياً" : "Evidence first, interpretation second"}
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {isArabic
-                    ? "نقدّم لوحات سوقية، وأدوات بحث، ومقارنات، وتقارير. لكننا لا نملي على المستخدم ماذا يشتري أو يبيع أو ينتظر. المنصة تشرح، والمستخدم يقرر."
-                    : "We provide market dashboards, search tools, calculators, and comparison workflows. We publish reports and insights. But we never tell users what to buy, sell, or hold. The platform provides understanding. Users make their own decisions."}
+                    ? "تنتج Entrestate إشارات وتقييمات ومخرجات مرتبة قابلة للتتبع إلى مصادر موثقة. الأحكام ليست أوامر شراء أو بيع؛ بل مدخلات قرار مدروسة بدرجة أدلة واضحة. الدليل ظاهر دائماً، والقرار النهائي لك."
+                    : "Entrestate produces structured market intelligence: scoring, signals, and ranked outputs, all traceable to verified sources. Verdicts are graded inputs, not instructions. The evidence is always visible. The conclusion is always yours."}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Principles */}
           <div className="mb-20">
             <div className="max-w-2xl mb-12">
-              <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">{isArabic ? "المبادئ" : "Principles"}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-accent mb-3">
+                {isArabic ? "المبادئ" : "Principles"}
+              </p>
               <h2 className="text-3xl md:text-4xl font-serif text-foreground leading-tight text-balance">
-                {isArabic ? "ما الذي نؤمن به" : "What we believe"}
+                {isArabic ? "كيف نبني الثقة في المنتج" : "How product trust is built"}
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -152,19 +189,32 @@ export default async function AboutPage() {
             </div>
           </div>
 
-          {/* CTA */}
           <div className="p-8 md:p-12 bg-card border border-border rounded-lg flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
-              <h2 className="text-2xl font-serif text-foreground mb-2">{isArabic ? "ابدأ من المكان المناسب لك" : "Explore Entrestate"}</h2>
-              <p className="text-sm text-muted-foreground">{isArabic ? "يمكنك البدء من السوق، أو قراءة التقارير، أو فتح مساعد القرار مباشرة." : "Start with Markets, review the Library, or open the Decision Tunnel."}</p>
+              <h2 className="text-2xl font-serif text-foreground mb-2">
+                {isArabic ? "ابدأ من السطح المناسب" : "Start from the right surface"}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {isArabic
+                  ? "افتح ملفات المناطق إذا كنت تبدأ من السوق، أو اعرض المشاريع المصنفة إذا كنت تريد نتائج قابلة للفحص."
+                  : "Open area profiles if you are starting from market context, or move straight to scored projects if you want inspectable outputs."}
+              </p>
             </div>
-            <Link
-              href={prefixLocalePath("/markets", locale)}
-              className="flex items-center gap-2 px-6 py-3 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors w-fit"
-            >
-              {isArabic ? "استكشف السوق" : "Explore Markets"}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href={prefixLocalePath("/areas", locale)}
+                className="flex items-center gap-2 px-6 py-3 text-sm font-medium border border-border rounded-md hover:border-accent/40 transition-colors"
+              >
+                {isArabic ? "استكشف المناطق" : "Explore Areas"}
+              </Link>
+              <Link
+                href={prefixLocalePath("/properties", locale)}
+                className="flex items-center gap-2 px-6 py-3 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                {isArabic ? "اعرض المشاريع المصنفة" : "View scored projects"}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>

@@ -54,13 +54,13 @@ const commands = {
 
 const stats = {
   en: [
-    { value: "2,813", label: "Scored Projects", icon: Building2 },
+    { value: "2,812", label: "Scored Projects", icon: Building2 },
     { value: "167",   label: "Areas Covered",   icon: MapPin },
     { value: "36,841",  label: "DLD Transactions", icon: TrendingUp },
     { value: "75",   label: "Developers Rated", icon: Users },
   ],
   ar: [
-    { value: "٢٬٨١٣", label: "مشروع مُصنّف",       icon: Building2 },
+    { value: "٢٬٨١٢", label: "مشروع مُصنّف",       icon: Building2 },
     { value: "١٦٧",   label: "منطقة مغطاة",        icon: MapPin },
     { value: "٣٦٬٨٤١", label: "معاملة DLD",       icon: TrendingUp },
     { value: "٧٥",   label: "مطور مُقيَّم",        icon: Users },
@@ -71,7 +71,7 @@ const features = {
   en: [
     {
       icon: Brain,
-      title: "Decision Engine V1",
+      title: "Decision Terminal V1",
       desc: "Every project scored on timing, stress resilience, yield, and investor grade — not guesses.",
     },
     {
@@ -88,7 +88,7 @@ const features = {
   ar: [
     {
       icon: Brain,
-      title: "محرك القرار V1",
+      title: "محطة القرار V1",
       desc: "كل مشروع مُقيَّم بالتوقيت ومرونة الضغط والعائد ودرجة المستثمر — ليس تخمينات.",
     },
     {
