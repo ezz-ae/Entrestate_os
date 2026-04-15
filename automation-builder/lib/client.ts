@@ -16,6 +16,11 @@ export async function fetchAgents() {
   return getJson<{ agents: AgentDefinition[] }>("/api/automation-builder/agents")
 }
 
+export async function fetchRuns(agentId?: string) {
+  const search = agentId ? `?agentId=${encodeURIComponent(agentId)}` : ""
+  return getJson<{ runs: AgentRun[] }>(`/api/automation-builder/runs${search}`)
+}
+
 export async function createAgent(payload: Omit<AgentDefinition, "id" | "teamId" | "createdAt" | "updatedAt" | "version">) {
   return getJson<{ agent: AgentDefinition }>("/api/automation-builder/agents", {
     method: "POST",

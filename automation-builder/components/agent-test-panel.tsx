@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import type { AutomationTemplate } from "@/automation-builder/lib/automation-types"
+import type { AgentRun, AutomationTemplate } from "@/automation-builder/lib/automation-types"
 import type { AutomationDraft } from "@/automation-builder/lib/draft"
 import { Button } from "@/automation-builder/components/ui/button"
 import { Card } from "@/automation-builder/components/ui/card"
@@ -14,9 +14,16 @@ type AutomationTestPanelProps = {
   activeAutomationId: string | null
   template: AutomationTemplate | null
   onEnsureAutomation: () => Promise<string | null>
+  onRunComplete?: (run: AgentRun) => void
 }
 
-export function AutomationTestPanel({ draft, activeAutomationId, template, onEnsureAutomation }: AutomationTestPanelProps) {
+export function AutomationTestPanel({
+  draft,
+  activeAutomationId,
+  template,
+  onEnsureAutomation,
+  onRunComplete,
+}: AutomationTestPanelProps) {
   const [inputs, setInputs] = useState<Record<string, string>>({})
   const [output, setOutput] = useState<Record<string, string> | null>(null)
   const [summary, setSummary] = useState<string | null>(null)
@@ -41,6 +48,7 @@ export function AutomationTestPanel({ draft, activeAutomationId, template, onEns
       setOutput((run.output?.outputs as Record<string, string>) || null)
       setSummary((run.output?.summary as string) || null)
       setFollowUps((run.output?.followUps as string[]) || [])
+      onRunComplete?.(run)
     } catch (error) {
       setOutput({ error: "Unable to test the agent right now." })
     } finally {

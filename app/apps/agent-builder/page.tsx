@@ -3,9 +3,9 @@ import { Navbar } from "@/components/navbar"
 import AgentBuilderApp from "@/automation-builder/agent-builder-app"
 
 export const metadata: Metadata = {
-  title: "Agent-First Builder - Entrestate",
+  title: "Agent Builder - Entrestate",
   description:
-    "Build real estate agents with a guided wizard, clear rules, and business-first outputs.",
+    "Configure, test, and publish real estate agents with live runs, rule gates, and operational controls.",
 }
 
 export default function AgentBuilderPage() {

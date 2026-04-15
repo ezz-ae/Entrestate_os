@@ -123,6 +123,16 @@ export const AutomationVersionSchema = z.object({
 })
 export type AutomationVersion = z.infer<typeof AutomationVersionSchema>
 
+export const AgentVersionSchema = z.object({
+  id: z.string(),
+  agentId: z.string(),
+  version: z.number(),
+  definition: AutomationDefinitionSchema,
+  createdAt: z.string(),
+  createdBy: z.string(),
+})
+export type AgentVersion = z.infer<typeof AgentVersionSchema>
+
 export const AutomationRunSchema = z.object({
   id: z.string(),
   automationId: z.string(),
@@ -135,6 +145,19 @@ export const AutomationRunSchema = z.object({
   completedAt: z.string().optional(),
 })
 export type AutomationRun = z.infer<typeof AutomationRunSchema>
+
+export const AgentRunSchema = z.object({
+  id: z.string(),
+  agentId: z.string(),
+  version: z.number(),
+  status: z.enum(["queued", "running", "completed", "failed"]),
+  input: z.record(z.string(), z.unknown()),
+  output: z.record(z.string(), z.unknown()).optional(),
+  error: z.string().optional(),
+  createdAt: z.string(),
+  completedAt: z.string().optional(),
+})
+export type AgentRun = z.infer<typeof AgentRunSchema>
 
 export const AutomationMessageSchema = z.object({
   id: z.string(),
