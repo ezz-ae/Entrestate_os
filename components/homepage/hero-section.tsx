@@ -6,10 +6,25 @@ import { ArrowRight, Database, Lock, ShieldCheck } from "lucide-react"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import { formatAed } from "@/lib/format/currency"
 import { formatInteger } from "@/lib/format/number"
+import { LiveSignalCard } from "@/components/platform/live-signal-card"
+import { TerminalPromptTeaser } from "@/components/platform/terminal-prompt-teaser"
 
 type Props = {
   avgMarketPrice: number | null
   totalProjects: number
+  buySignals: number
+  topProject: {
+    slug: string
+    name: string
+    area?: string | null
+    developer?: string | null
+    timing?: string | null
+    stress?: string | null
+    yieldValue?: number | null
+    score?: number | null
+    price?: number | null
+  } | null
+  syncLabel?: string | null
 }
 
 const COPY = {
@@ -26,7 +41,7 @@ const COPY = {
     stats: {
       projects: "Projects scored",
       avgPrice: "Avg. entry price",
-      listings: "Verified listings",
+      buySignals: "BUY signals live",
       dld: "DLD transactions",
       areas: "Area profiles",
       developers: "Tracked developers",
@@ -45,7 +60,7 @@ const COPY = {
     stats: {
       projects: "مشروع مقيّم",
       avgPrice: "متوسط سعر الدخول",
-      listings: "قائمة موثقة",
+      buySignals: "إشارات BUY مباشرة",
       dld: "معاملة DLD",
       areas: "ملف منطقة",
       developers: "مطور متابع",
@@ -53,11 +68,10 @@ const COPY = {
   },
 } as const
 
-export function HeroSection({ avgMarketPrice, totalProjects }: Props) {
+export function HeroSection({ avgMarketPrice, totalProjects, buySignals, topProject, syncLabel }: Props) {
   const locale = useLocale() as AppLocale
   const copy = COPY[locale] ?? COPY.en
 
-  const bayutListings = 41381
   const dldTransactions = 36841
   const areasCount = 167
   const developerCount = 481
@@ -69,15 +83,15 @@ export function HeroSection({ avgMarketPrice, totalProjects }: Props) {
     ? "منصة واحدة تحول ضوضاء السوق إلى حكم منظم، مع الأدلة التي تدعم كل نتيجة."
     : "One platform that turns market noise into a structured verdict, with the evidence to back every call."
   const stats = [
-    { label: copy.stats.projects, value: totalProjects },
+    { label: copy.stats.projects, value: totalProjects, sublabel: locale === "ar" ? "مصدر حي" : "Live source" },
     avgMarketPrice && avgMarketPrice > 0
-      ? { label: copy.stats.avgPrice, value: formatAed(avgMarketPrice, locale, { compact: true }) }
+      ? { label: copy.stats.avgPrice, value: formatAed(avgMarketPrice, locale, { compact: true }), sublabel: locale === "ar" ? "متوسط السوق" : "Market median" }
       : null,
-    { label: copy.stats.listings, value: bayutListings },
-    { label: copy.stats.dld, value: dldTransactions },
-    { label: copy.stats.areas, value: areasCount },
-    { label: copy.stats.developers, value: developerCount },
-  ].filter(Boolean) as Array<{ label: string; value: number | string }>
+    { label: copy.stats.buySignals, value: buySignals, sublabel: locale === "ar" ? "الآن" : "Right now" },
+    { label: copy.stats.dld, value: dldTransactions, sublabel: locale === "ar" ? "مرصودة" : "Observed" },
+    { label: copy.stats.areas, value: areasCount, sublabel: locale === "ar" ? "مفعلة" : "Active" },
+    { label: copy.stats.developers, value: developerCount, sublabel: locale === "ar" ? "متابعون" : "Tracked" },
+  ].filter(Boolean) as Array<{ label: string; value: number | string; sublabel: string }>
 
   return (
     <section className="relative">
@@ -127,19 +141,36 @@ export function HeroSection({ avgMarketPrice, totalProjects }: Props) {
             </Link>
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <TerminalPromptTeaser className="mt-8" compact />
+
+          <div className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-3">
             {stats.map((item) => (
-              <div key={item.label} className="flex items-baseline gap-1.5">
-                <span className="text-sm font-semibold tabular-nums text-foreground">
+              <div key={item.label} className="rounded-2xl border border-border/60 bg-card/50 p-4">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/60">{item.label}</p>
+                <span className="mt-2 block text-xl font-semibold tabular-nums text-foreground">
                   {typeof item.value === "number" ? formatInteger(item.value, locale) : item.value}
                 </span>
-                <span className="text-[11px] text-muted-foreground/60">{item.label}</span>
+                <span className="mt-1 block text-[11px] text-muted-foreground/60">{item.sublabel}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="w-full shrink-0 lg:w-[360px] xl:w-[420px]">
+        <div className="w-full shrink-0 space-y-4 lg:w-[360px] xl:w-[420px]">
+          {topProject ? (
+            <LiveSignalCard
+              title={topProject.name}
+              area={topProject.area}
+              developer={topProject.developer}
+              timing={topProject.timing}
+              stress={topProject.stress}
+              yieldValue={topProject.yieldValue}
+              score={topProject.score}
+              price={topProject.price}
+              updatedLabel={syncLabel}
+              slug={topProject.slug}
+            />
+          ) : null}
           <div className="relative rounded-2xl border border-border/60 bg-card/50 p-5 shadow-2xl shadow-black/20 backdrop-blur-sm">
             <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
             <div className="flex items-start gap-3">

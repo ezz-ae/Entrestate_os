@@ -80,6 +80,44 @@ export default async function PlansPage() {
       href: "/contact",
     },
   ]
+  const featureMatrix = [
+    {
+      feature: t("Terminal access", "وصول المحطة"),
+      individual: t("Limited", "محدود"),
+      broker: "✓",
+      enterprise: "✓",
+    },
+    {
+      feature: t("Reports", "التقارير"),
+      individual: "✓",
+      broker: "✓",
+      enterprise: "✓",
+    },
+    {
+      feature: t("Developer scores", "درجات المطورين"),
+      individual: t("Limited", "محدود"),
+      broker: "✓",
+      enterprise: "✓",
+    },
+    {
+      feature: t("API access", "وصول API"),
+      individual: "—",
+      broker: t("Limited", "محدود"),
+      enterprise: "✓",
+    },
+    {
+      feature: t("Deal rooms", "غرف الصفقات"),
+      individual: "—",
+      broker: t("Limited", "محدود"),
+      enterprise: "✓",
+    },
+    {
+      feature: t("DaaS layer", "طبقة DaaS"),
+      individual: "—",
+      broker: "—",
+      enterprise: "✓",
+    },
+  ]
 
   return (
     <main id="main-content">
@@ -158,6 +196,48 @@ export default async function PlansPage() {
               )}
             </p>
           </div>
+
+          <section className="mt-10 rounded-3xl border border-border bg-card p-6 md:p-8">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-accent">
+                  {t("Feature comparison", "مقارنة المزايا")}
+                </p>
+                <h2 className="mt-2 text-2xl font-serif text-foreground">
+                  {t("See the layer differences clearly", "اعرف الفرق بين الطبقات بوضوح")}
+                </h2>
+              </div>
+              <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+                {t(
+                  "The data stays open. The workflow depth, verdict access, and infrastructure layers expand as the plan moves up.",
+                  "تبقى البيانات مفتوحة. أما عمق سير العمل والوصول إلى الحكم وطبقات البنية فتتوسع مع الخطة الأعلى.",
+                )}
+              </p>
+            </div>
+
+            <div className="mt-6 overflow-x-auto rounded-2xl border border-border/70">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-background/70 text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">{t("Feature", "الميزة")}</th>
+                    <th className="px-4 py-3 font-medium">{t("Individual", "فردي")}</th>
+                    <th className="px-4 py-3 font-medium">{t("Broker", "وسيط")}</th>
+                    <th className="px-4 py-3 font-medium">{t("Enterprise", "مؤسسي")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {featureMatrix.map((row) => (
+                    <tr key={row.feature} className="border-t border-border/60">
+                      <td className="px-4 py-3 font-medium text-foreground">{row.feature}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{row.individual}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{row.broker}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{row.enterprise}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
       </div>
       <Footer />

@@ -18,6 +18,7 @@ import {
   Mail,
   BookOpen,
 } from "lucide-react"
+import { TerminalPromptTeaser } from "@/components/platform/terminal-prompt-teaser"
 
 // ── Navigation structure ──────────────────────────────────────────────────────
 
@@ -261,27 +262,29 @@ export function Footer() {
                   `36,841 معاملة DLD. ${projectCountText} مشروعاً مقيّماً. اسأل المحطة أي شيء عن عقارات دبي.`,
                 )}
               </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link
-                  href={toHref("/chat")}
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20"
-                >
-                  {t("Open Terminal", "افتح المحطة")}
-                  <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
-                </Link>
-                <Link
-                  href={toHref("/plans")}
-                  className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
-                >
-                  {t("View Plans", "عرض الباقات")}
-                </Link>
-                <Link
-                  href={toHref("/contact")}
-                  className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {t("Enterprise enquiry", "استفسار مؤسسي")}
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </Link>
+              <div className="mt-5">
+                <TerminalPromptTeaser
+                  compact
+                  title={t("Open the terminal from the footer", "افتح المحطة مباشرة من الفوتر")}
+                  description={t(
+                    "Type the market question first, then step into the live terminal with the query already filled in.",
+                    "اكتب سؤال السوق أولاً، ثم ادخل إلى المحطة الحية مع تعبئة الاستعلام مسبقاً.",
+                  )}
+                  caption={t(
+                    `Live terminal surface · ${projectCountText} scored projects in the active dataset.`,
+                    `سطح المحطة الحي · ${projectCountText} مشروعاً مقيّماً في مجموعة البيانات النشطة.`,
+                  )}
+                  className="bg-background/40"
+                />
+                <div className="mt-4 flex flex-wrap gap-4 text-sm">
+                  <Link href={toHref("/plans")} className="text-foreground transition hover:text-primary">
+                    {t("View Plans", "عرض الباقات")}
+                  </Link>
+                  <Link href={toHref("/contact")} className="inline-flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground">
+                    {t("Enterprise enquiry", "استفسار مؤسسي")}
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
 

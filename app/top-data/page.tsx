@@ -100,6 +100,7 @@ export default async function TopDataPage() {
     const sectionData = rowsBySection.get(sectionKey)
     return sectionData ? shouldRenderTopDataSection(sectionKey, sectionData.data_json) : false
   })
+  const visibleSectionCount = availableSections.length
   const missingSections = REQUIRED_SECTIONS.filter((key) => {
     const sectionData = rowsBySection.get(key)
     return !sectionData || !shouldRenderTopDataSection(key, sectionData.data_json)
@@ -140,7 +141,7 @@ export default async function TopDataPage() {
               <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]" />
               <span className="text-xs text-muted-foreground">
                 <span className="font-semibold text-foreground">{availableSections.length}</span>
-                {isArabic ? `/${REQUIRED_SECTIONS.length} أقسام محمّلة` : `/${REQUIRED_SECTIONS.length} sections loaded`}
+                {isArabic ? `/${visibleSectionCount} أقسام مباشرة` : `/${visibleSectionCount} live sections`}
               </span>
             </div>
           )}

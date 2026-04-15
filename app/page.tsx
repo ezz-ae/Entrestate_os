@@ -6,9 +6,11 @@ import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/homepage/hero-section"
 import { DecisionTunnelStepper } from "@/components/homepage/decision-tunnel-stepper"
 import { getMarketPulseSummary } from "@/lib/frontend-content"
+import { listProperties } from "@/lib/decision-infrastructure"
 import { SEO, absoluteUrl, getLocaleAlternates, getSeoCopy } from "@/lib/seo"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
+import { VerdictCard } from "@/components/platform/verdict-card"
 
 export const dynamic = "force-dynamic"
 
@@ -109,6 +111,7 @@ function getAutomationCards(locale: "en" | "ar") {
 
 const API_PAYLOAD_PREVIEW = {
   project: "Marina Vista",
+  area: "Dubai Marina",
   verdict: "BUY",
   confidence: 0.84,
   evidence_level: "L1_CANONICAL",
@@ -132,11 +135,65 @@ export default async function HomePage() {
     data_as_of: new Date().toISOString(),
     summary: { total: 2812, avg_price: null, avg_yield: null, buy_signals: 136, high_confidence: 0 },
   }))
+  const featured = await listProperties({
+    page: 1,
+    pageSize: 1,
+    sortBy: "god_metric",
+    locale,
+  }).catch(() => ({
+    data_as_of: new Date().toISOString(),
+    projects: [],
+    total: 0,
+    page: 1,
+    pageSize: 1,
+  }))
 
   const totalProjects = pulse.summary.total || 2812
   const avgMarketPrice = typeof pulse.summary.avg_price === "number" && Number.isFinite(pulse.summary.avg_price)
     ? pulse.summary.avg_price
     : null
+  const buySignals = pulse.summary.buy_signals || 357
+  const topProject = featured.projects[0]
+    ? {
+        slug: String(featured.projects[0].slug),
+        name: String(featured.projects[0].name ?? featured.projects[0].project_name ?? "Top project"),
+        area: String(featured.projects[0].final_area ?? featured.projects[0].area ?? ""),
+        developer: String(featured.projects[0].developer ?? ""),
+        timing: typeof featured.projects[0].timing_label === "string"
+          ? featured.projects[0].timing_label
+          : typeof featured.projects[0].l3_timing_signal === "string"
+            ? featured.projects[0].l3_timing_signal
+            : null,
+        stress: typeof featured.projects[0].stress_grade_v1 === "string"
+          ? featured.projects[0].stress_grade_v1
+          : typeof featured.projects[0].l2_stress_test_grade === "string"
+            ? featured.projects[0].l2_stress_test_grade
+            : null,
+        yieldValue: typeof featured.projects[0].rental_yield === "number"
+          ? featured.projects[0].rental_yield
+          : typeof featured.projects[0].l1_canonical_yield === "number"
+            ? featured.projects[0].l1_canonical_yield
+            : null,
+        score: typeof featured.projects[0].investor_score_v1 === "number"
+          ? featured.projects[0].investor_score_v1
+          : typeof featured.projects[0].engine_god_metric === "number"
+            ? featured.projects[0].engine_god_metric
+            : null,
+        price: typeof featured.projects[0].price_from_aed === "number"
+          ? featured.projects[0].price_from_aed
+          : typeof featured.projects[0].l1_canonical_price === "number"
+            ? featured.projects[0].l1_canonical_price
+            : null,
+      }
+    : null
+  const syncLabel = new Date(pulse.data_as_of).toLocaleString(isArabic ? "ar-AE-u-nu-latn" : "en-AE", {
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Dubai",
+  }) + " GST"
 
   return (
     <main id="main-content">
@@ -147,7 +204,13 @@ export default async function HomePage() {
       <Navbar />
 
       <div className="mx-auto max-w-[1100px] px-6 pb-28 pt-32 md:pt-44">
-        <HeroSection avgMarketPrice={avgMarketPrice} totalProjects={totalProjects} />
+        <HeroSection
+          avgMarketPrice={avgMarketPrice}
+          totalProjects={totalProjects}
+          buySignals={buySignals}
+          topProject={topProject}
+          syncLabel={syncLabel}
+        />
 
         <section className="mt-20">
           <div className="mb-8 text-center">
@@ -315,14 +378,22 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
-                {isArabic ? "معاينة payload" : "Payload preview"}
-              </p>
-              <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed text-foreground/85">
-                {JSON.stringify(API_PAYLOAD_PREVIEW, null, 2)}
-              </pre>
-            </div>
+            <VerdictCard
+              name={API_PAYLOAD_PREVIEW.project}
+              area={API_PAYLOAD_PREVIEW.area}
+              verdict={API_PAYLOAD_PREVIEW.verdict}
+              confidence={API_PAYLOAD_PREVIEW.confidence}
+              yieldValue={API_PAYLOAD_PREVIEW.yield_score / 10}
+              stress={API_PAYLOAD_PREVIEW.stress_grade}
+              timing={API_PAYLOAD_PREVIEW.verdict}
+              score={API_PAYLOAD_PREVIEW.confidence * 100}
+              evidenceLevel={API_PAYLOAD_PREVIEW.evidence_level}
+              sources={API_PAYLOAD_PREVIEW.sources}
+              positiveDrivers={API_PAYLOAD_PREVIEW.drivers.positive}
+              negativeDrivers={API_PAYLOAD_PREVIEW.drivers.negative}
+              jsonPayload={API_PAYLOAD_PREVIEW}
+              href="/properties"
+            />
           </div>
         </section>
       </div>

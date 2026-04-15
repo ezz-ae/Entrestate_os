@@ -410,6 +410,32 @@ export function slugifyName(value: string) {
     .replace(/^-+|-+$/g, "")
 }
 
+function normalizeDeveloperComparable(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "")
+}
+
+function buildDeveloperMatchClause(terms: string[]) {
+  const normalizedTerms = Array.from(
+    new Set(
+      terms
+        .map((term) => term.trim())
+        .filter(Boolean),
+    ),
+  )
+
+  if (normalizedTerms.length === 0) {
+    return Prisma.sql`FALSE`
+  }
+
+  const rawMatches = normalizedTerms.map((term) => Prisma.sql`LOWER(COALESCE(developer, '')) LIKE LOWER('%' || ${term} || '%')`)
+  const compactMatches = normalizedTerms
+    .map((term) => normalizeDeveloperComparable(term))
+    .filter(Boolean)
+    .map((term) => Prisma.sql`LOWER(REGEXP_REPLACE(COALESCE(developer, ''), '[^a-z0-9]+', '', 'g')) LIKE '%' || ${term} || '%'`)
+
+  return Prisma.sql`(${Prisma.join([...rawMatches, ...compactMatches], " OR ")})`
+}
+
 function getProjectSlug(record: DecisionRecord) {
   const name = record.name ?? record.project_name ?? record.title ?? "project"
   return slugifyName(String(name))
@@ -1848,7 +1874,7 @@ export async function getDeveloperBySlug(slug: string): Promise<{
   projects: DecisionProject[]
   area_presence: DecisionRecord[]
 } | null> {
-  const developerName = slug.replace(/-/g, " ")
+  const developerNameFromSlug = slug.replace(/-/g, " ")
   const developerQualityClauses = buildQualityClauses({
     requirePrice: true,
     requireStress: true,
@@ -1859,10 +1885,50 @@ export async function getDeveloperBySlug(slug: string): Promise<{
     excludeGarbageDeveloper: true,
     requireBedroomSanity: true,
   })
+  const developerProjectClauses = buildQualityClauses({
+    requirePrice: true,
+    requireArea: true,
+    requireDeveloper: true,
+    onlyUae: true,
+    excludeGarbageDeveloper: true,
+    requireBedroomSanity: true,
+  })
 
-  const developerWhere = Prisma.sql`LOWER(developer) LIKE LOWER('%' || ${developerName} || '%') AND ${Prisma.join(developerQualityClauses, " AND ")}`
+  let curatedDeveloper: DecisionRecord | null = null
+  if (USE_CURATED_DEVELOPERS_VIEW) {
+    const curatedRows = await runOptionalQuery(Prisma.sql`
+      SELECT
+        d.name AS developer,
+        d.slug,
+        COALESCE(
+          NULLIF(TRIM(to_jsonb(d) ->> 'developer_ar'), ''),
+          NULLIF(TRIM(to_jsonb(d) ->> 'name_ar'), '')
+        ) AS developer_ar,
+        d.avg_score AS reliability,
+        d.avg_score AS efficiency,
+        d.avg_price,
+        d.safe_projects,
+        d.project_count AS projects,
+        d.hq,
+        d.description,
+        d.payload
+      FROM ${DEVELOPERS_TABLE_SQL} d
+      WHERE slug = ${slug}
+      LIMIT 1
+    `)
+    curatedDeveloper = (curatedRows[0] as DecisionRecord | undefined) ?? null
+  }
 
-  const [developerRows, projectRows, areaRows, profileRows] = await Promise.all([
+  const canonicalDeveloperName =
+    typeof curatedDeveloper?.developer === "string" && curatedDeveloper.developer.trim().length > 0
+      ? curatedDeveloper.developer
+      : developerNameFromSlug
+
+  const developerTerms = Array.from(new Set([canonicalDeveloperName, developerNameFromSlug].filter(Boolean)))
+  const developerWhere = Prisma.sql`${buildDeveloperMatchClause(developerTerms)} AND ${Prisma.join(developerQualityClauses, " AND ")}`
+  const developerProjectWhere = Prisma.sql`${buildDeveloperMatchClause(developerTerms)} AND ${Prisma.join(developerProjectClauses, " AND ")}`
+
+  const [developerRows, detailProjectRows, detailAreaRows, profileRows] = await Promise.all([
     runQuery(Prisma.sql`
       SELECT
         developer,
@@ -1885,10 +1951,12 @@ export async function getDeveloperBySlug(slug: string): Promise<{
         l1_canonical_yield,
         l2_stress_test_grade,
         l3_timing_signal,
+        decision_label_v1,
+        l2_developer_reliability,
         engine_god_metric,
         l1_confidence
       FROM ${DETAIL_TABLE_SQL}
-      WHERE ${developerWhere}
+      WHERE ${developerProjectWhere}
       ORDER BY engine_god_metric DESC NULLS LAST
       LIMIT 40
     `),
@@ -1900,7 +1968,7 @@ export async function getDeveloperBySlug(slug: string): Promise<{
       FROM (
         SELECT COALESCE(final_area, area) AS area
         FROM ${DETAIL_TABLE_SQL}
-        WHERE ${developerWhere}
+        WHERE ${developerProjectWhere}
       ) d
       LEFT JOIN gc_area_profiles gp ON LOWER(gp.name) = LOWER(d.area)
       GROUP BY 1
@@ -1917,7 +1985,10 @@ export async function getDeveloperBySlug(slug: string): Promise<{
         payload->>'footprint' AS footprint,
         payload->>'continuity' AS continuity
       FROM gc_developer_profiles
-      WHERE LOWER(name) LIKE LOWER('%' || ${developerName} || '%')
+      WHERE ${Prisma.join(
+        developerTerms.map((term) => Prisma.sql`LOWER(COALESCE(name, '')) LIKE LOWER('%' || ${term} || '%')`),
+        " OR ",
+      )}
       LIMIT 1
     `),
   ])
@@ -1925,31 +1996,10 @@ export async function getDeveloperBySlug(slug: string): Promise<{
   let developer = (developerRows[0] as DecisionRecord | undefined) ?? null
   let profile = (profileRows[0] as DecisionRecord | undefined) ?? null
 
-  if (!developer && USE_CURATED_DEVELOPERS_VIEW) {
-    const curatedRows = await runQuery(Prisma.sql`
-      SELECT
-        d.name AS developer,
-        d.slug,
-        COALESCE(
-          NULLIF(TRIM(to_jsonb(d) ->> 'developer_ar'), ''),
-          NULLIF(TRIM(to_jsonb(d) ->> 'name_ar'), '')
-        ) AS developer_ar,
-        d.avg_score AS reliability,
-        d.avg_score AS efficiency,
-        d.avg_price,
-        d.safe_projects,
-        d.project_count AS projects,
-        d.hq,
-        d.description,
-        d.payload
-      FROM ${DEVELOPERS_TABLE_SQL} d
-      WHERE slug = ${slug}
-      LIMIT 1
-    `)
+  if (!developer && curatedDeveloper) {
+    developer = curatedDeveloper
 
-    developer = (curatedRows[0] as DecisionRecord | undefined) ?? null
-
-    if (developer && !profile) {
+    if (!profile) {
       profile = {
         developer_ar: developer.developer_ar ?? null,
         hq: developer.hq ?? null,
@@ -1961,6 +2011,66 @@ export async function getDeveloperBySlug(slug: string): Promise<{
 
   if (!developer) return null
 
+  let projects = detailProjectRows.map((row) => mapProjectRecord(row as DecisionRecord))
+
+  if (projects.length === 0) {
+    for (const term of developerTerms) {
+      const fallback = await listProperties({
+        filters: { developer: term },
+        pageSize: 40,
+        sortBy: "god_metric",
+      })
+
+      if (fallback.projects.length > 0) {
+        projects = fallback.projects
+        break
+      }
+    }
+  }
+
+  let areaPresence = detailAreaRows as DecisionRecord[]
+
+  if (areaPresence.length === 0 && projects.length > 0) {
+    const areaAccumulator = new Map<string, { area: string; projects: number }>()
+
+    for (const project of projects) {
+      const areaName = String(project.final_area ?? project.area ?? "").trim()
+      if (!areaName) continue
+
+      const existing = areaAccumulator.get(areaName)
+      if (existing) {
+        existing.projects += 1
+      } else {
+        areaAccumulator.set(areaName, { area: areaName, projects: 1 })
+      }
+    }
+
+    const areaKeys = Array.from(areaAccumulator.keys())
+    let areaTranslations = new Map<string, string | null>()
+
+    if (areaKeys.length > 0) {
+      const translationRows = await runOptionalQuery<{ area_key: string; area_ar: string | null }>(Prisma.sql`
+        SELECT
+          LOWER(name) AS area_key,
+          COALESCE(payload->>'area_ar', payload->>'name_ar') AS area_ar
+        FROM gc_area_profiles
+        WHERE LOWER(name) IN (${toSqlList(areaKeys.map((value) => value.toLowerCase()))})
+      `)
+
+      areaTranslations = new Map(
+        translationRows.map((row) => [row.area_key, row.area_ar ?? null]),
+      )
+    }
+
+    areaPresence = Array.from(areaAccumulator.values())
+      .sort((left, right) => right.projects - left.projects)
+      .map((entry) => ({
+        area: entry.area,
+        area_ar: areaTranslations.get(entry.area.toLowerCase()) ?? null,
+        projects: entry.projects,
+      }))
+  }
+
   return {
     data_as_of: new Date().toISOString(),
     developer: {
@@ -1968,8 +2078,8 @@ export async function getDeveloperBySlug(slug: string): Promise<{
       slug: typeof developer.slug === "string" ? developer.slug : slugifyName(String(developer.developer ?? "developer")),
       profile,
     },
-    projects: projectRows.map((row) => mapProjectRecord(row as DecisionRecord)),
-    area_presence: areaRows as DecisionRecord[],
+    projects,
+    area_presence: areaPresence,
   }
 }
 

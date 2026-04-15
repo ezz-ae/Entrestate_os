@@ -1,6 +1,8 @@
+import Link from "next/link"
 import { ConfidenceBadge, StressGradeBadge, TimingSignalBadge } from "@/components/decision/badges"
 import { formatAed, formatScore, formatYield } from "@/components/decision/formatters"
 import { TransactionNotification } from "@/components/dld/transaction-notification"
+import { prefixLocalePath } from "@/i18n/locale"
 import { formatInteger } from "@/lib/format/number"
 
 type TopDataSectionProps = {
@@ -72,6 +74,15 @@ function formatYieldValue(value: number | null, locale?: string | null) {
   return value === null ? "—" : formatYield(value, locale)
 }
 
+function formatCompactAedValue(value: number | null, locale?: string | null) {
+  if (value === null) return "—"
+  const formatter = new Intl.NumberFormat(isArabicLocale(locale) ? "ar-AE-u-nu-latn" : "en-AE", {
+    notation: "compact",
+    maximumFractionDigits: value >= 1_000_000 ? 1 : 0,
+  })
+  return `AED ${formatter.format(value)}`
+}
+
 function formatCount(value: number, locale?: string | null, fallback = "0") {
   return formatInteger(value, locale, fallback)
 }
@@ -100,6 +111,10 @@ function valueFromKeys(record: GenericObject, keys: string[]) {
     if (key in record) return record[key]
   }
   return undefined
+}
+
+function slugifyValue(value: string) {
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 }
 
 function normalizeJsonPayload(value: unknown): unknown {
@@ -308,25 +323,60 @@ function TimingSignalsView({ data, locale }: { data: unknown; locale?: string })
     { key: "AVOID", tone: "border-red-500/50 bg-red-500/10" },
   ]
 
-  return (
-    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-      {signals.map((signal) => {
-        const record = bySignal.get(signal.key) ?? {}
-        const count = asNumber(valueFromKeys(record, ["count", "projects"])) ?? 0
-        const avgPrice = asNumber(valueFromKeys(record, ["avg_price", "price_avg"]))
-        const avgYield = asNumber(valueFromKeys(record, ["avg_yield", "yield_avg"]))
+  const total = signals.reduce((sum, signal) => {
+    const record = bySignal.get(signal.key) ?? {}
+    return sum + (asNumber(valueFromKeys(record, ["count", "projects"])) ?? 0)
+  }, 0)
 
-        return (
-          <div key={signal.key} className={`rounded-lg border p-3 ${signal.tone}`}>
-            <div className="flex items-center justify-between">
+  return (
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-full border border-border/60 bg-background/50">
+        <div className="flex h-11 w-full">
+          {signals.map((signal) => {
+            const record = bySignal.get(signal.key) ?? {}
+            const count = asNumber(valueFromKeys(record, ["count", "projects"])) ?? 0
+            const width = total > 0 ? `${Math.max((count / total) * 100, count > 0 ? 4 : 0)}%` : "0%"
+            const barTone =
+              signal.key === "STRONG_BUY"
+                ? "bg-emerald-700"
+                : signal.key === "BUY"
+                  ? "bg-emerald-500"
+                  : signal.key === "HOLD"
+                    ? "bg-amber-500"
+                    : signal.key === "WAIT"
+                      ? "bg-slate-500"
+                      : "bg-red-500"
+
+            return (
+              <div key={signal.key} className={`flex items-center justify-center px-2 text-[10px] font-semibold text-white ${barTone}`} style={{ width }}>
+                {total > 0 && count > 0 ? `${Math.round((count / total) * 100)}%` : ""}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
+        {signals.map((signal) => {
+          const record = bySignal.get(signal.key) ?? {}
+          const count = asNumber(valueFromKeys(record, ["count", "projects"])) ?? 0
+          const avgPrice = asNumber(valueFromKeys(record, ["avg_price", "price_avg"]))
+          const avgYield = asNumber(valueFromKeys(record, ["avg_yield", "yield_avg"]))
+          const share = total > 0 ? Math.round((count / total) * 100) : 0
+
+          return (
+            <div key={signal.key} className={`rounded-lg border p-3 ${signal.tone}`}>
               <TimingSignalBadge signal={signal.key} />
-              <p className="text-base font-semibold text-foreground">{formatCount(count, locale)}</p>
+              <p className="mt-3 text-xl font-semibold text-foreground">{formatCount(count, locale)}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{share}% {isArabicLocale(locale) ? "من المخزون" : "of inventory"}</p>
+              <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                <p>{isArabicLocale(locale) ? `السعر ${formatCompactAedValue(avgPrice, locale)}` : `Price ${formatCompactAedValue(avgPrice, locale)}`}</p>
+                <p>{isArabicLocale(locale) ? `العائد ${formatYieldValue(avgYield, locale)}` : `Yield ${formatYieldValue(avgYield, locale)}`}</p>
+              </div>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">{isArabicLocale(locale) ? `متوسط السعر: ${formatAedValue(avgPrice, locale)}` : `Avg price: ${formatAedValue(avgPrice, locale)}`}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{isArabicLocale(locale) ? `متوسط العائد: ${formatYieldValue(avgYield, locale)}` : `Avg yield: ${formatYieldValue(avgYield, locale)}`}</p>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -351,11 +401,37 @@ function StressGradesView({ data, locale }: { data: unknown; locale?: string }) 
 
   const max = Math.max(...grades.map((entry) => byGrade.get(entry.grade) ?? 0), 1)
 
+  const total = grades.reduce((sum, entry) => sum + (byGrade.get(entry.grade) ?? 0), 0)
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
+      <div className="flex min-h-[180px] items-end justify-between gap-3 rounded-2xl border border-border/60 bg-background/40 p-4">
+        {grades.map((entry) => {
+          const count = byGrade.get(entry.grade) ?? 0
+          const pct = Math.max(Math.min((count / max) * 100, 100), 4)
+
+          return (
+            <div key={entry.grade} className="flex flex-1 flex-col items-center gap-3">
+              <div className="flex h-[132px] w-full items-end justify-center rounded-xl bg-background/60 px-2">
+                <div className={`w-full max-w-[52px] rounded-t-2xl ${entry.barColor}`} style={{ height: `${pct}%` }} />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-foreground">{entry.grade}</p>
+                <p className="text-[11px] text-muted-foreground">{formatCount(count, locale)}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        {isArabicLocale(locale)
+          ? `المخزون الأكثر شيوعاً يقع عند Grade C، بينما تمثل A+B ${formatCount((byGrade.get("A") ?? 0) + (byGrade.get("B") ?? 0), locale)} من أصل ${formatCount(total, locale)} مشروع.`
+          : `Grade C is the mode. A+B account for ${formatCount((byGrade.get("A") ?? 0) + (byGrade.get("B") ?? 0), locale)} of ${formatCount(total, locale)} scored projects.`}
+      </p>
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
       {grades.map((entry) => {
         const count = byGrade.get(entry.grade) ?? 0
-        const pct = Math.max(Math.min((count / max) * 100, 100), 0)
 
         return (
           <div key={entry.grade} className="rounded-lg border border-border/60 bg-background/40 p-3">
@@ -364,11 +440,12 @@ function StressGradesView({ data, locale }: { data: unknown; locale?: string }) 
               <p className="text-sm font-semibold text-foreground">{formatCount(count, locale)}</p>
             </div>
             <div className="mt-2 h-2 rounded-full bg-muted">
-              <div className={`h-2 rounded-full ${entry.barColor}`} style={{ width: `${pct}%` }} />
+              <div className={`h-2 rounded-full ${entry.barColor}`} style={{ width: `${Math.max(Math.min((count / max) * 100, 100), 4)}%` }} />
             </div>
           </div>
         )
       })}
+      </div>
     </div>
   )
 }
@@ -482,22 +559,29 @@ function TopProjectsTableView({ data, locale }: { data: unknown; locale?: string
           </tr>
         </thead>
         <tbody>
-          {rows.slice(0, 15).map((row, index) => {
+          {rows.slice(0, 20).map((row, index) => {
             const name = asText(valueFromKeys(row, ["name", "project"]), `Project ${index + 1}`)
             const area = asText(valueFromKeys(row, ["area", "final_area"]))
             const developer = asText(valueFromKeys(row, ["developer"]))
-            const price = asNumber(valueFromKeys(row, ["price_from", "price", "l1_canonical_price", "avg_price"]))
+            const price = asNumber(valueFromKeys(row, ["price_from", "price", "l1_canonical_price", "avg_price", "price_from_aed"]))
             const yieldValue = asNumber(valueFromKeys(row, ["rental_yield", "yield", "l1_canonical_yield", "avg_yield"]))
             const stressGrade = asText(valueFromKeys(row, ["stress_grade_v1", "grade"]), "E")
-            const timing = asText(valueFromKeys(row, ["timing_label", "timing"]), "WAIT")
-            const godMetric = asNumber(valueFromKeys(row, ["investor_score_v1", "score"]))
+            const timing = asText(valueFromKeys(row, ["decision_label_v1", "timing_label", "timing"]), "WAIT")
+            const godMetric = asNumber(valueFromKeys(row, ["investor_score_v1", "score", "god_metric"]))
+            const slug = asText(valueFromKeys(row, ["slug"]), slugifyValue(name))
 
             return (
               <tr key={`${name}-${index}`} className="border-t border-border/50 bg-card/30 transition hover:bg-primary/5">
-                <td className="px-3 py-2 font-medium text-foreground">{name}</td>
+                <td className="px-3 py-2 font-medium text-foreground">
+                  <Link href={prefixLocalePath(`/properties/${slug}`, locale ?? "en")} className="transition hover:text-primary">
+                    {name}
+                  </Link>
+                </td>
                 <td className="px-3 py-2 text-muted-foreground">{area}</td>
                 <td className="px-3 py-2 text-muted-foreground">{developer}</td>
-                <td className="px-3 py-2 text-muted-foreground">{formatAedValue(price, locale)}</td>
+                <td className="px-3 py-2 text-muted-foreground">
+                  {price !== null ? formatCompactAedValue(price, locale) : (isArabicLocale(locale) ? "قيد الإطلاق" : "Off-plan")}
+                </td>
                 <td className="px-3 py-2 text-muted-foreground">{formatYieldValue(yieldValue, locale)}</td>
                 <td className="px-3 py-2">
                   <StressGradeBadge grade={stressGrade} />
@@ -505,7 +589,7 @@ function TopProjectsTableView({ data, locale }: { data: unknown; locale?: string
                 <td className="px-3 py-2">
                   <TimingSignalBadge signal={timing} />
                 </td>
-                <td className="px-3 py-2 text-muted-foreground">{formatScore(godMetric, locale)}</td>
+                <td className="px-3 py-2 text-muted-foreground">{godMetric !== null ? godMetric.toFixed(1) : "—"}</td>
               </tr>
             )
           })}
@@ -528,18 +612,27 @@ function AreaIntelligenceView({ data, locale }: { data: unknown; locale?: string
         const area = asText(valueFromKeys(row, ["area", "name"]), `Area ${index + 1}`)
         const projects = asNumber(valueFromKeys(row, ["projects", "count"])) ?? 0
         const avgPrice = asNumber(valueFromKeys(row, ["avg_price", "price"]))
-        const efficiency = asNumber(valueFromKeys(row, ["efficiency", "engine_god_metric", "score"]))
-        const supply = asNumber(valueFromKeys(row, ["supply_pressure", "l3_supply_pressure"]))
+        const score = asNumber(valueFromKeys(row, ["efficiency", "engine_god_metric", "score"]))
+        const slug = asText(valueFromKeys(row, ["slug"]), slugifyValue(area))
 
         return (
           <div key={`${area}-${index}`} className="rounded-lg border border-border/60 bg-background/40 p-3">
-            <p className="text-sm font-medium text-foreground">{area}</p>
-            <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span>{isArabicLocale(locale) ? `${formatCount(projects, locale)} مشروع` : `${formatCount(projects, locale)} projects`}</span>
-              <span>{formatAedValue(avgPrice, locale)}</span>
-              <span>{isArabicLocale(locale) ? `الكفاءة ${formatScore(efficiency, locale)}` : `Eff ${formatScore(efficiency, locale)}`}</span>
-              <span>{isArabicLocale(locale) ? `المعروض ${formatScore(supply, locale)}` : `Supply ${formatScore(supply, locale)}`}</span>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <Link href={prefixLocalePath(`/areas/${slug}`, locale ?? "en")} className="text-sm font-medium text-foreground transition hover:text-primary">
+                  {area}
+                </Link>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {isArabicLocale(locale) ? `${formatCount(projects, locale)} مشروع` : `${formatCount(projects, locale)} projects`}
+                </p>
+              </div>
+              {score !== null ? (
+                <span className="rounded-full border border-border/60 bg-background/70 px-2.5 py-1 text-[11px] text-muted-foreground">
+                  {isArabicLocale(locale) ? `النتيجة ${formatScore(score, locale)}` : `Score ${formatScore(score, locale)}`}
+                </span>
+              ) : null}
             </div>
+            <p className="mt-4 text-lg font-semibold text-foreground">{formatCompactAedValue(avgPrice, locale)}</p>
           </div>
         )
       })}
@@ -559,14 +652,23 @@ function DeveloperReliabilityView({ data, locale }: { data: unknown; locale?: st
       {rows.slice(0, 12).map((row, index) => {
         const developer = asText(valueFromKeys(row, ["developer", "name"]), `Developer ${index + 1}`)
         const projects = asNumber(valueFromKeys(row, ["projects", "count"])) ?? 0
-        const reliability = asNumber(valueFromKeys(row, ["reliability", "score"]))
+        const reliability = asNumber(valueFromKeys(row, ["developer_reliability_score", "reliability", "score", "avg_score"]))
         const safeProjects = asNumber(valueFromKeys(row, ["safe_projects", "safe_count"]))
+        const tone = reliability === null ? "bg-slate-500" : reliability >= 80 ? "bg-emerald-500" : reliability >= 60 ? "bg-amber-500" : "bg-red-500"
+        const barWidth = reliability === null ? 12 : Math.max(12, Math.min(reliability, 100))
 
         return (
           <div key={`${developer}-${index}`} className="rounded-lg border border-border/60 bg-background/40 p-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-foreground">{developer}</p>
-              <p className="text-xs text-muted-foreground">{isArabicLocale(locale) ? `النتيجة ${formatScore(reliability, locale)}` : `Score ${formatScore(reliability, locale)}`}</p>
+              <p className="text-xs text-muted-foreground">
+                {reliability === null
+                  ? (isArabicLocale(locale) ? "غير مصنّف" : "Unscored")
+                  : (isArabicLocale(locale) ? `النتيجة ${Math.round(reliability)}` : `${Math.round(reliability)}`)}
+              </p>
+            </div>
+            <div className="mt-3 h-2 rounded-full bg-muted">
+              <div className={`h-2 rounded-full ${tone}`} style={{ width: `${barWidth}%` }} />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               {isArabicLocale(locale)
@@ -622,10 +724,18 @@ function TrustBarView({ data, locale }: { data: unknown; locale?: string }) {
   const hierarchy = hierarchyFromData.length > 0 ? hierarchyFromData : DEFAULT_HIERARCHY
   const engines = enginesFromData.length > 0 ? enginesFromData : DEFAULT_ENGINES
 
+  const standardizedRows = confidenceRows
+    .map((row) => ({
+      label: asText(valueFromKeys(row, ["label", "confidence"]), "UNKNOWN").toUpperCase(),
+      count: asNumber(valueFromKeys(row, ["count", "projects"])) ?? 0,
+    }))
+    .filter((row) => /^L[1-5]/.test(row.label))
+    .sort((left, right) => left.label.localeCompare(right.label))
+
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-border/60 bg-background/40 p-3">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">Hierarchy</p>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">{isArabicLocale(locale) ? "سلم الثقة" : "Confidence ladder"}</p>
         <p className="mt-2 text-sm text-foreground">{hierarchy.join(" → ")}</p>
       </div>
 
@@ -640,11 +750,11 @@ function TrustBarView({ data, locale }: { data: unknown; locale?: string }) {
         </div>
       </div>
 
-      {confidenceRows.length > 0 ? (
+      {standardizedRows.length > 0 ? (
         <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-          {confidenceRows.map((row, index) => {
-            const label = asText(valueFromKeys(row, ["label", "confidence"]), "UNKNOWN").toUpperCase()
-            const count = asNumber(valueFromKeys(row, ["count", "projects"])) ?? 0
+          {standardizedRows.map((row, index) => {
+            const label = row.label
+            const count = row.count
             return (
               <div key={`${label}-${index}`} className="rounded-lg border border-border/60 bg-background/40 p-3">
                 <div className="flex items-center justify-between">

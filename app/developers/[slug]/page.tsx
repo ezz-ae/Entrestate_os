@@ -27,11 +27,22 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
 
   const developer = detail.developer
   const profile = developer.profile as Record<string, unknown> | null
+  const primaryArea = detail.area_presence[0]
+  const primaryAreaLabel = primaryArea
+    ? pickLocalizedText(locale, primaryArea.area_ar, primaryArea.area, "")
+    : null
+  const liveSubtitle = [profile?.founded_year, profile?.hq].filter(Boolean).join(" · ")
+  const subtitleFallback = locale === "ar"
+    ? `${formatInteger(detail.projects.length, locale)} مشروع حي${primaryAreaLabel ? ` · ${primaryAreaLabel}` : ""}`
+    : `${formatInteger(detail.projects.length, locale)} live project${detail.projects.length === 1 ? "" : "s"}${primaryAreaLabel ? ` · ${primaryAreaLabel}` : ""}`
+  const profileNoteFallback = locale === "ar"
+    ? `${formatInteger(detail.projects.length, locale)} مشروع مرتبط${primaryAreaLabel ? ` في ${primaryAreaLabel}` : ""}${typeof developer.reliability === "number" ? ` · موثوقية ${formatScore(developer.reliability, locale)}` : ""}`
+    : `${formatInteger(detail.projects.length, locale)} linked project${detail.projects.length === 1 ? "" : "s"}${primaryAreaLabel ? ` in ${primaryAreaLabel}` : ""}${typeof developer.reliability === "number" ? ` · Reliability ${formatScore(developer.reliability, locale)}` : ""}`
   const copy = locale === "ar"
     ? {
         developerFallback: "المطور",
         pageEyebrow: "تفاصيل المطور",
-        profileFallback: "ملف المطور",
+        profileFallback: "بيانات المطور الحية",
         reliability: "الموثوقية",
         efficiency: "الكفاءة التشغيلية",
         projects: "المشاريع",
@@ -40,13 +51,15 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
         areaPresence: "التواجد الجغرافي",
         areaFallback: "المنطقة",
         profileNotes: "ملاحظات الملف",
-        operationsAvailable: "البيانات التشغيلية متوفرة",
+        operationsAvailable: "سياق المطور متصل بالبيانات الحية",
         projectFallback: "المشروع",
+        emptyProjects: "لا توجد مشاريع متصلة بهذا المطور في العرض الحالي.",
+        emptyAreas: "لا توجد مناطق مرتبطة في هذا العرض الحالي.",
       }
     : {
         developerFallback: "Developer",
         pageEyebrow: "Developer Detail",
-        profileFallback: "Developer profile",
+        profileFallback: "Live developer context",
         reliability: "Reliability",
         efficiency: "Efficiency",
         projects: "Projects",
@@ -55,8 +68,10 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
         areaPresence: "Area presence",
         areaFallback: "Area",
         profileNotes: "Profile notes",
-        operationsAvailable: "Operational footprint available",
+        operationsAvailable: "Live developer context connected",
         projectFallback: "Project",
+        emptyProjects: "No connected projects surfaced for this developer in the current dataset view.",
+        emptyAreas: "No linked areas surfaced for this developer in the current dataset view.",
       }
   const developerLabel = pickLocalizedText(locale, profile?.developer_ar, developer.developer, copy.developerFallback)
 
@@ -71,7 +86,7 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
           <p className="text-xs uppercase tracking-wider text-muted-foreground">{copy.pageEyebrow}</p>
           <h1 className="mt-2 text-3xl font-semibold text-foreground md:text-5xl">{developerLabel}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {[profile?.founded_year, profile?.hq].filter(Boolean).join(" · ") || copy.profileFallback}
+            {liveSubtitle || subtitleFallback || copy.profileFallback}
           </p>
 
           <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-5">
@@ -122,6 +137,11 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
                 />
               ))}
             </div>
+            {detail.projects.length === 0 ? (
+              <p className="mt-3 rounded-lg border border-border/50 bg-background/50 px-3 py-3 text-sm text-muted-foreground">
+                {copy.emptyProjects}
+              </p>
+            ) : null}
           </div>
 
           <aside className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4">
@@ -143,12 +163,17 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
                 </li>
               ))}
             </ul>
+            {detail.area_presence.length === 0 ? (
+              <p className="mt-3 rounded-lg border border-border/50 bg-background/50 px-3 py-3 text-sm text-muted-foreground">
+                {copy.emptyAreas}
+              </p>
+            ) : null}
 
             {profile ? (
               <div className="mt-4 rounded-xl border border-border/50 bg-background/50 p-3 text-xs text-muted-foreground">
                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{copy.profileNotes}</p>
                 <p className="mt-1 text-sm text-foreground">
-                  {[profile?.footprint, profile?.continuity].filter(Boolean).join(" · ") || copy.operationsAvailable}
+                  {[profile?.footprint, profile?.continuity].filter(Boolean).join(" · ") || profileNoteFallback || copy.operationsAvailable}
                 </p>
               </div>
             ) : null}

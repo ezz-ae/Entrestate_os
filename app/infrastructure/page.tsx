@@ -20,6 +20,8 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
+import { ArchitectureDiagram } from "@/components/platform/architecture-diagram"
+import { ExecutionFlowDiagram } from "@/components/platform/execution-flow-diagram"
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
@@ -245,51 +247,7 @@ export default async function InfrastructurePage() {
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-white/10 bg-[#071623] p-6">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-                  {t("How the integration works", "كيف يعمل التكامل")}
-                </p>
-                <div className="mt-5 space-y-4">
-                  {[
-                    {
-                      label: t("Your frontend", "الواجهة الخاصة بك"),
-                      detail: t("Your branded experience", "تجربتك بعلامتك"),
-                      tone: "border-cyan-400/30 bg-cyan-400/10 text-cyan-100",
-                    },
-                    {
-                      label: t("Entrestate API boundary", "حد Entrestate API"),
-                      detail: t("Structured payloads on /api/intel and /api/tx", "حمولات منظمة عبر /api/intel و /api/tx"),
-                      tone: "border-amber-400/30 bg-amber-400/10 text-amber-100",
-                    },
-                    {
-                      label: t("Scored intelligence layer", "طبقة الاستخبارات المصنفة"),
-                      detail: t("Evidence, scoring, and mapped city logic", "الأدلة والتقييم ومنطق المدينة المرسومة"),
-                      tone: "border-orange-400/30 bg-orange-400/10 text-orange-100",
-                    },
-                    {
-                      label: t("Execution infrastructure", "بنية التنفيذ"),
-                      detail: t("Deal rooms, holds, queues, and contracts", "غرف صفقات وحجوزات وطوابير وعقود"),
-                      tone: "border-emerald-400/30 bg-emerald-400/10 text-emerald-100",
-                    },
-                    {
-                      label: t("Verified property layer", "الطبقة العقارية الموثقة"),
-                      detail: t("Shared truth under both layers", "الحقيقة المشتركة أسفل الطبقتين"),
-                      tone: "border-white/15 bg-white/5 text-slate-100",
-                    },
-                  ].map((item) => (
-                    <div key={item.label} className={`rounded-2xl border px-4 py-4 ${item.tone}`}>
-                      <p className="text-sm font-semibold">{item.label}</p>
-                      <p className="mt-1 text-xs leading-6 opacity-85">{item.detail}</p>
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-5 text-sm leading-7 text-slate-300">
-                  {t(
-                    "Your frontend stays exactly as-is. Entrestate connects at the API boundary.",
-                    "تبقى الواجهة كما هي. وتتصل Entrestate عند حد الـ API.",
-                  )}
-                </p>
-              </div>
+              <ArchitectureDiagram locale={locale} />
             </div>
           </header>
 
@@ -425,17 +383,7 @@ export default async function InfrastructurePage() {
               </p>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-4">
-              {executionFlow.map((step, index) => (
-                <div key={step.title} className="rounded-[26px] border border-white/10 bg-white/5 p-6">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    {t("Step", "خطوة")} {index + 1}
-                  </p>
-                  <h3 className="mt-3 text-lg font-semibold text-white">{step.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">{step.body}</p>
-                </div>
-              ))}
-            </div>
+            <ExecutionFlowDiagram locale={locale} steps={executionFlow} />
 
             <div className="mt-5 grid gap-5 md:grid-cols-3">
               {[
