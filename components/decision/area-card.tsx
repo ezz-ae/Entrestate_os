@@ -4,6 +4,15 @@ import { formatAed, formatYield } from "@/components/decision/formatters"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { buildAreaStaticMapTileUrl } from "@/lib/area-geo"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import {
+  type AreaBenchmarks,
+  getAreaNarrative,
+  getAreaPosition,
+  getAreaPositionLabel,
+  getAreaTypeLabel,
+  getEfficiencyWidth,
+  getInventoryDepthLabel,
+} from "@/lib/area-intelligence"
 
 type AreaCardProps = {
   slug: string
@@ -13,11 +22,13 @@ type AreaCardProps = {
   city?: string | null
   avg_price?: number | null
   avg_yield?: number | null
+  efficiency?: number | null
   source_count?: number | null
   confidence?: string | null
   image_url?: string | null
+  area_type?: string | null
   top_projects?: string[] | null
-  apiPreview?: Record<string, unknown>
+  benchmarks: AreaBenchmarks
   locale?: AppLocale | string | null
 }
 
@@ -34,16 +45,32 @@ export function AreaCard(area: AreaCardProps) {
   const cityLabel = area.city ? pickLocalizedText(locale, null, area.city, area.city) : null
   const sourceCount = typeof area.source_count === "number" ? area.source_count : null
   const confidence = area.confidence ? String(area.confidence).toUpperCase() : null
-  const apiPreviewText = area.apiPreview ? JSON.stringify(area.apiPreview, null, 2) : null
+  const areaTypeLabel = getAreaTypeLabel(area.area_type, locale)
+  const positionKey = getAreaPosition(area, area.benchmarks)
+  const positionLabel = getAreaPositionLabel(area, area.benchmarks, locale)
+  const positionNarrative = getAreaNarrative(area, area.benchmarks, locale)
+  const inventoryDepthLabel = getInventoryDepthLabel(area.projects, locale)
+  const efficiencyWidth = getEfficiencyWidth(area.efficiency, area.benchmarks.maxEfficiency)
+  const positionTone =
+    positionKey === "value-yield"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+      : positionKey === "premium-carry"
+        ? "border-sky-500/30 bg-sky-500/10 text-sky-300"
+        : positionKey === "accessible-soft"
+          ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+          : positionKey === "selective"
+            ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+            : "border-border/60 bg-muted/40 text-muted-foreground"
   const copy = isArabic
     ? {
       projects: "مشروع",
       avgPrice: "متوسط السعر",
       avgYield: "متوسط العائد",
+      efficiency: "الكفاءة",
+      efficiencyHint: "ترتيب نسبي داخل السوق",
       topProjects: "أبرز المشاريع",
       sources: "مصادر",
       confidence: "موثوقية",
-      apiPayload: "حمولة API",
       openArea: `افتح ملف ${areaLabel}`,
       mapAlt: `خريطة ${areaLabel}`,
     }
@@ -51,10 +78,11 @@ export function AreaCard(area: AreaCardProps) {
         projects: "projects",
         avgPrice: "Avg Price",
         avgYield: "Avg Yield",
+        efficiency: "Efficiency",
+        efficiencyHint: "Relative market ranking",
         topProjects: "Top Projects",
         sources: "sources",
         confidence: "confidence",
-        apiPayload: "API Payload",
         openArea: `Open ${areaLabel} area details`,
         mapAlt: `Map of ${areaLabel}`,
       }
@@ -86,7 +114,22 @@ export function AreaCard(area: AreaCardProps) {
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-base font-semibold text-foreground">{areaLabel}</p>
+          <div>
+            <p className="text-base font-semibold text-foreground">{areaLabel}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] ${positionTone}`}>
+                {positionLabel}
+              </span>
+              <span className="rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                {inventoryDepthLabel}
+              </span>
+              {areaTypeLabel ? (
+                <span className="rounded-full border border-border/60 bg-background/60 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                  {areaTypeLabel}
+                </span>
+              ) : null}
+            </div>
+          </div>
           {area.projects ? (
             <span className="flex-shrink-0 rounded-full border border-border bg-muted/40 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
               {area.projects} {copy.projects}
@@ -107,6 +150,25 @@ export function AreaCard(area: AreaCardProps) {
             </p>
           </div>
         </div>
+
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          {positionNarrative}
+        </p>
+
+        {efficiencyWidth > 0 ? (
+          <div className="mt-3">
+            <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+              <span>{copy.efficiency}</span>
+              <span>{copy.efficiencyHint}</span>
+            </div>
+            <div className="mt-2 h-1.5 rounded-full bg-muted/70">
+              <div
+                className="h-1.5 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-400"
+                style={{ width: `${efficiencyWidth}%` }}
+              />
+            </div>
+          </div>
+        ) : null}
 
         {(sourceCount || confidence) ? (
           <div className="mt-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-wider text-muted-foreground/60">
@@ -140,17 +202,6 @@ export function AreaCard(area: AreaCardProps) {
               </div>
             </div>
           </div>
-        ) : null}
-
-        {apiPreviewText ? (
-          <details className="relative z-30 mt-3 rounded-lg border border-border/60 bg-background/40 p-2">
-            <summary className="cursor-pointer text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
-              {copy.apiPayload}
-            </summary>
-            <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-relaxed text-foreground/80">
-              {apiPreviewText}
-            </pre>
-          </details>
         ) : null}
       </div>
 

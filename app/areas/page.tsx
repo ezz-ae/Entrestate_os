@@ -6,9 +6,11 @@ import { AreaCard } from "@/components/decision/area-card"
 import { listAreas } from "@/lib/decision-infrastructure"
 import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { getRequestLocale } from "@/i18n/request"
-import { formatInteger } from "@/lib/format/number"
+import { formatDecimal, formatInteger } from "@/lib/format/number"
 import Link from "next/link"
 import { prefixLocalePath } from "@/i18n/locale"
+import { formatAed } from "@/lib/format/currency"
+import { computeMedian, getAreaPosition } from "@/lib/area-intelligence"
 
 export const dynamic = "force-dynamic"
 
@@ -43,6 +45,30 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
   const visibleAreas = activeCity
     ? data.areas.filter((area) => String(area.city ?? "").trim() === activeCity)
     : data.areas
+  const medianPrice = computeMedian(visibleAreas.map((area) => (typeof area.avg_price === "number" ? area.avg_price : null)))
+  const medianYield = computeMedian(visibleAreas.map((area) => (typeof area.avg_yield === "number" ? area.avg_yield : null)))
+  const maxEfficiency = visibleAreas.reduce<number | null>((currentMax, area) => {
+    const efficiency = typeof area.efficiency === "number" ? area.efficiency : null
+    if (efficiency === null) return currentMax
+    if (currentMax === null) return efficiency
+    return Math.max(currentMax, efficiency)
+  }, null)
+  const benchmarks = {
+    medianPrice,
+    medianYield,
+    maxEfficiency,
+  }
+  const benchmarkedAreas = visibleAreas.filter((area) => typeof area.projects === "number" && area.projects >= 5)
+  const valueYieldAreas = benchmarkedAreas.filter((area) => getAreaPosition(area, benchmarks) === "value-yield")
+  const valueYieldPreview = valueYieldAreas.slice(0, 3).map((area) => String(area.area ?? "")).filter(Boolean)
+  const efficiencyLeader =
+    [...benchmarkedAreas]
+      .filter((area) => typeof area.efficiency === "number")
+      .sort((left, right) => Number(right.efficiency ?? 0) - Number(left.efficiency ?? 0))[0] ?? null
+  const depthLeader =
+    [...visibleAreas]
+      .filter((area) => typeof area.projects === "number")
+      .sort((left, right) => Number(right.projects ?? 0) - Number(left.projects ?? 0))[0] ?? null
 
   return (
     <main id="main-content">
@@ -53,7 +79,9 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
             {isArabic ? "المناطق" : "Areas"}
           </p>
           <h1 className="mt-2 font-serif text-3xl font-medium text-foreground md:text-5xl">
-            {isArabic ? "167 ملف منطقة. وكل رقم له مصدر." : "167 area profiles. Every number is sourced."}
+            {isArabic
+              ? `${formatInteger(data.areas.length, locale)} ملف منطقة. وكل رقم له مصدر.`
+              : `${formatInteger(data.areas.length, locale)} area profiles. Every number is sourced.`}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isArabic
@@ -112,10 +140,85 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {isArabic
-              ? `${activeCity ? `عرض مدينة: ${activeCity} · ` : ""}مصادر متقاطعة: PropertyFinder / Bayut / DLD / Entrestate Spine`
-              : `${activeCity ? `City filter: ${activeCity} · ` : ""}Cross-referenced: PropertyFinder / Bayut / DLD / Entrestate Spine`}
+              ? `${activeCity ? `عرض مدينة: ${activeCity} · ` : ""}مصادر متقاطعة: PropertyFinder / Bayut / DLD / Entrestate Spine · مرتبة حسب الكفاءة`
+              : `${activeCity ? `City filter: ${activeCity} · ` : ""}Cross-referenced: PropertyFinder / Bayut / DLD / Entrestate Spine · sorted by efficiency`}
           </p>
         </div>
+
+        <section className="mb-8">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/40">
+                {isArabic ? "قراءات السوق" : "Market Reads"}
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-foreground">
+                {isArabic ? "ما الذي يقوله متوسط السوق" : "What the area math is saying"}
+              </h2>
+            </div>
+            <p className="max-w-xl text-xs text-muted-foreground">
+              {isArabic
+                ? `الوسيط الحالي: ${formatAed(medianPrice, locale, { compact: true })} للدخول و ${formatDecimal(medianYield, locale, 1, 1)}% للعائد.`
+                : `Current median: ${formatAed(medianPrice, locale, { compact: true })} entry and ${formatDecimal(medianYield, locale, 1, 1)}% yield.`}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <article className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/80">
+                {isArabic ? "قيمة وعائد" : "Value Yield"}
+              </p>
+              <p className="mt-3 text-3xl font-semibold text-foreground">
+                {formatInteger(valueYieldAreas.length, locale)}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {isArabic
+                  ? "مناطق تحت وسيط السعر وفوق وسيط العائد. هذه هي الجيوب التي تظهر فيها الكفاءة الرأسمالية أولاً."
+                  : "Areas sitting below the median entry price and above the median yield. This is where capital efficiency appears first."}
+              </p>
+              {valueYieldPreview.length > 0 ? (
+                <p className="mt-3 text-xs text-emerald-200/90">
+                  {isArabic ? `الأقرب للصورة الآن: ${valueYieldPreview.join(" · ")}` : `Closest fits right now: ${valueYieldPreview.join(" · ")}`}
+                </p>
+              ) : null}
+            </article>
+
+            <article className="rounded-2xl border border-sky-500/20 bg-sky-500/[0.06] p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-300/80">
+                {isArabic ? "قائد الكفاءة" : "Efficiency Leader"}
+              </p>
+              <p className="mt-3 text-xl font-semibold text-foreground">
+                {efficiencyLeader ? String(efficiencyLeader.area ?? "") : (isArabic ? "قيد التشكّل" : "Forming")}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {efficiencyLeader
+                  ? (isArabic
+                    ? `${formatAed(efficiencyLeader.avg_price, locale, { compact: true })} · ${formatDecimal(efficiencyLeader.avg_yield, locale, 1, 1)}% عائد · ${formatInteger(efficiencyLeader.projects, locale)} مشاريع`
+                    : `${formatAed(efficiencyLeader.avg_price, locale, { compact: true })} · ${formatDecimal(efficiencyLeader.avg_yield, locale, 1, 1)}% yield · ${formatInteger(efficiencyLeader.projects, locale)} projects`)
+                  : (isArabic
+                    ? "لا توجد بيانات كافية لترتيب الكفاءة حالياً."
+                    : "Not enough coverage yet to rank efficiency cleanly.")}
+              </p>
+            </article>
+
+            <article className="rounded-2xl border border-border/70 bg-card/70 p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60">
+                {isArabic ? "عمق المخزون" : "Inventory Depth"}
+              </p>
+              <p className="mt-3 text-xl font-semibold text-foreground">
+                {depthLeader ? String(depthLeader.area ?? "") : (isArabic ? "قيد التشكّل" : "Forming")}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {depthLeader
+                  ? (isArabic
+                    ? `${formatInteger(depthLeader.projects, locale)} مشروعاً مصنفاً · ${formatAed(depthLeader.avg_price, locale, { compact: true })} دخول متوسط`
+                    : `${formatInteger(depthLeader.projects, locale)} scored projects · ${formatAed(depthLeader.avg_price, locale, { compact: true })} average entry`)
+                  : (isArabic
+                    ? "لم يتكوّن بعد رائد واضح في عمق المخزون."
+                    : "No clear depth leader is visible yet.")}
+              </p>
+            </article>
+          </div>
+        </section>
 
         <AreasView areas={visibleAreas} />
 
@@ -145,11 +248,13 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
                 city={typeof area.city === "string" ? area.city : null}
                 avg_price={typeof area.avg_price === "number" ? area.avg_price : null}
                 avg_yield={typeof area.avg_yield === "number" ? area.avg_yield : null}
+                efficiency={typeof area.efficiency === "number" ? area.efficiency : null}
                 source_count={typeof area.source_count === "number" ? area.source_count : null}
                 confidence={typeof area.confidence === "string" ? area.confidence : null}
                 image_url={typeof area.image_url === "string" ? area.image_url : null}
+                area_type={typeof area.area_type === "string" ? area.area_type : null}
                 top_projects={Array.isArray(area.top_projects) ? area.top_projects.filter((item): item is string => typeof item === "string") : []}
-                apiPreview={area as Record<string, unknown>}
+                benchmarks={benchmarks}
                 locale={locale}
               />
             ))}

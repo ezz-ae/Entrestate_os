@@ -4,6 +4,13 @@ import { formatAed, formatScore, formatYield } from "@/components/decision/forma
 import { TransactionNotification } from "@/components/dld/transaction-notification"
 import { prefixLocalePath } from "@/i18n/locale"
 import { formatInteger } from "@/lib/format/number"
+import {
+  computeMedian,
+  getAreaNarrative,
+  getAreaPositionLabel,
+  getAreaTypeLabel,
+  getEfficiencyWidth,
+} from "@/lib/area-intelligence"
 
 type TopDataSectionProps = {
   section: string
@@ -327,6 +334,24 @@ function TimingSignalsView({ data, locale }: { data: unknown; locale?: string })
     const record = bySignal.get(signal.key) ?? {}
     return sum + (asNumber(valueFromKeys(record, ["count", "projects"])) ?? 0)
   }, 0)
+  const strongBuyRecord = bySignal.get("STRONG_BUY") ?? {}
+  const avoidRecord = bySignal.get("AVOID") ?? {}
+  const strongBuyAvgPrice = asNumber(valueFromKeys(strongBuyRecord, ["avg_price", "price_avg"]))
+  const strongBuyAvgYield = asNumber(valueFromKeys(strongBuyRecord, ["avg_yield", "yield_avg"]))
+  const avoidAvgPrice = asNumber(valueFromKeys(avoidRecord, ["avg_price", "price_avg"]))
+  const avoidAvgYield = asNumber(valueFromKeys(avoidRecord, ["avg_yield", "yield_avg"]))
+  const priceGap =
+    strongBuyAvgPrice && avoidAvgPrice && strongBuyAvgPrice > 0
+      ? avoidAvgPrice / strongBuyAvgPrice
+      : null
+  const yieldGap =
+    strongBuyAvgYield !== null && avoidAvgYield !== null
+      ? strongBuyAvgYield - avoidAvgYield
+      : null
+  const comparisonMaxPrice =
+    strongBuyAvgPrice !== null || avoidAvgPrice !== null
+      ? Math.max(strongBuyAvgPrice ?? 0, avoidAvgPrice ?? 0, 1)
+      : 1
 
   return (
     <div className="space-y-4">
@@ -355,6 +380,53 @@ function TimingSignalsView({ data, locale }: { data: unknown; locale?: string })
           })}
         </div>
       </div>
+
+      {priceGap !== null && yieldGap !== null && strongBuyAvgPrice !== null && avoidAvgPrice !== null ? (
+        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] p-4">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)] lg:items-center">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300/80">
+                {isArabicLocale(locale) ? "قراءة مشتقة" : "Derived read"}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-foreground">
+                {isArabicLocale(locale)
+                  ? `متوسط سعر فئة STRONG_BUY هو ${formatCompactAedValue(strongBuyAvgPrice, locale)} فقط، أي أقل بنحو ${priceGap.toFixed(1)}× من فئة AVOID عند ${formatCompactAedValue(avoidAvgPrice, locale)}، ومع ذلك تحقق ${Math.abs(yieldGap).toFixed(1)} نقطة مئوية ${yieldGap >= 0 ? "أعلى" : "أقل"} في العائد. هنا لا تبدو تكلفة الدخول المنخفضة كتنازل، بل كأفضلية.`
+                  : `STRONG_BUY inventory averages ${formatCompactAedValue(strongBuyAvgPrice, locale)} — ${priceGap.toFixed(1)}x cheaper than AVOID at ${formatCompactAedValue(avoidAvgPrice, locale)} — while delivering ${Math.abs(yieldGap).toFixed(1)} percentage points ${yieldGap >= 0 ? "more" : "less"} yield. Lower entry cost is the edge here, not the tradeoff.`}
+              </p>
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-border/60 bg-background/40 p-3">
+              {[
+                {
+                  label: "STRONG_BUY",
+                  labelAr: "STRONG_BUY",
+                  price: strongBuyAvgPrice,
+                  tone: "bg-emerald-500",
+                },
+                {
+                  label: "AVOID",
+                  labelAr: "AVOID",
+                  price: avoidAvgPrice,
+                  tone: "bg-rose-500",
+                },
+              ].map((entry) => {
+                const width = Math.max(12, Math.min(((entry.price ?? 0) / comparisonMaxPrice) * 100, 100))
+                return (
+                  <div key={entry.label}>
+                    <div className="mb-1 flex items-center justify-between gap-3 text-[11px]">
+                      <span className="font-medium text-foreground">{isArabicLocale(locale) ? entry.labelAr : entry.label}</span>
+                      <span className="text-muted-foreground">{formatCompactAedValue(entry.price, locale)}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted">
+                      <div className={`h-2 rounded-full ${entry.tone}`} style={{ width: `${width}%` }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
         {signals.map((signal) => {
@@ -606,14 +678,37 @@ function AreaIntelligenceView({ data, locale }: { data: unknown; locale?: string
     return <p className="text-sm text-muted-foreground">{isArabicLocale(locale) ? "لا توجد سجلات مناطق متاحة." : "No area intelligence records available."}</p>
   }
 
+  const medianPrice = computeMedian(rows.map((row) => asNumber(valueFromKeys(row, ["avg_price", "price"]))))
+  const medianYield = computeMedian(rows.map((row) => asNumber(valueFromKeys(row, ["avg_yield", "yield"]))))
+  const maxEfficiency = rows.reduce<number | null>((currentMax, row) => {
+    const score = asNumber(valueFromKeys(row, ["efficiency", "engine_god_metric", "score", "avg_score"]))
+    if (score === null) return currentMax
+    if (currentMax === null) return score
+    return Math.max(currentMax, score)
+  }, null)
+
   return (
     <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
       {rows.slice(0, 10).map((row, index) => {
         const area = asText(valueFromKeys(row, ["area", "name"]), `Area ${index + 1}`)
         const projects = asNumber(valueFromKeys(row, ["projects", "count"])) ?? 0
         const avgPrice = asNumber(valueFromKeys(row, ["avg_price", "price"]))
-        const score = asNumber(valueFromKeys(row, ["efficiency", "engine_god_metric", "score"]))
+        const avgYield = asNumber(valueFromKeys(row, ["avg_yield", "yield"]))
+        const score = asNumber(valueFromKeys(row, ["efficiency", "engine_god_metric", "score", "avg_score"]))
         const slug = asText(valueFromKeys(row, ["slug"]), slugifyValue(area))
+        const areaType = asText(valueFromKeys(row, ["area_type"]), "").toLowerCase() || null
+        const positionLabel = getAreaPositionLabel(
+          { avg_price: avgPrice, avg_yield: avgYield, efficiency: score, projects, area_type: areaType },
+          { medianPrice, medianYield, maxEfficiency },
+          locale,
+        )
+        const narrative = getAreaNarrative(
+          { avg_price: avgPrice, avg_yield: avgYield, efficiency: score, projects, area_type: areaType },
+          { medianPrice, medianYield, maxEfficiency },
+          locale,
+        )
+        const areaTypeLabel = getAreaTypeLabel(areaType, locale)
+        const efficiencyWidth = getEfficiencyWidth(score, maxEfficiency)
 
         return (
           <div key={`${area}-${index}`} className="rounded-lg border border-border/60 bg-background/40 p-3">
@@ -626,13 +721,57 @@ function AreaIntelligenceView({ data, locale }: { data: unknown; locale?: string
                   {isArabicLocale(locale) ? `${formatCount(projects, locale)} مشروع` : `${formatCount(projects, locale)} projects`}
                 </p>
               </div>
+              <span className="rounded-full border border-border/60 bg-background/70 px-2.5 py-1 text-[11px] text-muted-foreground">
+                {positionLabel}
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {areaTypeLabel ? (
+                <span className="rounded-full border border-border/60 bg-background/70 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  {areaTypeLabel}
+                </span>
+              ) : null}
               {score !== null ? (
-                <span className="rounded-full border border-border/60 bg-background/70 px-2.5 py-1 text-[11px] text-muted-foreground">
-                  {isArabicLocale(locale) ? `النتيجة ${formatScore(score, locale)}` : `Score ${formatScore(score, locale)}`}
+                <span className="rounded-full border border-border/60 bg-background/70 px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  {isArabicLocale(locale) ? `الكفاءة ${formatScore(score, locale)}` : `Efficiency ${formatScore(score, locale)}`}
                 </span>
               ) : null}
             </div>
-            <p className="mt-4 text-lg font-semibold text-foreground">{formatCompactAedValue(avgPrice, locale)}</p>
+            <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+                  {isArabicLocale(locale) ? "السعر" : "Price"}
+                </p>
+                <p className="mt-1 font-semibold text-foreground">{formatCompactAedValue(avgPrice, locale)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+                  {isArabicLocale(locale) ? "العائد" : "Yield"}
+                </p>
+                <p className="mt-1 font-semibold text-foreground">{formatYieldValue(avgYield, locale)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+                  {isArabicLocale(locale) ? "العمق" : "Depth"}
+                </p>
+                <p className="mt-1 font-semibold text-foreground">{formatCount(projects, locale)}</p>
+              </div>
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{narrative}</p>
+            {efficiencyWidth > 0 ? (
+              <div className="mt-3">
+                <div className="mb-1 flex items-center justify-between gap-3 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+                  <span>{isArabicLocale(locale) ? "الكفاءة" : "Efficiency"}</span>
+                  <span>{isArabicLocale(locale) ? "مقياس نسبي" : "Relative scale"}</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-muted">
+                  <div
+                    className="h-1.5 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-sky-400"
+                    style={{ width: `${efficiencyWidth}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
         )
       })}
