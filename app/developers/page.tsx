@@ -98,13 +98,19 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
   const syncMeta = buildDataSyncMeta("developers", data.data_as_of)
   const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
 
+  const tierInsight = withRel.length > 0
+    ? isArabic
+      ? `${formatInteger(tierCounts.excellent, locale)} ممتاز، ${formatInteger(tierCounts.good, locale)} جيد، ${formatInteger(tierCounts.watch, locale)} على قائمة المراقبة — جودة التنفيذ ليست موزعة بالتساوي.`
+      : `${formatInteger(tierCounts.excellent, locale)} Excellent, ${formatInteger(tierCounts.good, locale)} Good, ${formatInteger(tierCounts.watch, locale)} on watch — execution quality is not evenly distributed.`
+    : null
+  const headerBodyBase = isArabic
+    ? `${formatInteger(developers.length, locale)} مطوراً متابعاً. و${formatInteger(withRel.length, locale)} منهم يملكون سجلات موثقة بدرجات موثوقية قابلة للفحص.`
+    : `${formatInteger(developers.length, locale)} developers tracked. ${formatInteger(withRel.length, locale)} with verified records and reliability scores you can inspect.`
   const copy = {
     audit: isArabic ? "موثوقية المطور" : "Developer Reliability",
     titleLead: isArabic ? "المطورون" : "Developer",
     titleAccent: isArabic ? "الموثوقون" : "Reliability",
-    headerBody: isArabic
-      ? `${formatInteger(developers.length, locale)} مطوراً متابعاً. و${formatInteger(withRel.length, locale)} منهم يملكون سجلات موثقة بدرجات موثوقية قابلة للفحص.`
-      : `${formatInteger(developers.length, locale)} developers tracked. ${formatInteger(withRel.length, locale)} with verified records and reliability scores you can inspect.`,
+    headerBody: tierInsight ? `${headerBodyBase} ${tierInsight}` : headerBodyBase,
     freshness: isArabic ? "تحديث التدقيق" : "Audit Freshness",
     trackedDevelopers: isArabic ? "المطورون المتابعون" : "Tracked Developers",
     trackedDevelopersSub: isArabic ? "نشطون في سوق الإمارات" : "Active in UAE market",

@@ -32,6 +32,7 @@ const COPY = {
     eyebrow: "UAE Real Estate Intelligence",
     titleLineOne: "Dubai real estate is moving fast.",
     titleLineTwo: "Your data should too.",
+    subtitle: "Scored projects, area context, and developer signals in one evidence-backed decision surface.",
     primaryCta: "Open Terminal",
     secondaryCta: "Enterprise Integration",
     trustTitle: "Every verdict links back to source.",
@@ -51,6 +52,7 @@ const COPY = {
     eyebrow: "استخبارات العقار في الإمارات",
     titleLineOne: "سوق دبي العقاري يتحرك بسرعة.",
     titleLineTwo: "ويجب أن تتحرك بياناتك بالسرعة نفسها.",
+    subtitle: "مشاريع مصنفة، وسياق مناطق، وإشارات مطورين داخل سطح قرار واحد ومدعوم بالأدلة.",
     primaryCta: "افتح المحطة",
     secondaryCta: "تكامل المؤسسات",
     trustTitle: "كل حكم مرتبط بمصدره.",
@@ -75,22 +77,39 @@ export function HeroSection({ avgMarketPrice, totalProjects, buySignals, topProj
   const dldTransactions = 36841
   const areasCount = 167
   const developerCount = 481
-  const totalProjectsDisplay = formatInteger(totalProjects, locale)
-  const descriptionLead = locale === "ar"
-    ? `${formatInteger(dldTransactions, locale)} معاملة DLD. ${totalProjectsDisplay} مشروعاً مقيّماً. ${formatInteger(areasCount, locale)} ملف منطقة.`
-    : `${formatInteger(dldTransactions, locale)} DLD transactions. ${totalProjectsDisplay} scored projects. ${formatInteger(areasCount, locale)} area profiles.`
-  const descriptionBody = locale === "ar"
-    ? "منصة واحدة تحول ضوضاء السوق إلى حكم منظم، مع الأدلة التي تدعم كل نتيجة."
-    : "One platform that turns market noise into a structured verdict, with the evidence to back every call."
   const stats = [
-    { label: copy.stats.projects, value: totalProjects, sublabel: locale === "ar" ? "مصدر حي" : "Live source" },
+    {
+      label: copy.stats.projects,
+      value: totalProjects,
+      sublabel: locale === "ar" ? "٩٧٪ تغطية درجة A/B" : "97% Grade A/B coverage",
+    },
     avgMarketPrice && avgMarketPrice > 0
-      ? { label: copy.stats.avgPrice, value: formatAed(avgMarketPrice, locale, { compact: true }), sublabel: locale === "ar" ? "متوسط السوق" : "Market median" }
+      ? {
+          label: copy.stats.avgPrice,
+          value: formatAed(avgMarketPrice, locale, { compact: true }),
+          sublabel: locale === "ar" ? `الوسيط عبر ${formatInteger(areasCount, locale)} منطقة` : `Median across ${formatInteger(areasCount, locale)} areas`,
+        }
       : null,
-    { label: copy.stats.buySignals, value: buySignals, sublabel: locale === "ar" ? "الآن" : "Right now" },
-    { label: copy.stats.dld, value: dldTransactions, sublabel: locale === "ar" ? "مرصودة" : "Observed" },
-    { label: copy.stats.areas, value: areasCount, sublabel: locale === "ar" ? "مفعلة" : "Active" },
-    { label: copy.stats.developers, value: developerCount, sublabel: locale === "ar" ? "متابعون" : "Tracked" },
+    {
+      label: copy.stats.buySignals,
+      value: buySignals,
+      sublabel: locale === "ar" ? "يُحدَّث كل ساعة" : "Refreshed hourly",
+    },
+    {
+      label: copy.stats.dld,
+      value: dldTransactions,
+      sublabel: locale === "ar" ? "سجل مرجعي موثق" : "Canonical registry",
+    },
+    {
+      label: copy.stats.areas,
+      value: areasCount,
+      sublabel: locale === "ar" ? "ثنائية اللغة، معيارية" : "Bilingual, benchmarked",
+    },
+    {
+      label: copy.stats.developers,
+      value: developerCount,
+      sublabel: locale === "ar" ? "مصنّفة بالموثوقية" : "Reliability-graded",
+    },
   ].filter(Boolean) as Array<{ label: string; value: number | string; sublabel: string }>
 
   return (
@@ -118,9 +137,7 @@ export function HeroSection({ avgMarketPrice, totalProjects, buySignals, topProj
           </h1>
 
           <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-[17px]">
-            {descriptionLead}
-            <br />
-            {descriptionBody}
+            {copy.subtitle}
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">

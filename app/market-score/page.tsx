@@ -412,6 +412,27 @@ export default function MarketScorePage() {
 
   const availableAreas = summary?.available.areas ?? []
   const compareQuery = compareLeft && compareRight ? `${compareLeft}|${compareRight}` : ""
+  const qualityNarrative = useMemo(() => {
+    if (!summary) return null
+    const score = summary.avgScore
+    const dist = summary.safetyDistribution ?? []
+    const top = [...dist].sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0))[0]
+    const bandLabel = top ? String(top.label) : null
+    const bandShare = top ? Math.round(top.percent ?? 0) : 0
+    const threshold = score >= 65 ? "above" : score >= 50 ? "near" : "below"
+    if (isArabic) {
+      const thresholdCopy = threshold === "above" ? "فوق أرضية الثقة" : threshold === "near" ? "قرب خط المراقبة" : "دون خط المراقبة"
+      if (bandLabel && bandShare > 0) {
+        return `${thresholdCopy} — مدفوع بأن ${bandShare}٪ من المعروض ضمن فئة ${bandLabel}.`
+      }
+      return thresholdCopy
+    }
+    const thresholdCopy = threshold === "above" ? "Above confidence floor" : threshold === "near" ? "Near watch line" : "Below watch line"
+    if (bandLabel && bandShare > 0) {
+      return `${thresholdCopy} — driven by ${bandShare}% of inventory sitting in the ${bandLabel} band.`
+    }
+    return thresholdCopy
+  }, [summary, isArabic])
   const chartDetails = isArabic ? {
     safety: {
       title: "توزيع الأمان",
@@ -911,7 +932,7 @@ export default function MarketScorePage() {
                 {summary ? summary.avgScore.toFixed(1) : "—"}
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                {copy.breakdowns}
+                {qualityNarrative ?? copy.breakdowns}
               </p>
             </div>
             <div className="rounded-xl border border-border/70 bg-muted/30 p-5">

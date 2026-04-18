@@ -104,6 +104,19 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
   // Derive stats from current page
   const projects = result.projects
   const buyCount = projects.filter((p) => (p.timing_label ?? p.l3_timing_signal) === "BUY").length
+  const holdCount = projects.filter((p) => (p.timing_label ?? p.l3_timing_signal) === "HOLD").length
+  const waitCount = projects.filter((p) => (p.timing_label ?? p.l3_timing_signal) === "WAIT").length
+  const signaledCount = buyCount + holdCount + waitCount
+  const dominantSignal: "BUY" | "HOLD" | "WAIT" | null = signaledCount === 0
+    ? null
+    : buyCount >= holdCount && buyCount >= waitCount
+      ? "BUY"
+      : holdCount >= waitCount
+        ? "HOLD"
+        : "WAIT"
+  const dominantShare = signaledCount > 0 && dominantSignal
+    ? Math.round((dominantSignal === "BUY" ? buyCount : dominantSignal === "HOLD" ? holdCount : waitCount) / signaledCount * 100)
+    : null
   const prices = projects.map((p) => typeof (p.price_from_aed ?? p.l1_canonical_price) === "number" ? Number(p.price_from_aed ?? p.l1_canonical_price) : null).filter((v): v is number => v !== null && v > 0)
   const avgPrice = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : null
   const yields = projects.map((p) => typeof (p.rental_yield ?? p.l1_canonical_yield) === "number" ? Number(p.rental_yield ?? p.l1_canonical_yield) : null).filter((v): v is number => v !== null && v > 0)
@@ -181,9 +194,16 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
     ? `الصفحة ${formatInteger(currentPage, locale)} من ${formatInteger(totalPages || 1, locale)} · عرض ${formatInteger(projects.length, locale)} من ${formatInteger(totalProjectsCount, locale)} مشروعاً`
     : `Page ${formatInteger(currentPage, locale)} of ${formatInteger(totalPages || 1, locale)} · showing ${formatInteger(projects.length, locale)} of ${formatInteger(totalProjectsCount, locale)} projects`
 
-  const headerBody = locale === "ar"
-      ? `${formatInteger(totalProjectsCount, locale)} مشروعاً مقيّماً عبر التوقيت والضغط والعائد ومستوى الأدلة، مع أحكام قابلة للفحص قبل اتخاذ القرار.`
-      : `${formatInteger(totalProjectsCount, locale)} projects scored across timing, stress, yield, and evidence, with verdicts you can inspect before acting.`
+  const signalLabelAr: Record<"BUY" | "HOLD" | "WAIT", string> = { BUY: "الشراء", HOLD: "الاحتفاظ", WAIT: "الانتظار" }
+  const compositionInsight = dominantSignal && dominantShare !== null
+    ? locale === "ar"
+      ? `على هذه الصفحة، ${signalLabelAr[dominantSignal]} هو الإشارة الغالبة بـ ${dominantShare}٪ من الحمولة المصنّفة.`
+      : `On this page, ${dominantSignal} is the dominant signal at ${dominantShare}% of scored inventory.`
+    : null
+  const headerBodyBase = locale === "ar"
+    ? `${formatInteger(totalProjectsCount, locale)} مشروعاً مقيّماً عبر التوقيت والضغط والعائد ومستوى الأدلة، مع أحكام قابلة للفحص قبل اتخاذ القرار.`
+    : `${formatInteger(totalProjectsCount, locale)} projects scored across timing, stress, yield, and evidence, with verdicts you can inspect before acting.`
+  const headerBody = compositionInsight ? `${headerBodyBase} ${compositionInsight}` : headerBodyBase
 
   return (
     <main id="main-content">

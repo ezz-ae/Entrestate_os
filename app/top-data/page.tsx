@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { getTopDataRows } from "@/lib/frontend-content"
-import { TopDataSection, shouldRenderTopDataSection } from "@/components/top-data/top-data-section"
+import { TopDataSection, shouldRenderTopDataSection, deriveDistributionInsight } from "@/components/top-data/top-data-section"
 import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { getRequestLocale } from "@/i18n/request"
 import { getTranslations } from "next-intl/server"
@@ -105,6 +105,15 @@ export default async function TopDataPage() {
     const sectionData = rowsBySection.get(key)
     return !sectionData || !shouldRenderTopDataSection(key, sectionData.data_json)
   })
+  const timingSection = rowsBySection.get("timing-signals")
+  const timingInsight = timingSection
+    ? deriveDistributionInsight(timingSection.data_json, "timing-signals", locale)
+    : null
+  const stressSection = rowsBySection.get("stress-grades")
+  const stressInsight = stressSection
+    ? deriveDistributionInsight(stressSection.data_json, "stress-grades", locale)
+    : null
+  const regimeLine = timingInsight ?? stressInsight
   const syncMeta = buildDataSyncMeta("topData", topData.data_as_of)
   const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE-u-nu-latn" : "en-AE", {
     month: "short",
@@ -133,6 +142,11 @@ export default async function TopDataPage() {
               ? "كل مقطع أدناه يعكس الحالة الحالية للمخزون المصنّف، ويتم تحديثه طوال اليوم من بيانات DLD ومصادر القوائم."
               : "Every section below reflects the current state of scored inventory, updated throughout the day from DLD and listing sources."}
           </p>
+          {regimeLine ? (
+            <p className="mt-3 inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-1.5 text-xs font-medium text-emerald-300/90">
+              {regimeLine}
+            </p>
+          ) : null}
         </header>
 
         <section className="mb-6 flex flex-wrap items-center gap-3">

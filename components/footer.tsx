@@ -18,7 +18,6 @@ import {
   Mail,
   BookOpen,
 } from "lucide-react"
-import { TerminalPromptTeaser } from "@/components/platform/terminal-prompt-teaser"
 
 // ── Navigation structure ──────────────────────────────────────────────────────
 
@@ -248,43 +247,53 @@ export function Footer() {
             {/* Left */}
             <div className="max-w-lg">
               <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-widest text-primary">
-                {t("Start anywhere", "ابدأ من أي سؤال")}
+                {t("Platform snapshot", "لقطة المنصة")}
               </p>
               <h2 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
                 {t(
-                  "Start with any question. The evidence is already in the system.",
-                  "ابدأ بأي سؤال. الأدلة موجودة بالفعل داخل النظام.",
+                  "One platform for scored inventory, evidence, and research.",
+                  "منصة واحدة للمخزون المصنّف، والأدلة، والأبحاث.",
                 )}
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {t(
-                  `36,841 DLD transactions. ${projectCountText} scored projects. Ask the terminal anything about Dubai real estate.`,
-                  `36,841 معاملة DLD. ${projectCountText} مشروعاً مقيّماً. اسأل المحطة أي شيء عن عقارات دبي.`,
+                  `36,841 DLD transactions. ${projectCountText} scored projects. Research, reports, and enterprise delivery stay connected in one system.`,
+                  `36,841 معاملة DLD. ${projectCountText} مشروعاً مقيّماً. تبقى الأبحاث والتقارير وتسليم المؤسسات متصلة داخل نظام واحد.`,
                 )}
               </p>
-              <div className="mt-5">
-                <TerminalPromptTeaser
-                  compact
-                  title={t("Open the terminal from the footer", "افتح المحطة مباشرة من الفوتر")}
-                  description={t(
-                    "Type the market question first, then step into the live terminal with the query already filled in.",
-                    "اكتب سؤال السوق أولاً، ثم ادخل إلى المحطة الحية مع تعبئة الاستعلام مسبقاً.",
-                  )}
-                  caption={t(
-                    `Live terminal surface · ${projectCountText} scored projects in the active dataset.`,
-                    `سطح المحطة الحي · ${projectCountText} مشروعاً مقيّماً في مجموعة البيانات النشطة.`,
-                  )}
-                  className="bg-background/40"
-                />
-                <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                  <Link href={toHref("/plans")} className="text-foreground transition hover:text-primary">
-                    {t("View Plans", "عرض الباقات")}
-                  </Link>
-                  <Link href={toHref("/contact")} className="inline-flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground">
-                    {t("Enterprise enquiry", "استفسار مؤسسي")}
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                {[
+                  {
+                    value: "36,841",
+                    label: t("DLD transactions", "معاملات DLD"),
+                    sub: t("Canonical source", "مصدر مرجعي"),
+                  },
+                  {
+                    value: projectCountText,
+                    label: t("Scored projects", "مشاريع مصنفة"),
+                    sub: t("Engine refreshed hourly", "المحرّك يُحدَّث كل ساعة"),
+                  },
+                  {
+                    value: "24/7",
+                    label: t("Enterprise-ready access", "وصول مؤسسي جاهز"),
+                    sub: t("SOC 2 posture", "جاهزية SOC 2"),
+                  },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-border/60 bg-card/40 px-4 py-4">
+                    <p className="text-lg font-semibold text-foreground">{item.value}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{item.label}</p>
+                    <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground/50">{item.sub}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-4 text-sm">
+                <Link href={toHref("/plans")} className="text-foreground transition hover:text-primary">
+                  {t("View Plans", "عرض الباقات")}
+                </Link>
+                <Link href={toHref("/contact")} className="inline-flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground">
+                  {t("Enterprise enquiry", "استفسار مؤسسي")}
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
               </div>
             </div>
 

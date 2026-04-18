@@ -414,6 +414,25 @@ function normalizeDeveloperComparable(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "")
 }
 
+function hasMeaningfulValue(value: unknown) {
+  if (value === null || value === undefined) return false
+  if (typeof value === "string") return value.trim().length > 0
+  if (Array.isArray(value)) return value.length > 0
+  if (typeof value === "object") return Object.keys(value as Record<string, unknown>).length > 0
+  return true
+}
+
+function mergePreferredRecord(primary: DecisionRecord, fallback: DecisionRecord | null | undefined): DecisionRecord {
+  if (!fallback) return primary
+
+  const merged: DecisionRecord = { ...fallback }
+  for (const [key, value] of Object.entries(primary)) {
+    merged[key] = hasMeaningfulValue(value) ? value : (fallback[key] ?? value)
+  }
+
+  return merged
+}
+
 function buildDeveloperMatchClause(terms: string[]) {
   const normalizedTerms = Array.from(
     new Set(
@@ -729,6 +748,58 @@ function buildDeveloperRowsFromPropertySnapshot(projects: DecisionProject[]): Db
         top_projects: entry.topProjects.map((project) => project.name),
       }
     })
+}
+
+function normalizeComparableValue(value: unknown) {
+  return String(value ?? "").trim().toLowerCase()
+}
+
+function buildAreaContextFromPropertySnapshot(projects: DecisionProject[], areaName: string) {
+  const normalizedArea = normalizeComparableValue(areaName)
+  if (!normalizedArea) return null
+
+  const row = buildAreaRowsFromPropertySnapshot(projects).find(
+    (entry) => normalizeComparableValue(entry.area) === normalizedArea,
+  )
+
+  return (row as DecisionRecord | undefined) ?? null
+}
+
+function buildDeveloperContextFromPropertySnapshot(projects: DecisionProject[], developerName: string) {
+  const normalizedDeveloper = normalizeComparableValue(developerName)
+  if (!normalizedDeveloper) return null
+
+  const row = buildDeveloperRowsFromPropertySnapshot(projects).find(
+    (entry) => normalizeComparableValue(entry.developer) === normalizedDeveloper,
+  )
+
+  return (row as DecisionRecord | undefined) ?? null
+}
+
+function buildSimilarProjectsFromPropertySnapshot(
+  projects: DecisionProject[],
+  currentProject: DecisionProject,
+  limit = 5,
+) {
+  const normalizedArea = normalizeComparableValue(currentProject.final_area ?? currentProject.area)
+  const currentSlug = normalizeComparableValue(currentProject.slug)
+  const currentName = normalizeComparableValue(currentProject.name ?? currentProject.project_name)
+
+  if (!normalizedArea) return []
+
+  return projects
+    .filter((project) => {
+      if (normalizeComparableValue(project.final_area ?? project.area) !== normalizedArea) return false
+      if (normalizeComparableValue(project.slug) === currentSlug) return false
+      if (currentName && normalizeComparableValue(project.name ?? project.project_name) === currentName) return false
+      return true
+    })
+    .sort((left, right) => {
+      const rightScore = firstNumber(right.engine_god_metric, right.investor_score_v1) ?? Number.NEGATIVE_INFINITY
+      const leftScore = firstNumber(left.engine_god_metric, left.investor_score_v1) ?? Number.NEGATIVE_INFINITY
+      return rightScore - leftScore
+    })
+    .slice(0, limit)
 }
 
 function buildMarketPulseFromPropertySnapshot(projects: DecisionProject[]) {
@@ -1251,7 +1322,27 @@ export async function getProjectBySlug(slug: string): Promise<{
     null
   if (!project) return null
 
-  const computedProject = applyLiveCalculations(project as DecisionRecord)
+  let enrichedProject = project as DecisionRecord
+
+  if (USE_CURATED_PROPERTIES_VIEW) {
+    const detailRows = await runOptionalQuery<{ raw_row: DecisionRecord | null }>(Prisma.sql`
+      SELECT to_jsonb(t) AS raw_row
+      FROM ${DETAIL_TABLE_SQL} t
+      WHERE LOWER(COALESCE(name, '')) LIKE LOWER('%' || ${candidateName} || '%')
+      ORDER BY
+        CASE WHEN LOWER(COALESCE(name, '')) = LOWER(${String(project.name ?? "")}) THEN 0 ELSE 1 END,
+        CASE WHEN LOWER(COALESCE(developer, '')) = LOWER(${String(project.developer ?? "")}) THEN 0 ELSE 1 END,
+        engine_god_metric DESC NULLS LAST
+      LIMIT 1
+    `)
+
+    const detailPayload = detailRows[0]?.raw_row
+    if (detailPayload && typeof detailPayload === "object" && !Array.isArray(detailPayload)) {
+      enrichedProject = mergePreferredRecord(enrichedProject, detailPayload)
+    }
+  }
+
+  const computedProject = applyLiveCalculations(enrichedProject)
   const projectWithSlug = mapProjectRecord(computedProject)
   const areaName = String(computedProject.final_area ?? computedProject.area ?? "")
   const developerName = String(computedProject.developer ?? "")
@@ -1352,13 +1443,35 @@ export async function getProjectBySlug(slug: string): Promise<{
         `),
       ])
 
+  let areaContext = (areaContextRows[0] as DecisionRecord | undefined) ?? null
+  let developerProfile = (developerRows[0] as DecisionRecord | undefined) ?? null
+  let similarProjects = similarRows.map((row) => mapProjectRecord(row as DecisionRecord))
+
+  if (USE_CURATED_PROPERTIES_VIEW && (!areaContext || !developerProfile || similarProjects.length === 0)) {
+    const snapshotProjects = await getPropertySnapshotProjects()
+
+    if (snapshotProjects.length > 0) {
+      if (!areaContext) {
+        areaContext = buildAreaContextFromPropertySnapshot(snapshotProjects, areaName)
+      }
+
+      if (!developerProfile) {
+        developerProfile = buildDeveloperContextFromPropertySnapshot(snapshotProjects, developerName)
+      }
+
+      if (similarProjects.length === 0) {
+        similarProjects = buildSimilarProjectsFromPropertySnapshot(snapshotProjects, projectWithSlug)
+      }
+    }
+  }
+
   return {
     data_as_of: new Date().toISOString(),
     slug: normalizedSlug,
     project: projectWithSlug,
-    area_context: (areaContextRows[0] as DecisionRecord | undefined) ?? null,
-    developer_profile: (developerRows[0] as DecisionRecord | undefined) ?? null,
-    similar_projects: similarRows.map((row) => mapProjectRecord(row as DecisionRecord)),
+    area_context: areaContext,
+    developer_profile: developerProfile,
+    similar_projects: similarProjects,
   }
 }
 

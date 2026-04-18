@@ -52,6 +52,16 @@ function evidenceTone(level: string | null | undefined) {
   return "border-red-500/30 bg-red-500/10 text-red-300"
 }
 
+function evidenceMeaning(level: string | null | undefined, isArabic: boolean): string | null {
+  const value = (level ?? "").toUpperCase()
+  if (value.startsWith("L1")) return isArabic ? "DLD موثّق — جاهز للتدقيق" : "DLD-verified · audit-ready"
+  if (value.startsWith("L2")) return isArabic ? "مصادر متعددة متطابقة" : "Multi-source cross-checked"
+  if (value.startsWith("L3")) return isArabic ? "إشارة سوق — تحقّق يدوي" : "Market signal · verify before acting"
+  if (value.startsWith("L4")) return isArabic ? "تقدير نموذجي" : "Model-estimated"
+  if (value.length > 0) return isArabic ? "دليل محدود — احذر" : "Thin evidence · caution"
+  return null
+}
+
 export function VerdictCard({
   name,
   area,
@@ -138,8 +148,14 @@ export function VerdictCard({
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <TimingSignalBadge signal={timing} />
         {evidenceLevel ? (
-          <span className={cn("inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium", evidenceTone(evidenceLevel))}>
-            {isArabic ? `الأدلة ${evidenceLevel}` : `Evidence ${evidenceLevel}`}
+          <span
+            className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium", evidenceTone(evidenceLevel))}
+            title={evidenceMeaning(evidenceLevel, isArabic) ?? undefined}
+          >
+            <span>{isArabic ? `الأدلة ${evidenceLevel}` : `Evidence ${evidenceLevel}`}</span>
+            {evidenceMeaning(evidenceLevel, isArabic) ? (
+              <span className="text-[10px] font-normal opacity-80">· {evidenceMeaning(evidenceLevel, isArabic)}</span>
+            ) : null}
           </span>
         ) : null}
         {sources.slice(0, 4).map((source) => (

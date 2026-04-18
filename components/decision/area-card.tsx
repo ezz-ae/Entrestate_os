@@ -61,6 +61,31 @@ export function AreaCard(area: AreaCardProps) {
           : positionKey === "selective"
             ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
             : "border-border/60 bg-muted/40 text-muted-foreground"
+  const efficiencyTier: "top-quartile" | "upper-mid" | "lower-mid" | "below-band" | null =
+    efficiencyWidth >= 75
+      ? "top-quartile"
+      : efficiencyWidth >= 50
+        ? "upper-mid"
+        : efficiencyWidth >= 25
+          ? "lower-mid"
+          : efficiencyWidth > 0
+            ? "below-band"
+            : null
+  const efficiencyTierLabel = efficiencyTier
+    ? isArabic
+      ? {
+          "top-quartile": "رُبع علوي في الكفاءة",
+          "upper-mid": "أعلى من الوسيط",
+          "lower-mid": "تحت الوسيط",
+          "below-band": "دون النطاق",
+        }[efficiencyTier]
+      : {
+          "top-quartile": "Top-quartile efficiency",
+          "upper-mid": "Above-median efficiency",
+          "lower-mid": "Below-median efficiency",
+          "below-band": "Below-band efficiency",
+        }[efficiencyTier]
+    : null
   const copy = isArabic
     ? {
       projects: "مشروع",
@@ -151,7 +176,19 @@ export function AreaCard(area: AreaCardProps) {
           </div>
         </div>
 
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        {(inventoryDepthLabel || efficiencyTierLabel) ? (
+          <p className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-medium text-muted-foreground/80">
+            <span>{inventoryDepthLabel}</span>
+            {efficiencyTierLabel ? (
+              <>
+                <span className="text-muted-foreground/40">·</span>
+                <span>{efficiencyTierLabel}</span>
+              </>
+            ) : null}
+          </p>
+        ) : null}
+
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           {positionNarrative}
         </p>
 

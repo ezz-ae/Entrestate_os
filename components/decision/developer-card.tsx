@@ -28,11 +28,33 @@ function slugify(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
 }
 
-function reliabilityConfig(score: number | null) {
-  if (score === null) return { bar: "bg-muted", text: "text-muted-foreground", label: "—", tier: "" }
-  if (score >= 80) return { bar: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", label: `${score.toFixed(0)}`, tier: "Excellent" }
-  if (score >= 60) return { bar: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", label: `${score.toFixed(0)}`, tier: "Good" }
-  return { bar: "bg-red-500", text: "text-red-600 dark:text-red-400", label: `${score.toFixed(0)}`, tier: "Watch" }
+type ReliabilityTierKey = "excellent" | "good" | "watch" | "unknown"
+
+function reliabilityConfig(score: number | null): {
+  bar: string
+  text: string
+  label: string
+  tier: string
+  tierKey: ReliabilityTierKey
+} {
+  if (score === null) return { bar: "bg-muted", text: "text-muted-foreground", label: "—", tier: "", tierKey: "unknown" }
+  if (score >= 80) return { bar: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", label: `${score.toFixed(0)}`, tier: "Excellent", tierKey: "excellent" }
+  if (score >= 60) return { bar: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", label: `${score.toFixed(0)}`, tier: "Good", tierKey: "good" }
+  return { bar: "bg-red-500", text: "text-red-600 dark:text-red-400", label: `${score.toFixed(0)}`, tier: "Watch", tierKey: "watch" }
+}
+
+function trajectoryCopy(tierKey: ReliabilityTierKey, isArabic: boolean): string | null {
+  if (tierKey === "excellent") return isArabic ? "فوق أرضية الـ80" : "Above 80 floor"
+  if (tierKey === "good") return isArabic ? "ضمن نطاق التحمّل" : "Within tolerance band"
+  if (tierKey === "watch") return isArabic ? "قرب عتبة المراقبة — تابع" : "Near watch threshold — monitor"
+  return null
+}
+
+function trajectoryTone(tierKey: ReliabilityTierKey): string {
+  if (tierKey === "excellent") return "text-emerald-600 dark:text-emerald-400"
+  if (tierKey === "good") return "text-amber-600 dark:text-amber-400"
+  if (tierKey === "watch") return "text-rose-600 dark:text-rose-400"
+  return "text-muted-foreground"
 }
 
 function getDeveloperInitials(name: string) {
@@ -166,6 +188,11 @@ export function DeveloperCard(developer: DeveloperCardProps) {
               style={{ width: `${relPct}%` }}
             />
           </div>
+          {trajectoryCopy(rel.tierKey, locale === "ar") ? (
+            <p className={`mt-1.5 text-[11px] font-medium ${trajectoryTone(rel.tierKey)}`}>
+              {trajectoryCopy(rel.tierKey, locale === "ar")}
+            </p>
+          ) : null}
         </div>
 
         {/* Avg ticket + yield */}

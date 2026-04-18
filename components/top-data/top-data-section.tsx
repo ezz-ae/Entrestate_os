@@ -1011,9 +1011,78 @@ function renderSection(section: string, data: unknown, locale?: string) {
   return <GenericListView data={data} locale={locale} />
 }
 
+export function deriveDistributionInsight(
+  data: unknown,
+  sectionKey: "timing-signals" | "stress-grades" | "yield-labels" | "decision-labels" | "evidence-levels",
+  locale?: string,
+): string | null {
+  const rows = dataToRecords(data)
+  if (rows.length === 0) return null
+
+  let topLabel: string | null = null
+  let topCount = 0
+  let totalCount = 0
+
+  for (const row of rows) {
+    const label = asText(valueFromKeys(row, ["label", "grade", "signal", "name", "tier"]), "")
+    const count = asNumber(valueFromKeys(row, ["count", "projects"])) ?? 0
+    if (!label || count <= 0) continue
+    totalCount += count
+    if (count > topCount) {
+      topCount = count
+      topLabel = label
+    }
+  }
+
+  if (!topLabel || totalCount === 0) return null
+
+  const share = Math.round((topCount / totalCount) * 100)
+  const isArabic = isArabicLocale(locale)
+
+  if (sectionKey === "timing-signals") {
+    return isArabic
+      ? `إشارة ${topLabel} هي الغالبة بـ ${share}٪ من المخزون المصنّف.`
+      : `${topLabel} is the dominant signal at ${share}% of scored inventory.`
+  }
+  if (sectionKey === "stress-grades") {
+    return isArabic
+      ? `درجة ${topLabel} تهيمن بـ ${share}٪ من المشاريع المختبرة تحت الضغط.`
+      : `Grade ${topLabel} dominates at ${share}% of stress-tested projects.`
+  }
+  if (sectionKey === "yield-labels") {
+    return isArabic
+      ? `فئة العائد ${topLabel} هي الأكثر تواجداً بـ ${share}٪ من القوائم.`
+      : `${topLabel} is the most common yield band at ${share}% of listings.`
+  }
+  if (sectionKey === "decision-labels") {
+    return isArabic
+      ? `تصنيف ${topLabel} يتصدر بـ ${share}٪ من الأحكام الصادرة.`
+      : `${topLabel} leads the verdict mix at ${share}% of decisions.`
+  }
+  if (sectionKey === "evidence-levels") {
+    return isArabic
+      ? `مستوى ${topLabel} يغطي ${share}٪ من الأصول — هذا هو عمق سلسلة الأدلة السائد.`
+      : `${topLabel} covers ${share}% of assets — that's the prevailing evidence depth.`
+  }
+  return null
+}
+
 export function TopDataSection({ section, locale, title, subtitle, confidence, lastUpdated, data }: TopDataSectionProps) {
+  let effectiveSubtitle = subtitle
+  if (!effectiveSubtitle) {
+    if (
+      section === "timing-signals" ||
+      section === "stress-grades" ||
+      section === "yield-labels" ||
+      section === "decision-labels" ||
+      section === "evidence-levels"
+    ) {
+      effectiveSubtitle = deriveDistributionInsight(data, section, locale)
+    }
+  }
+
   return (
-    <SectionShell section={section} locale={locale} title={title} subtitle={subtitle} confidence={confidence} lastUpdated={lastUpdated}>
+    <SectionShell section={section} locale={locale} title={title} subtitle={effectiveSubtitle} confidence={confidence} lastUpdated={lastUpdated}>
       {renderSection(section, data, locale)}
     </SectionShell>
   )
