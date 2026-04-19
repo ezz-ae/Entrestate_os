@@ -45,10 +45,22 @@ export function EnterpriseDashboard({ summary, intelligence }: EnterpriseDashboa
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
 
+  const buySignalShare = summary.total > 0 ? Math.round((summary.buySignals / summary.total) * 100) : 0
+  const highConfidenceShare = summary.total > 0 ? Math.round((summary.highConfidence / summary.total) * 100) : 0
+  const yieldVerdict = (() => {
+    if (summary.avgYield === null) return null
+    if (summary.avgYield >= 7) return isArabic ? "فوق عتبة التدفق النقدي" : "Above cash-flow threshold"
+    if (summary.avgYield >= 5.5) return isArabic ? "ضمن نطاق السوق" : "Within market band"
+    return isArabic ? "دون خط المراقبة" : "Below watch line"
+  })()
+
   const stats = [
     {
       label: isArabic ? "إجمالي المشاريع" : "Total Projects",
       value: summary.total.toLocaleString(),
+      sub: isArabic
+        ? `${highConfidenceShare}٪ ثقة عالية`
+        : `${highConfidenceShare}% high-confidence`,
       icon: Boxes,
       color: "text-blue-400",
       bg: "bg-blue-500/10",
@@ -56,6 +68,9 @@ export function EnterpriseDashboard({ summary, intelligence }: EnterpriseDashboa
     {
       label: isArabic ? "إشارات الشراء" : "Buy Signals",
       value: summary.buySignals.toLocaleString(),
+      sub: isArabic
+        ? `${buySignalShare}٪ من المخزون — ${buySignalShare >= 35 ? "انحياز للتنفيذ" : "انحياز للانتظار"}`
+        : `${buySignalShare}% of inventory — ${buySignalShare >= 35 ? "bias to act" : "bias to wait"}`,
       icon: TrendingUp,
       color: "text-emerald-400",
       bg: "bg-emerald-500/10",
@@ -63,6 +78,7 @@ export function EnterpriseDashboard({ summary, intelligence }: EnterpriseDashboa
     {
       label: isArabic ? "متوسط السعر" : "Avg Price (AED)",
       value: summary.avgPrice ? summary.avgPrice.toLocaleString() : "—",
+      sub: isArabic ? "الوسيط عبر المخزون المصنَّف" : "Median across scored inventory",
       icon: Database,
       color: "text-amber-400",
       bg: "bg-amber-500/10",
@@ -70,6 +86,7 @@ export function EnterpriseDashboard({ summary, intelligence }: EnterpriseDashboa
     {
       label: isArabic ? "متوسط العائد" : "Avg Yield",
       value: summary.avgYield ? `${summary.avgYield}%` : "—",
+      sub: yieldVerdict ?? (isArabic ? "قيد التجميع" : "Awaiting data"),
       icon: Activity,
       color: "text-violet-400",
       bg: "bg-violet-500/10",
@@ -161,10 +178,24 @@ export function EnterpriseDashboard({ summary, intelligence }: EnterpriseDashboa
                 <div className="rounded-2xl bg-slate-950/50 p-4 border border-slate-800">
                   <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">{isArabic ? "انحياز المخاطر" : "Risk Bias"}</p>
                   <p className="text-xl font-bold text-blue-400">{(intelligence.riskBias * 100).toFixed(0)}%</p>
+                  <p className="mt-1 text-[10px] text-slate-500 leading-relaxed">
+                    {intelligence.riskBias >= 0.6
+                      ? isArabic ? "ميل هجومي — توسع مرحب به" : "Offense-leaning · scaling welcome"
+                      : intelligence.riskBias >= 0.4
+                        ? isArabic ? "متوازن حول الوسيط" : "Balanced around median"
+                        : isArabic ? "دفاعي — فضّل الأصول المثبتة" : "Defensive · prefer proven"}
+                  </p>
                 </div>
                 <div className="rounded-2xl bg-slate-950/50 p-4 border border-slate-800">
                   <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">{isArabic ? "العائد مقابل الأمان" : "Yield vs Safety"}</p>
                   <p className="text-xl font-bold text-emerald-400">{(intelligence.yieldVsSafety * 100).toFixed(0)}%</p>
+                  <p className="mt-1 text-[10px] text-slate-500 leading-relaxed">
+                    {intelligence.yieldVsSafety >= 0.6
+                      ? isArabic ? "يضغط نحو العائد" : "Tilts toward yield"
+                      : intelligence.yieldVsSafety >= 0.4
+                        ? isArabic ? "مزيج متوازن" : "Balanced blend"
+                        : isArabic ? "يميل إلى الأمان" : "Leans toward safety"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -187,6 +218,7 @@ export function EnterpriseDashboard({ summary, intelligence }: EnterpriseDashboa
                   <p className="mt-1 text-2xl font-bold text-slate-50 tracking-tight">{stat.value}</p>
                 </div>
               </div>
+              <p className="mt-3 text-[11px] text-slate-400 leading-relaxed">{stat.sub}</p>
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
           ))}
@@ -245,14 +277,31 @@ export function EnterpriseDashboard({ summary, intelligence }: EnterpriseDashboa
                </div>
                <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
                   {[
-                    { label: isArabic ? "الأنابيب النشطة" : "Active Pipelines", value: "12" },
-                    { label: isArabic ? "المخرجات المجدولة" : "Scheduled Outputs", value: "1.2k" },
-                    { label: isArabic ? "وقت التشغيل" : "Uptime", value: "99.9%" },
-                    { label: isArabic ? "دقة البيانات" : "Data Accuracy", value: "L1" },
+                    {
+                      label: isArabic ? "المخزون المصنَّف" : "Scored Inventory",
+                      value: summary.total.toLocaleString(),
+                      sub: isArabic ? "يتحدث كل ساعة" : "Refreshed hourly",
+                    },
+                    {
+                      label: isArabic ? "إشارات نشطة" : "Live Signals",
+                      value: summary.buySignals.toLocaleString(),
+                      sub: isArabic ? `${buySignalShare}٪ من المخزون` : `${buySignalShare}% of inventory`,
+                    },
+                    {
+                      label: isArabic ? "ثقة عالية" : "High Confidence",
+                      value: `${highConfidenceShare}%`,
+                      sub: isArabic ? "مصادر متقاطعة" : "Multi-source verified",
+                    },
+                    {
+                      label: isArabic ? "طبقة الأدلة" : "Evidence Floor",
+                      value: "L1",
+                      sub: isArabic ? "DLD موثّق · جاهز للتدقيق" : "DLD-verified · audit-ready",
+                    },
                   ].map((item) => (
                     <div key={item.label} className="rounded-xl bg-slate-950/40 p-4 border border-slate-800/50">
                       <p className="text-[10px] uppercase tracking-wider text-slate-500">{item.label}</p>
                       <p className="mt-1 text-lg font-bold text-slate-200">{item.value}</p>
+                      <p className="mt-1 text-[10px] text-slate-500 leading-relaxed">{item.sub}</p>
                     </div>
                   ))}
                </div>
