@@ -2,6 +2,7 @@ import crypto from "node:crypto"
 import { TableSpec } from "../tablespec"
 import { sampleTimeTableRows } from "./sample-data"
 import {
+  TimeTableMaterializedRow,
   TimeTableMetadata,
   TimeTablePage,
   TimeTablePreview,
@@ -49,7 +50,44 @@ const getNumeric = (value: TimeTableRow[keyof TimeTableRow]) => {
   return null
 }
 
-const computeRowSignals = (row: TimeTableRow): TimeTableRow => {
+const sanitizeRowId = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+
+const resolveRowId = (row: TimeTableRow, index: number) => {
+  const record = row as Record<string, unknown>
+  const existing = typeof record._rowId === "string" && record._rowId.trim().length > 0
+    ? record._rowId
+    : null
+
+  if (existing) {
+    return existing
+  }
+
+  const candidate = [record.asset_id, record.project, record.area]
+    .find((value) => typeof value === "string" && value.trim().length > 0)
+
+  const base = typeof candidate === "string" ? sanitizeRowId(candidate) : ""
+  return `${base || "row"}-${index + 1}`
+}
+
+const hydrateRow = (row: TimeTableRow, index: number, createdAt: string): TimeTableMaterializedRow => {
+  const record = row as Record<string, unknown>
+  const timestamp = typeof record._timestamp === "string" && record._timestamp.trim().length > 0
+    ? record._timestamp
+    : createdAt
+
+  return {
+    ...row,
+    _rowId: resolveRowId(row, index),
+    _timestamp: timestamp,
+  }
+}
+
+const computeRowSignals = (row: TimeTableMaterializedRow): TimeTableMaterializedRow => {
   const yieldPct = getNumeric(row.yield_pct)
   const riskBand = typeof row.risk_band === "string" ? row.risk_band : ""
   const liquidityBand = typeof row.liquidity_band === "string" ? row.liquidity_band : ""
@@ -78,18 +116,20 @@ export class TimeTable {
   private readonly spec: TableSpec
   private readonly rows: TimeTableRow[]
   private readonly options: TimeTableOptions
+  private readonly createdAt: string
 
   constructor(spec: TableSpec, rows: TimeTableRow[], options: TimeTableOptions = {}) {
     this.spec = spec
     this.rows = rows
     this.options = options
+    this.createdAt = options.createdAt || new Date().toISOString()
   }
 
   metadata(): TimeTableMetadata {
     return {
       id: this.spec.intent.toLowerCase().replace(/\s+/g, "-") || "time-table",
       hash: hashTableSpec(this.spec),
-      createdAt: this.options.createdAt || new Date().toISOString(),
+      createdAt: this.createdAt,
       owner: this.options.owner,
       visibility: this.options.visibility || "private",
       refreshPolicy: this.options.refreshPolicy || "manual",
@@ -106,11 +146,11 @@ export class TimeTable {
     }
   }
 
-  computeSignals(): TimeTableRow[] {
-    return this.rows.map((row) => computeRowSignals(row))
+  computeSignals(): TimeTableMaterializedRow[] {
+    return this.rows.map((row, index) => computeRowSignals(hydrateRow(row, index, this.createdAt)))
   }
 
-  materialize(): TimeTableRow[] {
+  materialize(): TimeTableMaterializedRow[] {
     return this.computeSignals()
   }
 

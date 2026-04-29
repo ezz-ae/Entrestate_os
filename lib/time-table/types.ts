@@ -3,7 +3,14 @@ import { TableSpec } from "../tablespec"
 export type TimeTableVisibility = "private" | "team" | "public"
 export type TimeTableRefreshPolicy = "manual" | "daily" | "weekly" | "monthly"
 
-export type TimeTableRow = Record<string, string | number | boolean | null>
+export type TimeTableCell = string | number | boolean | null
+
+export type TimeTableRow = Record<string, TimeTableCell>
+
+export type TimeTableMaterializedRow = TimeTableRow & {
+  _rowId: string
+  _timestamp: string
+}
 
 export type TimeTableMetadata = {
   id: string
@@ -19,7 +26,7 @@ export type TimeTableMetadata = {
 
 export type TimeTablePreview = {
   metadata: TimeTableMetadata
-  rows: TimeTableRow[]
+  rows: TimeTableMaterializedRow[]
 }
 
 export type TimeTablePage = {
@@ -27,5 +34,5 @@ export type TimeTablePage = {
   page: number
   pageSize: number
   total: number
-  rows: TimeTableRow[]
+  rows: TimeTableMaterializedRow[]
 }

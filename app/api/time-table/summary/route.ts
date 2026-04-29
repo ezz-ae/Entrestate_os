@@ -9,6 +9,11 @@ import {
   tableSpecSchema,
 } from "@/lib/tablespec"
 import { createTimeTable } from "@/lib/time-table"
+import {
+  buildTimeTableCitations,
+  buildTimeTableEvidence,
+  buildTimeTableNarrative,
+} from "@/lib/time-table/presentation"
 import { generateDataScientistText } from "@/lib/llm/data-scientist"
 import { getPublicErrorMessage, getRequestId } from "@/lib/api-errors"
 
@@ -59,7 +64,6 @@ const parseSummary = (text: string): SummaryResponse => {
 
 export async function POST(request: Request) {
   const requestId = getRequestId(request)
-  let fallbackIntent: string | undefined
   try {
     const payload = await request.json()
     const parsed = requestSchema.safeParse(payload)
@@ -68,7 +72,6 @@ export async function POST(request: Request) {
     }
 
     const { spec, intent, goldenPath, entitlements, useLLM, llm, limit } = parsed.data
-    fallbackIntent = intent
 
     const resolvedSpec = spec
       ? enforceTableSpec(spec, entitlements)
@@ -91,8 +94,15 @@ export async function POST(request: Request) {
     const table = createTimeTable(resolvedSpec)
     const preview = table.preview(limit ?? 8)
     const sampleRows = preview.rows.slice(0, 6)
+    const citations = buildTimeTableCitations(resolvedSpec, preview.rows)
+    const evidence = buildTimeTableEvidence(resolvedSpec)
+    const fallback = fallbackSummary(intent ?? resolvedSpec.intent)
+    let summary = fallback
+    let degraded = false
+    let warning: string | undefined
 
-    const prompt = `You are an investment analyst writing a short notebook summary for a client.
+    try {
+      const prompt = `You are an investment analyst writing a short notebook summary for a client.
 
 Intent: ${resolvedSpec.intent}
 Row grain: ${resolvedSpec.row_grain}
@@ -112,23 +122,41 @@ Return JSON only in this format:
 Be concise, avoid making up numbers not present in the rows. If data is sparse, say so.
 Respond with valid JSON only.`
 
-    const { text } = await generateDataScientistText({
-      prompt,
-      system: "You summarize time tables for real-estate decision notebooks.",
-      maxTokens: llm?.maxTokens ?? 600,
-      model: llm?.model,
-    })
+      const { text } = await generateDataScientistText({
+        prompt,
+        system: "You summarize time tables for real-estate decision notebooks.",
+        maxTokens: llm?.maxTokens ?? 600,
+        model: llm?.model,
+      })
 
-    const summary = parseSummary(text)
-    return NextResponse.json({ ...summary, requestId })
-  } catch (error) {
+      summary = parseSummary(text)
+    } catch (error) {
+      degraded = true
+      warning = getPublicErrorMessage(error, "Summary model unavailable. Returned deterministic fallback summary.")
+    }
+
     return NextResponse.json(
       {
-        ...(fallbackSummary(fallbackIntent)),
-        error: getPublicErrorMessage(error, "Failed to generate summary."),
+        ...summary,
+        narrative: buildTimeTableNarrative({
+          spec: resolvedSpec,
+          summary: summary.summary,
+          highlights: summary.highlights,
+          citations,
+        }),
+        citations,
+        evidence,
+        degraded,
+        warning,
         requestId,
+        request_id: requestId,
       },
-      { status: 500 },
+      { headers: { "x-request-id": requestId } },
+    )
+  } catch (error) {
+    return NextResponse.json(
+      { error: getPublicErrorMessage(error, "Failed to generate summary."), requestId, request_id: requestId },
+      { status: 500, headers: { "x-request-id": requestId } },
     )
   }
 }

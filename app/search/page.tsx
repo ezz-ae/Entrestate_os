@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { SearchTimeTableBuilder } from "@/components/search/time-table-builder"
 import { formatAed } from "@/lib/format/currency"
 import type { CoverageSummary } from "@/lib/data-coverage"
 import { pickLocalizedText } from "@/lib/format/entities"
@@ -229,10 +230,10 @@ export default function SearchPage() {
   const sortOptions = getSortOptions(locale)
   const copy = {
     eyebrow: isArabic ? "السوق" : "Market Intelligence",
-    title: isArabic ? "استكشاف المشاريع" : "Project Search",
+    title: isArabic ? "استكشاف المشاريع وبناء Time Table" : "Project Search + Time Table Builder",
     intro: isArabic
-      ? `ابحث داخل ${formatInteger(2813, locale)} مشروعًا مُقيَّمًا. افتح أي نتيجة لترى القراءة الكاملة.`
-      : `Filter across ${(2813).toLocaleString()} scored projects. Click any result to go deeper.`,
+      ? `ابحث داخل ${formatInteger(2813, locale)} مشروعًا مُقيَّمًا أو حوّل الاستعلام إلى Time Table مع narrative قابلة للدفاع.`
+      : `Filter across ${(2813).toLocaleString()} scored projects or compile the query into a defensible Time Table.`,
     searchPlaceholder: isArabic ? "ابحث باسم المشروع أو المطور أو المنطقة" : "Search by project name, developer, area…",
     searchButton: isArabic ? "ابحث" : "Search",
     filters: isArabic ? "تصفية" : "Filters",
@@ -428,6 +429,8 @@ export default function SearchPage() {
             {copy.intro}
           </p>
         </div>
+
+        <SearchTimeTableBuilder locale={locale} />
 
         {/* ── Search + filter controls ── */}
         <div className="mb-8 space-y-4">

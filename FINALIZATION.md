@@ -38,6 +38,8 @@ This file anchors release finalization at the repo root.
 - `app/sitemap.ts` now includes the core `/chat` and `/map` product surfaces so discovery matches the primary platform entry points.
 - Search, Areas, and Map now expose explicit data-coverage summaries, source-view visibility, fallback detection, and request correlation IDs via `lib/data-coverage.ts`, `app/api/search/route.ts`, `app/api/areas/route.ts`, `app/search/page.tsx`, `app/map/page.tsx`, and `app/areas/page.tsx`.
 - Route and unit coverage for these data-quality contracts now live in `tests/api-route-contracts.test.ts` and `tests/data-coverage.test.ts`.
+- `/search` now includes a real Time Table Builder shell via `components/search/time-table-builder.tsx`, backed by `/api/time-table/preview` and `/api/time-table/summary`, with analyst-mode narrative, clickable citations, and row-highlighting.
+- Time Table previews now guarantee `_rowId` and `_timestamp` metadata from `lib/time-table/time-table.ts`, and summary responses now return deterministic citations, evidence, and fallback notebook text via `lib/time-table/presentation.ts`.
 
 ## Verification Status
 
@@ -52,5 +54,4 @@ This file anchors release finalization at the repo root.
 
 - Widget attribution persistence still depends on the live `attribution_events` and `widgets` tables being present in Neon.
 - Signup and upgrade attribution windows are wired at the API boundary, but full 7-day and 90-day attribution logic still depends on production event history.
-- Search still needs the Time Table Builder-specific scaffold, and citation click-to-row-highlight remains open.
 - A full production build cannot be re-validated until local disk space is freed beyond the current ~`303MiB` headroom.

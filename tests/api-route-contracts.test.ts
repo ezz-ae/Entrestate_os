@@ -5,6 +5,7 @@ const queryRawMock = vi.fn()
 const getMarketScoreSummaryMock = vi.fn()
 const listSearchIndexMock = vi.fn()
 const listAreasMock = vi.fn()
+const generateDataScientistTextMock = vi.fn()
 
 vi.mock("@/lib/notebook-provenance", () => ({
   getLatestNotebookProvenance: vi.fn(async () => ({
@@ -44,6 +45,10 @@ vi.mock("@/lib/decision-infrastructure", () => ({
   listAreas: (...args: unknown[]) => listAreasMock(...args),
 }))
 
+vi.mock("@/lib/llm/data-scientist", () => ({
+  generateDataScientistText: (...args: unknown[]) => generateDataScientistTextMock(...args),
+}))
+
 vi.mock("@/lib/market-score/filters", () => ({
   parseMarketScoreFilters: vi.fn(() => ({
     filters: { cities: [], areas: [], statusBands: [], priceTiers: [], safetyBands: [] },
@@ -61,6 +66,7 @@ import { GET as marketsGet } from "@/app/api/markets/route"
 import { GET as marketScoreSummaryGet } from "@/app/api/market-score/summary/route"
 import { GET as searchGet } from "@/app/api/search/route"
 import { GET as areasGet } from "@/app/api/areas/route"
+import { POST as timeTableSummaryPost } from "@/app/api/time-table/summary/route"
 
 describe("route contracts", () => {
   beforeEach(() => {
@@ -68,6 +74,7 @@ describe("route contracts", () => {
     getMarketScoreSummaryMock.mockReset()
     listSearchIndexMock.mockReset()
     listAreasMock.mockReset()
+    generateDataScientistTextMock.mockReset()
   })
 
   it("returns a real total count envelope from /api/markets", async () => {
@@ -194,6 +201,35 @@ describe("route contracts", () => {
     expect(response.status).toBe(200)
     expect(body.coverage?.score).toBe(83.3)
     expect(body.source_view).toBe("api.areas_v1")
+    expect(body.requestId).toBeTruthy()
+    expect(body.request_id).toBe(body.requestId)
+    expect(response.headers.get("x-request-id")).toBe(body.requestId)
+  })
+
+  it("returns narrative, citations, and evidence from /api/time-table/summary", async () => {
+    generateDataScientistTextMock.mockResolvedValue({
+      text: JSON.stringify({
+        summary: "Yield leaders are concentrated in the current area comparison.",
+        highlights: ["The top rows skew toward higher rental yield.", "Filters remain narrow enough for analyst review."],
+        nextActions: ["Export a memo", "Share with investment committee"],
+      }),
+    })
+
+    const response = await timeTableSummaryPost(
+      new Request("http://localhost/api/time-table/summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goldenPath: "compare_area_yields", limit: 4 }),
+      }),
+    )
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.summary).toContain("Yield leaders")
+    expect(body.narrative).toContain("[cit-1]")
+    expect(Array.isArray(body.citations)).toBe(true)
+    expect(body.citations[0]?.rowIds?.length).toBeGreaterThan(0)
+    expect(Array.isArray(body.evidence?.sources)).toBe(true)
     expect(body.requestId).toBeTruthy()
     expect(body.request_id).toBe(body.requestId)
     expect(response.headers.get("x-request-id")).toBe(body.requestId)

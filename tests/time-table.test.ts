@@ -9,6 +9,8 @@ describe("Time Table", () => {
     const preview = table.preview(2)
 
     expect(preview.rows).toHaveLength(2)
+    expect(preview.rows[0]).toHaveProperty("_rowId")
+    expect(preview.rows[0]).toHaveProperty("_timestamp")
     expect(preview.rows[0]).toHaveProperty("yield_score")
     expect(preview.rows[0]).toHaveProperty("risk_score")
     expect(preview.rows[0]).toHaveProperty("liquidity_score")
@@ -16,5 +18,6 @@ describe("Time Table", () => {
     const page = table.paginate(1, 2)
     expect(page.total).toBe(sampleTimeTableRows.length)
     expect(page.rows).toHaveLength(2)
+    expect(page.rows[0]?._rowId).toBeTruthy()
   })
 })

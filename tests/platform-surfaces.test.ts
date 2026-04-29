@@ -32,11 +32,16 @@ describe("platform score surfaces", () => {
     const searchLayout = read("app/search/layout.tsx")
     const mapLayout = read("app/map/layout.tsx")
     const sitemap = read("app/sitemap.ts")
+    const searchPage = read("app/search/page.tsx")
+    const builder = read("components/search/time-table-builder.tsx")
 
     expect(searchLayout).toContain("generateMetadata")
     expect(mapLayout).toContain("generateMetadata")
     expect(sitemap).toContain('"/chat"')
     expect(sitemap).toContain('"/map"')
+    expect(searchPage).toContain("SearchTimeTableBuilder")
+    expect(builder).toContain("/api/time-table/preview")
+    expect(builder).toContain("AnalystView")
   })
 
   it("keeps public trust and compliance pathways visible", () => {

@@ -19,11 +19,13 @@ type AnalystViewProps = {
 export function AnalystView({ narrative, citations, rows, columns, evidence }: AnalystViewProps) {
   const [highlightedRowIds, setHighlightedRowIds] = useState<string[]>([])
   const [isEvidenceOpen, setIsEvidenceOpen] = useState(false)
+  const [activeCitationDescription, setActiveCitationDescription] = useState<string | null>(null)
 
   const handleCitationClick = (citationId: string) => {
     const citation = citations.find(c => c.id === citationId)
     if (citation) {
       setHighlightedRowIds(citation.rowIds)
+      setActiveCitationDescription(typeof citation.description === "string" ? citation.description : null)
       setIsEvidenceOpen(true)
     }
   }
@@ -68,6 +70,12 @@ export function AnalystView({ narrative, citations, rows, columns, evidence }: A
             </div>
             <ScrollArea className="h-full pr-4">
               <div className="space-y-4 text-xs">
+                {activeCitationDescription ? (
+                  <div>
+                    <p className="font-bold mb-1">Active citation:</p>
+                    <p className="opacity-70">{activeCitationDescription}</p>
+                  </div>
+                ) : null}
                 <div>
                   <p className="font-bold mb-1">Sources:</p>
                   <ul className="list-disc list-inside opacity-70">
@@ -84,6 +92,12 @@ export function AnalystView({ narrative, citations, rows, columns, evidence }: A
                   <p className="font-bold mb-1">Assumptions:</p>
                   <ul className="list-disc list-inside opacity-70">
                     {evidence.assumptions.map((a, i) => <li key={i}>{a}</li>)}
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-bold mb-1">Calculations:</p>
+                  <ul className="list-disc list-inside opacity-70">
+                    {evidence.calculations.map((calc, i) => <li key={i}>{calc.metric}: {calc.formula}</li>)}
                   </ul>
                 </div>
               </div>
