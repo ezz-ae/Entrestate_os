@@ -5,6 +5,7 @@ import { useLocale } from "next-intl"
 import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import type { CoverageSummary } from "@/lib/data-coverage"
 import { MapPin, Layers, Activity, TrendingUp, Shield, Loader2, MessageSquare, BookOpen } from "lucide-react"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
@@ -19,6 +20,13 @@ type AreaCluster = {
   avg_yield: number | null
   efficiency: number | null
   buy_signals: number
+}
+
+type AreaMeta = {
+  sourceView: string
+  primaryView: string
+  syncedAt: string
+  coverage: CoverageSummary | null
 }
 
 type LayerOptionId = "yield" | "price" | "supply" | "safety" | "liquidity"
@@ -44,13 +52,22 @@ export default function MapPage() {
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
   const [areas, setAreas] = useState<AreaCluster[]>([])
+  const [meta, setMeta] = useState<AreaMeta | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeLayer, setActiveLayer] = useState<LayerOptionId>("yield")
 
   useEffect(() => {
     fetch("/api/areas")
       .then((res) => (res.ok ? res.json() : { areas: [] }))
-      .then((data) => setAreas(data.areas ?? []))
+      .then((data) => {
+        setAreas(data.areas ?? [])
+        setMeta({
+          sourceView: data.source_view ?? data.sync?.primaryView ?? "api.areas_v1",
+          primaryView: data.sync?.primaryView ?? "api.areas_v1",
+          syncedAt: data.data_as_of ?? data.sync?.syncedAt ?? new Date().toISOString(),
+          coverage: data.coverage ?? null,
+        })
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
@@ -80,6 +97,15 @@ export default function MapPage() {
     id: option.id,
     label: isArabic ? option.ar : option.en,
   }))
+  const coverageLabels = {
+    city: isArabic ? "المدينة" : "City",
+    area_ar: isArabic ? "الاسم العربي" : "Arabic label",
+    avg_price: isArabic ? "متوسط السعر" : "Average price",
+    avg_yield: isArabic ? "متوسط العائد" : "Average yield",
+    efficiency: isArabic ? "الكفاءة" : "Efficiency",
+    top_projects: isArabic ? "المشاريع البارزة" : "Top projects",
+  } satisfies Record<string, string>
+  const isFallbackSource = meta ? meta.sourceView !== meta.primaryView : false
 
   const flowCards = [
     {
@@ -250,6 +276,33 @@ export default function MapPage() {
                   ? "استخدم الخريطة لفهم التوزيع المكاني للعائد والسعر وكثافة المشاريع، ثم انتقل إلى البحث للتصفية أو إلى الدردشة للحكم النهائي."
                   : "Use Map to understand geographic price, yield, and project density, then move into Search for filtering or Chat for the final verdict."}
               </p>
+              <div className="mt-4 rounded-xl border border-border/50 bg-background/50 px-4 py-3 text-sm text-muted-foreground">
+                <p>
+                  <span className="font-medium text-foreground">{isArabic ? "المصدر الحالي:" : "Current source:"}</span>{" "}
+                  {meta?.sourceView ?? "api.areas_v1"}
+                </p>
+                <p className="mt-1">
+                  <span className="font-medium text-foreground">{isArabic ? "جودة التغطية:" : "Coverage score:"}</span>{" "}
+                  {meta?.coverage ? `${meta.coverage.score}/100` : "—"}
+                  {isFallbackSource ? ` · ${isArabic ? "مصدر احتياطي" : "Fallback source"}` : ""}
+                </p>
+                <p className="mt-1">
+                  <span className="font-medium text-foreground">{isArabic ? "آخر تزامن:" : "Last sync:"}</span>{" "}
+                  {meta ? new Date(meta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE") : "—"}
+                </p>
+              </div>
+              {meta?.coverage?.fields?.length ? (
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  {meta.coverage.fields.slice(0, 4).map((field) => (
+                    <div key={field.key} className="rounded-xl border border-border/40 bg-background/40 px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">
+                        {coverageLabels[field.key] ?? field.label}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-foreground">{field.pct}%</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
             <div className="rounded-2xl border border-border/60 bg-card/70 p-6">
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">

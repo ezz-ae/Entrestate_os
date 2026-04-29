@@ -40,6 +40,15 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
   const params = await searchParams
   const syncMeta = buildDataSyncMeta("areas", data.data_as_of)
   const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
+  const isFallbackSource = data.source_view !== syncMeta.primaryView
+  const coverageLabels = {
+    city: isArabic ? "المدينة" : "City",
+    area_ar: isArabic ? "الاسم العربي" : "Arabic label",
+    avg_price: isArabic ? "متوسط السعر" : "Average price",
+    avg_yield: isArabic ? "متوسط العائد" : "Average yield",
+    efficiency: isArabic ? "الكفاءة" : "Efficiency",
+    top_projects: isArabic ? "المشاريع البارزة" : "Top projects",
+  } satisfies Record<string, string>
   const cities = [...new Set(data.areas.map((area) => String(area.city ?? "").trim()).filter(Boolean))].sort()
   const activeCity = cities.includes(String(params.city ?? "").trim()) ? String(params.city).trim() : ""
   const visibleAreas = activeCity
@@ -90,8 +99,8 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
           </p>
           <p className="mt-2 text-[11px] text-muted-foreground/60">
             {isArabic
-              ? `مزامنة API · ${syncMeta.primaryView} · ${syncTimestamp}`
-              : `API sync · ${syncMeta.primaryView} · ${syncTimestamp}`}
+              ? `مزامنة API · ${data.source_view} · ${syncTimestamp}${isFallbackSource ? " · مصدر احتياطي" : ""}`
+              : `API sync · ${data.source_view} · ${syncTimestamp}${isFallbackSource ? " · fallback source" : ""}`}
           </p>
         </header>
 
@@ -135,14 +144,24 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
         <div className="mb-8 rounded-2xl border border-border/70 bg-card/60 p-4">
           <h2 className="text-sm font-semibold text-foreground">
             {isArabic
-              ? `تغطية البيانات: ${formatInteger(visibleAreas.length, locale)} منطقة`
-              : `Data coverage: ${formatInteger(visibleAreas.length, locale)} areas`}
+              ? `تغطية البيانات: ${formatInteger(visibleAreas.length, locale)} منطقة · ${formatDecimal(data.coverage.score, locale, 1, 1)}/100`
+              : `Data coverage: ${formatInteger(visibleAreas.length, locale)} areas · ${formatDecimal(data.coverage.score, locale, 1, 1)}/100`}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {isArabic
               ? `${activeCity ? `عرض مدينة: ${activeCity} · ` : ""}مصادر متقاطعة: PropertyFinder / Bayut / DLD / Entrestate Spine · مرتبة حسب الكفاءة`
               : `${activeCity ? `City filter: ${activeCity} · ` : ""}Cross-referenced: PropertyFinder / Bayut / DLD / Entrestate Spine · sorted by efficiency`}
           </p>
+          <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
+            {data.coverage.fields.map((field) => (
+              <div key={field.key} className="rounded-xl border border-border/40 bg-background/40 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">
+                  {coverageLabels[field.key] ?? field.label}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{formatDecimal(field.pct, locale, 1, 1)}%</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         <section className="mb-8">

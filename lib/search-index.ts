@@ -1,5 +1,6 @@
 import "server-only"
 import { Prisma, dbQuery } from "@/lib/db"
+import { buildCoverageSummary, buildEmptyCoverageSummary, type CoverageSummary } from "@/lib/data-coverage"
 import { getInventoryTableName, getSearchTableName, getSearchTableSql } from "@/lib/inventory-table"
 import { listProperties, slugifyName, type PropertyFilters } from "@/lib/decision-infrastructure"
 
@@ -21,6 +22,7 @@ export type SearchIndexResult = {
   total: number
   projects: Record<string, unknown>[]
   source_view: string
+  coverage: CoverageSummary
 }
 
 type CountRow = { total: number }
@@ -226,6 +228,17 @@ function mapSearchRow(row: Record<string, unknown>) {
   }
 }
 
+const SEARCH_COVERAGE_FIELDS = [
+  { key: "developer", label: "Developer", pick: (row: Record<string, unknown>) => row.developer },
+  { key: "area", label: "Area", pick: (row: Record<string, unknown>) => row.area ?? row.final_area },
+  { key: "price", label: "Price", pick: (row: Record<string, unknown>) => row.price_from_aed ?? row.l1_canonical_price },
+  { key: "yield", label: "Yield", pick: (row: Record<string, unknown>) => row.rental_yield ?? row.l1_canonical_yield },
+  { key: "score", label: "Score", pick: (row: Record<string, unknown>) => row.investor_score_v1 ?? row.engine_god_metric ?? row.god_metric },
+  { key: "timing", label: "Timing", pick: (row: Record<string, unknown>) => row.timing_label ?? row.l3_timing_signal },
+  { key: "stress", label: "Stress", pick: (row: Record<string, unknown>) => row.stress_grade_v1 ?? row.l2_stress_test_grade },
+  { key: "slug", label: "Slug", pick: (row: Record<string, unknown>) => row.slug },
+] as const
+
 function normalizeSourceCandidates() {
   const primary = getSearchTableName()
   const values = [primary, "api.search_index", "public.search_index"]
@@ -304,6 +317,7 @@ export async function listSearchIndex(input: SearchIndexInput = {}): Promise<Sea
           total,
           projects: mappedProjects,
           source_view: tableName,
+          coverage: buildCoverageSummary(mappedProjects, [...SEARCH_COVERAGE_FIELDS]),
         }
       }
 
@@ -314,6 +328,7 @@ export async function listSearchIndex(input: SearchIndexInput = {}): Promise<Sea
         total: 0,
         projects: [],
         source_view: tableName,
+        coverage: buildEmptyCoverageSummary([...SEARCH_COVERAGE_FIELDS]),
       }
     } catch (error) {
       if (isSkippableSearchError(error)) {
@@ -340,6 +355,7 @@ export async function listSearchIndex(input: SearchIndexInput = {}): Promise<Sea
       total: fallback.total,
       projects: fallback.projects,
       source_view: getInventoryTableName(),
+      coverage: buildCoverageSummary(fallback.projects, [...SEARCH_COVERAGE_FIELDS]),
     }
   }
 

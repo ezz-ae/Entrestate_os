@@ -6,6 +6,7 @@ import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { formatAed } from "@/lib/format/currency"
+import type { CoverageSummary } from "@/lib/data-coverage"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { formatDecimal, formatInteger } from "@/lib/format/number"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
@@ -31,6 +32,13 @@ import {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Project = Record<string, unknown>
+
+type SearchMeta = {
+  sourceView: string
+  primaryView: string
+  syncedAt: string
+  coverage: CoverageSummary | null
+}
 
 // ── Preset shortcuts ──────────────────────────────────────────────────────────
 
@@ -307,7 +315,7 @@ export default function SearchPage() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
-  const [syncMeta, setSyncMeta] = useState<{ sourceView: string; syncedAt: string } | null>(null)
+  const [syncMeta, setSyncMeta] = useState<SearchMeta | null>(null)
 
   const totalPages = Math.ceil(total / 24)
 
@@ -334,7 +342,9 @@ export default function SearchPage() {
       setPage(queryPage)
       setSyncMeta({
         sourceView: data.source_view ?? data.sync?.primaryView ?? "api.search_index",
+        primaryView: data.sync?.primaryView ?? "api.search_index",
         syncedAt: data.data_as_of ?? data.sync?.syncedAt ?? new Date().toISOString(),
+        coverage: data.coverage ?? null,
       })
     } catch {
       setResults([])
@@ -369,12 +379,14 @@ export default function SearchPage() {
     setPage(1)
     fetch(`/api/search?${params.toString()}`)
       .then((r) => (r.ok ? r.json() : { projects: [], total: 0 }))
-      .then((data: { projects?: Project[]; total?: number; source_view?: string; sync?: { primaryView?: string; syncedAt?: string }; data_as_of?: string }) => {
+      .then((data: { projects?: Project[]; total?: number; source_view?: string; sync?: { primaryView?: string; syncedAt?: string }; data_as_of?: string; coverage?: CoverageSummary }) => {
         setResults(data.projects ?? [])
         setTotal(data.total ?? 0)
         setSyncMeta({
           sourceView: data.source_view ?? data.sync?.primaryView ?? "api.search_index",
+          primaryView: data.sync?.primaryView ?? "api.search_index",
           syncedAt: data.data_as_of ?? data.sync?.syncedAt ?? new Date().toISOString(),
+          coverage: data.coverage ?? null,
         })
       })
       .catch(() => {
@@ -386,6 +398,17 @@ export default function SearchPage() {
   }
 
   const activeFilterCount = [timing, stress, area, developer, minPrice, maxPrice].filter(Boolean).length
+  const isFallbackSource = syncMeta ? syncMeta.sourceView !== syncMeta.primaryView : false
+  const coverageLabels = {
+    developer: isArabic ? "المطور" : "Developer",
+    area: isArabic ? "المنطقة" : "Area",
+    price: isArabic ? "السعر" : "Price",
+    yield: isArabic ? "العائد" : "Yield",
+    score: isArabic ? "النتيجة" : "Score",
+    timing: isArabic ? "التوقيت" : "Timing",
+    stress: isArabic ? "الدرجة" : "Stress",
+    slug: isArabic ? "المعرف" : "Slug",
+  } satisfies Record<string, string>
 
   return (
     <main id="main-content">
@@ -779,6 +802,11 @@ export default function SearchPage() {
                 {syncMeta?.sourceView ?? "api.search_index"}
               </p>
               <p className="mt-1">
+                <span className="font-medium text-foreground">{isArabic ? "جودة التغطية:" : "Coverage score:"}</span>{" "}
+                {syncMeta?.coverage ? `${syncMeta.coverage.score}/100` : "—"}
+                {isFallbackSource ? ` · ${isArabic ? "مصدر احتياطي" : "Fallback source"}` : ""}
+              </p>
+              <p className="mt-1">
                 <span className="font-medium text-foreground">{isArabic ? "آخر تزامن:" : "Last sync:"}</span>{" "}
                 {syncMeta
                   ? new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
@@ -787,6 +815,18 @@ export default function SearchPage() {
                     : "On first query"}
               </p>
             </div>
+            {syncMeta?.coverage?.fields?.length ? (
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {syncMeta.coverage.fields.slice(0, 4).map((field) => (
+                  <div key={field.key} className="rounded-xl border border-border/40 bg-background/40 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">
+                      {coverageLabels[field.key] ?? field.label}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">{field.pct}%</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-2xl border border-border/60 bg-card/60 p-6">

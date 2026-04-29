@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { NextRequest } from "next/server"
 
 const queryRawMock = vi.fn()
 const getMarketScoreSummaryMock = vi.fn()
+const listSearchIndexMock = vi.fn()
+const listAreasMock = vi.fn()
 
 vi.mock("@/lib/notebook-provenance", () => ({
   getLatestNotebookProvenance: vi.fn(async () => ({
@@ -33,6 +36,14 @@ vi.mock("@/lib/market-score/service", () => ({
   getMarketScoreSummary: (...args: unknown[]) => getMarketScoreSummaryMock(...args),
 }))
 
+vi.mock("@/lib/search-index", () => ({
+  listSearchIndex: (...args: unknown[]) => listSearchIndexMock(...args),
+}))
+
+vi.mock("@/lib/decision-infrastructure", () => ({
+  listAreas: (...args: unknown[]) => listAreasMock(...args),
+}))
+
 vi.mock("@/lib/market-score/filters", () => ({
   parseMarketScoreFilters: vi.fn(() => ({
     filters: { cities: [], areas: [], statusBands: [], priceTiers: [], safetyBands: [] },
@@ -48,11 +59,15 @@ vi.mock("@/lib/market-score/validators", () => ({
 
 import { GET as marketsGet } from "@/app/api/markets/route"
 import { GET as marketScoreSummaryGet } from "@/app/api/market-score/summary/route"
+import { GET as searchGet } from "@/app/api/search/route"
+import { GET as areasGet } from "@/app/api/areas/route"
 
 describe("route contracts", () => {
   beforeEach(() => {
     queryRawMock.mockReset()
     getMarketScoreSummaryMock.mockReset()
+    listSearchIndexMock.mockReset()
+    listAreasMock.mockReset()
   })
 
   it("returns a real total count envelope from /api/markets", async () => {
@@ -126,6 +141,61 @@ describe("route contracts", () => {
       snapshot_ts: "2026-04-10T00:00:00.000Z",
       sources_used: ["inventory_full"],
     })
+    expect(response.headers.get("x-request-id")).toBe(body.requestId)
+  })
+
+  it("returns coverage and request headers from /api/search", async () => {
+    listSearchIndexMock.mockResolvedValue({
+      data_as_of: "2026-04-12T00:00:00.000Z",
+      page: 1,
+      pageSize: 24,
+      total: 2,
+      projects: [{ slug: "marina-vista", developer: "Emaar" }],
+      source_view: "api.search_index",
+      coverage: {
+        total: 1,
+        score: 87.5,
+        status: "strong",
+        fields: [
+          { key: "developer", label: "Developer", available: 1, total: 1, pct: 100, status: "strong" },
+        ],
+      },
+    })
+
+    const response = await searchGet(new NextRequest("http://localhost/api/search?q=marina"))
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.coverage?.score).toBe(87.5)
+    expect(body.source_view).toBe("api.search_index")
+    expect(body.requestId).toBeTruthy()
+    expect(body.request_id).toBe(body.requestId)
+    expect(response.headers.get("x-request-id")).toBe(body.requestId)
+  })
+
+  it("returns coverage and source visibility from /api/areas", async () => {
+    listAreasMock.mockResolvedValue({
+      data_as_of: "2026-04-12T00:00:00.000Z",
+      source_view: "api.areas_v1",
+      areas: [{ slug: "dubai-marina", area: "Dubai Marina" }],
+      coverage: {
+        total: 1,
+        score: 83.3,
+        status: "mixed",
+        fields: [
+          { key: "avg_price", label: "Average price", available: 1, total: 1, pct: 100, status: "strong" },
+        ],
+      },
+    })
+
+    const response = await areasGet(new Request("http://localhost/api/areas"))
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.coverage?.score).toBe(83.3)
+    expect(body.source_view).toBe("api.areas_v1")
+    expect(body.requestId).toBeTruthy()
+    expect(body.request_id).toBe(body.requestId)
     expect(response.headers.get("x-request-id")).toBe(body.requestId)
   })
 })

@@ -36,6 +36,8 @@ This file anchors release finalization at the repo root.
 - `app/map/page.tsx` now localizes layer controls and legend copy for Arabic instead of leaving those navigation surfaces partially English.
 - `app/status/page.tsx` now exposes governance and reliance routes directly to privacy, terms, architecture docs, and the CTO review.
 - `app/sitemap.ts` now includes the core `/chat` and `/map` product surfaces so discovery matches the primary platform entry points.
+- Search, Areas, and Map now expose explicit data-coverage summaries, source-view visibility, fallback detection, and request correlation IDs via `lib/data-coverage.ts`, `app/api/search/route.ts`, `app/api/areas/route.ts`, `app/search/page.tsx`, `app/map/page.tsx`, and `app/areas/page.tsx`.
+- Route and unit coverage for these data-quality contracts now live in `tests/api-route-contracts.test.ts` and `tests/data-coverage.test.ts`.
 
 ## Verification Status
 

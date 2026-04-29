@@ -1,6 +1,7 @@
 import "server-only"
 import { Prisma } from "@prisma/client"
 import { withStatementTimeout } from "@/lib/db-guardrails"
+import { buildCoverageSummary, type CoverageSummary } from "@/lib/data-coverage"
 import {
   getAreasTableName,
   getAreasTableSql,
@@ -1478,6 +1479,8 @@ export async function getProjectBySlug(slug: string): Promise<{
 export async function listAreas(): Promise<{
   data_as_of: string
   areas: Array<DecisionRecord & { slug: string }>
+  source_view: string
+  coverage: CoverageSummary
 }> {
   const curatedAreaCandidates = [
     AREAS_TABLE_NAME,
@@ -1517,6 +1520,7 @@ export async function listAreas(): Promise<{
   `
 
   let rows: DbRow[] = []
+  let sourceView = AREAS_TABLE_NAME
 
   if (USE_CURATED_AREAS_VIEW) {
     for (const tableName of curatedAreaCandidates) {
@@ -1582,6 +1586,7 @@ export async function listAreas(): Promise<{
 
       if (candidateRows.length > 0) {
         rows = candidateRows
+        sourceView = tableName
         break
       }
     }
@@ -1589,12 +1594,14 @@ export async function listAreas(): Promise<{
 
   if (rows.length === 0) {
     rows = await runOptionalQuery(nonCuratedAreasQuery)
+    if (rows.length > 0) sourceView = DETAIL_TABLE_NAME
   }
 
   if (rows.length === 0) {
     const snapshotProjects = await getPropertySnapshotProjects()
     if (snapshotProjects.length > 0) {
       rows = buildAreaRowsFromPropertySnapshot(snapshotProjects)
+      sourceView = "property_snapshot"
     }
   }
 
@@ -1638,9 +1645,7 @@ export async function listAreas(): Promise<{
     ]),
   )
 
-  return {
-    data_as_of: new Date().toISOString(),
-    areas: rows.map((row) => {
+  const areas = rows.map((row) => {
       const key = String(row.area ?? "").toLowerCase()
       const profile = profileMap.get(key)
       const inlineTopProjects = Array.isArray((row as DecisionRecord).top_projects)
@@ -1655,7 +1660,20 @@ export async function listAreas(): Promise<{
         top_projects: topProjects,
         slug: slugifyName(String(row.area ?? "area")),
       }
-    }),
+    })
+
+  return {
+    data_as_of: new Date().toISOString(),
+    areas,
+    source_view: sourceView,
+    coverage: buildCoverageSummary(areas, [
+      { key: "city", label: "City", pick: (row) => row.city },
+      { key: "area_ar", label: "Arabic label", pick: (row) => row.area_ar },
+      { key: "avg_price", label: "Average price", pick: (row) => row.avg_price },
+      { key: "avg_yield", label: "Average yield", pick: (row) => row.avg_yield },
+      { key: "efficiency", label: "Efficiency", pick: (row) => row.efficiency },
+      { key: "top_projects", label: "Top projects", pick: (row) => row.top_projects },
+    ]),
   }
 }
 

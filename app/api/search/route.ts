@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getPublicErrorMessage, getRequestId } from "@/lib/api-errors"
+import { buildEmptyCoverageSummary } from "@/lib/data-coverage"
 import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { listSearchIndex } from "@/lib/search-index"
 import type { PropertyFilters } from "@/lib/decision-infrastructure"
@@ -37,11 +38,15 @@ export async function GET(request: NextRequest) {
       locale,
     })
 
-    return NextResponse.json({
-      ...result,
-      sync: buildDataSyncMeta("search", result.data_as_of),
-      requestId,
-    })
+    return NextResponse.json(
+      {
+        ...result,
+        sync: buildDataSyncMeta("search", result.data_as_of),
+        requestId,
+        request_id: requestId,
+      },
+      { headers: { "x-request-id": requestId } },
+    )
   } catch (error) {
     return NextResponse.json(
       {
@@ -50,11 +55,23 @@ export async function GET(request: NextRequest) {
         page: 1,
         pageSize,
         data_as_of: new Date().toISOString(),
+        source_view: "api.search_index",
+        coverage: buildEmptyCoverageSummary([
+          { key: "developer", label: "Developer" },
+          { key: "area", label: "Area" },
+          { key: "price", label: "Price" },
+          { key: "yield", label: "Yield" },
+          { key: "score", label: "Score" },
+          { key: "timing", label: "Timing" },
+          { key: "stress", label: "Stress" },
+          { key: "slug", label: "Slug" },
+        ]),
         sync: buildDataSyncMeta("search"),
         error: getPublicErrorMessage(error, "Failed to run search."),
         requestId,
+        request_id: requestId,
       },
-      { status: 500 },
+      { status: 500, headers: { "x-request-id": requestId } },
     )
   }
 }
