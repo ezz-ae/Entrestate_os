@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { useCopilot } from "@/components/copilot-provider"
@@ -36,6 +35,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { EvidenceDrawer } from "@/components/decision/evidence-drawer"
 import {
   DEFAULT_COMPREHENSIVE_PROFILE,
   getComprehensiveProfileFromSignals,
@@ -55,6 +55,7 @@ import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type ChatInterfaceProps = {
   id?: string
+  initialGoldenPath?: GoldenPathId
   initialLimit?: number | null
   initialRemaining?: number | null
   initialBlocked?: boolean
@@ -67,7 +68,7 @@ type WorkspaceCard = {
   subtitle: string
 }
 
-type GoldenPathId = "underwrite_development_site" | "compare_area_yields" | "draft_spa_contract"
+export type GoldenPathId = "underwrite_development_site" | "compare_area_yields" | "draft_spa_contract"
 
 type GoldenPathPreview = {
   metadata?: {
@@ -447,6 +448,75 @@ function extractMessageToolOutputs(message: any): Record<string, unknown>[] {
   }
 
   return outputs
+}
+
+function buildEvidenceDrawerData(message: any) {
+  const outputs = extractMessageToolOutputs(message)
+  const metadata = toRecord(message?.metadata)
+  const provenance = toRecord(metadata?.provenance)
+  if (outputs.length === 0 && !provenance) return null
+
+  const sourceEntries = outputs.flatMap((output) => {
+    const entries: unknown[] = []
+    if (typeof output.source === "string") {
+      entries.push({ source: output.source })
+    }
+    if (Array.isArray(output.sources_used)) {
+      entries.push(...output.sources_used.map((value) => ({ source: value })))
+    }
+    return entries
+  })
+
+  if (Array.isArray(provenance?.sources_used)) {
+    for (const source of provenance.sources_used) {
+      sourceEntries.push({ source })
+    }
+  }
+
+  const exclusions = outputs.flatMap((output) =>
+    Array.isArray(output.exclusions) ? output.exclusions : [],
+  )
+
+  const assumptions = outputs.flatMap((output) => {
+    const items: unknown[] = []
+    if (Array.isArray(output.guardrail_warnings)) {
+      items.push(...output.guardrail_warnings)
+    }
+    if (output.no_results === true) {
+      items.push("No direct rows returned from this tool invocation.")
+    }
+    if (typeof output.overview === "string" && output.overview.trim().length > 0) {
+      items.push(output.overview)
+    }
+    return items
+  })
+
+  const steps = outputs.flatMap((output) => {
+    const items: unknown[] = []
+    if (Array.isArray(output.calculation_steps)) {
+      items.push(...output.calculation_steps)
+    }
+    if (Array.isArray(output.steps)) {
+      items.push(...output.steps)
+    }
+    if (typeof output.formula === "string" && output.formula.trim().length > 0) {
+      items.push(output.formula)
+    }
+    return items
+  })
+
+  const timestamp = outputs.find((output) => typeof output.data_as_of === "string")?.data_as_of
+
+  return {
+    sources: sourceEntries,
+    exclusions,
+    assumptions,
+    steps,
+    timestamp: typeof timestamp === "string" ? timestamp : typeof provenance?.snapshot_ts === "string" ? provenance.snapshot_ts : undefined,
+    requestId: typeof metadata?.requestId === "string" ? metadata.requestId : typeof metadata?.request_id === "string" ? metadata.request_id : undefined,
+    runId: typeof metadata?.run_id === "string" ? metadata.run_id : undefined,
+    snapshotTs: typeof provenance?.snapshot_ts === "string" ? provenance.snapshot_ts : undefined,
+  }
 }
 
 function deriveToolTrace(message: any, locale: string): string | null {
@@ -835,6 +905,7 @@ const slashCommands: SlashCommand[] = [
 ]
 
 export function ChatInterface({
+  initialGoldenPath,
   initialLimit = 20,
   initialRemaining = 20,
   initialBlocked = false,
@@ -845,7 +916,6 @@ export function ChatInterface({
   const t = useTranslations("chat")
   const { data: session } = authClient.useSession()
   const canUpload = Boolean(session?.user)
-  const searchParams = useSearchParams()
   const [mounted, setMounted] = useState(false)
   const [input, setInput] = useState("")
 
@@ -878,6 +948,7 @@ export function ChatInterface({
   const prevDldCount = useRef(0)
   const prevSelectedProject = useRef("")
   const initialPromptRef = useRef<string | null>(null)
+  const initialGoldenPathRef = useRef<GoldenPathId | null>(null)
 
   const { messages, sendMessage, status, error, stop } = useCopilot()
 
@@ -975,6 +1046,15 @@ export function ChatInterface({
       setGoldenPathLoading(null)
     }
   }
+
+  useEffect(() => {
+    if (!initialGoldenPath || initialGoldenPathRef.current === initialGoldenPath) {
+      return
+    }
+
+    initialGoldenPathRef.current = initialGoldenPath
+    void runGoldenPath(initialGoldenPath)
+  }, [initialGoldenPath, runGoldenPath])
 
   useEffect(() => {
     if (!mounted) return
@@ -1812,6 +1892,7 @@ export function ChatInterface({
               ? stripThinkTags(messageText(message))
               : displayMessageText(message)
             const toolTrace = message.role === "assistant" ? deriveToolTrace(message, locale) : null
+            const evidenceDrawer = message.role === "assistant" ? buildEvidenceDrawerData(message) : null
 
             return (
               <div
@@ -1837,6 +1918,27 @@ export function ChatInterface({
                     {toolTrace ? (
                       <div className="mt-3 text-[10px] font-mono text-muted-foreground/70">
                         [{toolTrace}]
+                      </div>
+                    ) : null}
+                    {evidenceDrawer?.requestId ? (
+                      <div className="mt-2 text-[10px] font-mono text-muted-foreground/70">
+                        request_id={evidenceDrawer.requestId}
+                      </div>
+                    ) : null}
+                    {evidenceDrawer ? (
+                      <div className="mt-4">
+                        <EvidenceDrawer
+                          title={locale === "ar" ? "درج الأدلة" : "Evidence Drawer"}
+                          sources={evidenceDrawer.sources}
+                          exclusions={evidenceDrawer.exclusions}
+                          assumptions={evidenceDrawer.assumptions}
+                          steps={evidenceDrawer.steps}
+                          timestamp={evidenceDrawer.timestamp}
+                          snapshotId="copilot-tool-trace"
+                          runId={evidenceDrawer.runId}
+                          snapshotTs={evidenceDrawer.snapshotTs}
+                          locale={locale}
+                        />
                       </div>
                     ) : null}
                   </div>

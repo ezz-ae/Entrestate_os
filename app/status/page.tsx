@@ -143,6 +143,24 @@ function getIncidents(locale: AppLocale) {
   ]
 }
 
+function getGovernanceLinks(locale: AppLocale) {
+  if (locale === "ar") {
+    return [
+      { title: "سياسة الخصوصية", body: "كيف تُعالج بيانات الحساب والمخرجات وطلبات الدعم.", href: "/privacy" },
+      { title: "شروط الاستخدام", body: "حدود الاعتماد على المنصة ومسؤوليات الاستخدام.", href: "/terms" },
+      { title: "توثيق المعمارية", body: "راجع طبقة الأدلة ومحرك القرار والبنية العامة.", href: "/docs/documentation" },
+      { title: "مراجعة تقنية", body: "مراجعة تشغيلية صريحة للفجوات المتبقية وخطة الإغلاق.", href: "/docs/cto-deployment-review" },
+    ]
+  }
+
+  return [
+    { title: "Privacy policy", body: "How account, support, and product-output data is handled.", href: "/privacy" },
+    { title: "Terms of service", body: "Reliance boundaries and product-use obligations.", href: "/terms" },
+    { title: "Architecture docs", body: "Inspect the evidence model, decision engine, and system design.", href: "/docs/documentation" },
+    { title: "CTO review", body: "Review the remaining operational gaps and closeout plan.", href: "/docs/cto-deployment-review" },
+  ]
+}
+
 async function getSnapshotSummary() {
   try {
     const [pulse, freshness] = await Promise.all([getMarketPulse(), getDataFreshnessStatus()])
@@ -188,6 +206,7 @@ export default async function StatusPage() {
   const services = getServices(locale)
   const sloTargets = getSloTargets(locale)
   const incidents = getIncidents(locale)
+  const governanceLinks = getGovernanceLinks(locale)
   const snapshot = await getSnapshotSummary()
   const numberLocale = getNumberLocale(locale)
   const allOperational = services.every((service) => service.status === (isArabic ? "يعمل" : "Operational"))
@@ -374,6 +393,27 @@ export default async function StatusPage() {
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{incident.summary}</p>
               </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-8">
+          <div className="mb-4 flex items-center gap-2">
+            <Shield className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold text-foreground">
+              {isArabic ? "الحوكمة وحدود الاعتماد" : "Governance and reliance"}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {governanceLinks.map((item) => (
+              <Link
+                key={item.title}
+                href={prefixLocalePath(item.href, locale)}
+                className="rounded-2xl border border-border/60 bg-card/75 p-5 transition hover:border-primary/30 hover:bg-card"
+              >
+                <p className="text-sm font-medium text-foreground">{item.title}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+              </Link>
             ))}
           </div>
         </section>

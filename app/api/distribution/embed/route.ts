@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic"
 const requestSchema = z.object({
   widgetId: z.string().trim().min(1).max(100),
   tableHash: z.string().trim().min(6).max(128),
+  widgetType: z.enum(["market_card", "area_table", "score_badge", "market_pulse"]).optional(),
   tier: z.enum(["free", "pro", "enterprise"]).optional(),
   branding: z
     .object({

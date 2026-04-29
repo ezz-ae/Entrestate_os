@@ -774,11 +774,11 @@ export default function MarketScorePage() {
       return `${row.name || row.asset_id}\n${location || "الموقع غير متاح"}\n${status} · ${price}\n${score} · ${safety}`
     }
 
-    const status = row.status_band ? `Status: ${formatStatusBand(row.status_band, locale)}` : "Status: N/A"
-    const price = row.price_aed ? `Price: AED ${row.price_aed.toLocaleString(numberLocale)}` : "Price: N/A"
-    const score = row.score_0_100 ? `Score: ${row.score_0_100}` : "Score: N/A"
-    const safety = row.safety_band ? `Safety: ${row.safety_band}` : "Safety: N/A"
-    return `Project ${row.name || row.asset_id} · ${location || "Location: N/A"}\n${status} · ${price}\n${score} · ${safety}`
+    const status = row.status_band ? `Status: ${formatStatusBand(row.status_band, locale)}` : "Status: Not available"
+    const price = row.price_aed ? `Price: AED ${row.price_aed.toLocaleString(numberLocale)}` : "Price: Not available"
+    const score = row.score_0_100 ? `Score: ${row.score_0_100}` : "Score: Not available"
+    const safety = row.safety_band ? `Safety: ${row.safety_band}` : "Safety: Not available"
+    return `Project ${row.name || row.asset_id} · ${location || "Location: Not available"}\n${status} · ${price}\n${score} · ${safety}`
   }
 
   const handleCopySummary = async (row: MarketScoreInventoryResponse["rows"][number]) => {

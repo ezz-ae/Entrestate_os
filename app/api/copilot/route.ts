@@ -65,9 +65,22 @@ import { loadChatSession, saveChatMessage } from "@/lib/copilot/persistence"
 import { getUserProfile } from "@/lib/profile/queries"
 import { normalizeLocale } from "@/i18n/locale"
 import { getEnterpriseConfig } from "@/lib/enterprise-config"
+import { getLatestNotebookProvenance } from "@/lib/notebook-provenance"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+const PROVENANCE_TIMEOUT_MS = 500
+
+async function resolveProvenanceFast() {
+  try {
+    return await Promise.race([
+      getLatestNotebookProvenance(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), PROVENANCE_TIMEOUT_MS)),
+    ])
+  } catch {
+    return null
+  }
+}
 
 function normalizeIncomingMessages(messages: UIMessage[]) {
   return messages.map((message, index) => {
@@ -193,6 +206,19 @@ function buildTerminalCommandGuide(locale: string) {
 export async function POST(request: Request) {
   const requestId = getRequestId(request)
   const locale = normalizeLocale(request.headers.get("x-entrestate-locale"))
+  const provenance = await resolveProvenanceFast()
+  const runId = provenance?.run_id ?? requestId
+
+  const messageMetadata = () => ({
+    requestId,
+    request_id: requestId,
+    run_id: runId,
+    provenance: {
+      run_id: runId,
+      snapshot_ts: provenance?.snapshot_ts ?? null,
+      sources_used: provenance?.sources_used ?? ["copilot_tool_stream"],
+    },
+  })
 
   try {
     let body: { messages?: UIMessage[]; id?: string }
@@ -410,6 +436,7 @@ export async function POST(request: Request) {
         originalMessages: normalizedMessages,
         execute: ({ writer }) => {
           writer.write({ type: "start" })
+          writer.write({ type: "message-metadata", messageMetadata: messageMetadata() })
           writer.write({ type: "start-step" })
           writer.write({ type: "text-start", id: "text-1" })
           writer.write({
@@ -443,6 +470,7 @@ export async function POST(request: Request) {
         originalMessages: normalizedMessages,
         execute: ({ writer }) => {
           writer.write({ type: "start" })
+          writer.write({ type: "message-metadata", messageMetadata: messageMetadata() })
           writer.write({ type: "start-step" })
           writer.write({ type: "text-start", id: "text-1" })
           writer.write({
@@ -529,6 +557,7 @@ export async function POST(request: Request) {
     })
     return result.toUIMessageStreamResponse({
       originalMessages: normalizedMessages,
+      messageMetadata,
       headers: {
         "x-request-id": requestId,
         "x-entrestate-tier": entitlement.tier,

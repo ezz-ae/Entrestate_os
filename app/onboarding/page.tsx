@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useLocale } from "next-intl"
 import { Building2, TrendingUp, Briefcase, Shield, Rocket, BarChart3, ArrowRight, SkipForward } from "lucide-react"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { authClient } from "@/lib/auth/client"
 
 type Role = "broker" | "investor" | "developer" | "analyst"
 
@@ -113,8 +114,9 @@ const COPY = {
   },
 } as const
 
-import { inferOnboardingProfile, generateInitialQuery } from "@/lib/profile/inference"
+import { inferOnboardingProfile } from "@/lib/profile/inference"
 import { Attribution } from "@/lib/attribution/tracker"
+import { getFirstQuery } from "@/lib/onboarding/first-query"
 
 type Objective = "yield" | "growth" | "visa"
 type RiskLevel = "conservative" | "balanced" | "aggressive"
@@ -176,6 +178,7 @@ export default function OnboardingPage() {
   const router = useRouter()
   const locale = useLocale() as AppLocale
   const copy = ONBOARDING_COPY[locale] ?? ONBOARDING_COPY.en
+  const { data: session } = authClient.useSession()
   
   const [step, setStep] = useState(1)
   const [objective, setObjective] = useState<Objective | null>(null)
@@ -198,20 +201,30 @@ export default function OnboardingPage() {
 
     try {
       Attribution.logOnboardingComplete(objective || undefined)
-      await fetch("/api/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile),
-      })
+      if (session?.user?.id) {
+        await fetch("/api/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...profile,
+            userId: session.user.id,
+          }),
+        })
+      }
     } catch (e) {
       console.error("Onboarding profile sync failed", e)
     } finally {
       setSaving(false)
-      const query = generateInitialQuery({
+      const initialPlan = getFirstQuery({
         objective: objective || undefined,
         budget: budget || undefined,
       })
-      router.push(prefixLocalePath(`/os?q=${encodeURIComponent(query)}&onboarded=true`, locale))
+      router.push(
+        prefixLocalePath(
+          `/chat?q=${encodeURIComponent(initialPlan.query)}&goldenPath=${initialPlan.goldenPath}&onboarded=true`,
+          locale,
+        ),
+      )
     }
   }
 

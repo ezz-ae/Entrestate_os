@@ -2,12 +2,11 @@
 
 import Link from "next/link"
 import { useLocale } from "next-intl"
-import { ArrowRight, Database, Lock, ShieldCheck } from "lucide-react"
+import { ArrowRight, Database, MapPin, Search, ShieldCheck } from "lucide-react"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import { formatAed } from "@/lib/format/currency"
 import { formatInteger } from "@/lib/format/number"
 import { LiveSignalCard } from "@/components/platform/live-signal-card"
-import { TerminalPromptTeaser } from "@/components/platform/terminal-prompt-teaser"
 
 type Props = {
   avgMarketPrice: number | null
@@ -33,8 +32,11 @@ const COPY = {
     titleLineOne: "Dubai real estate is moving fast.",
     titleLineTwo: "Your data should too.",
     subtitle: "Scored projects, area context, and developer signals in one evidence-backed decision surface.",
-    primaryCta: "Open Terminal",
-    secondaryCta: "Enterprise Integration",
+    primaryActions: {
+      chat: "Open Chat",
+      search: "Open Search",
+      map: "Open Map",
+    },
     trustTitle: "Every verdict links back to source.",
     trustBody:
       "Confidence, timing, yield, and drivers stay visible so the output can be reviewed before it is used.",
@@ -53,8 +55,11 @@ const COPY = {
     titleLineOne: "سوق دبي العقاري يتحرك بسرعة.",
     titleLineTwo: "ويجب أن تتحرك بياناتك بالسرعة نفسها.",
     subtitle: "مشاريع مصنفة، وسياق مناطق، وإشارات مطورين داخل سطح قرار واحد ومدعوم بالأدلة.",
-    primaryCta: "افتح المحطة",
-    secondaryCta: "تكامل المؤسسات",
+    primaryActions: {
+      chat: "افتح المحادثة",
+      search: "افتح البحث",
+      map: "افتح الخريطة",
+    },
     trustTitle: "كل حكم مرتبط بمصدره.",
     trustBody:
       "الثقة والتوقيت والعائد ومحركات النتيجة تبقى ظاهرة حتى يمكن مراجعة المخرج قبل استخدامه.",
@@ -111,6 +116,23 @@ export function HeroSection({ avgMarketPrice, totalProjects, buySignals, topProj
       sublabel: locale === "ar" ? "مصنّفة بالموثوقية" : "Reliability-graded",
     },
   ].filter(Boolean) as Array<{ label: string; value: number | string; sublabel: string }>
+  const primaryActions = [
+    {
+      href: prefixLocalePath("/chat", locale),
+      label: copy.primaryActions.chat,
+      icon: Database,
+    },
+    {
+      href: prefixLocalePath("/search", locale),
+      label: copy.primaryActions.search,
+      icon: Search,
+    },
+    {
+      href: prefixLocalePath("/map", locale),
+      label: copy.primaryActions.map,
+      icon: MapPin,
+    },
+  ]
 
   return (
     <section className="relative">
@@ -140,25 +162,24 @@ export function HeroSection({ avgMarketPrice, totalProjects, buySignals, topProj
             {copy.subtitle}
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href={prefixLocalePath("/chat", locale)}
-              className="flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-md transition hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/20"
-            >
-              <Database className="h-4 w-4" />
-              {copy.primaryCta}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href={prefixLocalePath("/infrastructure", locale)}
-              className="flex items-center gap-2 rounded-full border border-dashed border-border/80 bg-background/60 px-6 py-3 text-sm font-semibold text-foreground transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
-            >
-              <Lock className="h-4 w-4 text-primary" />
-              {copy.secondaryCta}
-            </Link>
+          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {primaryActions.map((action) => {
+              const Icon = action.icon
+              return (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/60 px-5 py-4 text-sm font-semibold text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
+                >
+                  <span className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-primary" />
+                    {action.label}
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              )
+            })}
           </div>
-
-          <TerminalPromptTeaser className="mt-8" compact />
 
           <div className="mt-8 grid grid-cols-2 gap-3 xl:grid-cols-3">
             {stats.map((item) => (

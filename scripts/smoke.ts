@@ -1,1 +1,1 @@
-import "../smoke (2).ts"
+import "./post-deploy-smoke.ts"

@@ -176,6 +176,49 @@ function buildHardFallback(locale: string) {
   }
 }
 
+function buildChatProvenance(
+  runId: string,
+  provenance: { snapshot_ts?: string | null } | null,
+  sourcesUsed: string[],
+) {
+  return {
+    run_id: runId,
+    snapshot_ts: provenance?.snapshot_ts ?? null,
+    sources_used: sourcesUsed,
+  }
+}
+
+function buildChatResponse(args: {
+  content: string
+  requestId: string
+  runId: string
+  provenance: { snapshot_ts?: string | null } | null
+  sourcesUsed: string[]
+  dataCards?: ChatCard[]
+  dataAsOf?: string
+  warnings?: string[]
+  extra?: Record<string, unknown>
+}) {
+  const provenancePayload = buildChatProvenance(args.runId, args.provenance, args.sourcesUsed)
+
+  return {
+    ...(args.extra ?? {}),
+    content: args.content,
+    dataCards: args.dataCards ?? [],
+    evidence: {
+      sources_used: args.sourcesUsed,
+      warnings: args.warnings ?? [],
+      run_id: args.runId,
+      provenance: provenancePayload,
+    },
+    provenance: provenancePayload,
+    data_as_of: args.dataAsOf ?? new Date().toISOString(),
+    requestId: args.requestId,
+    request_id: args.requestId,
+    run_id: args.runId,
+  }
+}
+
 async function safeDbQuery<T>(query: Prisma.Sql, label: string): Promise<T[]> {
   try {
     return await dbQuery<T>(query)
@@ -914,19 +957,23 @@ export async function POST(request: Request) {
 
     if (isNonActionableTerminalInput(message)) {
       return NextResponse.json(
-        {
+        buildChatResponse({
           content: buildTerminalCommandGuide(locale),
-          suggestions: [
-            locale === "ar" ? "PULSE" : "PULSE",
-            "PROJECT Marina Vista",
-            locale === "ar" ? "SCREEN مشاريع تحت AED 2M" : "SCREEN projects under AED 2M",
-            "AREA Jumeirah Village Circle",
-          ],
-          compiler_output: buildCompilerOutput(message),
           requestId,
-          request_id: requestId,
-          usage,
-        },
+          runId,
+          provenance,
+          sourcesUsed: ["terminal_command_guide"],
+          extra: {
+            suggestions: [
+              locale === "ar" ? "PULSE" : "PULSE",
+              "PROJECT Marina Vista",
+              locale === "ar" ? "SCREEN مشاريع تحت AED 2M" : "SCREEN projects under AED 2M",
+              "AREA Jumeirah Village Circle",
+            ],
+            compiler_output: buildCompilerOutput(message),
+            usage,
+          },
+        }),
         {
           status: 200,
           headers: {
@@ -940,15 +987,21 @@ export async function POST(request: Request) {
     if (!model) {
       const fallback = await buildSafeDeterministicFallback(message, locale, parsed.data.context)
       return NextResponse.json(
-        {
-          ...fallback,
-          warning: "Live model unavailable. Returned deterministic market response.",
-          suggestions: getDefaultSuggestions(locale),
-          compiler_output: buildCompilerOutput(message),
+        buildChatResponse({
+          content: fallback.content,
           requestId,
-          request_id: requestId,
-          usage,
-        },
+          runId,
+          provenance,
+          sourcesUsed: fallback.evidence?.sources_used ?? ["deterministic_fallback"],
+          dataCards: fallback.dataCards,
+          dataAsOf: fallback.data_as_of,
+          extra: {
+            warning: "Live model unavailable. Returned deterministic market response.",
+            suggestions: getDefaultSuggestions(locale),
+            compiler_output: buildCompilerOutput(message),
+            usage,
+          },
+        }),
         {
           status: 200,
           headers: {
@@ -1011,28 +1064,24 @@ export async function POST(request: Request) {
           ? `The data shows: ${toolSummary}`
           : "No matching projects found."
 
-      const responsePayload = {
+      const sourcesUsed = deterministic?.evidence?.sources_used ?? collectSources(toolResults)
+
+      const responsePayload = buildChatResponse({
         content,
-        dataCards: dataCards ?? deterministic?.dataCards,
-        notifications: notifications.length > 0 ? notifications : undefined,
-        suggestions: getDefaultSuggestions(locale),
-        evidence: {
-          sources_used: deterministic?.evidence?.sources_used ?? collectSources(toolResults),
-          warnings: confidenceWarnings,
-          run_id: runId,
-          provenance: {
-            run_id: runId,
-            snapshot_ts: provenance?.snapshot_ts ?? null,
-            sources_used: deterministic?.evidence?.sources_used ?? collectSources(toolResults),
-          },
-        },
-        data_as_of: deterministic?.data_as_of ?? resolveDataAsOf(toolResults),
-        compiler_output: buildCompilerOutput(message),
         requestId,
-        request_id: requestId,
-        run_id: runId,
-        usage,
-      }
+        runId,
+        provenance,
+        sourcesUsed,
+        dataCards: dataCards ?? deterministic?.dataCards,
+        dataAsOf: deterministic?.data_as_of ?? resolveDataAsOf(toolResults),
+        warnings: confidenceWarnings,
+        extra: {
+          notifications: notifications.length > 0 ? notifications : undefined,
+          suggestions: getDefaultSuggestions(locale),
+          compiler_output: buildCompilerOutput(message),
+          usage,
+        },
+      })
 
       return NextResponse.json(responsePayload, {
         status: 200,
@@ -1045,21 +1094,21 @@ export async function POST(request: Request) {
       console.error("Chat route LLM execution failed:", { requestId, error })
       const fallback = await buildSafeDeterministicFallback(message, locale, parsed.data.context)
       return NextResponse.json(
-        {
-          ...fallback,
-          run_id: runId,
-          provenance: {
-            run_id: runId,
-            snapshot_ts: provenance?.snapshot_ts ?? null,
-            sources_used: fallback.evidence?.sources_used ?? ["deterministic_fallback"],
-          },
-          warning: "Live model unavailable. Returned deterministic market response.",
-          suggestions: getDefaultSuggestions(locale),
-          compiler_output: buildCompilerOutput(message),
+        buildChatResponse({
+          content: fallback.content,
           requestId,
-          request_id: requestId,
-          usage,
-        },
+          runId,
+          provenance,
+          sourcesUsed: fallback.evidence?.sources_used ?? ["deterministic_fallback"],
+          dataCards: fallback.dataCards,
+          dataAsOf: fallback.data_as_of,
+          extra: {
+            warning: "Live model unavailable. Returned deterministic market response.",
+            suggestions: getDefaultSuggestions(locale),
+            compiler_output: buildCompilerOutput(message),
+            usage,
+          },
+        }),
         {
           status: 200,
           headers: {

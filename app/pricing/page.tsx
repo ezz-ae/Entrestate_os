@@ -236,6 +236,61 @@ const FAQ_GROUPS = {
   ],
 }
 
+const FREE_ACCESS = {
+  en: {
+    title: "Start free before you buy",
+    body: "Individual users can begin with the core intelligence surfaces, then upgrade only when branding, collaboration, or enterprise delivery becomes necessary.",
+    bullets: [
+      "Open the Decision Terminal with evidence-backed responses",
+      "Use Search and Map to inspect scored market coverage",
+      "Move to paid plans for branded outputs, team controls, and API delivery",
+    ],
+    cta: "Open free access",
+  },
+  ar: {
+    title: "ابدأ مجاناً قبل الشراء",
+    body: "يمكن للمستخدم الفردي أن يبدأ من الأسطح الأساسية، ثم يترقى فقط عندما يحتاج العلامة أو التعاون أو النشر المؤسسي.",
+    bullets: [
+      "افتح محطة القرار مع ردود مدعومة بالأدلة",
+      "استخدم البحث والخريطة لمراجعة تغطية السوق المقيّمة",
+      "انتقل إلى الخطط المدفوعة عند الحاجة إلى العلامة، الفريق، أو الـ API",
+    ],
+    cta: "افتح الوصول المجاني",
+  },
+} as const
+
+const PLAN_COMPARISON = {
+  en: [
+    { feature: "Decision Terminal", values: ["Included", "Included", "Included", "Included"] },
+    { feature: "Search + Map", values: ["Included", "Included", "Included", "Included"] },
+    { feature: "Evidence Drawer + request IDs", values: ["Included", "Included", "Included", "Included"] },
+    { feature: "Branded outputs", values: ["Entrestate only", "Entrestate only", "Personal + Entrestate", "White-label"] },
+    { feature: "Team workspace", values: ["—", "—", "Light", "Full RBAC"] },
+    { feature: "API / embed delivery", values: ["—", "—", "—", "Included"] },
+  ],
+  ar: [
+    { feature: "محطة القرار", values: ["مضمن", "مضمن", "مضمن", "مضمن"] },
+    { feature: "البحث + الخريطة", values: ["مضمن", "مضمن", "مضمن", "مضمن"] },
+    { feature: "درج الأدلة + معرفات الطلب", values: ["مضمن", "مضمن", "مضمن", "مضمن"] },
+    { feature: "العلامة على المخرجات", values: ["Entrestate فقط", "Entrestate فقط", "شخصية + Entrestate", "White-label"] },
+    { feature: "مساحة الفريق", values: ["—", "—", "خفيفة", "RBAC كامل"] },
+    { feature: "API / التضمين", values: ["—", "—", "—", "مضمن"] },
+  ],
+} as const
+
+const PRICING_PROOF = {
+  en: [
+    { title: "Public status", href: "/status" },
+    { title: "Architecture docs", href: "/docs/documentation" },
+    { title: "Privacy + terms", href: "/privacy" },
+  ],
+  ar: [
+    { title: "الحالة العامة", href: "/status" },
+    { title: "توثيق المعمارية", href: "/docs/documentation" },
+    { title: "الخصوصية + الشروط", href: "/privacy" },
+  ],
+} as const
+
 function FaqGroup({ group, items }: { group: string; items: { q: string; a: string }[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   return (
@@ -274,9 +329,41 @@ export default function PricingPage() {
   const userTypes = USER_TYPES[locale] ?? USER_TYPES.en
   const orgFeatures = ORG_FEATURES[locale] ?? ORG_FEATURES.en
   const faqGroups = FAQ_GROUPS[locale] ?? FAQ_GROUPS.en
+  const freeAccess = FREE_ACCESS[locale] ?? FREE_ACCESS.en
+  const comparisonRows = PLAN_COMPARISON[locale] ?? PLAN_COMPARISON.en
+  const proofLinks = PRICING_PROOF[locale] ?? PRICING_PROOF.en
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "FAQPage",
+        mainEntity: faqGroups.flatMap((group) =>
+          group.items.map((item) => ({
+            "@type": "Question",
+            name: item.q,
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: item.a,
+            },
+          })),
+        ),
+      },
+      {
+        "@type": "OfferCatalog",
+        name: isArabic ? "مستويات Entrestate" : "Entrestate plans",
+        itemListElement: userTypes.map((type) => ({
+          "@type": "Offer",
+          name: type.title,
+          description: type.description,
+          category: isArabic ? "خطط المنصة" : "Platform plans",
+        })),
+      },
+    ],
+  }
 
   return (
     <main id="main-content" dir={isArabic ? "rtl" : "ltr"}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <Navbar />
 
       <div className="mx-auto max-w-[1100px] px-4 sm:px-6 pb-24 pt-28 md:pt-36">
@@ -295,6 +382,34 @@ export default function PricingPage() {
               : "From solo research to full Entrestate OS deployment."}
           </p>
         </header>
+
+        <section className="mb-12 rounded-3xl border border-primary/20 bg-primary/5 p-6 md:p-8">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
+                {isArabic ? "مسار البداية" : "Entry path"}
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-foreground md:text-3xl">{freeAccess.title}</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">{freeAccess.body}</p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
+              <ul className="space-y-2.5">
+                {freeAccess.bullets.map((bullet) => (
+                  <li key={bullet} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    {bullet}
+                  </li>
+                ))}
+              </ul>
+              <Button asChild className="mt-5 w-full gap-2">
+                <Link href={prefixLocalePath("/chat", locale)}>
+                  {freeAccess.cta}
+                  <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
 
         {/* ── User type cards ── */}
         <section className="grid grid-cols-1 gap-5 md:grid-cols-3 mb-20">
@@ -361,6 +476,40 @@ export default function PricingPage() {
               </article>
             )
           })}
+        </section>
+
+        <section className="mb-20 rounded-3xl border border-border/60 bg-card/60 p-6 md:p-8">
+          <div className="mb-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
+              {isArabic ? "مقارنة مباشرة" : "Direct comparison"}
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-foreground md:text-3xl">
+              {isArabic ? "ما الذي يتغير بين المستويات؟" : "What changes across tiers?"}
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-border/50">
+                  <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "الميزة" : "Capability"}</th>
+                  <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "مجاني" : "Free"}</th>
+                  <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "Solo" : "Solo"}</th>
+                  <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "Pro" : "Pro"}</th>
+                  <th className="pb-3 font-medium text-muted-foreground">{isArabic ? "OS" : "OS"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonRows.map((row) => (
+                  <tr key={row.feature} className="border-b border-border/30">
+                    <td className="py-3 pr-3 font-medium text-foreground">{row.feature}</td>
+                    {row.values.map((value, index) => (
+                      <td key={`${row.feature}-${index}`} className="py-3 pr-3 text-muted-foreground">{value}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         {/* ── Entrestate OS deep-dive ── */}
@@ -468,6 +617,28 @@ export default function PricingPage() {
                   {isArabic ? "راسلنا" : "Email us"}
                 </a>
               </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-16 rounded-2xl border border-border/60 bg-card/60 px-6 py-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {isArabic ? "اعتماد قبل الشراء" : "Trust before purchase"}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {isArabic
+                  ? "راجع الحالة العامة، بنية المنصة، والوثائق القانونية قبل قرار الشراء أو التكامل."
+                  : "Review public status, platform architecture, and legal docs before procurement or integration."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {proofLinks.map((item) => (
+                <Button key={item.title} asChild variant="outline" className="gap-2">
+                  <Link href={prefixLocalePath(item.href, locale)}>{item.title}</Link>
+                </Button>
+              ))}
             </div>
           </div>
         </section>

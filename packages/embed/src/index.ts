@@ -14,6 +14,8 @@ type WidgetAttributes = {
   badgeText: string | null
   logoUrl: string | null
   upgradeUrl: string | null
+  widgetId: string | null
+  widgetType: string | null
 }
 
 type InitOptions = {
@@ -23,6 +25,10 @@ type InitOptions = {
 const DEFAULT_API_BASE = ""
 const DEFAULT_ACCENT = "#0f172a"
 const DEFAULT_BADGE = "Powered by Entrestate"
+const ATTRIBUTION_ENDPOINT = "/api/attribution"
+const SESSION_KEY = "entrestate:widget-session-id"
+const VIEW_DEDUP_PREFIX = "entrestate:widget-view:"
+const VIEW_DEDUP_WINDOW_MS = 30 * 60 * 1000
 
 function normalizeTier(value: string | null): DistributionTier {
   if (value === "pro" || value === "enterprise") return value
@@ -56,12 +62,107 @@ function readAttributes(container: HTMLElement): WidgetAttributes {
     badgeText: container.getAttribute("data-badge"),
     logoUrl: container.getAttribute("data-logo"),
     upgradeUrl: container.getAttribute("data-upgrade-url"),
+    widgetId: container.getAttribute("data-widget-id") ?? container.getAttribute("data-entrestate-widget"),
+    widgetType: container.getAttribute("data-widget-type"),
   }
 }
 
-function openFallbackTab(apiBase: string) {
-  const target = resolveUrl(apiBase, "/chat?ref=widget")
+function buildChatTarget(widgetId: string | null) {
+  if (!widgetId) return "/chat?ref=widget"
+  return `/chat?ref=widget&wid=${encodeURIComponent(widgetId)}`
+}
+
+function openFallbackTab(apiBase: string, widgetId: string | null) {
+  const target = resolveUrl(apiBase, buildChatTarget(widgetId))
   window.open(target, "_blank", "noopener,noreferrer")
+}
+
+function getSessionId() {
+  try {
+    const existing = window.sessionStorage.getItem(SESSION_KEY)
+    if (existing) return existing
+    const generated =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `widget-${Date.now()}-${Math.random().toString(16).slice(2)}`
+    window.sessionStorage.setItem(SESSION_KEY, generated)
+    return generated
+  } catch {
+    return `widget-${Date.now()}`
+  }
+}
+
+function shouldTrackView(widgetId: string, sessionId: string) {
+  try {
+    const storageKey = `${VIEW_DEDUP_PREFIX}${widgetId}:${sessionId}`
+    const lastSeen = window.sessionStorage.getItem(storageKey)
+    if (lastSeen) {
+      const elapsed = Date.now() - Number(lastSeen)
+      if (Number.isFinite(elapsed) && elapsed < VIEW_DEDUP_WINDOW_MS) {
+        return false
+      }
+    }
+    window.sessionStorage.setItem(storageKey, String(Date.now()))
+    return true
+  } catch {
+    return true
+  }
+}
+
+function emitAttribution(
+  apiBase: string,
+  payload: Record<string, unknown>,
+) {
+  const url = resolveUrl(apiBase, ATTRIBUTION_ENDPOINT)
+  const body = JSON.stringify(payload)
+
+  try {
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      const blob = new Blob([body], { type: "application/json" })
+      navigator.sendBeacon(url, blob)
+      return
+    }
+  } catch {}
+
+  void fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+    keepalive: true,
+  }).catch(() => undefined)
+}
+
+function trackWidgetView(apiBase: string, attrs: WidgetAttributes) {
+  const widgetId = attrs.widgetId
+  if (!widgetId) return
+  const sessionId = getSessionId()
+  if (!shouldTrackView(widgetId, sessionId)) return
+
+  emitAttribution(apiBase, {
+    event_type: "widget_view",
+    widget_id: widgetId,
+    embed_type: attrs.widgetType ?? undefined,
+    source_domain: window.location.hostname,
+    source_page_url: window.location.href,
+    session_id: sessionId,
+  })
+}
+
+function trackWidgetClick(apiBase: string, attrs: WidgetAttributes) {
+  const widgetId = attrs.widgetId
+  if (!widgetId) return
+
+  emitAttribution(apiBase, {
+    event_type: "widget_click",
+    widget_id: widgetId,
+    embed_type: attrs.widgetType ?? undefined,
+    source_domain: window.location.hostname,
+    source_page_url: window.location.href,
+    session_id: getSessionId(),
+    metadata: {
+      click_target: buildChatTarget(widgetId),
+    },
+  })
 }
 
 function createOverlay(title: string, body: string): OverlayState {
@@ -124,8 +225,11 @@ function createOverlay(title: string, body: string): OverlayState {
   return { root: backdrop, close }
 }
 
-async function submitDualCapture(apiBase: string, webhook: string | null, email: string) {
-  const signupUrl = `${apiBase}/api/signup?tier=free&source=widget`
+async function submitDualCapture(apiBase: string, webhook: string | null, email: string, widgetId: string | null) {
+  const query = widgetId
+    ? `?tier=free&source=widget&wid=${encodeURIComponent(widgetId)}`
+    : "?tier=free&source=widget"
+  const signupUrl = `${apiBase}/api/signup${query}`
   const body = JSON.stringify({ email })
 
   const tasks: Promise<unknown>[] = [
@@ -211,6 +315,7 @@ function mountWidget(container: HTMLElement, options: InitOptions) {
   const attrs = readAttributes(container)
   const branding = resolveBranding(attrs)
   const upgradeUrl = resolveUpgradeUrl(apiBase, attrs.upgradeUrl)
+  const widgetId = attrs.widgetId
 
   const root = createMountRoot(container)
   const wrapper = document.createElement("div")
@@ -261,17 +366,18 @@ function mountWidget(container: HTMLElement, options: InitOptions) {
   action.style.cursor = "pointer"
 
   action.addEventListener("click", () => {
+    trackWidgetClick(apiBase, attrs)
     if (attrs.interaction === "overlay") {
       try {
         createOverlay("Evidence Drawer", "You are viewing evidence without leaving the broker page.")
         window.dispatchEvent(new CustomEvent("open_evidence_drawer"))
         return
       } catch {
-        openFallbackTab(apiBase)
+        openFallbackTab(apiBase, widgetId)
         return
       }
     }
-    openFallbackTab(apiBase)
+    openFallbackTab(apiBase, widgetId)
   })
 
   const metrics = document.createElement("div")
@@ -317,7 +423,7 @@ function mountWidget(container: HTMLElement, options: InitOptions) {
       event.preventDefault()
       if (!input.value) return
       submit.disabled = true
-      await submitDualCapture(apiBase, attrs.leadWebhook, input.value)
+      await submitDualCapture(apiBase, attrs.leadWebhook, input.value, widgetId)
       submit.disabled = false
       createOverlay("Request received", "We sent your details for broker follow-up and Entrestate access.")
     })
@@ -373,6 +479,23 @@ function mountWidget(container: HTMLElement, options: InitOptions) {
   }
 
   root.appendChild(wrapper)
+
+  if (typeof IntersectionObserver !== "undefined") {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          trackWidgetView(apiBase, attrs)
+          observer.disconnect()
+          break
+        }
+      },
+      { threshold: 0.35 },
+    )
+    observer.observe(container)
+  } else {
+    trackWidgetView(apiBase, attrs)
+  }
 }
 
 export function initEntrestateWidgets(options: InitOptions = {}) {

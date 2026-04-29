@@ -5,7 +5,7 @@ import { useLocale } from "next-intl"
 import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { MapPin, Layers, Activity, TrendingUp, Shield, Loader2 } from "lucide-react"
+import { MapPin, Layers, Activity, TrendingUp, Shield, Loader2, MessageSquare, BookOpen } from "lucide-react"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
@@ -21,7 +21,15 @@ type AreaCluster = {
   buy_signals: number
 }
 
-const layerOptions = ["Yield bands", "Pricing heatmap", "Supply pressure", "Safety tiers", "Liquidity score"]
+type LayerOptionId = "yield" | "price" | "supply" | "safety" | "liquidity"
+
+const LAYER_OPTIONS: Array<{ id: LayerOptionId; en: string; ar: string }> = [
+  { id: "yield", en: "Yield bands", ar: "شرائح العائد" },
+  { id: "price", en: "Pricing heatmap", ar: "خريطة السعر" },
+  { id: "supply", en: "Supply pressure", ar: "ضغط المعروض" },
+  { id: "safety", en: "Safety tiers", ar: "طبقات الأمان" },
+  { id: "liquidity", en: "Liquidity score", ar: "سيولة السوق" },
+]
 
 function getHeatColor(value: number | null, max: number): string {
   if (value === null || max === 0) return "bg-muted/30 border-border/60"
@@ -37,7 +45,7 @@ export default function MapPage() {
   const isArabic = locale === "ar"
   const [areas, setAreas] = useState<AreaCluster[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeLayer, setActiveLayer] = useState("Yield bands")
+  const [activeLayer, setActiveLayer] = useState<LayerOptionId>("yield")
 
   useEffect(() => {
     fetch("/api/areas")
@@ -54,19 +62,51 @@ export default function MapPage() {
 
   function getClusterColor(area: AreaCluster): string {
     switch (activeLayer) {
-      case "Yield bands":
+      case "yield":
         return getHeatColor(typeof area.avg_yield === "number" ? area.avg_yield : null, maxYield)
-      case "Pricing heatmap":
+      case "price":
         return getHeatColor(typeof area.avg_price === "number" ? area.avg_price : null, maxPrice)
-      case "Safety tiers":
-      case "Liquidity score":
+      case "safety":
+      case "liquidity":
         return getHeatColor(typeof area.efficiency === "number" ? area.efficiency : null, maxEfficiency)
-      case "Supply pressure":
+      case "supply":
         return getHeatColor(area.projects, maxProjects)
       default:
         return "bg-muted/30 border-border/60"
     }
   }
+
+  const layerOptions = LAYER_OPTIONS.map((option) => ({
+    id: option.id,
+    label: isArabic ? option.ar : option.en,
+  }))
+
+  const flowCards = [
+    {
+      title: isArabic ? "افتح البحث" : "Open Search",
+      body: isArabic
+        ? "انتقل من القراءة المكانية إلى تصفية المشاريع والمطورين والدرجات."
+        : "Move from spatial context into project, developer, and score filtering.",
+      href: "/search",
+      icon: Layers,
+    },
+    {
+      title: isArabic ? "افتح الدردشة" : "Open Chat",
+      body: isArabic
+        ? "حوّل المشهد المكاني إلى حكم نهائي مدعوم بالأدلة."
+        : "Turn a geographic signal into a final verdict with evidence.",
+      href: "/chat",
+      icon: MessageSquare,
+    },
+    {
+      title: isArabic ? "راجع الحالة والتوثيق" : "Review status and docs",
+      body: isArabic
+        ? "راجع حداثة البيانات والمنهجية قبل الاعتماد على الطبقات المكانية."
+        : "Confirm data freshness and methodology before relying on spatial layers.",
+      href: "/status",
+      icon: BookOpen,
+    },
+  ]
 
   return (
     <main id="main-content">
@@ -151,49 +191,90 @@ export default function MapPage() {
                   <div className="mt-3 space-y-2">
                     {layerOptions.map((layer) => (
                       <button
-                        key={layer}
-                        onClick={() => setActiveLayer(layer)}
+                        key={layer.id}
+                        onClick={() => setActiveLayer(layer.id)}
                         className={`w-full text-left rounded-xl border px-4 py-3 text-sm transition-colors ${
-                          activeLayer === layer
+                          activeLayer === layer.id
                             ? "border-primary/60 bg-primary/10 text-foreground"
                             : "border-border/60 bg-background/50 text-foreground hover:border-primary/30"
                         }`}
                       >
-                        {layer}
+                        {layer.label}
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">Legend</p>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "الدليل اللوني" : "Legend"}</p>
                   <div className="mt-3 space-y-2">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <div className="h-3 w-3 rounded-sm bg-emerald-500/20 border border-emerald-500/40" />
-                      High (top quartile)
+                      {isArabic ? "مرتفع (أعلى ربع)" : "High (top quartile)"}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <div className="h-3 w-3 rounded-sm bg-blue-500/20 border border-blue-500/40" />
-                      Above average
+                      {isArabic ? "فوق المتوسط" : "Above average"}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <div className="h-3 w-3 rounded-sm bg-amber-500/20 border border-amber-500/40" />
-                      Below average
+                      {isArabic ? "دون المتوسط" : "Below average"}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <div className="h-3 w-3 rounded-sm bg-red-500/15 border border-red-500/30" />
-                      Low (bottom quartile)
+                      {isArabic ? "منخفض (أدنى ربع)" : "Low (bottom quartile)"}
                     </div>
                   </div>
                 </div>
 
                 <div className="rounded-xl border border-border/60 bg-background/50 px-4 py-3 text-sm text-muted-foreground">
                   <Shield className="h-4 w-4 text-accent inline-block mr-2" />
-                  Click any area to open its detail page with projects and intelligence.
+                  {isArabic
+                    ? "اضغط على أي منطقة لفتح صفحتها مع المشاريع والإشارات الاستخباراتية."
+                    : "Click any area to open its detail page with projects and intelligence."}
                 </div>
               </div>
             </section>
           </div>
+
+          <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="rounded-2xl border border-border/60 bg-card/70 p-6">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
+                {isArabic ? "وضع الاعتماد" : "Reliance posture"}
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-foreground">
+                {isArabic ? "الخريطة تقرأ السوق مكانياً، ولا تصدر الحكم وحدها" : "Map is a spatial lens, not a standalone verdict"}
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                {isArabic
+                  ? "استخدم الخريطة لفهم التوزيع المكاني للعائد والسعر وكثافة المشاريع، ثم انتقل إلى البحث للتصفية أو إلى الدردشة للحكم النهائي."
+                  : "Use Map to understand geographic price, yield, and project density, then move into Search for filtering or Chat for the final verdict."}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-card/70 p-6">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
+                {isArabic ? "الأسطح المرتبطة" : "Connected surfaces"}
+              </p>
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+                {flowCards.map((card) => {
+                  const Icon = card.icon
+                  return (
+                    <Link
+                      key={card.title}
+                      href={prefixLocalePath(card.href, locale)}
+                      className="group rounded-2xl border border-border/60 bg-background/50 p-4 transition hover:border-primary/30 hover:bg-background"
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <h3 className="mt-3 text-sm font-semibold text-foreground">{card.title}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{card.body}</p>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
         </div>
       </div>
       <Footer />

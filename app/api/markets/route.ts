@@ -201,34 +201,45 @@ export async function GET(request: Request) {
           ? Prisma.sql`ORDER BY safety_band ASC NULLS LAST`
           : Prisma.sql`ORDER BY score_0_100 DESC NULLS LAST`
 
-    const rows = await Promise.race([
+    const { rows, totalCount } = await Promise.race([
       withStatementTimeout(async (tx) => {
-        return tx.$queryRaw<any[]>(Prisma.sql`
-          SELECT
-            asset_id::text AS asset_id,
-            name,
-            developer,
-            city,
-            area,
-            status_band,
-            price_aed::double precision AS price_aed,
-            beds,
-            score_0_100::double precision AS score_0_100,
-            safety_band,
-            classification
-          FROM agent_inventory_view_v1
-          ${whereClause}
-          ${orderBy}
-          LIMIT ${effectiveLimit} OFFSET ${effectiveOffset}
-        `)
+        const [rows, countRows] = await Promise.all([
+          tx.$queryRaw<any[]>(Prisma.sql`
+            SELECT
+              asset_id::text AS asset_id,
+              name,
+              developer,
+              city,
+              area,
+              status_band,
+              price_aed::double precision AS price_aed,
+              beds,
+              score_0_100::double precision AS score_0_100,
+              safety_band,
+              classification
+            FROM agent_inventory_view_v1
+            ${whereClause}
+            ${orderBy}
+            LIMIT ${effectiveLimit} OFFSET ${effectiveOffset}
+          `),
+          tx.$queryRaw<Array<{ count: number | string }>>(Prisma.sql`
+            SELECT COUNT(*)::int AS count
+            FROM agent_inventory_view_v1
+            ${whereClause}
+          `),
+        ])
+
+        return {
+          rows,
+          totalCount: Number(countRows[0]?.count ?? 0),
+        }
       }),
-      new Promise<any[]>((_, reject) =>
+      new Promise<{ rows: any[]; totalCount: number }>((_, reject) =>
         setTimeout(() => reject(new Error("Market query timeout")), MARKET_QUERY_TIMEOUT_MS),
       ),
     ])
 
     const normalizedRows = rows.map((row) => normalizeValue(row))
-    const totalCount = normalizedRows.length
 
     return NextResponse.json({
       requestId,
@@ -243,6 +254,10 @@ export async function GET(request: Request) {
       results: normalizedRows,
       data: normalizedRows,
       projects: normalizedRows,
+    }, {
+      headers: {
+        "x-request-id": requestId,
+      },
     })
   } catch (error) {
     console.error("Markets query error:", { requestId, error })
@@ -260,6 +275,11 @@ export async function GET(request: Request) {
       data: [],
       projects: [],
       warning: getPublicErrorMessage(error, "Failed to load market inventory."),
+    }, {
+      status: 500,
+      headers: {
+        "x-request-id": requestId,
+      },
     })
   }
 }

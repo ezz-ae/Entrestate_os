@@ -1,4 +1,5 @@
 import type { BehavioralSignal, ProfileAdjustment, ProfileInferenceResult, UserProfile } from "./types"
+import { getFirstQuery } from "@/lib/onboarding/first-query"
 
 const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value))
 
@@ -96,12 +97,5 @@ export function generateInitialQuery(selections: {
   objective?: string
   budget?: string
 }): string {
-  const obj = selections.objective?.toLowerCase() || ""
-  const budgetStr = selections.budget ? ` budget around ${selections.budget}` : ""
-
-  if (obj.includes("yield")) return `Show me high-yield projects${budgetStr} in Dubai`
-  if (obj.includes("growth")) return `Top capital growth projects${budgetStr} with high resilience scores`
-  if (obj.includes("visa")) return `Golden Visa eligible properties${budgetStr} under AED 4M`
-  
-  return "What are the best real estate investment opportunities today?"
+  return getFirstQuery(selections).query
 }

@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button"
 import { ConfidenceBadge, ConfidenceLevel } from "@/components/trust/confidence-badge"
 import { Database, Clock } from "lucide-react"
 import { formatDate } from "@/lib/format/date"
+import { TRUST_COPY } from "@/lib/copy/trust"
 
 type EvidenceDrawerProps = {
   sources?: any[]
   exclusions?: any[]
   assumptions?: any[]
+  steps?: any[]
   title?: string
   confidenceScore?: number
   confidenceLevel?: ConfidenceLevel
@@ -24,6 +26,7 @@ export function EvidenceDrawer({
   sources, 
   exclusions, 
   assumptions, 
+  steps,
   title = "Evidence Drawer",
   confidenceScore,
   confidenceLevel,
@@ -37,12 +40,13 @@ export function EvidenceDrawer({
   const resolvedTimestamp = snapshotTs || timestamp || new Date().toISOString()
   const isArabic = locale === "ar"
   const copy = {
-    title: isArabic ? "درج الأدلة" : "Evidence Drawer",
+    title: isArabic ? "درج الأدلة" : TRUST_COPY.evidence_drawer.header,
     expose: isArabic ? "عرض الأدلة" : "Expose Evidence",
     collapse: isArabic ? "إخفاء الأدلة" : "Collapse Intelligence",
-    sources: isArabic ? "المصادر" : "Sources",
-    exclusions: isArabic ? "الاستبعادات" : "Exclusions",
-    assumptions: isArabic ? "الافتراضات" : "Assumptions",
+    sources: isArabic ? "المصادر" : TRUST_COPY.evidence_drawer.sources_label,
+    exclusions: isArabic ? "الاستبعادات" : TRUST_COPY.evidence_drawer.exclusions_label,
+    assumptions: isArabic ? "الافتراضات" : TRUST_COPY.evidence_drawer.assumptions_label,
+    steps: isArabic ? "خطوات الحساب" : TRUST_COPY.evidence_drawer.steps_label,
     snapshot: isArabic ? "اللقطة" : "Snapshot",
     verified: isArabic ? "التحقق" : "Verified",
     run: isArabic ? "التشغيل" : "Run",
@@ -73,7 +77,7 @@ export function EvidenceDrawer({
 
       {open && (
         <div className="mt-4 space-y-4 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             <div className="space-y-2">
               <p className="font-semibold text-[10px] uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> {copy.sources}
@@ -96,6 +100,14 @@ export function EvidenceDrawer({
               </p>
               <div className="rounded-lg border border-border/40 bg-background/40 p-2 max-h-40 overflow-auto custom-scrollbar">
                 <pre className="whitespace-pre-wrap">{JSON.stringify(assumptions ?? [], null, 2)}</pre>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="font-semibold text-[10px] uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-500" /> {copy.steps}
+              </p>
+              <div className="rounded-lg border border-border/40 bg-background/40 p-2 max-h-40 overflow-auto custom-scrollbar">
+                <pre className="whitespace-pre-wrap">{JSON.stringify(steps ?? [], null, 2)}</pre>
               </div>
             </div>
           </div>

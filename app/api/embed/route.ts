@@ -75,13 +75,15 @@ export async function GET(request: Request) {
     actions: {
       cta_action: "open_evidence_drawer",
       fallback_action: "open_new_tab",
-      fallback_url: "/chat?ref=widget",
+      fallback_url: id ? `/chat?ref=widget&wid=${encodeURIComponent(id)}` : "/chat?ref=widget",
     },
     lead_magnet: {
       enabled: spec.leadMagnet,
       mode: spec.leadMagnet ? "dual_capture" : "none",
       webhook_attribute: "data-lead-webhook",
-      entrestate_signup_url: "/api/signup?tier=free&source=widget",
+      entrestate_signup_url: id
+        ? `/api/signup?tier=free&source=widget&wid=${encodeURIComponent(id)}`
+        : "/api/signup?tier=free&source=widget",
     },
     embed_attributes: {
       interaction: "overlay",

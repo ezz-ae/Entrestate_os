@@ -112,7 +112,7 @@ export async function POST(request: Request) {
 
       const avgPrice = prices.length
         ? (prices.reduce((a, b) => a + b, 0) / prices.length).toLocaleString()
-        : "n/a"
+        : "Not available"
 
       return NextResponse.json({
         reply: `Summary for ${cityMatch.label}.`,

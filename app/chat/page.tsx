@@ -7,6 +7,7 @@ import { headers } from "next/headers"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { getTranslations } from "next-intl/server"
+import type { GoldenPathId } from "@/components/ChatInterface"
 
 export default async function ChatPage({
   searchParams,
@@ -23,6 +24,12 @@ export default async function ChatPage({
   const sessionId = Array.isArray(params.id) ? params.id[0] : params.id
   const promptParam = Array.isArray(params.prompt) ? params.prompt[0] : params.prompt
   const queryParam = Array.isArray(params.q) ? params.q[0] : params.q
+  const goldenPathParam = Array.isArray(params.goldenPath) ? params.goldenPath[0] : params.goldenPath
+  const initialGoldenPath = goldenPathParam === "underwrite_development_site"
+    || goldenPathParam === "compare_area_yields"
+    || goldenPathParam === "draft_spa_contract"
+    ? goldenPathParam as GoldenPathId
+    : undefined
 
   if (isMobile) {
     // On mobile, always use the sidebar chat experience instead of the desktop /chat layout.
@@ -58,6 +65,7 @@ export default async function ChatPage({
         ) : null}
         <ChatInterface
           id={sessionId || undefined}
+          initialGoldenPath={initialGoldenPath}
           initialLimit={usage.limit}
           initialRemaining={usage.remaining}
           initialBlocked={usage.blocked}

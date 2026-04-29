@@ -9,6 +9,7 @@ export type EmbedBranding = {
 export type EmbedConfig = {
   widgetId: string
   tableHash: string
+  widgetType?: "market_card" | "area_table" | "score_badge" | "market_pulse"
   tier?: DistributionTier
   branding?: EmbedBranding
 }
@@ -43,6 +44,8 @@ export function generateEmbedSnippet(config: EmbedConfig): string {
 
   const dataAttributes = [
     `data-entrestate-widget="${escapeHtml(config.widgetId)}"`,
+    `data-widget-id="${escapeHtml(config.widgetId)}"`,
+    `data-widget-type="${escapeHtml(config.widgetType ?? "market_card")}"`,
     `data-table-hash="${escapeHtml(config.tableHash)}"`,
     `data-interaction="overlay"`,
     `data-lead-magnet="${leadMagnet}"`,

@@ -10,6 +10,7 @@ import { pickLocalizedText } from "@/lib/format/entities"
 import { formatDecimal, formatInteger } from "@/lib/format/number"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import {
+  BookOpen,
   Search,
   SlidersHorizontal,
   X,
@@ -23,6 +24,8 @@ import {
   Building2,
   MapPin,
   ChevronDown,
+  MessageSquare,
+  Activity,
 } from "lucide-react"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -250,7 +253,43 @@ export default function SearchPage() {
     next: isArabic ? "التالي" : "Next",
     of: isArabic ? "من" : "of",
     unnamedProject: isArabic ? "مشروع بدون اسم" : "Unnamed project",
+    flowEyebrow: isArabic ? "اكمل المسار" : "Complete the flow",
+    flowTitle: isArabic ? "البحث جزء من طبقة قرار أكبر" : "Search is one part of a larger decision flow",
+    flowBody: isArabic
+      ? "استخدم البحث لتصفية السوق، ثم انتقل إلى الدردشة للحكم، أو إلى الخريطة للقراءة المكانية، أو إلى التوثيق لفهم المنهجية."
+      : "Use Search to screen the market, then move into Chat for a verdict, Map for spatial context, or Docs for methodology.",
+    trustTitle: isArabic ? "قراءة المصدر والتزامن" : "Source and sync posture",
+    trustBody: isArabic
+      ? "نتائج البحث تعرض سطح البيانات الذي جاءت منه ووقت آخر تزامن. للحكم النهائي استخدم الدردشة مع درج الأدلة ومعرف الطلب."
+      : "Search results expose the source view and sync time. For a final verdict, move into Chat with the Evidence Drawer and request ID.",
   }
+
+  const flowLinks = [
+    {
+      title: isArabic ? "افتح الدردشة" : "Open Chat",
+      body: isArabic
+        ? "حوّل النتيجة إلى حكم واضح مع الثقة والمصادر ومعرف الطلب."
+        : "Turn a result into a verdict with confidence, sources, and a request ID.",
+      href: "/chat",
+      icon: MessageSquare,
+    },
+    {
+      title: isArabic ? "افتح الخريطة" : "Open Map",
+      body: isArabic
+        ? "أضف قراءة مكانية للسعر والعائد وكثافة المشاريع قبل اتخاذ القرار."
+        : "Add a spatial read of price, yield, and project density before acting.",
+      href: "/map",
+      icon: MapPin,
+    },
+    {
+      title: isArabic ? "راجع التوثيق" : "Review Docs",
+      body: isArabic
+        ? "راجع طبقة الأدلة، Decision Tunnel، وحدود الاعتماد."
+        : "Inspect the evidence stack, Decision Tunnel, and reliance boundaries.",
+      href: "/docs/documentation",
+      icon: BookOpen,
+    },
+  ]
 
   const [query, setQuery] = useState("")
   const [area, setArea] = useState("")
@@ -726,6 +765,60 @@ export default function SearchPage() {
             )}
           </>
         )}
+
+        <section className="mt-16 grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-2xl border border-border/60 bg-card/60 p-6">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold text-foreground">{copy.trustTitle}</p>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{copy.trustBody}</p>
+            <div className="mt-4 rounded-xl border border-border/50 bg-background/50 px-4 py-3 text-sm text-muted-foreground">
+              <p>
+                <span className="font-medium text-foreground">{isArabic ? "السطح الحالي:" : "Current source:"}</span>{" "}
+                {syncMeta?.sourceView ?? "api.search_index"}
+              </p>
+              <p className="mt-1">
+                <span className="font-medium text-foreground">{isArabic ? "آخر تزامن:" : "Last sync:"}</span>{" "}
+                {syncMeta
+                  ? new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
+                  : isArabic
+                    ? "عند أول استعلام"
+                    : "On first query"}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-card/60 p-6">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
+              {copy.flowEyebrow}
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-foreground">{copy.flowTitle}</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{copy.flowBody}</p>
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+              {flowLinks.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link
+                    key={item.title}
+                    href={prefixLocalePath(item.href, locale)}
+                    className="group rounded-2xl border border-border/60 bg-background/50 p-4 transition hover:border-primary/30 hover:bg-background"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <h3 className="mt-3 text-sm font-semibold text-foreground">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+                    <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                      {isArabic ? "افتح" : "Open"}
+                      <ArrowRight className="h-3 w-3" />
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </section>
 
       </div>
       <Footer />

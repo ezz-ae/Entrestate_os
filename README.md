@@ -165,7 +165,9 @@ The `/os` notebook UI simulates a free tier 30-row cap; switch the plan selector
 ## CI
 - DB contract tests run via `.github/workflows/db-contract-nightly.yml`.
 - Set `NEON_READONLY_URL` as a GitHub Actions secret for the nightly run.
-- See `FINALIZATION.md` for the release checklist and `docs/smoke-finalization-guide.md` for the hardened preview smoke and promotion workflow that protects production SSO.
+- Apply `prisma/sql/2026-03-08_intelligence_distribution_finalize.sql` before expecting the nightly DB contract to pass on provenance, attribution, and unit-sample objects.
+- `FINALIZATION.md` is the stable root handoff file; the full notebook-exported checklist lives in `lib/FINALIZATION (3).md`.
+- See `docs/smoke-finalization-guide.md` for the hardened preview smoke and promotion workflow that protects production SSO.
 
 ## License
 - Proprietary. See `LICENSE.md` and `NOTICE.md`.

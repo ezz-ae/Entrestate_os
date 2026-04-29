@@ -59,7 +59,7 @@ export function TimingSignalBadge({ signal }: { signal: string | null | undefine
 
 export function StressGradeBadge({ grade }: { grade: string | null | undefined }) {
   const locale = useLocale()
-  const value = normalizeBadgeValue(grade, "N/A").toUpperCase()
+  const value = normalizeBadgeValue(grade, "NOT AVAILABLE").toUpperCase()
   const tone =
     value === "A"
       ? "border-emerald-600/50 bg-emerald-600/10 text-emerald-300"

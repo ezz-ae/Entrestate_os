@@ -1,12 +1,15 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Activity, ArrowRight, FileText, Lock, ShieldCheck, Zap } from "lucide-react"
+import { Activity, ArrowRight, BookOpen, CreditCard, FileText, Lock, Map, Search, Server, ShieldCheck, Zap, MessageSquare } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/homepage/hero-section"
+import { GoldenPathsSection } from "@/components/homepage/golden-paths-section"
 import { DecisionTunnelStepper } from "@/components/homepage/decision-tunnel-stepper"
 import { getMarketPulseSummary } from "@/lib/frontend-content"
 import { listProperties } from "@/lib/decision-infrastructure"
+import { docsArticles } from "@/lib/docs-articles"
+import { libraryArticles } from "@/lib/library-data"
 import { SEO, absoluteUrl, getLocaleAlternates, getSeoCopy } from "@/lib/seo"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
@@ -37,26 +40,48 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-const structuredDataObj = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "Organization",
-      name: SEO.siteName,
-      url: absoluteUrl("/"),
-      logo: absoluteUrl("/icon.svg"),
-    },
-    {
-      "@type": "WebSite",
-      name: SEO.siteName,
-      url: absoluteUrl("/"),
-      potentialAction: {
-        "@type": "SearchAction",
-        target: `${absoluteUrl("/search")}?q={search_term_string}`,
-        "query-input": "required name=search_term_string",
+function getStructuredData(locale: "en" | "ar") {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        name: SEO.siteName,
+        url: absoluteUrl("/"),
+        logo: absoluteUrl("/icon.svg"),
       },
-    },
-  ],
+      {
+        "@type": "WebSite",
+        name: SEO.siteName,
+        url: absoluteUrl("/"),
+        potentialAction: {
+          "@type": "SearchAction",
+          target: `${absoluteUrl("/search")}?q={search_term_string}`,
+          "query-input": "required name=search_term_string",
+        },
+      },
+      {
+        "@type": "SoftwareApplication",
+        name: SEO.siteName,
+        url: absoluteUrl("/"),
+        operatingSystem: "Web",
+        applicationCategory: "BusinessApplication",
+        description:
+          locale === "ar"
+            ? "منصة استخبارات عقارية في الإمارات تجمع الدردشة، البحث، والخريطة داخل طبقة أدلة واحدة قابلة للتدقيق."
+            : "A UAE real estate intelligence platform with chat, search, and map surfaces backed by auditable evidence.",
+        areaServed: {
+          "@type": "Country",
+          name: "United Arab Emirates",
+        },
+        availableLanguage: ["en", "ar"],
+        featureList:
+          locale === "ar"
+            ? ["دردشة مدعومة بالأدلة", "بحث المشاريع", "خريطة السوق", "معرفات الطلب", "توثيق معماري عام"]
+            : ["Evidence-backed chat", "Project search", "Spatial market map", "Request IDs", "Public architecture docs"],
+      },
+    ],
+  }
 }
 
 function getTrustMarkers(locale: "en" | "ar") {
@@ -109,6 +134,220 @@ function getAutomationCards(locale: "en" | "ar") {
       ]
 }
 
+function getSurfaceCards(locale: "en" | "ar") {
+  return locale === "ar"
+    ? [
+        {
+          icon: MessageSquare,
+          title: "الدردشة",
+          body: "ابدأ من سؤال مباشر واحصل على حكم مدعوم بالأدلة مع معرف طلب واضح.",
+          href: "/chat",
+        },
+        {
+          icon: Search,
+          title: "البحث",
+          body: "افحص السوق والمشاريع والفلاتر من سطح مخصص للتحليل المقارن.",
+          href: "/search",
+        },
+        {
+          icon: Map,
+          title: "الخريطة",
+          body: "اقرأ العائد والسعر وكثافة المشاريع من منظور مكاني مباشر.",
+          href: "/map",
+        },
+        {
+          icon: CreditCard,
+          title: "الأسعار",
+          body: "افهم ما هو مجاني، وما الذي يفتح التعاون والتكامل المؤسسي.",
+          href: "/pricing",
+        },
+        {
+          icon: Server,
+          title: "الحالة",
+          body: "راجع صحة المنصة، حداثة البيانات، وأهداف الاستقرار التشغيلية.",
+          href: "/status",
+        },
+        {
+          icon: BookOpen,
+          title: "التوثيق",
+          body: "اقرأ المعمارية، طبقة الأدلة، ونموذج القرار قبل الاعتماد.",
+          href: "/docs/documentation",
+        },
+      ]
+    : [
+        {
+          icon: MessageSquare,
+          title: "Chat",
+          body: "Start with a direct question and get an evidence-backed verdict with a request ID.",
+          href: "/chat",
+        },
+        {
+          icon: Search,
+          title: "Search",
+          body: "Screen markets, projects, and filters from a dedicated comparison surface.",
+          href: "/search",
+        },
+        {
+          icon: Map,
+          title: "Map",
+          body: "Read yield, price, and project density from a spatial market view.",
+          href: "/map",
+        },
+        {
+          icon: CreditCard,
+          title: "Pricing",
+          body: "See what is free, and what unlocks branding, collaboration, and enterprise delivery.",
+          href: "/pricing",
+        },
+        {
+          icon: Server,
+          title: "Status",
+          body: "Review system health, data freshness, and operating targets before rollout.",
+          href: "/status",
+        },
+        {
+          icon: BookOpen,
+          title: "Docs",
+          body: "Read the architecture, evidence model, and decision workflow before relying on outputs.",
+          href: "/docs/documentation",
+        },
+      ]
+}
+
+function getTrustProofCards(locale: "en" | "ar") {
+  return locale === "ar"
+    ? [
+        {
+          title: "دليل البيانات",
+          body: "طبقات الأدلة، TableSpec، وقرار التصفية كلها موثقة ومفتوحة للمراجعة.",
+          href: "/docs/documentation",
+        },
+        {
+          title: "الحالة والتشغيل",
+          body: "صفحة الحالة تعرض حداثة البيانات، توفر الخدمات، وأهداف التشغيل.",
+          href: "/status",
+        },
+        {
+          title: "الحوكمة والخصوصية",
+          body: "راجع الخصوصية والشروط ومسؤولية الاعتماد قبل دمج المنصة في مساراتك.",
+          href: "/privacy",
+        },
+        {
+          title: "طبقة المؤسسة",
+          body: "راجع البنية، الـ API، وتكامل الفريق قبل الإطلاق أو التوسعة.",
+          href: "/enterprise",
+        },
+      ]
+    : [
+        {
+          title: "Data methodology",
+          body: "Evidence layers, TableSpec behavior, and filtering rules are documented and reviewable.",
+          href: "/docs/documentation",
+        },
+        {
+          title: "Status and operations",
+          body: "System health, data freshness, and operating targets are exposed on the public status surface.",
+          href: "/status",
+        },
+        {
+          title: "Governance and privacy",
+          body: "Privacy, terms, and reliance language are explicit before you adopt the platform.",
+          href: "/privacy",
+        },
+        {
+          title: "Enterprise layer",
+          body: "Architecture, API delivery, and team rollout paths are visible before procurement.",
+          href: "/enterprise",
+        },
+      ]
+}
+
+function getResourceCards(locale: "en" | "ar") {
+  return locale === "ar"
+    ? [
+        {
+          title: "Decision Tunnel",
+          body: "شرح كيف تتحول النية إلى TableSpec ثم إلى أدلة وحكم ومخرج نهائي.",
+          href: "/docs/decision-engine-summary",
+        },
+        {
+          title: "Evidence Stack",
+          body: "راجع طبقات L1-L5 وما الذي يُعد حقيقة نهائية مقابل إشارة خام.",
+          href: "/docs/source-of-truth-registry",
+        },
+        {
+          title: "تقارير ومكتبة",
+          body: "ادخل إلى تقارير المكتبة وصفحات الشرح العميق لتقييم المنتج بالكامل.",
+          href: "/library/reports",
+        },
+      ]
+    : [
+        {
+          title: "Decision Tunnel",
+          body: "See how user intent becomes TableSpec, evidence, judgment, and a final artifact.",
+          href: "/docs/decision-engine-summary",
+        },
+        {
+          title: "Evidence Stack",
+          body: "Review L1-L5 trust boundaries and what qualifies as canonical truth.",
+          href: "/docs/source-of-truth-registry",
+        },
+        {
+          title: "Reports and library",
+          body: "Use the report library and long-form docs to evaluate the platform in depth.",
+          href: "/library/reports",
+        },
+      ]
+}
+
+function getProofCounters(locale: "en" | "ar", docsCount: number, libraryCount: number) {
+  return locale === "ar"
+    ? [
+        {
+          label: "المشاريع المقيّمة",
+          value: "2.8K+",
+          body: "طبقة العرض تسحب من نفس العمود الفقري المستخدم في البحث والخريطة والدردشة.",
+        },
+        {
+          label: "صفحات توثيق عامة",
+          value: `${docsCount}+`,
+          body: "المعمارية، طبقات الأدلة، ونموذج القرار متاحة قبل التعاقد أو الدمج.",
+        },
+        {
+          label: "تقارير ومكتبة",
+          value: `${libraryCount}+`,
+          body: "قراءات معمقة وتقارير طويلة مرتبطة بنفس طبقة البيانات.",
+        },
+        {
+          label: "أسطح ثقة علنية",
+          value: "4",
+          body: "الحالة، التوثيق، الخصوصية، والشروط متاحة علناً وتربط حدود الاعتماد.",
+        },
+      ]
+    : [
+        {
+          label: "Scored assets",
+          value: "2.8K+",
+          body: "Chat, Search, and Map all read from the same underlying inventory and scoring spine.",
+        },
+        {
+          label: "Public docs",
+          value: `${docsCount}+`,
+          body: "Architecture, evidence rules, and the decision model are visible before rollout.",
+        },
+        {
+          label: "Library deep dives",
+          value: `${libraryCount}+`,
+          body: "Reports and long-form market reads are linked from the product, not hidden behind sales copy.",
+        },
+        {
+          label: "Trust surfaces",
+          value: "4",
+          body: "Status, docs, privacy, and terms are public and define the platform's reliance boundaries.",
+        },
+      ]
+}
+
 const API_PAYLOAD_PREVIEW = {
   project: "Marina Vista",
   area: "Dubai Marina",
@@ -128,8 +367,27 @@ const API_PAYLOAD_PREVIEW = {
 export default async function HomePage() {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
+  const structuredDataObj = getStructuredData(locale)
   const trustMarkers = getTrustMarkers(locale)
   const automationCards = getAutomationCards(locale)
+  const surfaceCards = getSurfaceCards(locale)
+  const trustProofCards = getTrustProofCards(locale)
+  const resourceCards = getResourceCards(locale)
+  const proofCounters = getProofCounters(locale, docsArticles.length, libraryArticles.length)
+  const goldenPathShortcuts = [
+    {
+      label: isArabic ? "اكتب موقع تطوير" : "Underwrite Development Site",
+      href: prefixLocalePath("/chat?goldenPath=underwrite_development_site", locale),
+    },
+    {
+      label: isArabic ? "قارن عوائد المناطق" : "Compare Area Yields",
+      href: prefixLocalePath("/chat?goldenPath=compare_area_yields", locale),
+    },
+    {
+      label: isArabic ? "صياغة SPA" : "Draft SPA Contract",
+      href: prefixLocalePath("/chat?goldenPath=draft_spa_contract", locale),
+    },
+  ]
 
   const pulse = await getMarketPulseSummary().catch(() => ({
     data_as_of: new Date().toISOString(),
@@ -212,33 +470,21 @@ export default async function HomePage() {
           syncLabel={syncLabel}
         />
 
-        <section className="mt-20">
-          <div className="mb-8 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
-              {isArabic ? "كيف يعمل المحرك" : "How the engine works"}
-            </p>
-            <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
-              {isArabic
-                ? "إشارة → أدلة → حكم → تنفيذ"
-                : "Signal → Evidence → Judgment → Action"}
-            </h2>
-            <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
-              {isArabic
-                ? "كل حكم يعود إلى مصدره. ليست درجات غامضة؛ بل مخرجات قابلة للتدقيق من أول إشارة حتى التنفيذ."
-                : "Every verdict traces back to source. No black-box scores. Every output is auditable from first signal to execution."}
-            </p>
-          </div>
-          <DecisionTunnelStepper />
-        </section>
+        <GoldenPathsSection shortcuts={goldenPathShortcuts} />
 
-        <section className="mt-10 rounded-2xl border border-border bg-card px-6 py-5">
+        <section className="mt-6 rounded-2xl border border-border bg-card px-6 py-5">
           <div className="flex flex-col gap-5 md:flex-row md:items-center">
             <ShieldCheck className="h-8 w-8 shrink-0 text-primary/70" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground">
                 {isArabic
-                  ? "علامات ثقة تشغيلية عبر كل خطوة"
-                  : "Operational trust markers across every stage"}
+                  ? "شريط الثقة للتشغيل والإثبات"
+                  : "Trust bar for evidence-backed operations"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {isArabic
+                  ? `${totalProjects} أصل مقيّم · ${buySignals} إشارة BUY مباشرة · آخر تحديث ${syncLabel}`
+                  : `${totalProjects} scored assets · ${buySignals} live BUY signals · last refresh ${syncLabel}`}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {trustMarkers.map((marker) => (
@@ -258,6 +504,63 @@ export default async function HomePage() {
               {isArabic ? "كيف تعمل الأدلة" : "See evidence model"}
               <ArrowRight className="h-3 w-3" />
             </Link>
+          </div>
+        </section>
+
+        <section className="mt-20">
+          <div className="mb-8 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
+              {isArabic ? "كيف يعمل المحرك" : "How the engine works"}
+            </p>
+            <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
+              {isArabic
+                ? "إشارة → أدلة → حكم → تنفيذ"
+                : "Signal → Evidence → Judgment → Action"}
+            </h2>
+            <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
+              {isArabic
+                ? "كل حكم يعود إلى مصدره. ليست درجات غامضة؛ بل مخرجات قابلة للتدقيق من أول إشارة حتى التنفيذ."
+                : "Every verdict traces back to source. No black-box scores. Every output is auditable from first signal to execution."}
+            </p>
+          </div>
+          <DecisionTunnelStepper />
+        </section>
+
+        <section className="mt-20 rounded-3xl border border-border bg-card/60 p-8 md:p-10">
+          <div className="mb-8">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
+              {isArabic ? "هندسة الاستخدام" : "Platform architecture"}
+            </p>
+            <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
+              {isArabic ? "ابدأ من السطح الصحيح" : "Start from the right surface"}
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              {isArabic
+                ? "الدردشة للقرار، والبحث للمقارنة، والخريطة للقراءة المكانية. ثم تنتقل إلى الأسعار والحالة والتوثيق عندما تحتاج الاعتماد أو التكامل."
+                : "Chat handles intent, Search handles comparison, and Map handles spatial reading. Pricing, Status, and Docs support adoption, rollout, and procurement."}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {surfaceCards.map((card) => {
+              const Icon = card.icon
+              return (
+                <Link
+                  key={card.title}
+                  href={prefixLocalePath(card.href, locale)}
+                  className="group rounded-2xl border border-border/60 bg-background/50 p-5 transition hover:border-primary/30 hover:bg-background"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-4 text-base font-semibold text-foreground">{card.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{card.body}</p>
+                  <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-primary">
+                    {isArabic ? "افتح السطح" : "Open surface"}
+                    <ArrowRight className="h-3 w-3" />
+                  </span>
+                </Link>
+              )
+            })}
           </div>
         </section>
 
@@ -394,6 +697,80 @@ export default async function HomePage() {
               jsonPayload={API_PAYLOAD_PREVIEW}
               href="/properties"
             />
+          </div>
+        </section>
+
+        <section className="mt-20 grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-3xl border border-border bg-card/60 p-8 md:p-10">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
+              {isArabic ? "الثقة والاعتماد" : "Trust and adoption"}
+            </p>
+            <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
+              {isArabic ? "لا تعتمد على الواجهة فقط" : "Trust is operational, not cosmetic"}
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              {isArabic
+                ? "المستندات، الحالة، والحوكمة متاحة علناً حتى يعرف الفريق كيف تُنتج المنصة الحكم وما حدود الاعتماد عليه."
+                : "Docs, status, and governance are public so teams can inspect how verdicts are produced and where reliance boundaries sit."}
+            </p>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {trustProofCards.map((card) => (
+                <Link
+                  key={card.title}
+                  href={prefixLocalePath(card.href, locale)}
+                  className="rounded-2xl border border-border/60 bg-background/50 p-5 transition hover:border-primary/30 hover:bg-background"
+                >
+                  <h3 className="text-sm font-semibold text-foreground">{card.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{card.body}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-border bg-card/60 p-8 md:p-10">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
+              {isArabic ? "تعلم وتحقق" : "Learn and verify"}
+            </p>
+            <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
+              {isArabic ? "المحتوى العميق متاح من البداية" : "Deep content is linked from the core flow"}
+            </h2>
+            <div className="mt-6 space-y-4">
+              {resourceCards.map((card) => (
+                <Link
+                  key={card.title}
+                  href={prefixLocalePath(card.href, locale)}
+                  className="block rounded-2xl border border-border/60 bg-background/50 p-5 transition hover:border-primary/30 hover:bg-background"
+                >
+                  <h3 className="text-sm font-semibold text-foreground">{card.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{card.body}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-20 rounded-3xl border border-border bg-card/60 p-8 md:p-10">
+          <div className="max-w-3xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
+              {isArabic ? "دليل علني" : "Public proof"}
+            </p>
+            <h2 className="mt-2 font-serif text-2xl font-medium text-foreground md:text-3xl">
+              {isArabic ? "إشارات الثقة مبنية على أسطح قابلة للمراجعة" : "Trust signals come from reviewable surfaces"}
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              {isArabic
+                ? "لا نعتمد على ادعاءات غامضة. نربط الثقة بالحالة العامة، التوثيق، السياسات، والمحتوى العميق الذي يمكن مراجعته قبل اتخاذ القرار."
+                : "Trust is not handled with vague claims. It is tied to public status, architecture documentation, policy pages, and deep market content that can be reviewed before adoption."}
+            </p>
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {proofCounters.map((item) => (
+              <div key={item.label} className="rounded-2xl border border-border/60 bg-background/50 p-5">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/50">{item.label}</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{item.value}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+              </div>
+            ))}
           </div>
         </section>
       </div>

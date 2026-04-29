@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server"
+import { getRequestId } from "@/lib/api-errors"
 import { parseMarketScoreFilters } from "@/lib/market-score/filters"
 import { getMarketScoreSummary } from "@/lib/market-score/service"
 import type { MarketScoreSummary } from "@/lib/market-score/types"
 import { filtersSchema, routingSchema } from "@/lib/market-score/validators"
+import { getLatestNotebookProvenance } from "@/lib/notebook-provenance"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const SUMMARY_TIMEOUT_MS = 2500
+const PROVENANCE_TIMEOUT_MS = 500
 
 function emptySummary(): MarketScoreSummary {
   return {
@@ -37,7 +40,22 @@ function emptySummary(): MarketScoreSummary {
   }
 }
 
+async function resolveProvenanceFast() {
+  try {
+    return await Promise.race([
+      getLatestNotebookProvenance(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), PROVENANCE_TIMEOUT_MS)),
+    ])
+  } catch {
+    return null
+  }
+}
+
 export async function GET(request: Request) {
+  const requestId = getRequestId(request)
+  const provenance = await resolveProvenanceFast()
+  const runId = provenance?.run_id ?? requestId
+
   try {
     const { searchParams } = new URL(request.url)
     const { filters, routing, overrideFlags } = parseMarketScoreFilters(searchParams)
@@ -49,9 +67,44 @@ export async function GET(request: Request) {
         setTimeout(() => resolve({ ...emptySummary(), source: routing.riskProfile && routing.horizon ? "routed" : "view" }), SUMMARY_TIMEOUT_MS),
       ),
     ])
-    return NextResponse.json(summary)
+    return NextResponse.json(
+      {
+        ...summary,
+        requestId,
+        request_id: requestId,
+        run_id: runId,
+        provenance: {
+          run_id: runId,
+          snapshot_ts: provenance?.snapshot_ts ?? null,
+          sources_used: provenance?.sources_used ?? ["market_scores_v1"],
+        },
+      },
+      {
+        headers: {
+          "x-request-id": requestId,
+        },
+      },
+    )
   } catch (error) {
-    console.error("Market score summary error:", error)
-    return NextResponse.json({ ...emptySummary(), warning: "Failed to load market score summary." })
+    console.error("Market score summary error:", { requestId, error })
+    return NextResponse.json(
+      {
+        ...emptySummary(),
+        requestId,
+        request_id: requestId,
+        run_id: runId,
+        provenance: {
+          run_id: runId,
+          snapshot_ts: provenance?.snapshot_ts ?? null,
+          sources_used: provenance?.sources_used ?? ["market_scores_v1"],
+        },
+        warning: "Failed to load market score summary.",
+      },
+      {
+        headers: {
+          "x-request-id": requestId,
+        },
+      },
+    )
   }
 }

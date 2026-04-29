@@ -47,6 +47,39 @@ export default function ArtifactsPage() {
             </p>
           </header>
 
+          <section className="mb-8 rounded-2xl border border-border/70 bg-card/60 p-6">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Embed Widgets</p>
+                <h2 className="mt-2 text-2xl font-semibold text-foreground">Distribution surfaces with locked free-tier branding.</h2>
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                  Use `/api/embed` to deliver overlay-first widgets that preserve the broker page, expose only approved columns, and keep the Entrestate badge locked on free tier.
+                </p>
+              </div>
+              <div className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
+                Overlay mode • 1h cache • dual capture ready
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4">
+              {[
+                { name: "market_card", detail: "Single-asset signal card for pages and sidebars." },
+                { name: "area_table", detail: "Compact area comparison table with exposed columns only." },
+                { name: "score_badge", detail: "Confidence-safe score chip for listings and CRM views." },
+                { name: "market_pulse", detail: "Live market pulse summary for portals and newsletters." },
+              ].map((widget) => (
+                <div key={widget.name} className="rounded-xl border border-border/60 bg-background/40 p-4">
+                  <p className="font-mono text-xs text-primary">{widget.name}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{widget.detail}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-xl border border-dashed border-border/60 bg-background/30 p-4 text-xs text-muted-foreground">
+              `data-interaction="overlay"` and `data-lead-magnet="true"` are supported in `packages/embed`, with broker webhook dual-capture through `data-lead-webhook`.
+            </div>
+          </section>
+
           {loading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
