@@ -172,7 +172,7 @@ export function VerdictCard({
               {isArabic ? "سجّل الدخول لرؤية الحكم الكامل ومحركات القرار." : "Sign in to see the full verdict and decision drivers."}
             </p>
             <Link
-              href={prefixLocalePath("/plans", locale)}
+              href={prefixLocalePath("/pricing", locale)}
               className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-primary transition hover:text-primary/80"
             >
               {isArabic ? "ابدأ التجربة" : "Start free trial"}

@@ -12,6 +12,8 @@ import { prefixLocalePath } from "@/i18n/locale"
 import { formatAed } from "@/lib/format/currency"
 import { formatDate } from "@/lib/format/date"
 import { formatInteger } from "@/lib/format/number"
+import { getPlatformMetrics } from "@/lib/platform-metrics.server"
+import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
 
 export const dynamic = "force-dynamic"
 
@@ -19,12 +21,14 @@ type SearchParams = { filter?: string; sort?: string }
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
+  const metrics = await getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK)
+  const formatter = new Intl.NumberFormat(locale === "ar" ? "ar-AE" : "en-US")
 
   return {
     title:
       locale === "ar"
-        ? "موثوقية مطوري دبي — 481 مطوراً متابعاً | Entrestate"
-        : "Dubai Developer Reliability Scores — 481 Tracked | Entrestate",
+        ? `موثوقية مطوري دبي — ${formatter.format(metrics.ratedDevelopers)} مطوراً مُقيّماً | Entrestate`
+        : `Dubai Developer Reliability Scores — ${formatter.format(metrics.ratedDevelopers)} Rated | Entrestate`,
     description:
       locale === "ar"
         ? "تتبّع أداء المطورين عبر الاتساق ومعدل التسليم وسلامة المشاريع وجودة التنفيذ، مع درجات موثوقية للمطورين أصحاب السجل الموثق."

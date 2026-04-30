@@ -23,11 +23,13 @@ import {
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { TrustBar } from "@/components/decision/trust-bar"
-import { getHomepageContentSections, getMarketPulseSummary, getOutcomeIntentCounts } from "@/lib/frontend-content"
+import { getHomepageContentSections, getOutcomeIntentCounts } from "@/lib/frontend-content"
 import { formatAed } from "@/components/decision/formatters"
 import { Button } from "@/components/ui/button"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
+import { getPlatformMetrics } from "@/lib/platform-metrics.server"
+import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
 
 export const dynamic = "force-dynamic"
 
@@ -110,18 +112,15 @@ export default async function OverviewPage() {
   const isArabic = locale === "ar"
   const [homepage, pulse, intents] = await Promise.all([
     getHomepageContentSections().catch(() => ({ data_as_of: new Date().toISOString(), sections: [] })),
-    getMarketPulseSummary().catch(() => ({
-      data_as_of: new Date().toISOString(),
-      summary: { total: 0, avg_price: null, avg_yield: null, buy_signals: 0, high_confidence: 0 },
-    })),
+    getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK),
     getOutcomeIntentCounts().catch(() => ({ data_as_of: new Date().toISOString(), rows: [] })),
   ])
 
-  const totalProjects = pulse.summary.total || 2813
-  const highConfidence = pulse.summary.high_confidence || 0
-  const buySignals = pulse.summary.buy_signals || 136
-  const avgPrice = pulse.summary.avg_price
-  const avgYield = pulse.summary.avg_yield
+  const totalProjects = pulse.totalProjects
+  const highConfidence = pulse.highConfidence
+  const buySignals = pulse.buySignals
+  const avgPrice = pulse.avgPrice
+  const avgYield = pulse.avgYield
   const highConfidencePct = totalProjects > 0 ? (highConfidence / totalProjects) * 100 : 0
   const buyPct = totalProjects > 0 ? (buySignals / totalProjects) * 100 : 0
 

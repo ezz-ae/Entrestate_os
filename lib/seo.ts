@@ -14,9 +14,9 @@ const SEO_COPY: Record<AppLocale, { defaultTitle: string; defaultDescription: st
   en: {
     defaultTitle: SEO.defaultTitle,
     defaultDescription: SEO.defaultDescription,
-    homeTitle: "Dubai Real Estate Intelligence — DLD Data, Scored Projects | Entrestate",
+    homeTitle: "Dubai Real Estate Intelligence — DLD Data and Scored Projects | Entrestate",
     homeDescription:
-      "36,841 DLD transactions, 2,812 scored projects, and 167 area profiles in one Dubai real estate intelligence platform with evidence-backed verdicts.",
+      "Evidence-backed UAE real estate intelligence with DLD-linked market analysis, scored projects, area coverage, and auditable verdicts.",
     ogAlt: "Entrestate platform overview",
   },
   ar: {
@@ -35,13 +35,16 @@ export function getSeoCopy(locale: AppLocale) {
 }
 
 export function getOpenGraphLocale(locale: AppLocale) {
-  return locale === "ar" ? "ar_AE" : "en_US"
+  return locale === "ar" ? "ar_AE" : "en_AE"
 }
 
 export function getLocaleAlternates(path: string = "/") {
   return {
     canonical: prefixLocalePath(path, defaultLocale),
-    languages: Object.fromEntries(locales.map((locale) => [locale, prefixLocalePath(path, locale)])),
+    languages: Object.fromEntries([
+      ...locales.map((locale) => [locale, prefixLocalePath(path, locale)]),
+      ["x-default", prefixLocalePath(path, defaultLocale)],
+    ]),
   }
 }
 

@@ -14,115 +14,121 @@ import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 const USER_TYPES = {
   en: [
     {
-      id: "solo-analyst",
+      id: "pro",
       icon: User,
-      title: "Solo Analyst",
+      title: "Pro",
       badge: "$299/mo",
       badgeColor: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-      description: "Research-grade access for independent investors and analysts.",
+      description: "Evidence-backed research access for independent investors and operators.",
       features: [
         "Decision Terminal access",
         "L1 Canonical data provenance",
-        "Unlimited investor memo generation",
-        "BUY / HOLD / WAIT timing signals",
+        "Search, map, and scored project screening",
+        "Investor memo generation",
+        "BUY / HOLD / WAIT verdict access",
         "DLD transaction history & benchmarks",
         "Standard Entrestate branding",
       ],
-      cta: "Subscribe Now",
-      href: "/api/billing/checkout?tier=solo",
+      cta: "Start Pro plan",
+      href: "/api/billing/checkout?tier=pro",
+      isExternal: true,
     },
     {
-      id: "realtor-pro",
+      id: "team",
       icon: Briefcase,
-      title: "Realtor Pro",
-      badge: "$499/mo",
+      title: "Team",
+      badge: "$999/mo",
       badgeColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-      description: "Client-ready intelligence with branded outputs for advisory teams.",
+      description: "Shared intelligence workflows with branded outputs for advisory and brokerage teams.",
       features: [
-        "Everything in Solo Analyst",
+        "Everything in Pro",
+        "Light team workspace",
         "Personal + Entrestate branded outputs",
         "Branded Infographic Mode",
         "Client-ready PDF exports",
-        "Developer due diligence reports",
         "Priority response processing",
       ],
-      cta: "Subscribe Now",
-      href: "/api/billing/checkout?tier=realtor",
+      cta: "Start Team plan",
+      href: "/api/billing/checkout?tier=team",
+      isExternal: true,
     },
     {
-      id: "enterprise-os",
+      id: "institutional",
       icon: Building2,
-      title: "Entrestate OS",
-      badge: "$2,500/mo+",
+      title: "Institutional",
+      badge: "Annual contract",
       badgeColor: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-      description: "White-label platform deployment for firms, teams, and API delivery.",
+      description: "White-label platform deployment, governed API delivery, and rollout support for firms.",
       features: [
         "Full firm branding (White-label)",
         "Automation Studio (Scheduled Workers)",
         "Enterprise API Substrate access",
-        "5+ User seats with RBAC",
+        "RBAC and governed team controls",
         "Portfolio-level monitoring",
         "24/7 Priority institutional support",
       ],
-      cta: "See Infrastructure",
-      href: "/infrastructure",
+      cta: "Talk to sales",
+      href: "/contact",
       highlight: true,
     },
   ],
   ar: [
     {
-      id: "solo-analyst",
+      id: "pro",
       icon: User,
-      title: "المحلل المستقل",
+      title: "الخطة الاحترافية",
       badge: "299$/شهرياً",
       badgeColor: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-      description: "وصول بحثي احترافي للمستثمرين والمحللين المستقلين.",
+      description: "وصول احترافي مدعوم بالأدلة للمستثمرين والمشغلين المستقلين.",
       features: [
         "وصول إلى محطة القرار",
         "توثيق بيانات L1 Canonical",
-        "إنشاء مذكرات استثمار غير محدودة",
-        "إشارات الشراء والانتظار",
+        "البحث والخريطة وفرز المشاريع المصنفة",
+        "إنشاء مذكرات استثمار",
+        "الوصول إلى أحكام BUY / HOLD / WAIT",
         "سجل معاملات DLD والمعايير",
         "علامة Entrestate القياسية",
       ],
-      cta: "اشترك الآن",
-      href: "/api/billing/checkout?tier=solo",
+      cta: "ابدأ الخطة الاحترافية",
+      href: "/api/billing/checkout?tier=pro",
+      isExternal: true,
     },
     {
-      id: "realtor-pro",
+      id: "team",
       icon: Briefcase,
-      title: "الوسيط المحترف",
-      badge: "499$/شهرياً",
+      title: "خطة الفريق",
+      badge: "999$/شهرياً",
       badgeColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-      description: "استخبارات جاهزة للعملاء مع مخرجات تحمل هويتك.",
+      description: "مسارات استخبارات مشتركة مع مخرجات تحمل هويتك للفرق الاستشارية والوساطة.",
       features: [
-        "كل مميزات المحلل المستقل",
+        "كل مميزات الخطة الاحترافية",
+        "مساحة فريق خفيفة",
         "مخرجات بعلامتك + علامة Entrestate",
         "وضع الإنفوجرافيك المخصص",
         "تصدير ملفات PDF جاهزة للعملاء",
-        "تقارير تدقيق المطورين",
         "أولوية في معالجة الطلبات",
       ],
-      cta: "اشترك الآن",
-      href: "/api/billing/checkout?tier=realtor",
+      cta: "ابدأ خطة الفريق",
+      href: "/api/billing/checkout?tier=team",
+      isExternal: true,
     },
     {
-      id: "enterprise-os",
+      id: "institutional",
       icon: Building2,
-      title: "Entrestate OS للمؤسسات",
-      badge: "2,500$+ /شهرياً",
+      title: "المؤسسات",
+      badge: "عقد سنوي",
       badgeColor: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-      description: "نشر White-label للشركات والفرق وحمولة API جاهزة للتكامل.",
+      description: "نشر White-label للشركات مع حمولة API محكومة ودعم إطلاق مخصص.",
       features: [
         "علامة تجارية كاملة (White-label)",
         "استوديو الأتمتة (عمال مجدولون)",
         "وصول كامل لبنية الـ API",
-        "أكثر من 5 مقاعد مع إدارة صلاحيات",
+        "إدارة صلاحيات محكومة للفرق",
         "مراقبة المحافظ الاستثمارية",
         "دعم مؤسسي ذو أولوية 24/7",
       ],
-      cta: "شاهد البنية التحتية",
-      href: "/infrastructure",
+      cta: "تحدث مع المبيعات",
+      href: "/contact",
       highlight: true,
     },
   ],
@@ -426,7 +432,7 @@ export default function PricingPage() {
               >
                 {type.highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-background shadow-lg">
-                    {isArabic ? "مدفوع" : "Paid"}
+                    {isArabic ? "المؤسسات" : "Institutional"}
                   </div>
                 )}
 
@@ -493,9 +499,9 @@ export default function PricingPage() {
                 <tr className="border-b border-border/50">
                   <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "الميزة" : "Capability"}</th>
                   <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "مجاني" : "Free"}</th>
-                  <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "Solo" : "Solo"}</th>
-                  <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "Pro" : "Pro"}</th>
-                  <th className="pb-3 font-medium text-muted-foreground">{isArabic ? "OS" : "OS"}</th>
+                  <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "احترافي" : "Pro"}</th>
+                  <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "فريق" : "Team"}</th>
+                  <th className="pb-3 font-medium text-muted-foreground">{isArabic ? "مؤسسات" : "Institutional"}</th>
                 </tr>
               </thead>
               <tbody>

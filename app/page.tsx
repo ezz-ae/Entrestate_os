@@ -6,11 +6,12 @@ import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/homepage/hero-section"
 import { GoldenPathsSection } from "@/components/homepage/golden-paths-section"
 import { DecisionTunnelStepper } from "@/components/homepage/decision-tunnel-stepper"
-import { getMarketPulseSummary } from "@/lib/frontend-content"
 import { listProperties } from "@/lib/decision-infrastructure"
 import { docsArticles } from "@/lib/docs-articles"
 import { libraryArticles } from "@/lib/library-data"
 import { SEO, absoluteUrl, getLocaleAlternates, getSeoCopy } from "@/lib/seo"
+import { getPlatformMetrics } from "@/lib/platform-metrics.server"
+import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { VerdictCard } from "@/components/platform/verdict-card"
@@ -20,27 +21,33 @@ export const dynamic = "force-dynamic"
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
   const copy = getSeoCopy(locale)
+  const metrics = await getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK)
+  const formatter = new Intl.NumberFormat(locale === "ar" ? "ar-AE" : "en-US")
+  const homeDescription = locale === "ar"
+    ? `${formatter.format(metrics.dldTransactions)} معاملة DLD، و${formatter.format(metrics.totalProjects)} مشروعاً مقيّماً، و${formatter.format(metrics.totalAreas)} ملف منطقة، و${formatter.format(metrics.ratedDevelopers)} مطوراً مُقيّماً داخل منصة استخبارات عقارية مدعومة بالأدلة.`
+    : `${formatter.format(metrics.dldTransactions)} DLD transactions, ${formatter.format(metrics.totalProjects)} scored projects, ${formatter.format(metrics.totalAreas)} area profiles, and ${formatter.format(metrics.ratedDevelopers)} rated developers in one evidence-backed UAE real estate intelligence platform.`
 
   return {
     title: copy.homeTitle,
-    description: copy.homeDescription,
+    description: homeDescription,
     alternates: getLocaleAlternates("/"),
     openGraph: {
       title: copy.homeTitle,
-      description: copy.homeDescription,
+      description: homeDescription,
       url: getLocaleAlternates("/").languages?.[locale],
       images: [absoluteUrl(SEO.defaultOgImagePath)],
     },
     twitter: {
       card: "summary_large_image",
       title: copy.homeTitle,
-      description: copy.homeDescription,
+      description: homeDescription,
       images: [absoluteUrl(SEO.defaultOgImagePath)],
     },
   }
 }
 
 function getStructuredData(locale: "en" | "ar") {
+  const localizedSearchUrl = absoluteUrl(prefixLocalePath("/search", locale))
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -56,7 +63,7 @@ function getStructuredData(locale: "en" | "ar") {
         url: absoluteUrl("/"),
         potentialAction: {
           "@type": "SearchAction",
-          target: `${absoluteUrl("/search")}?q={search_term_string}`,
+          target: `${localizedSearchUrl}?q={search_term_string}`,
           "query-input": "required name=search_term_string",
         },
       },
@@ -86,8 +93,8 @@ function getStructuredData(locale: "en" | "ar") {
 
 function getTrustMarkers(locale: "en" | "ar") {
   return locale === "ar"
-    ? ["Canonical DLD", "Verified Records", "Auditable Lineage", "SOC 2 Ready"]
-    : ["Canonical DLD", "Verified Records", "Auditable Lineage", "SOC 2 Ready"]
+    ? ["Canonical DLD", "Verified Records", "Auditable Lineage", "Governed Access"]
+    : ["Canonical DLD", "Verified Records", "Auditable Lineage", "Governed Access"]
 }
 
 function getAutomationCards(locale: "en" | "ar") {
@@ -389,10 +396,7 @@ export default async function HomePage() {
     },
   ]
 
-  const pulse = await getMarketPulseSummary().catch(() => ({
-    data_as_of: new Date().toISOString(),
-    summary: { total: 2812, avg_price: null, avg_yield: null, buy_signals: 136, high_confidence: 0 },
-  }))
+  const metrics = await getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK)
   const featured = await listProperties({
     page: 1,
     pageSize: 1,
@@ -406,11 +410,9 @@ export default async function HomePage() {
     pageSize: 1,
   }))
 
-  const totalProjects = pulse.summary.total || 2812
-  const avgMarketPrice = typeof pulse.summary.avg_price === "number" && Number.isFinite(pulse.summary.avg_price)
-    ? pulse.summary.avg_price
-    : null
-  const buySignals = pulse.summary.buy_signals || 357
+  const totalProjects = metrics.totalProjects
+  const avgMarketPrice = metrics.avgPrice
+  const buySignals = metrics.buySignals
   const topProject = featured.projects[0]
     ? {
         slug: String(featured.projects[0].slug),
@@ -444,7 +446,7 @@ export default async function HomePage() {
             : null,
       }
     : null
-  const syncLabel = new Date(pulse.data_as_of).toLocaleString(isArabic ? "ar-AE-u-nu-latn" : "en-AE", {
+  const syncLabel = new Date(metrics.dataAsOf).toLocaleString(isArabic ? "ar-AE-u-nu-latn" : "en-AE", {
     month: "short",
     day: "2-digit",
     hour: "2-digit",
@@ -466,6 +468,9 @@ export default async function HomePage() {
           avgMarketPrice={avgMarketPrice}
           totalProjects={totalProjects}
           buySignals={buySignals}
+          totalAreas={metrics.totalAreas}
+          ratedDevelopers={metrics.ratedDevelopers}
+          dldTransactions={metrics.dldTransactions}
           topProject={topProject}
           syncLabel={syncLabel}
         />

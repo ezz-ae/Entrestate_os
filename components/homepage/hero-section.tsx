@@ -12,6 +12,9 @@ type Props = {
   avgMarketPrice: number | null
   totalProjects: number
   buySignals: number
+  totalAreas: number
+  ratedDevelopers: number
+  dldTransactions: number
   topProject: {
     slug: string
     name: string
@@ -40,7 +43,7 @@ const COPY = {
     trustTitle: "Every verdict links back to source.",
     trustBody:
       "Confidence, timing, yield, and drivers stay visible so the output can be reviewed before it is used.",
-    trustPills: ["Canonical DLD", "Verified Records", "Auditable Lineage", "SOC 2 Ready"],
+    trustPills: ["Canonical DLD", "Verified Records", "Auditable Lineage", "Governed Access"],
     stats: {
       projects: "Projects scored",
       avgPrice: "Avg. entry price",
@@ -63,7 +66,7 @@ const COPY = {
     trustTitle: "كل حكم مرتبط بمصدره.",
     trustBody:
       "الثقة والتوقيت والعائد ومحركات النتيجة تبقى ظاهرة حتى يمكن مراجعة المخرج قبل استخدامه.",
-    trustPills: ["DLD Canonical", "سجلات موثقة", "تتبّع كامل", "SOC 2 Ready"],
+    trustPills: ["DLD Canonical", "سجلات موثقة", "تتبّع كامل", "وصول محكوم"],
     stats: {
       projects: "مشروع مقيّم",
       avgPrice: "متوسط سعر الدخول",
@@ -75,13 +78,19 @@ const COPY = {
   },
 } as const
 
-export function HeroSection({ avgMarketPrice, totalProjects, buySignals, topProject, syncLabel }: Props) {
+export function HeroSection({
+  avgMarketPrice,
+  totalProjects,
+  buySignals,
+  totalAreas,
+  ratedDevelopers,
+  dldTransactions,
+  topProject,
+  syncLabel,
+}: Props) {
   const locale = useLocale() as AppLocale
   const copy = COPY[locale] ?? COPY.en
 
-  const dldTransactions = 36841
-  const areasCount = 167
-  const developerCount = 481
   const stats = [
     {
       label: copy.stats.projects,
@@ -92,7 +101,7 @@ export function HeroSection({ avgMarketPrice, totalProjects, buySignals, topProj
       ? {
           label: copy.stats.avgPrice,
           value: formatAed(avgMarketPrice, locale, { compact: true }),
-          sublabel: locale === "ar" ? `الوسيط عبر ${formatInteger(areasCount, locale)} منطقة` : `Median across ${formatInteger(areasCount, locale)} areas`,
+          sublabel: locale === "ar" ? `الوسيط عبر ${formatInteger(totalAreas, locale)} منطقة` : `Median across ${formatInteger(totalAreas, locale)} areas`,
         }
       : null,
     {
@@ -107,12 +116,12 @@ export function HeroSection({ avgMarketPrice, totalProjects, buySignals, topProj
     },
     {
       label: copy.stats.areas,
-      value: areasCount,
+      value: totalAreas,
       sublabel: locale === "ar" ? "ثنائية اللغة، معيارية" : "Bilingual, benchmarked",
     },
     {
       label: copy.stats.developers,
-      value: developerCount,
+      value: ratedDevelopers,
       sublabel: locale === "ar" ? "مصنّفة بالموثوقية" : "Reliability-graded",
     },
   ].filter(Boolean) as Array<{ label: string; value: number | string; sublabel: string }>

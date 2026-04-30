@@ -284,7 +284,7 @@ export async function POST(request: Request) {
           error: "Free usage is cooling down. Try again once your cooldown ends.",
           upgrade_cta: {
             label: "Upgrade for uninterrupted access",
-            url: "/plans",
+            url: "/pricing",
           },
           tier: entitlement.tier,
           usage,

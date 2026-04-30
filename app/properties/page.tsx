@@ -13,6 +13,8 @@ import { formatAed } from "@/lib/format/currency"
 import { formatDate } from "@/lib/format/date"
 import { formatInteger } from "@/lib/format/number"
 import { getTranslations } from "next-intl/server"
+import { getPlatformMetrics } from "@/lib/platform-metrics.server"
+import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
 
 export const dynamic = "force-dynamic"
 
@@ -34,12 +36,14 @@ type SearchParams = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
+  const metrics = await getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK)
+  const formatter = new Intl.NumberFormat(locale === "ar" ? "ar-AE" : "en-US")
 
   return {
     title:
       locale === "ar"
-        ? "مشاريع دبي المقيّمة — بيانات DLD موثقة | Entrestate"
-        : "2,812 Scored Dubai Projects — DLD Verified | Entrestate",
+        ? `مشاريع دبي المقيّمة — ${formatter.format(metrics.totalProjects)} مشروعاً موثقاً | Entrestate`
+        : `${formatter.format(metrics.totalProjects)} Scored Dubai Projects — DLD Verified | Entrestate`,
     description:
       locale === "ar"
         ? "مشاريع مقيّمة عبر التوقيت والضغط والعائد والأدلة، مع أحكام قابلة للفحص وروابط إلى مصادرها."

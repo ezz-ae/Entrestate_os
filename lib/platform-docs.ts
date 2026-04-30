@@ -27,7 +27,7 @@ export const platformDocsSectionsEn: PlatformDocsSection[] = [
       "Investment thesis, market opportunity, competitive moat, traction metrics, and diligence-ready documentation for strategic partners and institutional capital.",
     highlights: [
       "Decision infrastructure replacing $2B+ listing portal market",
-      "2,813 active projects, 481 canonical developers, 136 BUY signals",
+      "Live scored inventory, rated developers, and evidence-backed BUY signals",
       "Evidence-first architecture creates defensible trust moat",
       "Tier-based monetization: Free, Pro, Enterprise",
     ],
@@ -102,7 +102,7 @@ export const platformDocsSectionsAr: PlatformDocsSection[] = [
       "أطروحة الاستثمار، فرص السوق، الخندق التنافسي، مقاييس الجذب، والوثائق الجاهزة للفحص للشركاء الاستراتيجيين ورؤوس الأموال المؤسسية.",
     highlights: [
       "بنية تحتية للقرار تحل محل سوق بوابات العقارات الذي تبلغ قيمته 2 مليار دولار",
-      "2,813 مشروعاً نشطاً، 75 مطوراً معتمداً، وإشارات شراء مدققة",
+      "مخزون حي مصنّف، ومطورون مقيمون، وإشارات BUY مدعومة بالأدلة",
       "بنية قائمة على الأدلة تخلق خندقاً من الثقة القابلة للدفاع عنها",
       "نموذج ربحي قائم على الفئات: مجاني، احترافي، مؤسسي",
     ],
@@ -217,7 +217,7 @@ export const mindMapBranches = [
   {
     title: "Broker Dashboard Features",
     nodes: [
-      "AI Assistant (Gemini 1.5)",
+      "AI Copilot",
       "Brochure-to-Listing Automation",
       "AI Lead Scoring (Hot/Warm/Cold)",
       "Sales Communication Coach",

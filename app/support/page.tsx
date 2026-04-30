@@ -10,6 +10,7 @@ type SupportChannel = {
   description: string
   icon: typeof Mail
   action: string
+  href?: string
 }
 
 function getSupportChannels(locale: AppLocale): SupportChannel[] {
@@ -19,19 +20,22 @@ function getSupportChannels(locale: AppLocale): SupportChannel[] {
         title: "فريق العمليات",
         description: "للأسئلة اليومية حول اللوحات، البيانات، الصلاحيات، وتدفق العمل داخل المنصة.",
         icon: Mail,
-        action: "support@entrestate.ai",
+        action: "support@entrestate.com",
+        href: "mailto:support@entrestate.com",
       },
       {
-        title: "خط الأولوية",
-        description: "مخصص للحسابات النشطة والفرق التي تحتاج متابعة مباشرة وسريعة.",
+        title: "مسار الأولوية",
+        description: "للفرق النشطة والحسابات المؤسسية التي تحتاج توجيهاً سريعاً عبر فريق Entrestate.",
         icon: PhoneCall,
-        action: "+971 55 000 0000",
+        action: "افتح مكتب التواصل المؤسسي",
+        href: "/contact",
       },
       {
         title: "مركز الوثائق",
         description: "منهجية السوق، أدلة التشغيل، وبنية المنصة في مكان واحد.",
         icon: FileText,
         action: "تصفح الوثائق",
+        href: "/docs/documentation",
       },
     ]
   }
@@ -41,19 +45,22 @@ function getSupportChannels(locale: AppLocale): SupportChannel[] {
       title: "Email support",
       description: "Reach our operations team for dashboard, data, or advisor workflow questions.",
       icon: Mail,
-      action: "support@entrestate.ai",
+      action: "support@entrestate.com",
+      href: "mailto:support@entrestate.com",
     },
     {
-      title: "Direct hotline",
-      description: "Priority support for active broker teams and enterprise accounts.",
+      title: "Priority routing",
+      description: "Enterprise accounts and active teams get routed through the contact desk for faster handling.",
       icon: PhoneCall,
-      action: "+971 55 000 0000",
+      action: "Open enterprise contact desk",
+      href: "/contact",
     },
     {
       title: "Documentation",
       description: "Read market methodology notes and workflow guides.",
       icon: FileText,
       action: "Browse docs",
+      href: "/docs/documentation",
     },
   ]
 }
@@ -88,7 +95,16 @@ export default async function SupportPage() {
                 <channel.icon className="w-5 h-5 text-accent" />
                 <h2 className="text-lg font-medium text-foreground mt-4">{channel.title}</h2>
                 <p className="text-sm text-muted-foreground mt-2">{channel.description}</p>
-                <p className="text-sm font-medium text-foreground mt-4">{channel.action}</p>
+                {channel.href ? (
+                  <Link
+                    href={channel.href.startsWith("/") ? prefixLocalePath(channel.href, locale) : channel.href}
+                    className="mt-4 inline-flex text-sm font-medium text-foreground underline underline-offset-4"
+                  >
+                    {channel.action}
+                  </Link>
+                ) : (
+                  <p className="text-sm font-medium text-foreground mt-4">{channel.action}</p>
+                )}
               </div>
             ))}
           </div>

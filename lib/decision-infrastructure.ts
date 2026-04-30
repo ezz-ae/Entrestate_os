@@ -530,6 +530,17 @@ async function getPropertySnapshotProjects(): Promise<DecisionProject[]> {
   }
 }
 
+export async function listPropertySlugs(): Promise<string[]> {
+  const projects = await getPropertySnapshotProjects()
+  return Array.from(
+    new Set(
+      projects
+        .map((project) => String(project.slug ?? "").trim())
+        .filter(Boolean),
+    ),
+  )
+}
+
 function buildAreaRowsFromPropertySnapshot(projects: DecisionProject[]): DbRow[] {
   type Accumulator = {
     area: string

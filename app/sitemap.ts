@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
 import { blogPosts } from "@/lib/blog-data"
+import { listAreas, listDevelopers, listPropertySlugs } from "@/lib/decision-infrastructure"
 import { docsArticles } from "@/lib/docs-articles"
 import { libraryArticles } from "@/lib/library-data"
 import { getSiteUrl } from "@/lib/seo"
@@ -50,13 +51,17 @@ const staticRoutes = [
   "/investor-relations",
   "/careers",
   "/media",
-  "/plans",
   "/pricing",
   "/reports",
 ]
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date()
+  const [propertySlugs, areaData, developerData] = await Promise.all([
+    listPropertySlugs().catch(() => []),
+    listAreas().catch(() => ({ areas: [] })),
+    listDevelopers().catch(() => ({ developers: [] })),
+  ])
 
   const staticEntries = locales.flatMap((locale) =>
     staticRoutes.map((route) => ({
@@ -94,5 +99,40 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   )
 
-  return [...staticEntries, ...blogEntries, ...docsArticleEntries, ...libraryEntries]
+  const propertyEntries = locales.flatMap((locale) =>
+    propertySlugs.map((slug) => ({
+      url: `${baseUrl}${prefixLocalePath(`/properties/${slug}`, locale)}`,
+      lastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.75,
+    })),
+  )
+
+  const areaEntries = locales.flatMap((locale) =>
+    areaData.areas.map((area) => ({
+      url: `${baseUrl}${prefixLocalePath(`/areas/${String(area.slug)}`, locale)}`,
+      lastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.72,
+    })),
+  )
+
+  const developerEntries = locales.flatMap((locale) =>
+    developerData.developers.map((developer) => ({
+      url: `${baseUrl}${prefixLocalePath(`/developers/${String(developer.slug)}`, locale)}`,
+      lastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.72,
+    })),
+  )
+
+  return [
+    ...staticEntries,
+    ...blogEntries,
+    ...docsArticleEntries,
+    ...libraryEntries,
+    ...propertyEntries,
+    ...areaEntries,
+    ...developerEntries,
+  ]
 }

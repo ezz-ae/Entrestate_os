@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Navbar } from "@/components/navbar"
@@ -9,8 +10,52 @@ import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { formatInteger } from "@/lib/format/number"
+import { SEO, absoluteUrl, getLocaleAlternates, getOpenGraphLocale } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const locale = await getRequestLocale()
+  const detail = await getAreaBySlug(slug)
+
+  if (!detail) {
+    return {
+      title: locale === "ar" ? "المنطقة غير موجودة | Entrestate" : "Area not found | Entrestate",
+      alternates: getLocaleAlternates(`/areas/${slug}`),
+    }
+  }
+
+  const area = detail.area
+  const profile = area.profile as Record<string, unknown> | null
+  const areaName = pickLocalizedText(locale, profile?.area_ar, area.area, locale === "ar" ? "المنطقة" : "Area")
+  const title = locale === "ar"
+    ? `${areaName} — ملف المنطقة والأدلة | Entrestate`
+    : `${areaName} — Area intelligence and evidence | Entrestate`
+  const description = locale === "ar"
+    ? `${areaName} مع متوسط السعر، ومتوسط العائد، وضغط المعروض، وفرص BUY، وروابط مباشرة إلى المشاريع النشطة والمطورين المرتبطين.`
+    : `${areaName} with average price, yield, supply pressure, BUY signals, and direct links to active projects and linked developers.`
+  const alternates = getLocaleAlternates(`/areas/${slug}`)
+
+  return {
+    title,
+    description,
+    alternates,
+    openGraph: {
+      title,
+      description,
+      locale: getOpenGraphLocale(locale),
+      url: alternates.languages?.[locale],
+      images: [absoluteUrl(SEO.defaultOgImagePath)],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [absoluteUrl(SEO.defaultOgImagePath)],
+    },
+  }
+}
 
 function slugify(value: string) {
   return value

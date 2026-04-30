@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -8,8 +9,52 @@ import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { formatInteger } from "@/lib/format/number"
+import { SEO, absoluteUrl, getLocaleAlternates, getOpenGraphLocale } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const locale = await getRequestLocale()
+  const detail = await getDeveloperBySlug(slug)
+
+  if (!detail) {
+    return {
+      title: locale === "ar" ? "المطور غير موجود | Entrestate" : "Developer not found | Entrestate",
+      alternates: getLocaleAlternates(`/developers/${slug}`),
+    }
+  }
+
+  const developer = detail.developer
+  const profile = developer.profile as Record<string, unknown> | null
+  const developerName = pickLocalizedText(locale, profile?.developer_ar, developer.developer, locale === "ar" ? "المطور" : "Developer")
+  const title = locale === "ar"
+    ? `${developerName} — موثوقية المطور وسجله | Entrestate`
+    : `${developerName} — Developer reliability and track record | Entrestate`
+  const description = locale === "ar"
+    ? `${developerName} مع درجة الموثوقية، وكفاءة التشغيل، وعدد المشاريع، والتواجد الجغرافي، وروابط مباشرة إلى المشاريع المتصلة.`
+    : `${developerName} with reliability score, operating efficiency, project count, area presence, and direct links to connected projects.`
+  const alternates = getLocaleAlternates(`/developers/${slug}`)
+
+  return {
+    title,
+    description,
+    alternates,
+    openGraph: {
+      title,
+      description,
+      locale: getOpenGraphLocale(locale),
+      url: alternates.languages?.[locale],
+      images: [absoluteUrl(SEO.defaultOgImagePath)],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [absoluteUrl(SEO.defaultOgImagePath)],
+    },
+  }
+}
 
 function slugify(value: string) {
   return value

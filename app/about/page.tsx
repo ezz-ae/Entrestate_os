@@ -5,8 +5,8 @@ import { Footer } from "@/components/footer"
 import { ArrowRight, Shield, Eye, Scale, BookOpen } from "lucide-react"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
-import { getMarketPulseSummary } from "@/lib/frontend-content"
-import { listDevelopers } from "@/lib/decision-infrastructure"
+import { getPlatformMetrics } from "@/lib/platform-metrics.server"
+import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
 import { formatInteger } from "@/lib/format/number"
 
 export const dynamic = "force-dynamic"
@@ -79,29 +79,20 @@ export default async function AboutPage() {
   const isArabic = locale === "ar"
   const principles = getPrinciples(locale)
 
-  const [pulse, developerData] = await Promise.all([
-    getMarketPulseSummary().catch(() => ({
-      data_as_of: new Date().toISOString(),
-      summary: { total: 0, avg_price: null, avg_yield: null, buy_signals: 0, high_confidence: 0 },
-    })),
-    listDevelopers().catch(() => ({ developers: [], data_as_of: null })),
-  ])
-
-  const projectsScored = pulse.summary.total > 0 ? pulse.summary.total : 0
-  const scoredDevelopers = developerData.developers.length
+  const metrics = await getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK)
 
   const stats = isArabic
     ? [
         { value: formatInteger(3, locale), label: "إمارات" },
-        { value: formatInteger(projectsScored, locale), label: "مشروع مُقيَّم" },
-        { value: formatInteger(scoredDevelopers, locale), label: "مطور بدرجة موثوقية" },
-        { value: formatInteger(36841, locale), label: "معاملة DLD" },
+        { value: formatInteger(metrics.totalProjects, locale), label: "مشروع مُقيَّم" },
+        { value: formatInteger(metrics.ratedDevelopers, locale), label: "مطور بدرجة موثوقية" },
+        { value: formatInteger(metrics.dldTransactions, locale), label: "معاملة DLD" },
       ]
     : [
         { value: formatInteger(3, locale), label: "Emirates" },
-        { value: formatInteger(projectsScored, locale), label: "Projects scored" },
-        { value: formatInteger(scoredDevelopers, locale), label: "Reliability-scored developers" },
-        { value: formatInteger(36841, locale), label: "DLD transactions" },
+        { value: formatInteger(metrics.totalProjects, locale), label: "Projects scored" },
+        { value: formatInteger(metrics.ratedDevelopers, locale), label: "Reliability-scored developers" },
+        { value: formatInteger(metrics.dldTransactions, locale), label: "DLD transactions" },
       ]
 
   return (

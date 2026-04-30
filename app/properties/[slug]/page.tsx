@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Footer } from "@/components/footer"
@@ -11,8 +12,53 @@ import { getRequestLocale } from "@/i18n/request"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { formatInteger } from "@/lib/format/number"
 import { getProjectBySlug } from "@/lib/decision-infrastructure"
+import { SEO, absoluteUrl, getLocaleAlternates, getOpenGraphLocale } from "@/lib/seo"
 
 export const dynamic = "force-dynamic"
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const locale = await getRequestLocale()
+  const detail = await getProjectBySlug(slug)
+
+  if (!detail) {
+    return {
+      title: locale === "ar" ? "المشروع غير موجود | Entrestate" : "Project not found | Entrestate",
+      alternates: getLocaleAlternates(`/properties/${slug}`),
+    }
+  }
+
+  const project = detail.project
+  const name = String(project.name ?? project.project_name ?? "Project").trim()
+  const area = pickLocalizedText(locale, project.area_ar, project.final_area ?? project.area, locale === "ar" ? "دبي" : "Dubai")
+  const developer = pickLocalizedText(locale, project.developer_ar, project.developer, locale === "ar" ? "المطور" : "Developer")
+  const title = locale === "ar"
+    ? `${name} — تقييم المشروع والأدلة | Entrestate`
+    : `${name} — Project score and evidence | Entrestate`
+  const description = locale === "ar"
+    ? `${name} في ${area} من ${developer}. راجع الحكم المدعوم بالأدلة، إشارة التوقيت، طبقة الضغط، وحسابات العائد من صفحة المشروع الكاملة.`
+    : `${name} in ${area} by ${developer}. Review the evidence-backed verdict, timing signal, stress layer, and yield calculations from the full project page.`
+  const alternates = getLocaleAlternates(`/properties/${slug}`)
+
+  return {
+    title,
+    description,
+    alternates,
+    openGraph: {
+      title,
+      description,
+      locale: getOpenGraphLocale(locale),
+      url: alternates.languages?.[locale],
+      images: [absoluteUrl(SEO.defaultOgImagePath)],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [absoluteUrl(SEO.defaultOgImagePath)],
+    },
+  }
+}
 
 function toNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value

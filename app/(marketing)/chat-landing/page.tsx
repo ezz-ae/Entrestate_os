@@ -7,6 +7,7 @@ import { useRef } from "react"
 import { Footer } from "@/components/footer"
 import { MarqueePrompts } from "@/components/marketing/marquee-prompts"
 import { MarketingLLMInput } from "@/components/marketing/marketing-llm-input"
+import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
 import { ArrowRight, Command, Scale, Search, FileText, SlidersHorizontal, Gauge, ShieldAlert, BarChart3, Database, History, Activity, TrendingUp, MapPin, Building2, Users, Zap, Brain } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -16,13 +17,13 @@ const NAV_LINKS = {
   en: [
     { label: "Platform", href: "/overview" },
     { label: "Intelligence", href: "/ai" },
-    { label: "Enterprise", href: "/plans" },
+    { label: "Enterprise", href: "/pricing" },
     { label: "Pricing", href: "/pricing" },
   ],
   ar: [
     { label: "المنصة", href: "/overview" },
     { label: "التحليل", href: "/ai" },
-    { label: "المؤسسات", href: "/plans" },
+    { label: "المؤسسات", href: "/pricing" },
     { label: "الأسعار", href: "/pricing" },
   ],
 }
@@ -52,21 +53,6 @@ const commands = {
   ],
 }
 
-const stats = {
-  en: [
-    { value: "2,812", label: "Scored Projects", icon: Building2 },
-    { value: "167",   label: "Areas Covered",   icon: MapPin },
-    { value: "36,841",  label: "DLD Transactions", icon: TrendingUp },
-    { value: "75",   label: "Developers Rated", icon: Users },
-  ],
-  ar: [
-    { value: "٢٬٨١٢", label: "مشروع مُصنّف",       icon: Building2 },
-    { value: "١٦٧",   label: "منطقة مغطاة",        icon: MapPin },
-    { value: "٣٦٬٨٤١", label: "معاملة DLD",       icon: TrendingUp },
-    { value: "٧٥",   label: "مطور مُقيَّم",        icon: Users },
-  ],
-}
-
 const features = {
   en: [
     {
@@ -82,7 +68,7 @@ const features = {
     {
       icon: Building2,
       title: "Developer Reliability",
-      desc: "75 developers rated by delivery reliability, track record, and market positioning.",
+      desc: "Rated developer coverage across delivery reliability, track record, and market positioning.",
     },
   ],
   ar: [
@@ -99,7 +85,7 @@ const features = {
     {
       icon: Building2,
       title: "ملف المطورين",
-      desc: "٧٥ مطوراً مُقيَّماً بموثوقية التسليم والسجل والموقع السوقي.",
+      desc: "تغطية المطورين المُقيَّمين عبر موثوقية التسليم والسجل والموقع السوقي.",
     },
   ],
 }
@@ -171,10 +157,17 @@ const itemVariants = {
 export default function ChatLandingPage() {
   const locale  = useLocale()
   const isRTL   = locale === "ar"
+  const metrics = usePlatformMetrics()
+  const formatter = new Intl.NumberFormat(isRTL ? "ar-AE" : "en-US")
   const copy    = isRTL ? COPY.ar : COPY.en
   const navLinks = isRTL ? NAV_LINKS.ar : NAV_LINKS.en
   const cmds     = isRTL ? commands.ar : commands.en
-  const st       = isRTL ? stats.ar : stats.en
+  const st = [
+    { value: formatter.format(metrics.totalProjects), label: isRTL ? "مشروع مُصنّف" : "Scored Projects", icon: Building2 },
+    { value: formatter.format(metrics.totalAreas), label: isRTL ? "منطقة مغطاة" : "Areas Covered", icon: MapPin },
+    { value: formatter.format(metrics.dldTransactions), label: isRTL ? "معاملة DLD" : "DLD Transactions", icon: TrendingUp },
+    { value: formatter.format(metrics.ratedDevelopers), label: isRTL ? "مطور مُقيَّم" : "Developers Rated", icon: Users },
+  ]
   const feat     = isRTL ? features.ar : features.en
   const ex       = isRTL ? examples.ar : examples.en
 
@@ -261,7 +254,7 @@ export default function ChatLandingPage() {
                   <ArrowRight className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
                 </Link>
               </Button>
-              <Link href="/plans" className="group text-sm font-semibold flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+              <Link href="/pricing" className="group text-sm font-semibold flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
                 {copy.enterprise}
                 <ArrowRight className={`w-3.5 h-3.5 group-hover:translate-x-1 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : ""}`} />
               </Link>

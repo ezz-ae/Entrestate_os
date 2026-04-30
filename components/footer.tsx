@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useLocale } from "next-intl"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useNewReport, markReportSeen } from "@/hooks/use-new-report"
+import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
 import { LATEST_LIBRARY_REPORT } from "@/lib/latest-library-report"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import {
@@ -41,7 +42,7 @@ const columns = [
       { label: "Configuration Panel", href: "/settings/configuration" },
       { label: "Data Science Dashboard", href: "/workspace/data-scientist" },
       { label: "Agent Builder", href: "/apps/agent-builder" },
-      { label: "Enterprise Tiers", href: "/plans" },
+      { label: "Enterprise Tiers", href: "/pricing" },
       { label: "Changelog", href: "/changelog" },
       { label: "Roadmap", href: "/roadmap" },
     ],
@@ -83,7 +84,7 @@ const columns = [
 
 const trustBadges = [
   { icon: Database, label: "DLD Data Sourced", sub: "Dubai Land Department" },
-  { icon: ShieldCheck, label: "SOC 2 Compliant", sub: "Data security standards" },
+  { icon: ShieldCheck, label: "Governed Access", sub: "Signed requests and access controls" },
   { icon: CheckCircle2, label: "Verified Listings", sub: "Cross-referenced records" },
   { icon: MapPin, label: "UAE Market Focus", sub: "Dubai · Abu Dhabi · Sharjah" },
 ]
@@ -154,7 +155,7 @@ export function Footer() {
       badge.label,
       {
         "DLD Data Sourced": "بيانات موثقة من DLD",
-        "SOC 2 Compliant": "متوافق مع SOC 2",
+        "Governed Access": "وصول محكوم",
         "Verified Listings": "مشاريع متحقق منها",
         "UAE Market Focus": "تركيز على سوق الإمارات",
       }[badge.label] ?? badge.label,
@@ -163,7 +164,7 @@ export function Footer() {
       badge.sub,
       {
         "Dubai Land Department": "دائرة الأراضي والأملاك",
-        "Data security standards": "معايير أمن البيانات",
+        "Signed requests and access controls": "طلبات موقعة وضوابط وصول",
         "Cross-referenced records": "سجلات مطابقة",
         "Dubai · Abu Dhabi · Sharjah": "دبي · أبوظبي · الشارقة",
       }[badge.sub] ?? badge.sub,
@@ -172,37 +173,16 @@ export function Footer() {
   const { report, dismiss } = useNewReport()
   const [reportEmailSent, setReportEmailSent] = useState(false)
   const [reportSending, setReportSending] = useState(false)
-  const [projectCount, setProjectCount] = useState<number | null>(null)
+  const metrics = usePlatformMetrics()
 
   // Library report email state
   const [libraryEmail, setLibraryEmail] = useState("")
   const [libraryEmailSent, setLibraryEmailSent] = useState(false)
   const [libraryEmailSending, setLibraryEmailSending] = useState(false)
-  const projectCountText = projectCount !== null
-    ? new Intl.NumberFormat(isArabic ? "ar-AE" : "en-US").format(projectCount)
-    : t("Live", "مباشر")
-
-  useEffect(() => {
-    let active = true
-
-    fetch("/api/market-pulse")
-      .then((res) => {
-        if (!res.ok) throw new Error("Market pulse unavailable")
-        return res.json()
-      })
-      .then((data) => {
-        if (!active) return
-        const total = data?.summary?.total
-        setProjectCount(typeof total === "number" && Number.isFinite(total) ? total : null)
-      })
-      .catch(() => {
-        if (active) setProjectCount(null)
-      })
-
-    return () => {
-      active = false
-    }
-  }, [])
+  const formatter = new Intl.NumberFormat(isArabic ? "ar-AE" : "en-US")
+  const projectCountText = formatter.format(metrics.totalProjects)
+  const dldTransactionsText = formatter.format(metrics.dldTransactions)
+  const buySignalsText = formatter.format(metrics.buySignals)
 
   const handleEmailReport = async () => {
     if (!report || reportSending) return
@@ -257,14 +237,14 @@ export function Footer() {
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {t(
-                  `36,841 DLD transactions. ${projectCountText} scored projects. Research, reports, and enterprise delivery stay connected in one system.`,
-                  `36,841 معاملة DLD. ${projectCountText} مشروعاً مقيّماً. تبقى الأبحاث والتقارير وتسليم المؤسسات متصلة داخل نظام واحد.`,
+                  `${dldTransactionsText} DLD transactions. ${projectCountText} scored projects. Research, reports, and enterprise delivery stay connected in one system.`,
+                  `${dldTransactionsText} معاملة DLD. ${projectCountText} مشروعاً مقيّماً. تبقى الأبحاث والتقارير وتسليم المؤسسات متصلة داخل نظام واحد.`,
                 )}
               </p>
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 {[
                   {
-                    value: "36,841",
+                    value: dldTransactionsText,
                     label: t("DLD transactions", "معاملات DLD"),
                     sub: t("Canonical source", "مصدر مرجعي"),
                   },
@@ -274,9 +254,9 @@ export function Footer() {
                     sub: t("Engine refreshed hourly", "المحرّك يُحدَّث كل ساعة"),
                   },
                   {
-                    value: "24/7",
-                    label: t("Enterprise-ready access", "وصول مؤسسي جاهز"),
-                    sub: t("SOC 2 posture", "جاهزية SOC 2"),
+                    value: buySignalsText,
+                    label: t("BUY signals", "إشارات BUY"),
+                    sub: t("Evidence-backed windows", "نوافذ مدعومة بالأدلة"),
                   },
                 ].map((item) => (
                   <div key={item.label} className="rounded-2xl border border-border/60 bg-card/40 px-4 py-4">
@@ -287,8 +267,8 @@ export function Footer() {
                 ))}
               </div>
               <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                <Link href={toHref("/plans")} className="text-foreground transition hover:text-primary">
-                  {t("View Plans", "عرض الباقات")}
+                <Link href={toHref("/pricing")} className="text-foreground transition hover:text-primary">
+                  {t("View Pricing", "عرض التسعير")}
                 </Link>
                 <Link href={toHref("/contact")} className="inline-flex items-center gap-1.5 text-muted-foreground transition hover:text-foreground">
                   {t("Enterprise enquiry", "استفسار مؤسسي")}

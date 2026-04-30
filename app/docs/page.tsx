@@ -24,6 +24,7 @@ import {
 import { getPlatformDocsSections } from "@/lib/platform-docs"
 import type { ComponentType } from "react"
 import { Button } from "@/components/ui/button"
+import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 const sectionIcon: Record<string, ComponentType<{ className?: string }>> = {
@@ -39,6 +40,8 @@ export default function DocsPage() {
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
   const sections = getPlatformDocsSections(locale)
+  const metrics = usePlatformMetrics()
+  const formatter = new Intl.NumberFormat(isArabic ? "ar-AE" : "en-US")
   const copy = {
     badge: isArabic ? "مركز المعرفة 4.0" : "Knowledge Base v4.0",
     titleLineOne: isArabic ? "المرجع التشغيلي" : "The Intelligence OS for",
@@ -59,9 +62,9 @@ export default function DocsPage() {
     sequentialRefinement: isArabic ? "معالجة متدرجة للبيانات" : "Sequential data refinement",
   }
   const keyNumbers = [
-    { label: copy.activeProjects, value: "2,813", detail: copy.trackedAcrossUae },
-    { label: copy.canonicalDevelopers, value: "481", detail: copy.normalizedVerified },
-    { label: copy.buySignals, value: "136", detail: copy.evidenceBacked },
+    { label: copy.activeProjects, value: formatter.format(metrics.totalProjects), detail: copy.trackedAcrossUae },
+    { label: copy.canonicalDevelopers, value: formatter.format(metrics.ratedDevelopers), detail: copy.normalizedVerified },
+    { label: copy.buySignals, value: formatter.format(metrics.buySignals), detail: copy.evidenceBacked },
     { label: copy.pipelinePhases, value: "10", detail: copy.sequentialRefinement },
   ]
 
