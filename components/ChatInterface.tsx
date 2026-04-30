@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { useCopilot } from "@/components/copilot-provider"
@@ -911,6 +912,7 @@ export function ChatInterface({
   initialBlocked = false,
   initialCooldownSecondsRemaining = null,
 }: ChatInterfaceProps) {
+  const searchParams = useSearchParams()
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
   const t = useTranslations("chat")
