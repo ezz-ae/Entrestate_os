@@ -46,7 +46,7 @@ This file anchors release finalization at the repo root.
 - ✅ `pnpm run guardian`
 - ✅ `pnpm run lint`
 - ✅ `pnpm test`
-- ⚠️ `pnpm run build` is currently blocked locally by `ENOSPC` with ~`303MiB` free disk on `/System/Volumes/Data`; the code path remains lint-clean and test-clean.
+- ✅ `pnpm run build`
 - ⏳ `pnpm run smoke -- --url https://<preview-url>` pending preview URL
 - ⏳ `pnpm run test:db-contract` against `NEON_READONLY_URL` pending live readonly database
 
@@ -54,4 +54,3 @@ This file anchors release finalization at the repo root.
 
 - Widget attribution persistence still depends on the live `attribution_events` and `widgets` tables being present in Neon.
 - Signup and upgrade attribution windows are wired at the API boundary, but full 7-day and 90-day attribution logic still depends on production event history.
-- A full production build cannot be re-validated until local disk space is freed beyond the current ~`303MiB` headroom.

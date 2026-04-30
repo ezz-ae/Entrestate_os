@@ -192,7 +192,7 @@ export function buildCountQuery(baseSql: Prisma.Sql, filters?: Prisma.Sql | null
 export function buildAverageQuery(baseSql: Prisma.Sql, filters?: Prisma.Sql | null): Prisma.Sql {
   const whereClause = filters ? Prisma.sql`WHERE ${filters}` : Prisma.empty
   return Prisma.sql`
-    SELECT COALESCE(AVG(score_0_100), 0)::float AS avg_score
+    SELECT AVG(score_0_100)::float AS avg_score
     FROM (${baseSql}) AS inventory
     ${whereClause}
   `
@@ -220,7 +220,7 @@ export function buildAverageByQuery(
 ): Prisma.Sql {
   const whereClause = filters ? Prisma.sql`WHERE ${filters}` : Prisma.empty
   return Prisma.sql`
-    SELECT ${Prisma.raw(column)} AS label, COALESCE(AVG(score_0_100), 0)::float AS avg_score
+    SELECT ${Prisma.raw(column)} AS label, AVG(score_0_100)::float AS avg_score
     FROM (${baseSql}) AS inventory
     ${whereClause}
     GROUP BY ${Prisma.raw(column)}

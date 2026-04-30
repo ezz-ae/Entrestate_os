@@ -469,8 +469,8 @@ function mapProjectRecord(record: DecisionRecord): DecisionProject {
   }
 }
 
-const SNAPSHOT_PAGE_SIZE = 100
-const SNAPSHOT_MAX_PAGES = 40
+const SNAPSHOT_PAGE_SIZE = 1000
+const SNAPSHOT_MAX_PAGES = 10
 const SNAPSHOT_CACHE_TTL_MS = 30_000
 
 type PropertySnapshotCacheEntry = {
@@ -677,8 +677,8 @@ function buildDeveloperRowsFromPropertySnapshot(projects: DecisionProject[]): Db
       efficiencySum: 0,
       efficiencyCount: 0,
       safeProjects: 0,
-      areaCounts: new Map<string, number>(),
-      topProjects: [],
+      areaCounts: new Map<string, { label: string; count: number }>(),
+      topProjects: [] as Array<{ key: string; name: string; score: number }>,
     }
 
     accumulator.projects += 1
@@ -1000,7 +1000,7 @@ export async function listProperties(input: ListPropertiesInput = {}): Promise<{
   total: number
   projects: DecisionProject[]
 }> {
-  const pageSize = Math.min(Math.max(input.pageSize ?? 20, 1), 100)
+  const pageSize = Math.min(Math.max(input.pageSize ?? 20, 1), 1000)
   const page = Math.max(input.page ?? 1, 1)
   const offset = (page - 1) * pageSize
   const sortBy = input.sortBy ?? "god_metric"
@@ -1657,21 +1657,27 @@ export async function listAreas(): Promise<{
   )
 
   const areas = rows.map((row) => {
-      const key = String(row.area ?? "").toLowerCase()
-      const profile = profileMap.get(key)
-      const inlineTopProjects = Array.isArray((row as DecisionRecord).top_projects)
-        ? ((row as DecisionRecord).top_projects as string[])
-        : []
-      const topProjects = inlineTopProjects.length > 0 ? inlineTopProjects : topProjectsMap.get(key) ?? []
-      return {
-        ...row,
-        area_ar: (row as DecisionRecord).area_ar ?? profile?.area_ar ?? null,
-        image_url: profile?.image_url ?? null,
-        area_type: profile?.area_type ?? null,
-        top_projects: topProjects,
-        slug: slugifyName(String(row.area ?? "area")),
-      }
-    })
+    const key = String(row.area ?? "").toLowerCase()
+    const profile = profileMap.get(key)
+    const inlineTopProjects = Array.isArray((row as DecisionRecord).top_projects)
+      ? ((row as DecisionRecord).top_projects as string[])
+      : []
+    const topProjects = inlineTopProjects.length > 0 ? inlineTopProjects : topProjectsMap.get(key) ?? []
+    return {
+      ...row,
+      area: (row as any).area,
+      city: (row as any).city,
+      projects: (row as any).projects,
+      avg_price: (row as any).avg_price,
+      avg_yield: (row as any).avg_yield,
+      efficiency: (row as any).efficiency,
+      area_ar: (row as DecisionRecord).area_ar ?? profile?.area_ar ?? null,
+      image_url: profile?.image_url ?? null,
+      area_type: profile?.area_type ?? null,
+      top_projects: topProjects,
+      slug: slugifyName(String(row.area ?? "area")),
+    }
+  })
 
   return {
     data_as_of: new Date().toISOString(),

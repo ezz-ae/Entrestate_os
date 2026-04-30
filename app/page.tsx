@@ -162,24 +162,6 @@ function getSurfaceCards(locale: "en" | "ar") {
           body: "اقرأ العائد والسعر وكثافة المشاريع من منظور مكاني مباشر.",
           href: "/map",
         },
-        {
-          icon: CreditCard,
-          title: "الأسعار",
-          body: "افهم ما هو مجاني، وما الذي يفتح التعاون والتكامل المؤسسي.",
-          href: "/pricing",
-        },
-        {
-          icon: Server,
-          title: "الحالة",
-          body: "راجع صحة المنصة، حداثة البيانات، وأهداف الاستقرار التشغيلية.",
-          href: "/status",
-        },
-        {
-          icon: BookOpen,
-          title: "التوثيق",
-          body: "اقرأ المعمارية، طبقة الأدلة، ونموذج القرار قبل الاعتماد.",
-          href: "/docs/documentation",
-        },
       ]
     : [
         {
@@ -199,24 +181,6 @@ function getSurfaceCards(locale: "en" | "ar") {
           title: "Map",
           body: "Read yield, price, and project density from a spatial market view.",
           href: "/map",
-        },
-        {
-          icon: CreditCard,
-          title: "Pricing",
-          body: "See what is free, and what unlocks branding, collaboration, and enterprise delivery.",
-          href: "/pricing",
-        },
-        {
-          icon: Server,
-          title: "Status",
-          body: "Review system health, data freshness, and operating targets before rollout.",
-          href: "/status",
-        },
-        {
-          icon: BookOpen,
-          title: "Docs",
-          body: "Read the architecture, evidence model, and decision workflow before relying on outputs.",
-          href: "/docs/documentation",
         },
       ]
 }
@@ -244,6 +208,11 @@ function getTrustProofCards(locale: "en" | "ar") {
           body: "راجع البنية، الـ API، وتكامل الفريق قبل الإطلاق أو التوسعة.",
           href: "/enterprise",
         },
+        {
+          title: "الباقات والأسعار",
+          body: "مستويات الوصول، التاريخي، والتصدير واضحة قبل الاشتراك.",
+          href: "/pricing",
+        },
       ]
     : [
         {
@@ -265,6 +234,11 @@ function getTrustProofCards(locale: "en" | "ar") {
           title: "Enterprise layer",
           body: "Architecture, API delivery, and team rollout paths are visible before procurement.",
           href: "/enterprise",
+        },
+        {
+          title: "Plans and pricing",
+          body: "Access tiers, historical depth, and export limits are explicit before you subscribe.",
+          href: "/pricing",
         },
       ]
 }

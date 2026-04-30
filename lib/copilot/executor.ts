@@ -85,7 +85,7 @@ function nowIso() {
   return new Date().toISOString()
 }
 
-function toFiniteNumber(value: unknown, fallback = 0): number {
+function toFiniteNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value
   if (typeof value === "string") {
     const parsed = Number(value)
@@ -93,12 +93,13 @@ function toFiniteNumber(value: unknown, fallback = 0): number {
   }
   if (value && typeof value === "object" && "toNumber" in value) {
     try {
-      return (value as { toNumber: () => number }).toNumber()
+      const parsed = (value as { toNumber: () => number }).toNumber()
+      return Number.isFinite(parsed) ? parsed : null
     } catch {
       // fall through
     }
   }
-  return fallback
+  return null
 }
 
 function toSqlList(values: string[]) {
@@ -121,7 +122,7 @@ function buildQualityClauses(options: QualityOptions = {}): Prisma.Sql[] {
   const clauses: Prisma.Sql[] = []
 
   if (options.requirePrice) {
-    clauses.push(Prisma.sql`COALESCE(${COPILOT_PRICE_SQL}, 0) > 0`)
+    clauses.push(Prisma.sql`${COPILOT_PRICE_SQL} IS NOT NULL AND ${COPILOT_PRICE_SQL} > 0`)
   }
 
   if (options.requireStress) {
