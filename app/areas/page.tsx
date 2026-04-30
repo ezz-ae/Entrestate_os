@@ -3,6 +3,7 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { AreasView } from "@/components/decision/areas-view"
 import { AreaCard } from "@/components/decision/area-card"
+import { SitePagination, type SitePaginationItem } from "@/components/site-pagination"
 import { listAreas } from "@/lib/decision-infrastructure"
 import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { getRequestLocale } from "@/i18n/request"
@@ -13,11 +14,23 @@ import { formatAed } from "@/lib/format/currency"
 import { computeMedian, getAreaPosition } from "@/lib/area-intelligence"
 import { getPlatformMetrics } from "@/lib/platform-metrics.server"
 import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
+import { buildPaginationWindow, clampPage, parsePageParam } from "@/lib/pagination"
 
 export const dynamic = "force-dynamic"
 
+const AREAS_PAGE_SIZE = 9
+
 type SearchParams = {
   city?: string
+  page?: string
+}
+
+function buildAreasHref(locale: "en" | "ar", city: string, page: number) {
+  const params = new URLSearchParams()
+  if (city) params.set("city", city)
+  if (page > 1) params.set("page", String(page))
+  const query = params.toString()
+  return prefixLocalePath(query ? `/areas?${query}` : "/areas", locale)
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -57,6 +70,12 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
   const visibleAreas = activeCity
     ? data.areas.filter((area) => String(area.city ?? "").trim() === activeCity)
     : data.areas
+  const requestedPage = parsePageParam(params.page)
+  const totalPages = Math.max(1, Math.ceil(visibleAreas.length / AREAS_PAGE_SIZE))
+  const currentPage = clampPage(requestedPage, totalPages)
+  const pageStartIndex = (currentPage - 1) * AREAS_PAGE_SIZE
+  const pageEndIndex = Math.min(pageStartIndex + AREAS_PAGE_SIZE, visibleAreas.length)
+  const pagedAreas = visibleAreas.slice(pageStartIndex, pageEndIndex)
   const medianPrice = computeMedian(visibleAreas.map((area) => (typeof area.avg_price === "number" ? area.avg_price : null)))
   const medianYield = computeMedian(visibleAreas.map((area) => (typeof area.avg_yield === "number" ? area.avg_yield : null)))
   const maxEfficiency = visibleAreas.reduce<number | null>((currentMax, area) => {
@@ -92,6 +111,25 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
     [...visibleAreas]
       .filter((area) => typeof area.projects === "number")
       .sort((left, right) => Number(right.projects ?? 0) - Number(left.projects ?? 0))[0] ?? null
+  const paginationItems: SitePaginationItem[] = buildPaginationWindow(currentPage, totalPages).map((item) =>
+    typeof item === "number"
+      ? {
+          key: `area-page-${item}`,
+          label: String(item),
+          href: buildAreasHref(locale, activeCity, item),
+          active: item === currentPage,
+        }
+      : {
+          key: item,
+          label: item === "ellipsis-left" ? "…" : "…",
+          ellipsis: true,
+        },
+  )
+  const resultsSummary = visibleAreas.length > 0
+    ? (isArabic
+        ? `عرض ${formatInteger(pageStartIndex + 1, locale)}–${formatInteger(pageEndIndex, locale)} من ${formatInteger(visibleAreas.length, locale)} منطقة · الصفحة ${formatInteger(currentPage, locale)} من ${formatInteger(totalPages, locale)}`
+        : `Showing ${formatInteger(pageStartIndex + 1, locale)}–${formatInteger(pageEndIndex, locale)} of ${formatInteger(visibleAreas.length, locale)} areas · page ${formatInteger(currentPage, locale)} of ${formatInteger(totalPages, locale)}`)
+    : (isArabic ? "لا توجد مناطق في هذا العرض." : "No areas are available in this view.")
 
   return (
     <main id="main-content">
@@ -266,12 +304,25 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
               </h2>
             </div>
             <p className="text-xs text-muted-foreground">
-              {isArabic ? "نفس البيانات مع أسماء عرض مناسبة لكل لغة." : "The same records with locale-specific labels."}
+              {isArabic
+                ? `${formatInteger(AREAS_PAGE_SIZE, locale)} بطاقات في الصفحة للحفاظ على القراءة واضحة وسريعة.`
+                : `${formatInteger(AREAS_PAGE_SIZE, locale)} cards per page so the reading rhythm stays clear.`}
             </p>
           </div>
 
+          <div className="mb-5 rounded-2xl border border-border/60 bg-card/50 px-4 py-4">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <p className="text-sm font-medium text-foreground">
+                {activeCity
+                  ? (isArabic ? `المدينة النشطة: ${activeCity}` : `Active city filter: ${activeCity}`)
+                  : (isArabic ? "عرض كل المدن عبر نفس طبقة البيانات." : "Browsing every city through the same evidence layer.")}
+              </p>
+              <p className="text-xs text-muted-foreground">{resultsSummary}</p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {visibleAreas.map((area) => (
+            {pagedAreas.map((area) => (
               <AreaCard
                 key={String(area.slug)}
                 slug={String(area.slug)}
@@ -292,6 +343,17 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
               />
             ))}
           </div>
+
+          {visibleAreas.length > 0 ? (
+            <SitePagination
+              summary={resultsSummary}
+              previousHref={currentPage > 1 ? buildAreasHref(locale, activeCity, currentPage - 1) : null}
+              nextHref={currentPage < totalPages ? buildAreasHref(locale, activeCity, currentPage + 1) : null}
+              previousLabel={isArabic ? "السابق" : "Previous"}
+              nextLabel={isArabic ? "التالي" : "Next"}
+              items={paginationItems}
+            />
+          ) : null}
         </section>
       </div>
       <Footer />

@@ -3,10 +3,10 @@ import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { DeveloperCard } from "@/components/decision/developer-card"
+import { SitePagination, type SitePaginationItem } from "@/components/site-pagination"
 import { listDevelopers } from "@/lib/decision-infrastructure"
 import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { TrendingUp, Building2, BarChart3, ShieldCheck, Users2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { formatAed } from "@/lib/format/currency"
@@ -14,10 +14,22 @@ import { formatDate } from "@/lib/format/date"
 import { formatInteger } from "@/lib/format/number"
 import { getPlatformMetrics } from "@/lib/platform-metrics.server"
 import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
+import { buildPaginationWindow, clampPage, parsePageParam } from "@/lib/pagination"
 
 export const dynamic = "force-dynamic"
 
-type SearchParams = { filter?: string; sort?: string }
+const DEVELOPERS_PAGE_SIZE = 9
+
+type SearchParams = { filter?: string; sort?: string; page?: string }
+
+function buildDevelopersHref(locale: "en" | "ar", filter: string | undefined, sort: string, page: number) {
+  const params = new URLSearchParams()
+  if (filter) params.set("filter", filter)
+  if (sort !== "reliability") params.set("sort", sort)
+  if (page > 1) params.set("page", String(page))
+  const query = params.toString()
+  return prefixLocalePath(query ? `/developers?${query}` : "/developers", locale)
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
@@ -44,7 +56,7 @@ function tierOf(score: number | null): "excellent" | "good" | "watch" | "unknown
 }
 
 export default async function DevelopersPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const { filter, sort = "reliability" } = await searchParams
+  const { filter, sort = "reliability", page } = await searchParams
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
   const data = await listDevelopers()
@@ -82,6 +94,12 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
   const filtered = filter && ["excellent", "good", "watch"].includes(filter)
     ? sorted.filter((d) => tierOf(typeof d.reliability === "number" ? d.reliability as number : null) === filter)
     : sorted
+  const requestedPage = parsePageParam(page)
+  const totalPages = Math.max(1, Math.ceil(filtered.length / DEVELOPERS_PAGE_SIZE))
+  const currentPage = clampPage(requestedPage, totalPages)
+  const pageStartIndex = (currentPage - 1) * DEVELOPERS_PAGE_SIZE
+  const pageEndIndex = Math.min(pageStartIndex + DEVELOPERS_PAGE_SIZE, filtered.length)
+  const pagedDevelopers = filtered.slice(pageStartIndex, pageEndIndex)
 
   const FILTER_TABS = [
     { key: "", label: isArabic ? "كل المطورين" : "All developers", count: developers.length },
@@ -101,6 +119,27 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
     : null
   const syncMeta = buildDataSyncMeta("developers", data.data_as_of)
   const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
+  const paginationItems: SitePaginationItem[] = buildPaginationWindow(currentPage, totalPages).map((item) =>
+    typeof item === "number"
+      ? {
+          key: `developer-page-${item}`,
+          label: String(item),
+          href: buildDevelopersHref(locale, filter, sort, item),
+          active: item === currentPage,
+        }
+      : {
+          key: item,
+          label: "…",
+          ellipsis: true,
+        },
+  )
+  const resultsSummary = filtered.length > 0
+    ? (isArabic
+        ? `عرض ${formatInteger(pageStartIndex + 1, locale)}–${formatInteger(pageEndIndex, locale)} من ${formatInteger(filtered.length, locale)} مطوراً · الصفحة ${formatInteger(currentPage, locale)} من ${formatInteger(totalPages, locale)}`
+        : `Showing ${formatInteger(pageStartIndex + 1, locale)}–${formatInteger(pageEndIndex, locale)} of ${formatInteger(filtered.length, locale)} developers · page ${formatInteger(currentPage, locale)} of ${formatInteger(totalPages, locale)}`)
+    : (isArabic
+        ? "لا توجد نتائج مطابقة في هذا العرض."
+        : "No developers match the current view.")
 
   const tierInsight = withRel.length > 0
     ? isArabic
@@ -130,11 +169,12 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
     reliabilityScale: isArabic ? "الدرجات ≥80 = ممتاز · 60–79 = جيد · أقل من 60 = مراقبة" : "Scores ≥80 = Excellent · 60–79 = Good · <60 = Watch",
     sort: isArabic ? "الترتيب:" : "Sort:",
     showing: isArabic
-      ? `عرض ${formatInteger(filtered.length, locale)} من ${formatInteger(developers.length, locale)} مطوراً${filter ? ` · تمت التصفية حسب ${filter}` : ""}`
-      : `Showing ${formatInteger(filtered.length, locale)} of ${formatInteger(developers.length, locale)} developers${filter ? ` · filtered by ${filter}` : ""}`,
+      ? `${resultsSummary}${filter ? ` · تمت التصفية حسب ${filter}` : ""}`
+      : `${resultsSummary}${filter ? ` · filtered by ${filter}` : ""}`,
     emptyTitle: isArabic ? "لا يوجد مطورون في هذا التصنيف" : "No developers in this tier",
     emptyBody: isArabic ? "جرّب فلتر آخر أو اعرض كل المطورين." : "Try a different filter or view all developers.",
     clearFilter: isArabic ? "مسح الفلتر" : "Clear filter",
+    pageRhythm: isArabic ? "تسعة ملفات في الصفحة حتى يبقى التقييم مقروءاً." : "Nine profiles per page so the audit stays readable.",
   }
 
   return (
@@ -292,10 +332,21 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
           {copy.showing}
         </p>
 
+        <div className="mb-5 rounded-2xl border border-border/60 bg-card/50 px-4 py-4">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <p className="text-sm font-medium text-foreground">
+              {filter
+                ? (isArabic ? `نطاق القراءة الحالي: ${filter}` : `Current reading band: ${filter}`)
+                : (isArabic ? "عرض كامل لسجل المطورين الموثق." : "Full browse across the verified developer register.")}
+            </p>
+            <p className="text-xs text-muted-foreground">{copy.pageRhythm}</p>
+          </div>
+        </div>
+
         {/* Cards grid */}
         <section className="relative grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 xl:grid-cols-3">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(900px_circle_at_50%_-10%,rgba(99,102,241,0.12),transparent_58%)]" />
-          {filtered.map((developer) => (
+          {pagedDevelopers.map((developer) => (
             <DeveloperCard
               key={String(developer.slug)}
               slug={String(developer.slug)}
@@ -330,6 +381,17 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
             </div>
           )}
         </section>
+
+        {filtered.length > 0 ? (
+          <SitePagination
+            summary={resultsSummary}
+            previousHref={currentPage > 1 ? buildDevelopersHref(locale, filter, sort, currentPage - 1) : null}
+            nextHref={currentPage < totalPages ? buildDevelopersHref(locale, filter, sort, currentPage + 1) : null}
+            previousLabel={isArabic ? "السابق" : "Previous"}
+            nextLabel={isArabic ? "التالي" : "Next"}
+            items={paginationItems}
+          />
+        ) : null}
       </div>
       <Footer />
     </main>

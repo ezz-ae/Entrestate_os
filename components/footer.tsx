@@ -18,6 +18,10 @@ import {
   FileText,
   Mail,
   BookOpen,
+  Linkedin,
+  Instagram,
+  Youtube,
+  Twitter,
 } from "lucide-react"
 
 // ── Navigation structure ──────────────────────────────────────────────────────
@@ -70,12 +74,15 @@ const columns = [
     ],
   },
   {
-    heading: "Legal",
+    heading: "Trust Center",
     links: [
       { label: "Privacy Policy", href: "/privacy" },
       { label: "Terms of Service", href: "/terms" },
       { label: "Data Usage", href: "/data-usage" },
       { label: "Cookie Policy", href: "/cookies" },
+      { label: "Subprocessors", href: "/subprocessors" },
+      { label: "Data Residency", href: "/data-residency" },
+      { label: "DPA Template", href: "/dpa" },
       { label: "Status", href: "/status" },
       { label: "Support", href: "/support" },
     ],
@@ -89,6 +96,13 @@ const trustBadges = [
   { icon: MapPin, label: "UAE Market Focus", sub: "Dubai · Abu Dhabi · Sharjah" },
 ]
 
+const socialLinks = [
+  { label: "X", href: "https://x.com/entrestate", icon: Twitter },
+  { label: "LinkedIn", href: "https://www.linkedin.com/company/entrestate", icon: Linkedin },
+  { label: "Instagram", href: "https://www.instagram.com/entrestate", icon: Instagram },
+  { label: "YouTube", href: "https://www.youtube.com/@entrestate", icon: Youtube },
+]
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function Footer() {
@@ -100,13 +114,13 @@ export function Footer() {
     ...col,
     heading: t(
       col.heading,
-      {
-        Product: "المنتج",
-        Platform: "المنصة",
-        "Data & Research": "البيانات والأبحاث",
-        Company: "الشركة",
-        Legal: "قانوني",
-      }[col.heading] ?? col.heading,
+        {
+          Product: "المنتج",
+          Platform: "المنصة",
+          "Data & Research": "البيانات والأبحاث",
+          Company: "الشركة",
+          "Trust Center": "مركز الثقة",
+        }[col.heading] ?? col.heading,
     ),
     links: col.links.map((link) => ({
       ...link,
@@ -143,6 +157,9 @@ export function Footer() {
           "Terms of Service": "شروط الخدمة",
           "Data Usage": "استخدام البيانات",
           "Cookie Policy": "سياسة ملفات الارتباط",
+          Subprocessors: "المعالِجون الفرعيون",
+          "Data Residency": "إقامة البيانات",
+          "DPA Template": "ملحق معالجة البيانات",
           Status: "الحالة",
           Support: "الدعم",
         }[link.label] ?? link.label,
@@ -473,6 +490,26 @@ export function Footer() {
                 {t("Contact enterprise sales", "تواصل مع مبيعات المؤسسات")}
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
+            </div>
+
+            <div className="mt-5">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                {t("Follow Entrestate", "تابع Entrestate")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {socialLinks.map(({ label, href, icon: Icon }) => (
+                  <Link
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/50 px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </Link>
+                ))}
+              </div>
             </div>
 
             {/* Region badge */}
