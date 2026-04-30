@@ -1,42 +1,25 @@
 import { NextResponse } from "next/server"
 import { getRequestId } from "@/lib/api-errors"
-import type { PaidTier } from "@/lib/paypal"
+import { getSessionUser } from "@/lib/auth"
+import { normalizeLocale, prefixLocalePath } from "@/i18n/locale"
+import { createStripeCheckoutSession, hasStripePrice } from "@/lib/payments/stripe"
+import { createTapCharge, isTapAvailable } from "@/lib/payments/tap"
+import { resolvePaidTier, type BillingCadence, type BillingProcessor, type PaidTier } from "@/lib/pricing/plans"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const CHECKOUT_TIER_MAP: Record<string, PaidTier> = {
-  pro: "pro",
-  solo: "pro",
-  "solo-analyst": "pro",
-  team: "team",
-  realtor: "team",
-  "realtor-pro": "team",
-  institutional: "institutional",
-  enterprise: "institutional",
-  "enterprise-os": "institutional",
-  os: "institutional",
-}
-
-const PLAN_ENV_BY_TIER: Record<PaidTier, string> = {
-  pro: "PAYPAL_PLAN_ID_PRO",
-  team: "PAYPAL_PLAN_ID_TEAM",
-  institutional: "PAYPAL_PLAN_ID_INSTITUTIONAL",
-}
-
-function mapTier(rawTier: string | null): PaidTier | null {
-  if (!rawTier) return null
-  return CHECKOUT_TIER_MAP[rawTier.trim().toLowerCase()] ?? null
-}
-
-function hasConfiguredPlan(tier: PaidTier) {
-  return Boolean(process.env[PLAN_ENV_BY_TIER[tier]])
-}
-
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
   const requestUrl = new URL(request.url)
-  const tier = mapTier(requestUrl.searchParams.get("tier"))
+  const locale = normalizeLocale(request.headers.get("x-entrestate-locale"))
+  const tier = resolvePaidTier(requestUrl.searchParams.get("tier"))
+  const cadence = (requestUrl.searchParams.get("cadence") === "annual" ? "annual" : "monthly") as BillingCadence
+  const processorOverride = requestUrl.searchParams.get("processor")
+  const processor =
+    processorOverride === "stripe" || processorOverride === "tap"
+      ? processorOverride
+      : (["AE", "SA"].includes(request.headers.get("x-vercel-ip-country") ?? "AE") ? "tap" : "stripe") as BillingProcessor
 
   if (!tier) {
     return NextResponse.json(
@@ -49,24 +32,80 @@ export async function GET(request: Request) {
     )
   }
 
-  if (!hasConfiguredPlan(tier)) {
-    const fallbackUrl = new URL("/contact", requestUrl.origin)
+  if (tier === "institutional") {
+    const fallbackUrl = new URL(prefixLocalePath("/contact", locale), requestUrl.origin)
     fallbackUrl.searchParams.set("plan", tier)
     fallbackUrl.searchParams.set("source", "pricing")
-    fallbackUrl.searchParams.set("billing", "contact")
+    fallbackUrl.searchParams.set("billing", "sales")
 
     const response = NextResponse.redirect(fallbackUrl, { status: 307 })
     response.headers.set("x-request-id", requestId)
     return response
   }
 
-  const paypalUrl = new URL("/api/billing/paypal/checkout", requestUrl.origin)
-  for (const [key, value] of requestUrl.searchParams.entries()) {
-    paypalUrl.searchParams.set(key, value)
+  const user = await getSessionUser().catch(() => null)
+  if (!user?.id || !user.email) {
+    const checkoutUrl = new URL(prefixLocalePath("/checkout", locale), requestUrl.origin)
+    checkoutUrl.searchParams.set("tier", tier)
+    checkoutUrl.searchParams.set("cadence", cadence)
+    const response = NextResponse.redirect(checkoutUrl, { status: 307 })
+    response.headers.set("x-request-id", requestId)
+    return response
   }
-  paypalUrl.searchParams.set("tier", tier)
 
-  const response = NextResponse.redirect(paypalUrl, { status: 307 })
+  const successUrl = `${requestUrl.origin}${prefixLocalePath("/account", locale)}?billing=success&tier=${tier}`
+  const cancelUrl = `${requestUrl.origin}${prefixLocalePath("/pricing", locale)}?billing=cancelled&tier=${tier}`
+
+  const attemptProcessors: BillingProcessor[] =
+    processor === "tap"
+      ? ["tap", "stripe"]
+      : ["stripe", "tap"]
+
+  try {
+    for (const candidate of attemptProcessors) {
+      if (candidate === "stripe" && hasStripePrice(tier, cadence)) {
+        const checkoutUrl = await createStripeCheckoutSession({
+          tier,
+          cadence,
+          customerEmail: user.email,
+          accountKey: user.id,
+          successUrl,
+          cancelUrl,
+        })
+        const response = NextResponse.redirect(checkoutUrl, { status: 303 })
+        response.headers.set("x-request-id", requestId)
+        return response
+      }
+
+      if (candidate === "tap" && isTapAvailable()) {
+        const checkoutUrl = await createTapCharge({
+          tier,
+          cadence,
+          accountKey: user.id,
+          customer: {
+            email: user.email,
+            name: typeof user.name === "string" ? user.name : null,
+          },
+          successUrl,
+          origin: requestUrl.origin,
+        })
+        const response = NextResponse.redirect(checkoutUrl, { status: 303 })
+        response.headers.set("x-request-id", requestId)
+        return response
+      }
+    }
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Checkout unavailable.",
+        requestId,
+        request_id: requestId,
+      },
+      { status: 500, headers: { "x-request-id": requestId } },
+    )
+  }
+
+  const response = NextResponse.redirect(new URL(prefixLocalePath("/contact", locale), requestUrl.origin), { status: 307 })
   response.headers.set("x-request-id", requestId)
   return response
 }

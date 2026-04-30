@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
       locale === "ar"
         ? "كيف تنتقل بيانات السوق داخل Entrestate من المصدر إلى اللوحات والتقارير والواجهات النهائية."
         : "How market data moves through Entrestate from source systems to dashboards, reports, and published interfaces.",
-    alternates: getLocaleAlternates("/data-usage"),
+    alternates: getLocaleAlternates("/data-usage", locale),
   }
 }
 

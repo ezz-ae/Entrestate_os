@@ -6,6 +6,7 @@ import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { SearchTimeTableBuilder } from "@/components/search/time-table-builder"
+import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
 import { formatAed } from "@/lib/format/currency"
 import type { CoverageSummary } from "@/lib/data-coverage"
 import { pickLocalizedText } from "@/lib/format/entities"
@@ -224,6 +225,7 @@ function FilterChip({
 export default function SearchPage() {
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
+  const metrics = usePlatformMetrics()
   const presets = getPresets(locale)
   const timingOptions = getTimingOptions(locale)
   const gradeOptions = getGradeOptions(locale)
@@ -232,8 +234,8 @@ export default function SearchPage() {
     eyebrow: isArabic ? "السوق" : "Market Intelligence",
     title: isArabic ? "استكشاف المشاريع وبناء Time Table" : "Project Search + Time Table Builder",
     intro: isArabic
-      ? `ابحث داخل ${formatInteger(2813, locale)} مشروعًا مُقيَّمًا أو حوّل الاستعلام إلى Time Table مع narrative قابلة للدفاع.`
-      : `Filter across ${(2813).toLocaleString()} scored projects or compile the query into a defensible Time Table.`,
+      ? `ابحث داخل ${formatInteger(metrics.totalProjects, locale)} مشروعًا مُقيَّمًا أو حوّل الاستعلام إلى Time Table مع narrative قابلة للدفاع.`
+      : `Filter across ${metrics.totalProjects.toLocaleString()} scored projects or compile the query into a defensible Time Table.`,
     searchPlaceholder: isArabic ? "ابحث باسم المشروع أو المطور أو المنطقة" : "Search by project name, developer, area…",
     searchButton: isArabic ? "ابحث" : "Search",
     filters: isArabic ? "تصفية" : "Filters",
@@ -823,7 +825,7 @@ export default function SearchPage() {
                 {syncMeta.coverage.fields.slice(0, 4).map((field) => (
                   <div key={field.key} className="rounded-xl border border-border/40 bg-background/40 px-3 py-2">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">
-                      {coverageLabels[field.key] ?? field.label}
+                      {coverageLabels[field.key as keyof typeof coverageLabels] ?? field.label}
                     </p>
                     <p className="mt-1 text-sm font-semibold text-foreground">{field.pct}%</p>
                   </div>

@@ -5,6 +5,7 @@ import { getRequestLocale } from "@/i18n/request"
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
+  const alternates = getLocaleAlternates("/pricing", locale)
   const title = isArabic
     ? "أسعار Entrestate — من الوصول المجاني إلى النشر المؤسسي"
     : "Entrestate Pricing — Free access to enterprise deployment"
@@ -15,12 +16,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: getLocaleAlternates("/pricing"),
+    alternates,
     openGraph: {
       title,
       description,
       locale: getOpenGraphLocale(locale),
-      url: getLocaleAlternates("/pricing").languages?.[locale],
+      url: alternates.languages?.[locale],
       images: [absoluteUrl("/seq-poster.svg")],
     },
     twitter: {

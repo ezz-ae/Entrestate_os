@@ -9,6 +9,7 @@ import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type Props = {
   tier: "free" | "pro" | "team" | "institutional"
+  provider: string | null
   subscriptionId: string | null
   status: string | null
 }
@@ -51,7 +52,7 @@ function statusLabel(value: string | null, locale: AppLocale) {
   }
 }
 
-export function AccountBillingControls({ tier, subscriptionId, status }: Props) {
+export function AccountBillingControls({ tier, provider, subscriptionId, status }: Props) {
   const router = useRouter()
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
@@ -60,6 +61,7 @@ export function AccountBillingControls({ tier, subscriptionId, status }: Props) 
   const [error, setError] = useState<string | null>(null)
 
   const statusUpper = status?.toUpperCase() ?? null
+  const normalizedProvider = provider?.toLowerCase() ?? null
 
   const runAction = (url: string, successMessage: string, method: "GET" | "POST" = "POST") => {
     setError(null)
@@ -90,7 +92,7 @@ export function AccountBillingControls({ tier, subscriptionId, status }: Props) 
 
   return (
     <div className="mt-4 space-y-3">
-      {subscriptionId ? (
+      {subscriptionId && normalizedProvider === "paypal" ? (
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -142,10 +144,16 @@ export function AccountBillingControls({ tier, subscriptionId, status }: Props) 
             <Link href={prefixLocalePath("/pricing", locale)}>{isArabic ? "غيّر الباقة" : "Change plan"}</Link>
           </Button>
         </div>
+      ) : subscriptionId ? (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href={prefixLocalePath("/pricing", locale)}>{isArabic ? "غيّر الباقة" : "Change plan"}</Link>
+          </Button>
+        </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           <Button size="sm" asChild>
-            <Link href={prefixLocalePath("/pricing", locale)}>{isArabic ? "الترقية عبر PayPal" : "Upgrade with PayPal"}</Link>
+            <Link href={prefixLocalePath("/pricing", locale)}>{isArabic ? "عرض الباقات" : "View plans"}</Link>
           </Button>
         </div>
       )}
@@ -153,8 +161,18 @@ export function AccountBillingControls({ tier, subscriptionId, status }: Props) 
       <p className="text-xs text-muted-foreground">
         {isArabic ? "الباقة الحالية:" : "Current tier:"} <span className="font-medium text-foreground">{tierLabel(tier, locale)}</span>
         {" · "}
+        {isArabic ? "المعالج:" : "Provider:"} {normalizedProvider ?? (isArabic ? "غير مرتبط" : "none")}
+        {" · "}
         {isArabic ? "الحالة:" : "Status:"} {statusLabel(status, locale)}
       </p>
+
+      {subscriptionId && normalizedProvider && normalizedProvider !== "paypal" ? (
+        <p className="text-xs text-muted-foreground">
+          {isArabic
+            ? "هذا الاشتراك مرتبط بمزود دفع مباشر. تعديل الخطة يتم حالياً من صفحة التسعير أو عبر الدعم."
+            : "This subscription is linked to a direct payment provider. Plan changes currently flow through pricing or support."}
+        </p>
+      ) : null}
 
       {feedback ? <p className="text-xs text-emerald-600">{feedback}</p> : null}
       {error ? <p className="text-xs text-red-600">{error}</p> : null}

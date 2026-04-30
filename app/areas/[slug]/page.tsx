@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { JsonLd } from "@/components/JsonLd"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ProjectCard } from "@/components/decision/project-card"
@@ -11,6 +12,7 @@ import { prefixLocalePath } from "@/i18n/locale"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { formatInteger } from "@/lib/format/number"
 import { SEO, absoluteUrl, getLocaleAlternates, getOpenGraphLocale } from "@/lib/seo"
+import { breadcrumbSchema } from "@/lib/seo/schema"
 
 export const dynamic = "force-dynamic"
 
@@ -22,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!detail) {
     return {
       title: locale === "ar" ? "المنطقة غير موجودة | Entrestate" : "Area not found | Entrestate",
-      alternates: getLocaleAlternates(`/areas/${slug}`),
+      alternates: getLocaleAlternates(`/areas/${slug}`, locale),
     }
   }
 
@@ -35,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = locale === "ar"
     ? `${areaName} مع متوسط السعر، ومتوسط العائد، وضغط المعروض، وفرص BUY، وروابط مباشرة إلى المشاريع النشطة والمطورين المرتبطين.`
     : `${areaName} with average price, yield, supply pressure, BUY signals, and direct links to active projects and linked developers.`
-  const alternates = getLocaleAlternates(`/areas/${slug}`)
+  const alternates = getLocaleAlternates(`/areas/${slug}`, locale)
 
   return {
     title,
@@ -106,9 +108,15 @@ export default async function AreaDetailPage({ params }: { params: Promise<{ slu
   const cityLabel = typeof profile?.city === "string"
     ? pickLocalizedText(locale, null, profile.city, profile.city)
     : null
+  const breadcrumb = breadcrumbSchema([
+    { name: locale === "ar" ? "الرئيسية" : "Home", href: prefixLocalePath("/", locale) },
+    { name: locale === "ar" ? "المناطق" : "Areas", href: prefixLocalePath("/areas", locale) },
+    { name: areaLabel, href: prefixLocalePath(`/areas/${slug}`, locale) },
+  ])
 
   return (
     <main id="main-content">
+      <JsonLd data={breadcrumb} />
       <Navbar />
       <div className="mx-auto max-w-[1400px] px-6 pb-20 pt-28 md:pt-36">
         <header className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-6">

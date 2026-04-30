@@ -260,7 +260,12 @@ export default async function AccountPage() {
               </div>
 
               <div className="mt-5 md:mt-8">
-                <AccountBillingControls />
+                <AccountBillingControls
+                  tier={entitlement.tier}
+                  provider={entitlement.provider}
+                  subscriptionId={entitlement.subscriptionId}
+                  status={entitlement.status}
+                />
               </div>
             </section>
 

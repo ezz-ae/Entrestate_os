@@ -1,415 +1,115 @@
-"use client"
-
-import { useState } from "react"
 import Link from "next/link"
-import { useLocale } from "next-intl"
-import { Check, ChevronDown, ChevronUp, Building2, User, Briefcase, ArrowRight, Zap, Shield, Globe, BarChart3, FileText, Users } from "lucide-react"
-import { Navbar } from "@/components/navbar"
+import { ArrowRight, Building2, Check, ShieldCheck, Wallet } from "lucide-react"
+import { JsonLd } from "@/components/JsonLd"
 import { Footer } from "@/components/footer"
+import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
+import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import {
+  getLocalizedText,
+  getPaidPlan,
+  getPricingComparisonRows,
+  getPricingTrustLinks,
+  pricingFaq,
+  pricingPlans,
+} from "@/lib/pricing/plans"
+import { faqSchema, productSchema } from "@/lib/seo/schema"
 
-// ── User type cards ────────────────────────────────────────────────────────────
+function formatAed(value: number | null, locale: AppLocale) {
+  if (value === null) return locale === "ar" ? "تسعير مخصص" : "Custom pricing"
 
-const USER_TYPES = {
-  en: [
-    {
-      id: "pro",
-      icon: User,
-      title: "Pro",
-      badge: "$299/mo",
-      badgeColor: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-      description: "Evidence-backed research access for independent investors and operators.",
-      features: [
-        "Decision Terminal access",
-        "L1 Canonical data provenance",
-        "Search, map, and scored project screening",
-        "Investor memo generation",
-        "BUY / HOLD / WAIT verdict access",
-        "DLD transaction history & benchmarks",
-        "Standard Entrestate branding",
-      ],
-      cta: "Start Pro plan",
-      href: "/api/billing/checkout?tier=pro",
-      isExternal: true,
-    },
-    {
-      id: "team",
-      icon: Briefcase,
-      title: "Team",
-      badge: "$999/mo",
-      badgeColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-      description: "Shared intelligence workflows with branded outputs for advisory and brokerage teams.",
-      features: [
-        "Everything in Pro",
-        "Light team workspace",
-        "Personal + Entrestate branded outputs",
-        "Branded Infographic Mode",
-        "Client-ready PDF exports",
-        "Priority response processing",
-      ],
-      cta: "Start Team plan",
-      href: "/api/billing/checkout?tier=team",
-      isExternal: true,
-    },
-    {
-      id: "institutional",
-      icon: Building2,
-      title: "Institutional",
-      badge: "Annual contract",
-      badgeColor: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-      description: "White-label platform deployment, governed API delivery, and rollout support for firms.",
-      features: [
-        "Full firm branding (White-label)",
-        "Automation Studio (Scheduled Workers)",
-        "Enterprise API Substrate access",
-        "RBAC and governed team controls",
-        "Portfolio-level monitoring",
-        "24/7 Priority institutional support",
-      ],
-      cta: "Talk to sales",
-      href: "/contact",
-      highlight: true,
-    },
-  ],
-  ar: [
-    {
-      id: "pro",
-      icon: User,
-      title: "الخطة الاحترافية",
-      badge: "299$/شهرياً",
-      badgeColor: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-      description: "وصول احترافي مدعوم بالأدلة للمستثمرين والمشغلين المستقلين.",
-      features: [
-        "وصول إلى محطة القرار",
-        "توثيق بيانات L1 Canonical",
-        "البحث والخريطة وفرز المشاريع المصنفة",
-        "إنشاء مذكرات استثمار",
-        "الوصول إلى أحكام BUY / HOLD / WAIT",
-        "سجل معاملات DLD والمعايير",
-        "علامة Entrestate القياسية",
-      ],
-      cta: "ابدأ الخطة الاحترافية",
-      href: "/api/billing/checkout?tier=pro",
-      isExternal: true,
-    },
-    {
-      id: "team",
-      icon: Briefcase,
-      title: "خطة الفريق",
-      badge: "999$/شهرياً",
-      badgeColor: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-      description: "مسارات استخبارات مشتركة مع مخرجات تحمل هويتك للفرق الاستشارية والوساطة.",
-      features: [
-        "كل مميزات الخطة الاحترافية",
-        "مساحة فريق خفيفة",
-        "مخرجات بعلامتك + علامة Entrestate",
-        "وضع الإنفوجرافيك المخصص",
-        "تصدير ملفات PDF جاهزة للعملاء",
-        "أولوية في معالجة الطلبات",
-      ],
-      cta: "ابدأ خطة الفريق",
-      href: "/api/billing/checkout?tier=team",
-      isExternal: true,
-    },
-    {
-      id: "institutional",
-      icon: Building2,
-      title: "المؤسسات",
-      badge: "عقد سنوي",
-      badgeColor: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-      description: "نشر White-label للشركات مع حمولة API محكومة ودعم إطلاق مخصص.",
-      features: [
-        "علامة تجارية كاملة (White-label)",
-        "استوديو الأتمتة (عمال مجدولون)",
-        "وصول كامل لبنية الـ API",
-        "إدارة صلاحيات محكومة للفرق",
-        "مراقبة المحافظ الاستثمارية",
-        "دعم مؤسسي ذو أولوية 24/7",
-      ],
-      cta: "تحدث مع المبيعات",
-      href: "/contact",
-      highlight: true,
-    },
-  ],
+  return new Intl.NumberFormat(locale === "ar" ? "ar-AE" : "en-AE", {
+    style: "currency",
+    currency: "AED",
+    maximumFractionDigits: 0,
+  }).format(value)
 }
 
-// ── Entrestate OS feature highlights ──────────────────────────────────────────
-
-const ORG_FEATURES = {
-  en: [
-    { icon: Building2, title: "Company-Branded Outputs", desc: "Memos, reports, and exports ship in your firm's identity." },
-    { icon: Users, title: "Multi-User Team Workspace", desc: "Shared watchlists, portfolios, and audit trails in one workspace." },
-    { icon: Shield, title: "Dual-Schema API Security", desc: "Validated, encrypted responses with governed access." },
-    { icon: BarChart3, title: "Advanced Market Signals", desc: "Portfolio monitoring and market oversight for operating teams." },
-    { icon: Globe, title: "API Integration", desc: "Headless delivery for third-party platforms and internal systems." },
-    { icon: FileText, title: "Dedicated Onboarding", desc: "Structured rollout, setup, and ongoing support." },
-  ],
-  ar: [
-    { icon: Building2, title: "مخرجات بعلامة الشركة", desc: "المذكرات والتقارير والملفات تخرج بهوية شركتك." },
-    { icon: Users, title: "مساحة عمل الفريق", desc: "قوائم مشتركة ومحافظ وسجل متابعة داخل مساحة واحدة." },
-    { icon: Shield, title: "أمان API ثنائي المخطط", desc: "استجابات متحققة ومشفرة مع وصول محكوم." },
-    { icon: BarChart3, title: "إشارات سوقية متقدمة", desc: "متابعة المحافظ ورقابة السوق لفرق التشغيل." },
-    { icon: Globe, title: "تكامل API", desc: "تسليم Headless للمنصات الخارجية والأنظمة الداخلية." },
-    { icon: FileText, title: "تهيئة مخصصة", desc: "إطلاق منظم وإعداد ودعم مستمر." },
-  ],
+function formatCadence(value: "monthly" | "annual", locale: AppLocale) {
+  if (locale === "ar") return value === "monthly" ? "شهرياً" : "سنوياً"
+  return value === "monthly" ? "per month" : "per year"
 }
 
-// ── FAQ ────────────────────────────────────────────────────────────────────────
-
-const FAQ_GROUPS = {
-  en: [
-    {
-      group: "Access & Accounts",
-      items: [
-        {
-          q: "Is Entrestate really free for individuals?",
-          a: "Yes. Individuals can start free with core intelligence, copilot access, and report generation.",
-        },
-        {
-          q: "What's the difference between an investor and a realtor account?",
-          a: "Both use the same core engine. Realtor accounts add personal branding to client-ready outputs.",
-        },
-      ],
-    },
-    {
-      group: "Entrestate OS",
-      items: [
-        {
-          q: "What is Entrestate OS?",
-          a: "It is the company deployment: branded workspace, team controls, API access, and guided rollout.",
-        },
-        {
-          q: "How is enterprise priced?",
-          a: "Pricing is tailored by seats, API scope, and deployment requirements.",
-        },
-      ],
-    },
-    {
-      group: "The Platform",
-      items: [
-        {
-          q: "What is Entrestate, exactly?",
-          a: "Entrestate turns UAE property data into verified decision and execution workflows.",
-        },
-        {
-          q: "What can the Decision Terminal actually do?",
-          a: "It screens opportunities, compares markets, surfaces signals, and generates investor-ready reports.",
-        },
-      ],
-    },
-  ],
-  ar: [
-    {
-      group: "الوصول والحسابات",
-      items: [
-        {
-          q: "هل Entrestate مجاني حقاً للأفراد؟",
-          a: "نعم. يمكن للأفراد البدء مجاناً مع الوصول إلى الاستخبارات الأساسية والمساعد والتقارير.",
-        },
-        {
-          q: "ما الفرق بين حساب المستثمر وحساب الوسيط؟",
-          a: "كلاهما يستخدم نفس المحرك. حساب الوسيط يضيف علامته إلى المخرجات الجاهزة للعملاء.",
-        },
-      ],
-    },
-    {
-      group: "Entrestate OS",
-      items: [
-        {
-          q: "ما هو Entrestate OS؟",
-          a: "هو نشر الشركة: مساحة بعلامتك، وضوابط للفريق، ووصول API، وإطلاق منظم.",
-        },
-        {
-          q: "كيف يتم التسعير للمؤسسات؟",
-          a: "يتم التسعير بحسب عدد المقاعد ونطاق الـ API ومتطلبات النشر.",
-        },
-      ],
-    },
-    {
-      group: "المنصة",
-      items: [
-        {
-          q: "ما هو Entrestate بالضبط؟",
-          a: "تحول Entrestate بيانات السوق العقاري في الإمارات إلى تدفقات قرار وتنفيذ موثقة.",
-        },
-        {
-          q: "ماذا يقدم مساعد القرار؟",
-          a: "يفرز الفرص ويقارن الأسواق ويعرض الإشارات ويولد تقارير جاهزة للمستثمر.",
-        },
-      ],
-    },
-  ],
-}
-
-const FREE_ACCESS = {
-  en: {
-    title: "Start free before you buy",
-    body: "Individual users can begin with the core intelligence surfaces, then upgrade only when branding, collaboration, or enterprise delivery becomes necessary.",
-    bullets: [
-      "Open the Decision Terminal with evidence-backed responses",
-      "Use Search and Map to inspect scored market coverage",
-      "Move to paid plans for branded outputs, team controls, and API delivery",
-    ],
-    cta: "Open free access",
-  },
-  ar: {
-    title: "ابدأ مجاناً قبل الشراء",
-    body: "يمكن للمستخدم الفردي أن يبدأ من الأسطح الأساسية، ثم يترقى فقط عندما يحتاج العلامة أو التعاون أو النشر المؤسسي.",
-    bullets: [
-      "افتح محطة القرار مع ردود مدعومة بالأدلة",
-      "استخدم البحث والخريطة لمراجعة تغطية السوق المقيّمة",
-      "انتقل إلى الخطط المدفوعة عند الحاجة إلى العلامة، الفريق، أو الـ API",
-    ],
-    cta: "افتح الوصول المجاني",
-  },
-} as const
-
-const PLAN_COMPARISON = {
-  en: [
-    { feature: "Decision Terminal", values: ["Included", "Included", "Included", "Included"] },
-    { feature: "Search + Map", values: ["Included", "Included", "Included", "Included"] },
-    { feature: "Evidence Drawer + request IDs", values: ["Included", "Included", "Included", "Included"] },
-    { feature: "Branded outputs", values: ["Entrestate only", "Entrestate only", "Personal + Entrestate", "White-label"] },
-    { feature: "Team workspace", values: ["—", "—", "Light", "Full RBAC"] },
-    { feature: "API / embed delivery", values: ["—", "—", "—", "Included"] },
-  ],
-  ar: [
-    { feature: "محطة القرار", values: ["مضمن", "مضمن", "مضمن", "مضمن"] },
-    { feature: "البحث + الخريطة", values: ["مضمن", "مضمن", "مضمن", "مضمن"] },
-    { feature: "درج الأدلة + معرفات الطلب", values: ["مضمن", "مضمن", "مضمن", "مضمن"] },
-    { feature: "العلامة على المخرجات", values: ["Entrestate فقط", "Entrestate فقط", "شخصية + Entrestate", "White-label"] },
-    { feature: "مساحة الفريق", values: ["—", "—", "خفيفة", "RBAC كامل"] },
-    { feature: "API / التضمين", values: ["—", "—", "—", "مضمن"] },
-  ],
-} as const
-
-const PRICING_PROOF = {
-  en: [
-    { title: "Public status", href: "/status" },
-    { title: "Architecture docs", href: "/docs/documentation" },
-    { title: "Privacy + terms", href: "/privacy" },
-  ],
-  ar: [
-    { title: "الحالة العامة", href: "/status" },
-    { title: "توثيق المعمارية", href: "/docs/documentation" },
-    { title: "الخصوصية + الشروط", href: "/privacy" },
-  ],
-} as const
-
-function FaqGroup({ group, items }: { group: string; items: { q: string; a: string }[] }) {
-  const [openIndex, setOpenIndex] = useState<number | null>(null)
-  return (
-    <div>
-      <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">{group}</p>
-      <div className="space-y-2">
-        {items.map((item, i) => {
-          const isOpen = openIndex === i
-          return (
-            <div key={i} className="overflow-hidden rounded-xl border border-border/60 bg-card/60 transition-colors hover:border-border">
-              <button
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
-                onClick={() => setOpenIndex(isOpen ? null : i)}
-              >
-                <span className="text-sm font-medium text-foreground">{item.q}</span>
-                {isOpen
-                  ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
-              </button>
-              {isOpen && (
-                <div className="border-t border-border/40 px-5 pb-5 pt-4">
-                  <p className="text-sm leading-relaxed text-muted-foreground">{item.a}</p>
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-export default function PricingPage() {
-  const locale = useLocale() as AppLocale
+export default async function PricingPage() {
+  const locale = await getRequestLocale()
   const isArabic = locale === "ar"
-  const userTypes = USER_TYPES[locale] ?? USER_TYPES.en
-  const orgFeatures = ORG_FEATURES[locale] ?? ORG_FEATURES.en
-  const faqGroups = FAQ_GROUPS[locale] ?? FAQ_GROUPS.en
-  const freeAccess = FREE_ACCESS[locale] ?? FREE_ACCESS.en
-  const comparisonRows = PLAN_COMPARISON[locale] ?? PLAN_COMPARISON.en
-  const proofLinks = PRICING_PROOF[locale] ?? PRICING_PROOF.en
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "FAQPage",
-        mainEntity: faqGroups.flatMap((group) =>
-          group.items.map((item) => ({
-            "@type": "Question",
-            name: item.q,
-            acceptedAnswer: {
-              "@type": "Answer",
-              text: item.a,
-            },
-          })),
-        ),
-      },
-      {
-        "@type": "OfferCatalog",
-        name: isArabic ? "مستويات Entrestate" : "Entrestate plans",
-        itemListElement: userTypes.map((type) => ({
-          "@type": "Offer",
-          name: type.title,
-          description: type.description,
-          category: isArabic ? "خطط المنصة" : "Platform plans",
-        })),
-      },
-    ],
-  }
+  const proPlan = getPaidPlan("pro")
+  const teamPlan = getPaidPlan("team")
+  const institutionalPlan = getPaidPlan("institutional")
+  const comparisonRows = getPricingComparisonRows(locale)
+  const trustLinks = getPricingTrustLinks(locale)
+  const jsonLdFaq = faqSchema(
+    pricingFaq.map((item) => ({
+      q: getLocalizedText(item.q, locale),
+      a: getLocalizedText(item.a, locale),
+    })),
+  )
+  const productSchemas = [proPlan, teamPlan].map((plan) =>
+    productSchema({
+      name: getLocalizedText(plan.name, locale),
+      description: getLocalizedText(plan.tagline, locale),
+      url: `https://www.entrestate.com${prefixLocalePath("/pricing", locale)}#${plan.tier}`,
+      price: plan.monthlyAed ?? 0,
+      currency: "AED",
+    }),
+  )
 
   return (
-    <main id="main-content" dir={isArabic ? "rtl" : "ltr"}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+    <main id="main-content">
+      <JsonLd data={jsonLdFaq} />
+      {productSchemas.map((item, index) => (
+        <JsonLd key={index} data={item} />
+      ))}
+
       <Navbar />
-
-      <div className="mx-auto max-w-[1100px] px-4 sm:px-6 pb-24 pt-28 md:pt-36">
-
-        {/* ── Header ── */}
-        <header className="mb-16 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
+      <div className="mx-auto max-w-[1150px] px-4 pb-24 pt-28 sm:px-6 md:pt-36">
+        <header className="mx-auto max-w-3xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
             {isArabic ? "التسعير" : "Pricing"}
           </p>
-          <h1 className="mt-3 text-3xl font-semibold text-foreground md:text-5xl leading-tight">
-            {isArabic ? "اختر مستوى التشغيل المناسب لفريقك." : "Choose the operating level that fits your team."}
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground md:text-6xl">
+            {isArabic ? "تسعير واضح. بالدرهم. ومسار ترقية واضح." : "Clear pricing. Quoted in AED. One upgrade path."}
           </h1>
-          <p className="mt-4 text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
+          <p className="mt-4 text-base leading-relaxed text-muted-foreground md:text-lg">
             {isArabic
-              ? "من التحليل الفردي إلى نشر Entrestate OS على مستوى الشركة."
-              : "From solo research to full Entrestate OS deployment."}
+              ? "الوصول المجاني يفتح الأسطح الأساسية. أما الخطط المدفوعة فتبقى ضمن نموذج الباقات الحالي: احترافي، فريق، ومؤسسية."
+              : "Free access opens the core surfaces. Paid access stays on the live tier model already used by the product: Pro, Team, and Institutional."}
           </p>
+          <div className="mt-6 inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-border/60 bg-card/60 px-4 py-2 text-sm text-muted-foreground">
+            <Wallet className="h-4 w-4 text-primary" />
+            <span>{isArabic ? "كل الأسعار أدناه بالدرهم الإماراتي" : "All quoted prices below are in AED"}</span>
+            <span className="hidden text-border sm:inline">•</span>
+            <span>{isArabic ? "تضاف ضريبة القيمة المضافة عند الدفع حيثما تنطبق" : "VAT is added at checkout where applicable"}</span>
+          </div>
         </header>
 
-        <section className="mb-12 rounded-3xl border border-primary/20 bg-primary/5 p-6 md:p-8">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+        <section className="mt-12 rounded-[28px] border border-primary/20 bg-primary/5 p-6 md:p-8">
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
                 {isArabic ? "مسار البداية" : "Entry path"}
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-foreground md:text-3xl">{freeAccess.title}</h2>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">{freeAccess.body}</p>
+              <h2 className="mt-3 text-2xl font-semibold text-foreground md:text-3xl">
+                {getLocalizedText(pricingPlans.free.name, locale)}
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground md:text-base">
+                {getLocalizedText(pricingPlans.free.description, locale)}
+              </p>
             </div>
-            <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
-              <ul className="space-y-2.5">
-                {freeAccess.bullets.map((bullet) => (
-                  <li key={bullet} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-border/60 bg-background/80 p-5">
+              <p className="text-3xl font-semibold text-foreground">{formatAed(pricingPlans.free.monthlyAed, locale)}</p>
+              <ul className="mt-4 space-y-3">
+                {pricingPlans.free.features.map((feature) => (
+                  <li key={feature.en} className="flex items-start gap-3 text-sm text-muted-foreground">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    {bullet}
+                    {getLocalizedText(feature, locale)}
                   </li>
                 ))}
               </ul>
               <Button asChild className="mt-5 w-full gap-2">
-                <Link href={prefixLocalePath("/chat", locale)}>
-                  {freeAccess.cta}
+                <Link href={prefixLocalePath(pricingPlans.free.ctaHref, locale)}>
+                  {getLocalizedText(pricingPlans.free.ctaLabel, locale)}
                   <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
                 </Link>
               </Button>
@@ -417,91 +117,91 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ── User type cards ── */}
-        <section className="grid grid-cols-1 gap-5 md:grid-cols-3 mb-20">
-          {userTypes.map((type) => {
-            const Icon = type.icon
+        <section className="mt-10 grid gap-5 md:grid-cols-3">
+          {[proPlan, teamPlan, institutionalPlan].map((plan) => {
+            const price = plan.monthlyAed
+            const href = prefixLocalePath(plan.ctaHref, locale)
+
             return (
               <article
-                key={type.id}
-                className={`relative flex flex-col rounded-2xl border p-6 transition-all ${
-                  type.highlight
-                    ? "border-amber-500/30 bg-card shadow-xl shadow-amber-500/5"
-                    : "border-border/60 bg-card/70"
+                key={plan.tier}
+                id={plan.tier}
+                className={`rounded-[28px] border p-6 ${
+                  plan.highlight ? "border-primary/30 bg-card shadow-xl shadow-primary/5" : "border-border/60 bg-card/70"
                 }`}
               >
-                {type.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-background shadow-lg">
-                    {isArabic ? "المؤسسات" : "Institutional"}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
+                    <Building2 className="h-5 w-5 text-primary" />
                   </div>
-                )}
-
-                <div className="mb-5 flex items-start justify-between gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted/60">
-                    <Icon className="h-5 w-5 text-foreground/70" />
-                  </div>
-                  <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${type.badgeColor}`}>
-                    {type.badge}
+                  <span className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-semibold text-muted-foreground">
+                    {getLocalizedText(plan.badge, locale)}
                   </span>
                 </div>
 
-                <h2 className="text-base font-semibold text-foreground mb-2">{type.title}</h2>
-                <p className="text-sm text-muted-foreground/80 leading-relaxed mb-6 flex-1">{type.description}</p>
+                <h2 className="mt-5 text-xl font-semibold text-foreground">{getLocalizedText(plan.name, locale)}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{getLocalizedText(plan.tagline, locale)}</p>
+                <p className="mt-5 text-3xl font-semibold text-foreground">
+                  {formatAed(price, locale)}
+                  {price !== null ? (
+                    <span className="ms-2 text-sm font-medium text-muted-foreground">
+                      {formatCadence("monthly", locale)}
+                    </span>
+                  ) : null}
+                </p>
+                {plan.annualAed ? (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {isArabic
+                      ? `${formatAed(plan.annualAed, locale)} سنوياً`
+                      : `${formatAed(plan.annualAed, locale)} per year`}
+                  </p>
+                ) : null}
 
-                <ul className="space-y-2.5 mb-7">
-                  {type.features.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                      <Check className="h-4 w-4 shrink-0 text-emerald-500 mt-0.5" />
-                      {f}
+                <ul className="mt-6 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature.en} className="flex items-start gap-3 text-sm text-muted-foreground">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                      {getLocalizedText(feature, locale)}
                     </li>
                   ))}
                 </ul>
 
-                {type.isExternal ? (
-                  <Button
-                    asChild
-                    variant={type.highlight ? "default" : "outline"}
-                    className="w-full gap-2"
-                  >
-                    <a href={type.href}>
-                      {type.cta}
-                      <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
-                    </a>
-                  </Button>
-                ) : (
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <Link href={prefixLocalePath(type.href, locale)}>
-                      {type.cta}
-                    </Link>
-                  </Button>
-                )}
+                <Button asChild className="mt-7 w-full gap-2" variant={plan.highlight ? "default" : "outline"}>
+                  <Link href={href}>
+                    {getLocalizedText(plan.ctaLabel, locale)}
+                    <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
+                  </Link>
+                </Button>
               </article>
             )
           })}
         </section>
 
-        <section className="mb-20 rounded-3xl border border-border/60 bg-card/60 p-6 md:p-8">
-          <div className="mb-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
-              {isArabic ? "مقارنة مباشرة" : "Direct comparison"}
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold text-foreground md:text-3xl">
-              {isArabic ? "ما الذي يتغير بين المستويات؟" : "What changes across tiers?"}
-            </h2>
+        <section className="mt-14 rounded-[28px] border border-border/60 bg-card/70 p-6 md:p-8">
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
+                {isArabic ? "مقارنة مباشرة" : "Direct comparison"}
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold text-foreground">
+                {isArabic ? "ما الذي يتغير بين المستويات؟" : "What changes across tiers?"}
+              </h2>
+            </div>
+            <div className="hidden items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300 md:flex">
+              <ShieldCheck className="h-4 w-4" />
+              <span>{isArabic ? "منسق مع الحوكمة الحية" : "Aligned to the live entitlement model"}</span>
+            </div>
           </div>
-          <div className="overflow-x-auto">
+
+          <div className="mt-6 overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead>
-                <tr className="border-b border-border/50">
+                <tr className="border-b border-border/40">
                   <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "الميزة" : "Capability"}</th>
                   <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "مجاني" : "Free"}</th>
                   <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "احترافي" : "Pro"}</th>
                   <th className="pb-3 pr-3 font-medium text-muted-foreground">{isArabic ? "فريق" : "Team"}</th>
-                  <th className="pb-3 font-medium text-muted-foreground">{isArabic ? "مؤسسات" : "Institutional"}</th>
+                  <th className="pb-3 font-medium text-muted-foreground">{isArabic ? "مؤسسية" : "Institutional"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -509,7 +209,9 @@ export default function PricingPage() {
                   <tr key={row.feature} className="border-b border-border/30">
                     <td className="py-3 pr-3 font-medium text-foreground">{row.feature}</td>
                     {row.values.map((value, index) => (
-                      <td key={`${row.feature}-${index}`} className="py-3 pr-3 text-muted-foreground">{value}</td>
+                      <td key={`${row.feature}-${index}`} className="py-3 pr-3 text-muted-foreground">
+                        {value}
+                      </td>
                     ))}
                   </tr>
                 ))}
@@ -518,139 +220,48 @@ export default function PricingPage() {
           </div>
         </section>
 
-        {/* ── Entrestate OS deep-dive ── */}
-        <section className="mb-24 rounded-3xl border border-amber-500/20 bg-card/60 overflow-hidden">
-          <div className="px-6 md:px-10 py-10 border-b border-border/50">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
-                <Building2 className="h-5 w-5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
-                  {isArabic ? "المنتج المدفوع الوحيد" : "The only paid product"}
-                </p>
-                <h2 className="text-xl font-semibold text-foreground">
-                  {isArabic ? "Entrestate OS للمؤسسات" : "Entrestate OS"}
-                </h2>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-              {isArabic
-                ? "نشر كامل للشركة بعلامتك، مع ضوابط للفريق، وحمولة API Headless، وإطلاق منظم."
-                : "A full company deployment with your brand, team controls, headless API payloads, and structured rollout."}
+        <section className="mt-14 grid gap-10 lg:grid-cols-[1fr_0.9fr]">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
+              {isArabic ? "الأسئلة الشائعة" : "Frequently asked questions"}
             </p>
-          </div>
-
-          <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-0 divide-y sm:divide-y-0 ${isArabic ? "sm:divide-x-reverse" : "sm:divide-x"} divide-border/40`}>
-            {orgFeatures.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="p-6 md:p-7">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted/50 mb-4">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <h3 className="text-sm font-semibold text-foreground mb-1.5">{title}</h3>
-                <p className="text-xs text-muted-foreground/70 leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="px-6 md:px-10 py-7 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border/50">
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                {isArabic ? "سعر مخصص لكل شركة" : "Custom pricing per company"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {isArabic ? "بحسب حجم الفريق، واحتياجات API، ونطاق التكامل." : "Based on team size, API needs, and integration scope."}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button asChild variant="outline" className="gap-2 shrink-0">
-                <Link href={prefixLocalePath("/enterprise", locale)}>
-                  {isArabic ? "دليل الـ API" : "API guide"}
-                </Link>
-              </Button>
-              <Button asChild variant="default" className="gap-2 shrink-0">
-                <a href="mailto:hello@entrestate.com">
-                  <Zap className="h-4 w-4" />
-                  {isArabic ? "تواصل معنا" : "Contact us"}
-                </a>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* ── FAQ ── */}
-        <section>
-          <div className="mb-12 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
-              {isArabic ? "أسئلة شائعة" : "Common questions"}
-            </p>
-            <h2 className="mt-3 text-2xl font-semibold text-foreground md:text-3xl">
-              {isArabic ? "أسئلة متكررة" : "Frequently Asked Questions"}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-            {faqGroups.map((group) => (
-              <FaqGroup key={group.group} group={group.group} items={group.items} />
-            ))}
-          </div>
-
-          <div className="mt-14 rounded-2xl border border-border/60 bg-card/60 px-8 py-10 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
-              {isArabic ? "هل لديك سؤال خاص؟" : "Still have questions?"}
-            </p>
-            <h3 className="mt-3 text-xl font-semibold text-foreground">
-              {isArabic ? "تواصل مع الفريق" : "Talk to the team"}
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-              {isArabic
-                ? "للتسعير المؤسسي أو تكامل API أو الإطلاق المخصص، تواصل معنا مباشرة."
-                : "For enterprise pricing, API integration, or custom rollout, reach us directly."}
-            </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Button asChild variant="default">
-                <Link href={prefixLocalePath("/chat", locale)}>
-                  {isArabic ? "افتح المحطة" : "Open Terminal"}
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href={prefixLocalePath("/infrastructure", locale)}>
-                  {isArabic ? "شرح البنية" : "System overview"}
-                </Link>
-              </Button>
-              <Button asChild variant="outline">
-                <a href="mailto:hello@entrestate.com">
-                  {isArabic ? "راسلنا" : "Email us"}
-                </a>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-16 rounded-2xl border border-border/60 bg-card/60 px-6 py-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                {isArabic ? "اعتماد قبل الشراء" : "Trust before purchase"}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {isArabic
-                  ? "راجع الحالة العامة، بنية المنصة، والوثائق القانونية قبل قرار الشراء أو التكامل."
-                  : "Review public status, platform architecture, and legal docs before procurement or integration."}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {proofLinks.map((item) => (
-                <Button key={item.title} asChild variant="outline" className="gap-2">
-                  <Link href={prefixLocalePath(item.href, locale)}>{item.title}</Link>
-                </Button>
+            <div className="mt-5 space-y-3">
+              {pricingFaq.map((item) => (
+                <details key={item.q.en} className="rounded-2xl border border-border/60 bg-card/60 px-5 py-4">
+                  <summary className="cursor-pointer text-sm font-medium text-foreground">
+                    {getLocalizedText(item.q, locale)}
+                  </summary>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{getLocalizedText(item.a, locale)}</p>
+                </details>
               ))}
             </div>
           </div>
+
+          <aside className="rounded-[28px] border border-border/60 bg-card/70 p-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
+              {isArabic ? "إثباتات الحوكمة" : "Governance proofs"}
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold text-foreground">
+              {isArabic ? "قبل الشراء، راجع البنية والامتثال." : "Before you buy, inspect the public trust surface."}
+            </h2>
+            <ul className="mt-6 space-y-3">
+              {trustLinks.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={prefixLocalePath(item.href, locale)}
+                    className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/70 px-4 py-3 text-sm text-foreground transition hover:border-primary/30 hover:text-primary"
+                  >
+                    <span>{item.title}</span>
+                    <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </aside>
         </section>
 
+        <Footer />
       </div>
-      <Footer />
     </main>
   )
 }

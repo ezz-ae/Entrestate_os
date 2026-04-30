@@ -8,7 +8,7 @@ function privacyPolicy(locale: AppLocale): Omit<PolicyDocument, "footerLink"> {
       title: "سياسة الخصوصية",
       subtitle: "آخر تحديث: مارس 2026",
       intro:
-        "هذه الصفحة تشرح كيف تتعامل Entrestate مع بيانات الحساب، واستخدام المنصة، وطلبات الدعم، ومخرجات الأدوات. الهدف بسيط: تشغيل الخدمة بثقة، مع أقل قدر ممكن من جمع البيانات، ووضوح كامل في ما نحتفظ به ولماذا.",
+        "هذه الصفحة تشرح كيف تتعامل Entrestate مع بيانات الحساب، واستخدام المنصة، وطلبات الدعم، ومخرجات الأدوات. الهدف بسيط: تشغيل الخدمة بثقة، مع أقل قدر ممكن من جمع البيانات، وبما ينسجم مع توقعات PDPL في الإمارات وGDPR عند انطباقه.",
       sections: [
         {
           title: "ما الذي نجمعه",
@@ -40,6 +40,7 @@ function privacyPolicy(locale: AppLocale): Omit<PolicyDocument, "footerLink"> {
           title: "متى قد نشارك البيانات",
           paragraphs: [
             "لا نبيع بياناتك الشخصية. وقد نشارك بيانات محددة فقط عند الحاجة التشغيلية أو النظامية، مثل مزودي الدفع والاستضافة والتحليلات أو إذا طُلب ذلك وفق التزام قانوني واضح.",
+            "كما ننشر صفحة عامة بالمزودين التشغيليين الذين يساعدون في تشغيل الخدمة حتى يبقى سطح المعالجة واضحاً قبل التعاقد أو الاعتماد.",
           ],
         },
         {
@@ -52,6 +53,7 @@ function privacyPolicy(locale: AppLocale): Omit<PolicyDocument, "footerLink"> {
           title: "حقوقك وكيف تتواصل معنا",
           paragraphs: [
             "إذا رغبت في تصحيح بياناتك أو طلب حذفها أو الاستفسار عن أي نقطة تخص الخصوصية، يمكنك التواصل معنا عبر صفحة التواصل أو فريق الدعم، وسنراجع الطلب وفق طبيعة الحساب والالتزامات النظامية القائمة.",
+            "وعند انطباقه، يهدف هذا المسار إلى تغطية طلبات الوصول والتصحيح والحذف والاعتراض المرتبطة بـ PDPL وGDPR.",
           ],
         },
       ],
@@ -64,7 +66,7 @@ function privacyPolicy(locale: AppLocale): Omit<PolicyDocument, "footerLink"> {
     title: "Privacy Policy",
     subtitle: "Last updated: March 2026",
     intro:
-      "This page explains how Entrestate handles account data, platform activity, support requests, and product outputs. We collect only what is needed to operate the service, secure access, and improve reliability.",
+      "This page explains how Entrestate handles account data, platform activity, support requests, and product outputs. It is written to align the live product surface with UAE PDPL and GDPR-style privacy expectations while keeping collection limited to what is required to operate the service.",
     sections: [
       {
         title: "What we collect",
@@ -94,6 +96,7 @@ function privacyPolicy(locale: AppLocale): Omit<PolicyDocument, "footerLink"> {
         title: "When data may be shared",
         paragraphs: [
           "We do not sell personal information. Limited sharing may happen with payment, hosting, and analytics providers, or where disclosure is required by law or valid legal process.",
+          "A public list of the operational subprocessors used to run the service is published on the Entrestate subprocessor page.",
         ],
       },
       {
@@ -106,6 +109,7 @@ function privacyPolicy(locale: AppLocale): Omit<PolicyDocument, "footerLink"> {
         title: "Your choices",
         paragraphs: [
           "If you want to correct, delete, or review your information, contact our support team through the platform contact page and we will review the request against active account and legal obligations.",
+          "Where applicable, this process is intended to support PDPL- and GDPR-style access, correction, deletion, and objection requests.",
         ],
       },
     ],

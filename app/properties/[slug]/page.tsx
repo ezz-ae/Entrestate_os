@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { JsonLd } from "@/components/JsonLd"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { ConfidenceBadge, StressGradeBadge, TimingSignalBadge } from "@/components/decision/badges"
@@ -13,6 +14,7 @@ import { pickLocalizedText } from "@/lib/format/entities"
 import { formatInteger } from "@/lib/format/number"
 import { getProjectBySlug } from "@/lib/decision-infrastructure"
 import { SEO, absoluteUrl, getLocaleAlternates, getOpenGraphLocale } from "@/lib/seo"
+import { breadcrumbSchema, realEstateListingSchema } from "@/lib/seo/schema"
 
 export const dynamic = "force-dynamic"
 
@@ -24,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!detail) {
     return {
       title: locale === "ar" ? "المشروع غير موجود | Entrestate" : "Project not found | Entrestate",
-      alternates: getLocaleAlternates(`/properties/${slug}`),
+      alternates: getLocaleAlternates(`/properties/${slug}`, locale),
     }
   }
 
@@ -38,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = locale === "ar"
     ? `${name} في ${area} من ${developer}. راجع الحكم المدعوم بالأدلة، إشارة التوقيت، طبقة الضغط، وحسابات العائد من صفحة المشروع الكاملة.`
     : `${name} in ${area} by ${developer}. Review the evidence-backed verdict, timing signal, stress layer, and yield calculations from the full project page.`
-  const alternates = getLocaleAlternates(`/properties/${slug}`)
+  const alternates = getLocaleAlternates(`/properties/${slug}`, locale)
 
   return {
     title,
@@ -120,6 +122,10 @@ function toStringArray(value: unknown): string[] {
   }
 
   return []
+}
+
+function toArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : []
 }
 
 function InfoGrid({
@@ -261,6 +267,9 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
   const developerAreas = toStringArray(developerProfile.areas ?? developerProfile.top_areas)
   const developerTopProjects = toStringArray(developerProfile.top_projects)
   const bedroomValues = toStringArray(project.bedrooms)
+  const bedroomNumbers = bedroomValues
+    .map((value) => Number.parseInt(value, 10))
+    .filter((value) => Number.isFinite(value))
   const projectAreaSlug = slugify(String(project.final_area ?? project.area ?? "area"))
   const projectDeveloperSlug = slugify(String(project.developer ?? "developer"))
   const intelligenceItems = [
@@ -372,8 +381,35 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
     },
   ]
 
+  const structuredDescription = locale === "ar"
+    ? `${String(project.name ?? project.project_name ?? "المشروع")} في ${areaLabel} من ${developerLabel}. راجع الحكم المدعوم بالأدلة وإشارات التوقيت والضغط والعائد من صفحة المشروع الكاملة.`
+    : `${String(project.name ?? project.project_name ?? "Project")} in ${areaLabel} by ${developerLabel}. Review the evidence-backed verdict, timing signal, stress layer, and yield calculations from the full project page.`
+  const structuredImage = typeof project.hero_image === "string" && project.hero_image.trim().length > 0
+    ? project.hero_image
+    : absoluteUrl(SEO.defaultOgImagePath)
+  const breadcrumb = breadcrumbSchema([
+    { name: locale === "ar" ? "الرئيسية" : "Home", href: prefixLocalePath("/", locale) },
+    { name: locale === "ar" ? "المشاريع" : "Properties", href: prefixLocalePath("/properties", locale) },
+    { name: String(project.name ?? project.project_name ?? "Project"), href: prefixLocalePath(`/properties/${slug}`, locale) },
+  ])
+  const listing = realEstateListingSchema({
+    name: String(project.name ?? project.project_name ?? "Project"),
+    url: absoluteUrl(prefixLocalePath(`/properties/${slug}`, locale)),
+    description: structuredDescription,
+    developer: developerLabel,
+    area: areaLabel,
+    priceMin: toNumber(project.l1_canonical_price ?? project.price_from_aed),
+    priceMax: toNumber(project.price_max ?? project.price_to_aed),
+    currency: "AED",
+    bedrooms: bedroomNumbers,
+    completionYear: toNumber(project.completion_year),
+    image: structuredImage,
+  })
+
   return (
     <main id="main-content">
+      <JsonLd data={breadcrumb} />
+      <JsonLd data={listing} />
       <Navbar />
       <div className="mx-auto max-w-[1400px] px-6 pb-20 pt-28 md:pt-36">
         <header className="relative overflow-hidden rounded-[28px] border border-border/70 bg-card/70 p-6 md:p-8">
@@ -498,9 +534,9 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
 
           <aside className="space-y-6">
             <EvidenceDrawer
-              sources={project.evidence_sources}
-              exclusions={project.evidence_exclusions}
-              assumptions={project.evidence_assumptions}
+              sources={toArray(project.evidence_sources)}
+              exclusions={toArray(project.evidence_exclusions)}
+              assumptions={toArray(project.evidence_assumptions)}
               locale={locale}
             />
 

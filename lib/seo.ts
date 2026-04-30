@@ -38,11 +38,14 @@ export function getOpenGraphLocale(locale: AppLocale) {
   return locale === "ar" ? "ar_AE" : "en_AE"
 }
 
-export function getLocaleAlternates(path: string = "/") {
+export function getLocaleAlternates(path: string = "/", currentLocale: AppLocale = defaultLocale) {
+  const localizedEntries = locales.map((locale) => [locale, prefixLocalePath(path, locale)] as const)
+
   return {
-    canonical: prefixLocalePath(path, defaultLocale),
+    canonical: prefixLocalePath(path, currentLocale),
     languages: Object.fromEntries([
-      ...locales.map((locale) => [locale, prefixLocalePath(path, locale)]),
+      ...localizedEntries,
+      ...localizedEntries.map(([locale, href]) => [locale === "ar" ? "ar-AE" : "en-AE", href]),
       ["x-default", prefixLocalePath(path, defaultLocale)],
     ]),
   }

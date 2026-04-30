@@ -11,6 +11,8 @@ import Link from "next/link"
 import { prefixLocalePath } from "@/i18n/locale"
 import { formatAed } from "@/lib/format/currency"
 import { computeMedian, getAreaPosition } from "@/lib/area-intelligence"
+import { getPlatformMetrics } from "@/lib/platform-metrics.server"
+import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
 
 export const dynamic = "force-dynamic"
 
@@ -20,12 +22,13 @@ type SearchParams = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
+  const metrics = await getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK)
 
   return {
     title:
       locale === "ar"
         ? "ملفات مناطق دبي — العائد والسعر وبيانات العرض | Entrestate"
-        : "167 Dubai Area Profiles — Yield, Price & Supply Data | Entrestate",
+        : `${metrics.totalAreas} Dubai Area Profiles — Yield, Price & Supply Data | Entrestate`,
     description:
       locale === "ar"
         ? "ملفات مناطق مع متوسط السعر والعائد وسرعة المعاملات وضغط المعروض والمشاريع المقارنة، معززة ببيانات DLD."
@@ -68,7 +71,18 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
     maxEfficiency,
   }
   const benchmarkedAreas = visibleAreas.filter((area) => typeof area.projects === "number" && area.projects >= 5)
-  const valueYieldAreas = benchmarkedAreas.filter((area) => getAreaPosition(area, benchmarks) === "value-yield")
+  const valueYieldAreas = benchmarkedAreas.filter(
+    (area) =>
+      getAreaPosition(
+        {
+          avg_price: typeof area.avg_price === "number" ? area.avg_price : null,
+          avg_yield: typeof area.avg_yield === "number" ? area.avg_yield : null,
+          efficiency: typeof area.efficiency === "number" ? area.efficiency : null,
+          projects: typeof area.projects === "number" ? area.projects : null,
+        },
+        benchmarks,
+      ) === "value-yield",
+  )
   const valueYieldPreview = valueYieldAreas.slice(0, 3).map((area) => String(area.area ?? "")).filter(Boolean)
   const efficiencyLeader =
     [...benchmarkedAreas]
@@ -156,7 +170,7 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
             {data.coverage.fields.map((field) => (
               <div key={field.key} className="rounded-xl border border-border/40 bg-background/40 px-3 py-2">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50">
-                  {coverageLabels[field.key] ?? field.label}
+                  {coverageLabels[field.key as keyof typeof coverageLabels] ?? field.label}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-foreground">{formatDecimal(field.pct, locale, 1, 1)}%</p>
               </div>

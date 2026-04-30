@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { NextIntlClientProvider } from "next-intl"
 import { getTranslations } from "next-intl/server"
+import { CookieConsent } from "@/components/CookieConsent"
 import { ThemeProvider } from "@/components/theme-provider"
 import { CopilotProvider } from "@/components/copilot-provider"
 import { SEO, absoluteUrl, getLocaleAlternates, getOpenGraphLocale, getSeoCopy, getSiteUrl } from "@/lib/seo"
@@ -12,6 +13,7 @@ import "./globals.css"
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
   const copy = getSeoCopy(locale)
+  const alternates = getLocaleAlternates("/", locale)
 
   return {
     metadataBase: new URL(getSiteUrl()),
@@ -21,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: copy.defaultDescription,
     applicationName: SEO.siteName,
-    alternates: getLocaleAlternates("/"),
+    alternates,
     keywords: [
       "UAE real estate",
       "Dubai property market",
@@ -52,7 +54,7 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: SEO.siteName,
       title: copy.defaultTitle,
       description: copy.defaultDescription,
-      url: getLocaleAlternates("/").languages?.[locale],
+      url: alternates.languages?.[locale],
       images: [
         {
           url: absoluteUrl(SEO.defaultOgImagePath),
@@ -105,6 +107,7 @@ export default async function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
             <CopilotProvider>
               {children}
+              <CookieConsent />
             </CopilotProvider>
           </ThemeProvider>
         </NextIntlClientProvider>

@@ -178,6 +178,7 @@ type UpsertEntitlementInput = {
   accountKey: string
   email?: string | null
   tier: EntitlementTier
+  provider?: string | null
   subscriptionId?: string | null
   planId?: string | null
   status?: string | null
@@ -191,6 +192,7 @@ export async function upsertPaypalEntitlement(input: UpsertEntitlementInput): Pr
   if (!accountKey) {
     throw new Error("accountKey is required to upsert entitlement")
   }
+  const provider = input.provider?.trim() || "paypal"
 
   await ensureTables()
 
@@ -212,7 +214,7 @@ export async function upsertPaypalEntitlement(input: UpsertEntitlementInput): Pr
       ${accountKey},
       ${input.email ?? null},
       ${normalizeTier(input.tier)},
-      'paypal',
+      ${provider},
       ${input.subscriptionId ?? null},
       ${input.planId ?? null},
       ${input.status ?? null},
@@ -224,7 +226,7 @@ export async function upsertPaypalEntitlement(input: UpsertEntitlementInput): Pr
     ON CONFLICT (account_key) DO UPDATE SET
       email = COALESCE(EXCLUDED.email, billing_entitlements.email),
       tier = EXCLUDED.tier,
-      provider = 'paypal',
+      provider = ${provider},
       paypal_subscription_id = COALESCE(EXCLUDED.paypal_subscription_id, billing_entitlements.paypal_subscription_id),
       paypal_plan_id = COALESCE(EXCLUDED.paypal_plan_id, billing_entitlements.paypal_plan_id),
       paypal_status = COALESCE(EXCLUDED.paypal_status, billing_entitlements.paypal_status),
@@ -245,6 +247,7 @@ export async function upsertPaypalEntitlement(input: UpsertEntitlementInput): Pr
 type UpdateBySubscriptionInput = {
   subscriptionId: string
   tier: EntitlementTier
+  provider?: string | null
   planId?: string | null
   status?: string | null
   eventId?: string | null
@@ -255,6 +258,7 @@ type UpdateBySubscriptionInput = {
 export async function updateEntitlementBySubscriptionId(input: UpdateBySubscriptionInput): Promise<BillingEntitlement | null> {
   const subscriptionId = input.subscriptionId.trim()
   if (!subscriptionId) return null
+  const provider = input.provider?.trim() || null
 
   await ensureTables()
 
@@ -262,6 +266,7 @@ export async function updateEntitlementBySubscriptionId(input: UpdateBySubscript
     UPDATE billing_entitlements
     SET
       tier = ${normalizeTier(input.tier)},
+      provider = COALESCE(${provider}, provider),
       paypal_plan_id = COALESCE(${input.planId ?? null}, paypal_plan_id),
       paypal_status = COALESCE(${input.status ?? null}, paypal_status),
       last_event_id = COALESCE(${input.eventId ?? null}, last_event_id),

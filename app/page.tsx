@@ -22,6 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
   const copy = getSeoCopy(locale)
   const metrics = await getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK)
+  const alternates = getLocaleAlternates("/", locale)
   const formatter = new Intl.NumberFormat(locale === "ar" ? "ar-AE" : "en-US")
   const homeDescription = locale === "ar"
     ? `${formatter.format(metrics.dldTransactions)} معاملة DLD، و${formatter.format(metrics.totalProjects)} مشروعاً مقيّماً، و${formatter.format(metrics.totalAreas)} ملف منطقة، و${formatter.format(metrics.ratedDevelopers)} مطوراً مُقيّماً داخل منصة استخبارات عقارية مدعومة بالأدلة.`
@@ -30,11 +31,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: copy.homeTitle,
     description: homeDescription,
-    alternates: getLocaleAlternates("/"),
+    alternates,
     openGraph: {
       title: copy.homeTitle,
       description: homeDescription,
-      url: getLocaleAlternates("/").languages?.[locale],
+      url: alternates.languages?.[locale],
       images: [absoluteUrl(SEO.defaultOgImagePath)],
     },
     twitter: {

@@ -3,3 +3,4 @@ Entrestate
 Product: UAE real estate intelligence platform
 Contact: support@entrestate.com
 Site: https://www.entrestate.com
+Stack: Next.js, Vercel, Neon, OpenAI

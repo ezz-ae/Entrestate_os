@@ -4,6 +4,23 @@ import createNextIntlPlugin from "next-intl/plugin"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts")
+const cspMode = process.env.CSP_MODE ?? "enforce"
+
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "form-action 'self' https://checkout.stripe.com https://secure.tap.company",
+  "frame-ancestors 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://js.stripe.com https://secure.tap.company",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data: https:",
+  "connect-src 'self' https: wss:",
+  "frame-src 'self' https://js.stripe.com https://secure.tap.company",
+  "upgrade-insecure-requests",
+  "report-uri /api/csp-report",
+].join("; ")
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -62,11 +79,23 @@ const nextConfig = {
       {
         source: "/:path*",
         headers: [
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(self)" },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "Cross-Origin-Resource-Policy", value: "same-site" },
+          { key: "Origin-Agent-Cluster", value: "?1" },
+          {
+            key: cspMode === "report" ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",
+            value: contentSecurityPolicy,
+          },
         ],
+      },
+      {
+        source: "/_next/static/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
     ]
   },

@@ -6,6 +6,7 @@ export type CurrentEntitlement = {
   accountKey: string | null
   tier: "free" | "pro" | "team" | "institutional"
   source: "default" | "billing_entitlements"
+  provider: string | null
   subscriptionId: string | null
   status: string | null
 }
@@ -25,6 +26,7 @@ export async function getCurrentEntitlement(accountKeyOverride?: string | null):
       accountKey: null,
       tier: "free",
       source: "default",
+      provider: null,
       subscriptionId: null,
       status: null,
     }
@@ -37,6 +39,7 @@ export async function getCurrentEntitlement(accountKeyOverride?: string | null):
         accountKey,
         tier: "free",
         source: "default",
+        provider: null,
         subscriptionId: null,
         status: null,
       }
@@ -46,6 +49,7 @@ export async function getCurrentEntitlement(accountKeyOverride?: string | null):
       accountKey,
       tier: coerceEntitlementTier(entitlement.tier),
       source: "billing_entitlements",
+      provider: entitlement.provider,
       subscriptionId: entitlement.paypal_subscription_id,
       status: entitlement.paypal_status,
     }
@@ -55,6 +59,7 @@ export async function getCurrentEntitlement(accountKeyOverride?: string | null):
       accountKey,
       tier: "free",
       source: "default",
+      provider: null,
       subscriptionId: null,
       status: null,
     }

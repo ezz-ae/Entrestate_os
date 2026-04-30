@@ -11,6 +11,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: [
           "/api/",
+          "/_next/",
           "/account",
           "/settings",
           "/workspace",
@@ -18,6 +19,7 @@ export default function robots(): MetadataRoute.Robots {
           "/onboarding",
           "/signup",
           "/login",
+          "/*?q=*",
         ],
       },
     ],

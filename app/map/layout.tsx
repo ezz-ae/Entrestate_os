@@ -5,6 +5,7 @@ import { getRequestLocale } from "@/i18n/request"
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
+  const alternates = getLocaleAlternates("/map", locale)
   const title = isArabic ? "خريطة Entrestate — قراءة مكانية للسوق" : "Entrestate Map — Spatial market intelligence"
   const description = isArabic
     ? "استكشف المناطق بحسب العائد والسعر وضغط المعروض داخل خريطة سوق مرتبطة بنفس طبقة البيانات."
@@ -13,12 +14,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: getLocaleAlternates("/map"),
+    alternates,
     openGraph: {
       title,
       description,
       locale: getOpenGraphLocale(locale),
-      url: getLocaleAlternates("/map").languages?.[locale],
+      url: alternates.languages?.[locale],
       images: [absoluteUrl("/seq-poster.svg")],
     },
     twitter: {

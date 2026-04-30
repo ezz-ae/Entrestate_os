@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
       locale === "ar"
         ? "كيف تستخدم Entrestate ملفات الارتباط والتخزين المحلي لتثبيت الجلسة وتحسين الأداء وحفظ التفضيلات."
         : "How Entrestate uses cookies and browser storage to keep sessions stable, improve performance, and remember preferences.",
-    alternates: getLocaleAlternates("/cookies"),
+    alternates: getLocaleAlternates("/cookies", locale),
   }
 }
 

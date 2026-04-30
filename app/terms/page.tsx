@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
       locale === "ar"
         ? "الإطار الذي ينظم استخدام Entrestate ولوحات السوق وأدوات القرار والحسابات المؤسسية."
         : "The framework that governs use of Entrestate, market dashboards, decision tools, and enterprise workflows.",
-    alternates: getLocaleAlternates("/terms"),
+    alternates: getLocaleAlternates("/terms", locale),
   }
 }
 

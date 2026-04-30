@@ -1,8 +1,7 @@
 import "server-only"
 import { dbQuery, Prisma } from "@/lib/db"
-import { listAreas, listDevelopers } from "@/lib/decision-infrastructure"
-import { getMarketPulseSummary } from "@/lib/frontend-content"
 import { PLATFORM_METRICS_FALLBACK, withPlatformMetricFallback, type PlatformMetrics } from "@/lib/platform-metrics"
+import { platformStats } from "@/lib/stats/platformStats"
 
 type CountRow = {
   count: number
@@ -49,22 +48,24 @@ async function countDldTransactions() {
 }
 
 export async function getPlatformMetrics(): Promise<PlatformMetrics> {
-  const [pulse, areas, developers, dldTransactions] = await Promise.all([
-    getMarketPulseSummary().catch(() => null),
-    listAreas().catch(() => null),
-    listDevelopers().catch(() => null),
+  const [stats, dldTransactions] = await Promise.all([
+    platformStats().catch(() => null),
     countDldTransactions().catch(() => PLATFORM_METRICS_FALLBACK.dldTransactions),
   ])
 
   return withPlatformMetricFallback({
-    dataAsOf: pulse?.data_as_of ?? new Date().toISOString(),
-    totalProjects: pulse?.summary.total,
-    totalAreas: areas?.areas.length,
-    ratedDevelopers: developers?.developers.length,
-    buySignals: pulse?.summary.buy_signals,
-    highConfidence: pulse?.summary.high_confidence,
+    dataAsOf: stats?.dataAsOf ?? new Date().toISOString(),
+    totalProjects: stats?.totalProjects,
+    totalAreas: stats?.totalAreas,
+    ratedDevelopers: stats?.ratedDevelopers,
+    strongBuySignals: stats?.strongBuyCount,
+    buySignals: (stats?.strongBuyCount ?? 0) + (stats?.buyCount ?? 0),
+    holdSignals: stats?.holdCount,
+    waitSignals: stats?.waitCount,
+    avoidSignals: stats?.avoidCount,
+    highConfidence: stats?.highConfidence,
     dldTransactions,
-    avgPrice: pulse?.summary.avg_price,
-    avgYield: pulse?.summary.avg_yield,
+    avgPrice: stats?.avgPrice,
+    avgYield: stats?.avgYield,
   })
 }

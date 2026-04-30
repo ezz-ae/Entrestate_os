@@ -8,6 +8,17 @@ const LOCALE_SHORTCUT_REDIRECTS: Record<string, string> = {
   "/apis": "/docs/partners-apis",
 }
 
+function applyLocaleCookie(response: NextResponse, locale: string, secure: boolean) {
+  response.cookies.set(localeCookieName, locale, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+    secure,
+    httpOnly: false,
+  })
+  return response
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const segments = pathname.split("/").filter(Boolean)
@@ -26,6 +37,7 @@ export function proxy(request: NextRequest) {
   const unavailableText = activeLocale === "ar" ? "الخدمة غير متاحة" : "Service Unavailable"
   const isAutomationBuilderRoute = AUTOMATION_BUILDER_PATHS.some((path) => internalPathname.startsWith(path))
   const isKillSwitchRoute = KILL_SWITCH_PATHS.some((path) => internalPathname.startsWith(path))
+  const secureCookie = request.nextUrl.protocol === "https:"
 
   if (isAutomationBuilderRoute) {
     const enabled = process.env.NEXT_PUBLIC_ENABLE_AUTOMATION_BUILDER === "true"
@@ -41,6 +53,12 @@ export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-entrestate-locale", activeLocale)
 
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = pathname.replace(/\/+$/, "")
+    return applyLocaleCookie(NextResponse.redirect(redirectUrl, 308), activeLocale, secureCookie)
+  }
+
   if (internalPathname === "/api" || internalPathname.startsWith("/api/")) {
     return NextResponse.next({
       request: {
@@ -52,14 +70,13 @@ export function proxy(request: NextRequest) {
   if (isLocale(pathLocale) && LOCALE_SHORTCUT_REDIRECTS[internalPathname]) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = prefixLocalePath(LOCALE_SHORTCUT_REDIRECTS[internalPathname], activeLocale)
+    return applyLocaleCookie(NextResponse.redirect(redirectUrl, 308), activeLocale, secureCookie)
+  }
 
-    const response = NextResponse.redirect(redirectUrl)
-    response.cookies.set(localeCookieName, activeLocale, {
-      path: "/",
-      sameSite: "lax",
-    })
-
-    return response
+  if (/^\/(en|ar)\/plans\/?$/.test(pathname)) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = pathname.replace("/plans", "/pricing")
+    return applyLocaleCookie(NextResponse.redirect(redirectUrl, 301), activeLocale, secureCookie)
   }
 
   if (isLocale(pathLocale)) {
@@ -72,12 +89,7 @@ export function proxy(request: NextRequest) {
       },
     })
 
-    response.cookies.set(localeCookieName, activeLocale, {
-      path: "/",
-      sameSite: "lax",
-    })
-
-    return response
+    return applyLocaleCookie(response, activeLocale, secureCookie)
   }
 
   const response = NextResponse.next({
@@ -86,12 +98,7 @@ export function proxy(request: NextRequest) {
     },
   })
 
-  response.cookies.set(localeCookieName, activeLocale, {
-    path: "/",
-    sameSite: "lax",
-  })
-
-  return response
+  return applyLocaleCookie(response, activeLocale, secureCookie)
 }
 
 export const config = {

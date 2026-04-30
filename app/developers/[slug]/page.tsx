@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { JsonLd } from "@/components/JsonLd"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ProjectCard } from "@/components/decision/project-card"
@@ -10,6 +11,7 @@ import { prefixLocalePath } from "@/i18n/locale"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { formatInteger } from "@/lib/format/number"
 import { SEO, absoluteUrl, getLocaleAlternates, getOpenGraphLocale } from "@/lib/seo"
+import { breadcrumbSchema } from "@/lib/seo/schema"
 
 export const dynamic = "force-dynamic"
 
@@ -21,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!detail) {
     return {
       title: locale === "ar" ? "المطور غير موجود | Entrestate" : "Developer not found | Entrestate",
-      alternates: getLocaleAlternates(`/developers/${slug}`),
+      alternates: getLocaleAlternates(`/developers/${slug}`, locale),
     }
   }
 
@@ -34,7 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = locale === "ar"
     ? `${developerName} مع درجة الموثوقية، وكفاءة التشغيل، وعدد المشاريع، والتواجد الجغرافي، وروابط مباشرة إلى المشاريع المتصلة.`
     : `${developerName} with reliability score, operating efficiency, project count, area presence, and direct links to connected projects.`
-  const alternates = getLocaleAlternates(`/developers/${slug}`)
+  const alternates = getLocaleAlternates(`/developers/${slug}`, locale)
 
   return {
     title,
@@ -119,9 +121,15 @@ export default async function DeveloperDetailPage({ params }: { params: Promise<
         emptyAreas: "No linked areas surfaced for this developer in the current dataset view.",
       }
   const developerLabel = pickLocalizedText(locale, profile?.developer_ar, developer.developer, copy.developerFallback)
+  const breadcrumb = breadcrumbSchema([
+    { name: locale === "ar" ? "الرئيسية" : "Home", href: prefixLocalePath("/", locale) },
+    { name: locale === "ar" ? "المطورون" : "Developers", href: prefixLocalePath("/developers", locale) },
+    { name: developerLabel, href: prefixLocalePath(`/developers/${slug}`, locale) },
+  ])
 
   return (
     <main id="main-content">
+      <JsonLd data={breadcrumb} />
       <Navbar />
       <div className="mx-auto max-w-[1400px] px-6 pb-20 pt-28 md:pt-36">
         <header className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-6">

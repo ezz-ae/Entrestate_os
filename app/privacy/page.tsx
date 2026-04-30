@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
       locale === "ar"
         ? "كيف تتعامل Entrestate مع بيانات الحساب واستخدام المنصة وطلبات الدعم ومخرجات الأدوات."
         : "How Entrestate handles account data, platform activity, support requests, and product outputs.",
-    alternates: getLocaleAlternates("/privacy"),
+    alternates: getLocaleAlternates("/privacy", locale),
   }
 }
 
