@@ -3,6 +3,7 @@
 import { createContext, useContext, ReactNode, useState, useCallback, useMemo } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
+import type { UIMessage } from "ai"
 import { useLocale } from "next-intl"
 import { normalizeLocale } from "@/i18n/locale"
 
@@ -17,7 +18,15 @@ type CopilotContextValue = ChatHelpers & {
 
 const CopilotContext = createContext<CopilotContextValue | null>(null)
 
-export function CopilotProvider({ children, initialId }: { children: ReactNode; initialId?: string }) {
+export function CopilotProvider({
+  children,
+  initialId,
+  initialMessages = [],
+}: {
+  children: ReactNode
+  initialId?: string
+  initialMessages?: UIMessage[]
+}) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const locale = normalizeLocale(useLocale())
 
@@ -38,6 +47,7 @@ export function CopilotProvider({ children, initialId }: { children: ReactNode; 
   // shouldRecreateChat in @ai-sdk/react on every render, resetting the chat.
   const chatHelpers = useChat({
     ...(initialId != null ? { id: initialId } : {}),
+    messages: initialMessages,
     transport,
     onError: (error) => {
       console.error("Copilot error:", error)

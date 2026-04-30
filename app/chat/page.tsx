@@ -1,6 +1,9 @@
+import { CopilotProvider } from "@/components/copilot-provider"
 import { Navbar } from "@/components/navbar"
 import { ChatInterface } from "@/components/ChatInterface"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
+import { getSessionUser } from "@/lib/auth/server"
+import { loadChatSession } from "@/lib/copilot/persistence"
 import { getCopilotDailyLimit, getCopilotDailyUsage } from "@/lib/copilot-usage"
 import { redirect } from "next/navigation"
 import { headers } from "next/headers"
@@ -22,9 +25,20 @@ export default async function ChatPage({
   const isMobile = /mobile|android|iphone|ipad|phone/i.test(userAgent)
   const params = (await searchParams) ?? {}
   const sessionId = Array.isArray(params.id) ? params.id[0] : params.id
-  const promptParam = Array.isArray(params.prompt) ? params.prompt[0] : params.prompt
-  const queryParam = Array.isArray(params.q) ? params.q[0] : params.q
   const goldenPathParam = Array.isArray(params.goldenPath) ? params.goldenPath[0] : params.goldenPath
+  const sessionUser = await getSessionUser()
+  const restoredSession = sessionId && sessionUser?.id
+    ? await loadChatSession(sessionId)
+    : null
+  const authorizedSession = restoredSession?.userId === sessionUser?.id
+    ? restoredSession
+    : null
+  const initialMessages = authorizedSession?.messages.map((message) => ({
+    id: message.id,
+    role: message.role,
+    content: typeof message.content === "string" ? message.content : "",
+    ...(Array.isArray(message.parts) && message.parts.length > 0 ? { parts: message.parts } : {}),
+  }))
   const initialGoldenPath = goldenPathParam === "underwrite_development_site"
     || goldenPathParam === "compare_area_yields"
     || goldenPathParam === "draft_spa_contract"
@@ -63,14 +77,18 @@ export default async function ChatPage({
         {billingParam === "success" ? (
           <p className="mb-4 text-sm text-emerald-600">{t("subscriptionActivated")}</p>
         ) : null}
-        <ChatInterface
-          id={sessionId || undefined}
-          initialGoldenPath={initialGoldenPath}
-          initialLimit={usage.limit}
-          initialRemaining={usage.remaining}
-          initialBlocked={usage.blocked}
-          initialCooldownSecondsRemaining={usage.cooldownSecondsRemaining}
-        />
+        <CopilotProvider
+          initialId={authorizedSession?.id}
+          initialMessages={initialMessages}
+        >
+          <ChatInterface
+            initialGoldenPath={initialGoldenPath}
+            initialLimit={usage.limit}
+            initialRemaining={usage.remaining}
+            initialBlocked={usage.blocked}
+            initialCooldownSecondsRemaining={usage.cooldownSecondsRemaining}
+          />
+        </CopilotProvider>
       </div>
     </main>
   )

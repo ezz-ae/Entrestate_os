@@ -55,7 +55,6 @@ import { pickLocalizedText } from "@/lib/format/entities"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type ChatInterfaceProps = {
-  id?: string
   initialGoldenPath?: GoldenPathId
   initialLimit?: number | null
   initialRemaining?: number | null
