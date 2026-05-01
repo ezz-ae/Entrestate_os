@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, Shield, CreditCard, Users, Boxes, LogOut } from "lucide-react"
+import { User, CreditCard, FileText, KeyRound, LogOut } from "lucide-react"
 import { authClient } from "@/lib/auth/client"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
@@ -28,20 +28,20 @@ const COPY = {
     account: "Account",
     signIn: "Sign in",
     overview: "Account overview",
-    team: "Team access",
+    profile: "Profile settings",
     billing: "Billing",
-    security: "Security",
-    apps: "Connected apps",
+    reports: "Reports",
+    apiKeys: "API connections",
     signOut: "Sign out",
   },
   ar: {
     account: "الحساب",
     signIn: "تسجيل الدخول",
     overview: "نظرة عامة على الحساب",
-    team: "وصول الفريق",
+    profile: "إعدادات الملف",
     billing: "الفوترة",
-    security: "الأمان",
-    apps: "التطبيقات المرتبطة",
+    reports: "التقارير",
+    apiKeys: "اتصالات API",
     signOut: "تسجيل الخروج",
   },
 } as const
@@ -115,9 +115,9 @@ export function AccountMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={prefixLocalePath("/account#team", locale)} className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            {copy.team}
+          <Link href={prefixLocalePath("/account/profile", locale)} className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            {copy.profile}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
@@ -127,15 +127,15 @@ export function AccountMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={prefixLocalePath("/account#security", locale)} className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            {copy.security}
+          <Link href={prefixLocalePath("/account/reports", locale)} className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            {copy.reports}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={prefixLocalePath("/account#apps", locale)} className="flex items-center gap-2">
-            <Boxes className="h-4 w-4" />
-            {copy.apps}
+          <Link href={prefixLocalePath("/account/api-keys", locale)} className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4" />
+            {copy.apiKeys}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

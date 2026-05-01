@@ -11,8 +11,7 @@ export async function GET(request: Request) {
   const requestId = getRequestId(request)
 
   try {
-    const accountKey = request.headers.get("x-entrestate-account-key")?.trim() || request.headers.get("x-entrestate-user-id")?.trim() || null
-    const current = await getCurrentEntitlement(accountKey)
+    const current = await getCurrentEntitlement()
 
     if (!current.subscriptionId) {
       return NextResponse.json({ error: "No PayPal subscription linked to this account", requestId }, { status: 404 })

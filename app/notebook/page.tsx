@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useLocale } from "next-intl"
 import { formatDate } from "@/lib/format/date"
+import { prefixLocalePath } from "@/i18n/locale"
 
 type BookType = "client" | "area" | "project" | "portfolio"
 
@@ -143,7 +144,7 @@ export default function NotebookPage() {
             <p className="text-[11px] text-muted-foreground/70">
               {isArabic ? BRAND_STRIP.ar : BRAND_STRIP.en}
             </p>
-            <Link href="/pricing" className="text-[11px] font-semibold text-primary hover:underline underline-offset-2 ms-auto shrink-0">
+            <Link href={prefixLocalePath("/pricing", locale === "ar" ? "ar" : "en")} className="text-[11px] font-semibold text-primary hover:underline underline-offset-2 ms-auto shrink-0">
               {isArabic ? "طبقة المؤسسات" : "Enterprise layer"}
             </Link>
           </div>
@@ -275,7 +276,7 @@ export default function NotebookPage() {
                 {isArabic ? "دفتر جديد" : "New Book"}
               </Button>
               <Button asChild variant="outline" className="gap-2">
-                <Link href="/chat">
+                <Link href={prefixLocalePath("/chat", locale === "ar" ? "ar" : "en")}>
                   <Sparkles className="h-4 w-4" />
                   {isArabic ? "اسأل المساعد" : "Ask copilot"}
                 </Link>
@@ -380,7 +381,7 @@ export default function NotebookPage() {
 
             {/* Start from chat tile */}
             <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 22 }}>
-              <Link href="/chat">
+              <Link href={prefixLocalePath("/chat", locale === "ar" ? "ar" : "en")}>
                 <div className="h-full min-h-[200px] rounded-2xl border-2 border-dashed border-primary/20 hover:border-primary/40 bg-primary/3 hover:bg-primary/5 transition-all p-5 flex flex-col items-center justify-center text-center gap-3 group cursor-pointer">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                     <Sparkles className="h-5 w-5 text-primary" />
@@ -404,15 +405,15 @@ export default function NotebookPage() {
         {/* ── Bottom links ── */}
         {books.length > 0 && (
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground/50">
-            <Link href="/reports/generated" className="hover:text-foreground transition-colors flex items-center gap-1.5">
+            <Link href={prefixLocalePath("/reports/generated", locale === "ar" ? "ar" : "en")} className="hover:text-foreground transition-colors flex items-center gap-1.5">
               <Download className="h-3.5 w-3.5" />
               {isArabic ? "الملفات المصدّرة" : "Exported files"}
             </Link>
-            <Link href="/tools/memo" className="hover:text-foreground transition-colors flex items-center gap-1.5">
+            <Link href={prefixLocalePath("/tools/memo", locale === "ar" ? "ar" : "en")} className="hover:text-foreground transition-colors flex items-center gap-1.5">
               <FileText className="h-3.5 w-3.5" />
               {isArabic ? "إنشاء مذكرة" : "Generate memo"}
             </Link>
-            <Link href="/account/profile" className="hover:text-foreground transition-colors flex items-center gap-1.5">
+            <Link href={prefixLocalePath("/account/book", locale === "ar" ? "ar" : "en")} className="hover:text-foreground transition-colors flex items-center gap-1.5">
               <BookOpen className="h-3.5 w-3.5" />
               {isArabic ? "دفتر السوق الشخصي" : "Personal Market Book"}
             </Link>

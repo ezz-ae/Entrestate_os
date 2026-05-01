@@ -2,8 +2,9 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getSyncedUser } from "@/lib/auth/sync"
 import { getRequestId } from "@/lib/api-errors"
-import { hasTierAccess } from "@/lib/tier-access"
 import crypto from "node:crypto"
+import { getCurrentEntitlement } from "@/lib/account-entitlement"
+import { buildApiKeyPrefix, hashApiKey } from "@/lib/api-keys"
 
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
@@ -32,8 +33,8 @@ export async function POST(request: Request) {
   const user = await getSyncedUser()
   if (!user) return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401 })
 
-  // Restrict to Institutional/Enterprise
-  if (!await hasTierAccess(request, "institutional")) {
+  const entitlement = await getCurrentEntitlement()
+  if (entitlement.tier !== "institutional") {
     return NextResponse.json({ error: "Institutional tier required", requestId }, { status: 403 })
   }
 
@@ -42,19 +43,31 @@ export async function POST(request: Request) {
     if (!name) return NextResponse.json({ error: "Name is required", requestId }, { status: 400 })
 
     const rawKey = `ent_live_${crypto.randomBytes(32).toString("hex")}`
-    const prefix = rawKey.slice(0, 12) + "..." // ent_live_...
+    const prefix = buildApiKeyPrefix(rawKey)
+    const hashedKey = hashApiKey(rawKey)
 
     const newKey = await prisma.apiKey.create({
       data: {
         userId: user.id,
         name,
-        key: rawKey, // In a real production app, we would hash this
+        key: hashedKey,
         prefix,
         scopes: Array.isArray(scopes) ? scopes : ["read:market", "read:listings"],
       }
     })
 
-    return NextResponse.json({ key: { ...newKey, rawKey }, requestId })
+    return NextResponse.json({
+      key: {
+        id: newKey.id,
+        name: newKey.name,
+        prefix: newKey.prefix,
+        scopes: newKey.scopes,
+        createdAt: newKey.createdAt,
+        expiresAt: newKey.expiresAt,
+        rawKey,
+      },
+      requestId,
+    })
   } catch (error) {
     console.error("Failed to create API key:", error)
     return NextResponse.json({ error: "Failed to create API key", requestId }, { status: 500 })

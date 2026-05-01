@@ -3,9 +3,11 @@ export const dynamic = 'force-dynamic'
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { getSyncedUser } from "@/lib/auth/sync"
-import { ShieldCheck, Key, Zap, Globe, Copy, Trash, ExternalLink } from "lucide-react"
+import { ShieldCheck, Zap, Globe } from "lucide-react"
 import ApiKeyManager from "@/components/account/api-key-manager"
 import { redirect } from "next/navigation"
+import { prefixLocalePath } from "@/i18n/locale"
+import { getRequestLocale } from "@/i18n/request"
 
 export const metadata: Metadata = {
   title: "API Connections - Entrestate",
@@ -13,8 +15,9 @@ export const metadata: Metadata = {
 }
 
 export default async function ApiKeysPage() {
+  const locale = await getRequestLocale()
   const user = await getSyncedUser()
-  if (!user) redirect("/login")
+  if (!user) redirect(prefixLocalePath("/login", locale))
 
   return (
     <main className="min-h-screen bg-background">

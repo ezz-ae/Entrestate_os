@@ -8,8 +8,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
-  const headerAccountKey = request.headers.get("x-entrestate-account-key")?.trim() || request.headers.get("x-entrestate-user-id")?.trim()
-  const entitlement = await getCurrentEntitlement(headerAccountKey)
+  const entitlement = await getCurrentEntitlement()
 
   const usageAccountKey = entitlement.accountKey || getAnonymousCopilotAccountKey(request)
   const usage = await getCopilotDailyUsage(usageAccountKey, entitlement.tier)

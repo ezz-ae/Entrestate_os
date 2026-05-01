@@ -3,7 +3,7 @@ import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { getSyncedUser } from "@/lib/auth/sync"
 import { getRequestId } from "@/lib/api-errors"
-import { hasTierAccess } from "@/lib/tier-access"
+import { getCurrentEntitlement } from "@/lib/account-entitlement"
 import {
   DEFAULT_COMPREHENSIVE_PROFILE,
   getComprehensiveProfileFromSignals,
@@ -110,8 +110,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401 })
   }
 
-  // Restrict to Enterprise/Institutional
-  if (!await hasTierAccess(request, "institutional")) {
+  const entitlement = await getCurrentEntitlement()
+  if (entitlement.tier !== "institutional") {
     return NextResponse.json({ error: "Institutional tier required", requestId }, { status: 403 })
   }
 

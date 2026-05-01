@@ -6,8 +6,6 @@ import {
   CreditCard,
   ArrowRight,
   MessageSquareText,
-  BarChart3,
-  MapPin,
   FileText,
   CheckCircle2,
   Clock,
@@ -75,45 +73,45 @@ export default async function AccountPage() {
     {
       label: isArabic ? "دفتر السوق الشخصي" : "Personal Market Book",
       description: isArabic ? "توليد، تقرير، مشاركة، وتنفيذ" : "Generate, report, share, and implement",
-      href: "/account/profile",
+      href: "/account/book",
       icon: BookOpen,
       tiers: ["free", "pro", "team", "institutional"] as const,
       highlight: true,
     },
     {
-      label: t("quickAccess.chat"),
-      description: t("quickAccess.chatDesc"),
+      label: isArabic ? "إعدادات الملف" : "Profile Settings",
+      description: isArabic ? "الأولويات، الأفق، وأسواقك المفضلة" : "Risk weighting, horizon, and preferred markets",
+      href: "/account/profile",
+      icon: PenLine,
+      tiers: ["free", "pro", "team", "institutional"] as const,
+    },
+    {
+      label: isArabic ? "التقارير والتنزيلات" : "Reports & Downloads",
+      description: isArabic ? "المذكرات، التقارير، والملفات القابلة للتنزيل" : "Decision artifacts, memos, and downloadable files",
+      href: "/account/reports",
+      icon: FileText,
+      tiers: ["free", "pro", "team", "institutional"] as const,
+    },
+    {
+      label: isArabic ? "سجل الفوترة" : "Billing Activity",
+      description: isArabic ? "مراجعة الاشتراكات، التحديثات، وآخر أحداث الدفع" : "Audit subscriptions, plan changes, and payment events",
+      href: "/account/billing-activity",
+      icon: CreditCard,
+      tiers: ["free", "pro", "team", "institutional"] as const,
+    },
+    {
+      label: isArabic ? "اتصالات API" : "API Connections",
+      description: isArabic ? "مفاتيح مؤسسية للربط مع المواقع ولوحات التحكم" : "Institutional feed keys for external sites and dashboards",
+      href: "/account/api-keys",
+      icon: LayoutGrid,
+      tiers: ["institutional"] as const,
+    },
+    {
+      label: isArabic ? "محطة القرار" : "Decision Terminal",
+      description: isArabic ? "ابدأ جلسة تحليل جديدة على البيانات الحية" : "Start a new live market analysis session",
       href: "/chat",
       icon: MessageSquareText,
       tiers: ["free", "pro", "team", "institutional"] as const,
-    },
-    {
-      label: isArabic ? "مساحة العمل" : "Investor Workspace",
-      description: isArabic ? "أدوات البحث والتحليل والحاسبات" : "Research tools, analysis desks & calculators",
-      href: "/workspace",
-      icon: LayoutGrid,
-      tiers: ["free", "pro", "team", "institutional"] as const,
-    },
-    {
-      label: t("quickAccess.marketData"),
-      description: t("quickAccess.marketDataDesc"),
-      href: "/top-data",
-      icon: BarChart3,
-      tiers: ["free", "pro", "team", "institutional"] as const,
-    },
-    {
-      label: t("quickAccess.areas"),
-      description: t("quickAccess.areasDesc"),
-      href: "/areas",
-      icon: MapPin,
-      tiers: ["pro", "team", "institutional"] as const,
-    },
-    {
-      label: isArabic ? "مكتبة الأبحاث" : "Research Library",
-      description: isArabic ? "التقارير المُنشأة والمذكرات الاستثمارية" : "Generated reports and market memos",
-      href: "/reports/library",
-      icon: FileText,
-      tiers: ["pro", "team", "institutional"] as const,
     },
   ]
 
@@ -169,7 +167,7 @@ export default async function AccountPage() {
         </header>
 
         {/* ── Personal Market Book banner ── */}
-        <Link href={prefixLocalePath("/account/profile", locale)} className="group block mb-8">
+        <Link href={prefixLocalePath("/account/book", locale)} className="group block mb-8">
           <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/6 via-card to-card p-5 md:p-7 transition-all hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5">
             {/* Ambient glow */}
             <div className="pointer-events-none absolute -top-10 -right-10 w-48 h-48 bg-primary/8 blur-[60px] rounded-full" />
@@ -184,7 +182,7 @@ export default async function AccountPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                   <span className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {isArabic ? "دفتر السوق الشخصي" : "Personal Market Book ML"}
+                    {isArabic ? "دفتر السوق الشخصي" : "Personal Market Book"}
                   </span>
                   <span className="rounded-full border border-primary/20 bg-primary/8 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary/80">
                     {isArabic ? "جديد" : "New"}

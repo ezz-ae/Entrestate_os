@@ -12,8 +12,7 @@ export async function POST(request: Request) {
   const requestId = getRequestId(request)
 
   try {
-    const accountKey = request.headers.get("x-entrestate-account-key")?.trim() || request.headers.get("x-entrestate-user-id")?.trim() || null
-    const current = await getCurrentEntitlement(accountKey)
+    const current = await getCurrentEntitlement()
 
     if (!current.accountKey) {
       return NextResponse.json({ error: "Account identity required", requestId }, { status: 401 })

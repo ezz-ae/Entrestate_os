@@ -4,6 +4,8 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 import {
   countBillingEventsByAccountKey,
   listBillingEventsByAccountKey,
@@ -44,11 +46,11 @@ function getEventSummary(event: BillingActivityEvent) {
   return "No additional metadata"
 }
 
-function buildActivityHref(page: number, eventType: string | null) {
+function buildActivityHref(page: number, eventType: string | null, locale: "en" | "ar") {
   const params = new URLSearchParams()
   params.set("page", String(page))
   if (eventType) params.set("event_type", eventType)
-  return `/account/billing-activity?${params.toString()}`
+  return `${prefixLocalePath("/account/billing-activity", locale)}?${params.toString()}`
 }
 
 export default async function BillingActivityPage({
@@ -56,6 +58,7 @@ export default async function BillingActivityPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const locale = await getRequestLocale()
   const params = (await searchParams) ?? {}
   const requestedEventType = toSingleQueryValue(params.event_type)?.trim() || null
   const requestedPage = parsePage(toSingleQueryValue(params.page))
@@ -90,7 +93,7 @@ export default async function BillingActivityPage({
       <Navbar />
       <div className="mx-auto max-w-[1200px] px-6 pb-20 pt-28 md:pt-36">
         <header className="mb-6">
-          <Link href="/account" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <Link href={prefixLocalePath("/account", locale)} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
             Back to account
           </Link>
@@ -110,7 +113,7 @@ export default async function BillingActivityPage({
             <section className="mb-4 rounded-2xl border border-border/70 bg-card/70 p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant={activeFilter ? "outline" : "default"} size="sm" asChild>
-                  <Link href={buildActivityHref(1, null)}>All events</Link>
+                  <Link href={buildActivityHref(1, null, locale)}>All events</Link>
                 </Button>
                 {eventTypes.map((eventType) => (
                   <Button
@@ -119,7 +122,7 @@ export default async function BillingActivityPage({
                     size="sm"
                     asChild
                   >
-                    <Link href={buildActivityHref(1, eventType)}>{formatEventType(eventType)}</Link>
+                    <Link href={buildActivityHref(1, eventType, locale)}>{formatEventType(eventType)}</Link>
                   </Button>
                 ))}
               </div>
@@ -156,7 +159,7 @@ export default async function BillingActivityPage({
             <section className="mt-6 flex items-center justify-between">
               <Button variant="outline" size="sm" disabled={page <= 1} asChild={page > 1}>
                 {page > 1 ? (
-                  <Link href={buildActivityHref(page - 1, activeFilter)}>
+                  <Link href={buildActivityHref(page - 1, activeFilter, locale)}>
                     <ChevronLeft className="h-4 w-4" />
                     Previous
                   </Link>
@@ -172,7 +175,7 @@ export default async function BillingActivityPage({
 
               <Button variant="outline" size="sm" disabled={page >= totalPages} asChild={page < totalPages}>
                 {page < totalPages ? (
-                  <Link href={buildActivityHref(page + 1, activeFilter)}>
+                  <Link href={buildActivityHref(page + 1, activeFilter, locale)}>
                     Next
                     <ChevronRight className="h-4 w-4" />
                   </Link>

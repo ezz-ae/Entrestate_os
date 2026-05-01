@@ -86,6 +86,7 @@ type GoldenPathPreview = {
 }
 
 type ComparisonRow = {
+  kind: "project" | "area"
   label: string
   area: string
   developer: string
@@ -96,6 +97,9 @@ type ComparisonRow = {
   price: number | null
   yield: number | null
   score: number | null
+  projectsCount: number | null
+  buySignals: number | null
+  safeProjects: number | null
   developerReliabilityScore: number | null
   supplyResilienceScore: number | null
   liquidityResilienceScore: number | null
@@ -263,6 +267,70 @@ function formatAed(value: number | null, locale: string) {
 function formatMetric(value: number | null, locale: string, decimals = 1) {
   if (value === null) return "-"
   return formatDecimal(value, locale, decimals, decimals, "-")
+}
+
+function formatWholeNumber(value: number | null, locale: string) {
+  if (value === null) return "-"
+  return formatDecimal(value, locale, 0, 0, "-")
+}
+
+function formatPercent(value: number | null, locale: string, decimals = 1) {
+  if (value === null) return "-"
+  return `${formatMetric(value, locale, decimals)}%`
+}
+
+function formatDateLabel(value: unknown, locale: string) {
+  if (typeof value !== "string" || value.trim().length === 0) return "-"
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-AE" : "en-US", {
+    month: "short",
+    year: "numeric",
+  }).format(parsed)
+}
+
+function average(values: Array<number | null>) {
+  const filtered = values.filter((value): value is number => value !== null)
+  if (filtered.length === 0) return null
+  return filtered.reduce((sum, value) => sum + value, 0) / filtered.length
+}
+
+function weightedAverage(pairs: Array<{ value: number | null; weight: number | null }>) {
+  const filtered = pairs.filter(
+    (pair): pair is { value: number; weight: number } =>
+      pair.value !== null && pair.weight !== null && pair.weight > 0,
+  )
+  if (filtered.length === 0) return null
+
+  const totals = filtered.reduce(
+    (acc, pair) => {
+      acc.weighted += pair.value * pair.weight
+      acc.weight += pair.weight
+      return acc
+    },
+    { weighted: 0, weight: 0 },
+  )
+
+  if (totals.weight <= 0) return null
+  return totals.weighted / totals.weight
+}
+
+function sumValues(values: Array<number | null>) {
+  const filtered = values.filter((value): value is number => value !== null)
+  if (filtered.length === 0) return null
+  return filtered.reduce((sum, value) => sum + value, 0)
+}
+
+function toDisplayLabel(value: unknown, fallback = "-") {
+  const text = typeof value === "string" ? value.trim() : ""
+  if (!text) return fallback
+
+  return text
+    .split(/\s+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -589,10 +657,23 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
     ]
   }
 
+  const aggregateRows = rows.filter((row) =>
+    toFiniteNumber(row.projects) !== null ||
+    toFiniteNumber(row.avg_price) !== null ||
+    toFiniteNumber(row.avg_yield) !== null ||
+    toFiniteNumber(row.avg_score) !== null,
+  )
+
   const prices = rows
     .map((row) => toFiniteNumber(row.price_from_aed ?? row.l1_canonical_price))
     .filter((value): value is number => value !== null && value > 0)
-  const avgPrice = prices.length > 0 ? prices.reduce((sum, value) => sum + value, 0) / prices.length : null
+  const aggregatePrice = weightedAverage(
+    aggregateRows.map((row) => ({
+      value: toFiniteNumber(row.avg_price),
+      weight: toFiniteNumber(row.projects),
+    })),
+  )
+  const avgPrice = prices.length > 0 ? average(prices) : aggregatePrice
 
   const timingCounts = new Map<string, number>()
   for (const row of rows) {
@@ -608,7 +689,6 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
     if (!decisionLabel) continue
     decisionCounts.set(decisionLabel, (decisionCounts.get(decisionLabel) ?? 0) + 1)
   }
-  const topDecision = [...decisionCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? topTiming
 
   const confidenceCounts = new Map<string, number>()
   for (const row of rows) {
@@ -616,17 +696,52 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
     if (!confidence) continue
     confidenceCounts.set(confidence, (confidenceCounts.get(confidence) ?? 0) + 1)
   }
-  const topConfidence = [...confidenceCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? "-"
+  const totalProjects = sumValues(aggregateRows.map((row) => toFiniteNumber(row.projects)))
+  const totalBuySignals = sumValues(aggregateRows.map((row) => toFiniteNumber(row.buy_signals)))
+  const totalSafeProjects = sumValues(aggregateRows.map((row) => toFiniteNumber(row.safe_projects)))
+
+  const topConfidence = [...confidenceCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? (
+    totalProjects && totalSafeProjects
+      ? totalSafeProjects / totalProjects >= 0.65
+        ? locale === "ar" ? "تغطية قوية" : "Strong coverage"
+        : totalSafeProjects / totalProjects >= 0.4
+          ? locale === "ar" ? "تغطية متوسطة" : "Moderate coverage"
+          : locale === "ar" ? "تغطية محدودة" : "Thin coverage"
+      : "-"
+  )
 
   const scoreValues = rows
-    .map((row) => toFiniteNumber(row.investor_score_v1 ?? row.engine_god_metric))
+    .map((row) => toFiniteNumber(row.investor_score_v1 ?? row.avg_score ?? row.engine_god_metric))
     .filter((value): value is number => value !== null)
   const avgScore = scoreValues.length > 0 ? scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length : null
 
+  const decisionValue = [...decisionCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? (
+    totalProjects && totalBuySignals
+      ? totalBuySignals / totalProjects >= 0.5
+        ? locale === "ar" ? "زخم BUY" : "BUY-heavy"
+        : totalBuySignals / totalProjects >= 0.25
+          ? locale === "ar" ? "انتقائي" : "Selective"
+          : locale === "ar" ? "قيد المراقبة" : "Watchlist"
+      : topTiming
+  )
+
+  const matchedProjects = totalProjects && totalProjects > rows.length ? totalProjects : rows.length
+  const matchedProjectsSubtitle = totalProjects && aggregateRows.length > 0
+    ? locale === "ar"
+      ? `${formatWholeNumber(aggregateRows.length, locale)} أسواق مفحوصة`
+      : `${formatWholeNumber(aggregateRows.length, locale)} markets scanned`
+    : t("fromLiveScan")
+
+  const decisionSubtitle = totalBuySignals
+    ? locale === "ar"
+      ? `${formatWholeNumber(totalBuySignals, locale)} إشارات BUY`
+      : `${formatWholeNumber(totalBuySignals, locale)} BUY signals`
+    : `${t("timingLabelLead")}: ${topTiming}`
+
   return [
-    { title: t("matchedProjects"), value: formatDecimal(rows.length, locale, 0, 0), subtitle: t("fromLiveScan") },
+    { title: t("matchedProjects"), value: formatDecimal(matchedProjects, locale, 0, 0), subtitle: matchedProjectsSubtitle },
     { title: t("avgAskingPrice"), value: formatAed(avgPrice, locale), subtitle: t("acrossMatchedResults") },
-    { title: t("decisionLabel"), value: topDecision, subtitle: `${t("timingLabelLead")}: ${topTiming}` },
+    { title: t("decisionLabel"), value: decisionValue, subtitle: decisionSubtitle },
     { title: t("dataConfidence"), value: topConfidence, subtitle: `${t("avgInvestorScore")}: ${formatMetric(avgScore, locale)}` },
   ]
 }
@@ -634,24 +749,84 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
 function deriveComparisonRows(toolOutputs: Record<string, unknown>[], locale: string): ComparisonRow[] {
   const rows = toolOutputs
     .flatMap((output) => toRows(output.rows))
-    .filter((row) => typeof row.name === "string" || typeof row.project_name === "string")
+    .filter((row) => {
+      const hasSubject =
+        typeof row.name === "string" ||
+        typeof row.project_name === "string" ||
+        typeof row.project === "string" ||
+        typeof row.area === "string"
+
+      const hasComparisonMetric = [
+        row.price_from_aed,
+        row.l1_canonical_price,
+        row.avg_price,
+        row.rental_yield,
+        row.yield_pct,
+        row.avg_yield,
+        row.investor_score_v1,
+        row.avg_score,
+        row.engine_god_metric,
+        row.stress_grade_v1,
+        row.decision_label_v1,
+        row.buy_signals,
+        row.safe_projects,
+        row.projects,
+      ].some((value) => value !== null && value !== undefined && value !== "")
+
+      return hasSubject && hasComparisonMetric
+    })
 
   const unique = new Map<string, ComparisonRow>()
   for (const row of rows) {
-    const label = toText(row.name ?? row.project_name)
+    const projectLabel = toText(row.name ?? row.project_name ?? row.project, "")
+    const areaLabel = pickLocalizedText(locale, row.area_ar, row.final_area ?? row.area, "")
+    const label = projectLabel || areaLabel
     if (!label || unique.has(label)) continue
 
+    const projectsCount = toFiniteNumber(row.projects)
+    const buySignals = toFiniteNumber(row.buy_signals)
+    const safeProjects = toFiniteNumber(row.safe_projects)
+    const isAreaAggregate = !projectLabel && Boolean(areaLabel)
+
     unique.set(label, {
+      kind: isAreaAggregate ? "area" : "project",
       label,
-      area: pickLocalizedText(locale, row.area_ar, row.final_area === null ? row.area : row.final_area, "-"),
+      area: areaLabel || label,
       developer: pickLocalizedText(locale, row.developer_ar, row.developer, "-"),
-      confidence: toText(row.price_confidence ?? row.l1_confidence),
-      timingSignal: toText(row.timing_label ?? row.l3_timing_signal),
-      stressGrade: toText(row.stress_grade_v1 ?? row.l2_stress_test_grade),
+      confidence: isAreaAggregate
+        ? (
+            projectsCount !== null
+              ? locale === "ar"
+                ? `${formatWholeNumber(projectsCount, locale)} مشروع`
+                : `${formatWholeNumber(projectsCount, locale)} projects`
+              : "-"
+          )
+        : toText(row.price_confidence ?? row.l1_confidence),
+      timingSignal: isAreaAggregate
+        ? (
+            buySignals !== null
+              ? locale === "ar"
+                ? `${formatWholeNumber(buySignals, locale)} BUY`
+                : `${formatWholeNumber(buySignals, locale)} BUY signals`
+              : "-"
+          )
+        : toText(row.timing_label ?? row.l3_timing_signal),
+      stressGrade: isAreaAggregate
+        ? (
+            safeProjects !== null
+              ? locale === "ar"
+                ? `${formatWholeNumber(safeProjects, locale)} آمن`
+                : `${formatWholeNumber(safeProjects, locale)} safe projects`
+              : "-"
+          )
+        : toText(row.stress_grade_v1 ?? row.l2_stress_test_grade),
       stressScore: toFiniteNumber(row.stress_score ?? row.engine_stress_test),
-      price: toFiniteNumber(row.price_from_aed ?? row.l1_canonical_price),
-      yield: toFiniteNumber(row.rental_yield ?? row.l1_canonical_yield),
-      score: toFiniteNumber(row.investor_score_v1 ?? row.engine_god_metric),
+      price: toFiniteNumber(row.price_from_aed ?? row.l1_canonical_price ?? row.avg_price),
+      yield: toFiniteNumber(row.rental_yield ?? row.yield_pct ?? row.avg_yield ?? row.l1_canonical_yield),
+      score: toFiniteNumber(row.investor_score_v1 ?? row.avg_score ?? row.engine_god_metric),
+      projectsCount,
+      buySignals,
+      safeProjects,
       developerReliabilityScore: toFiniteNumber(row.developer_reliability_score ?? row.l2_developer_reliability),
       supplyResilienceScore: toFiniteNumber(row.supply_resilience_score),
       liquidityResilienceScore: toFiniteNumber(row.liquidity_resilience_score),
@@ -665,6 +840,245 @@ function deriveComparisonRows(toolOutputs: Record<string, unknown>[], locale: st
   }
 
   return [...unique.values()]
+}
+
+function buildComparisonSubtitle(row: ComparisonRow, locale: string) {
+  if (row.kind === "area") {
+    const parts = [
+      row.projectsCount !== null
+        ? locale === "ar"
+          ? `${formatWholeNumber(row.projectsCount, locale)} مشروع`
+          : `${formatWholeNumber(row.projectsCount, locale)} projects`
+        : null,
+      row.buySignals !== null
+        ? locale === "ar"
+          ? `${formatWholeNumber(row.buySignals, locale)} BUY`
+          : `${formatWholeNumber(row.buySignals, locale)} BUY signals`
+        : null,
+      row.safeProjects !== null
+        ? locale === "ar"
+          ? `${formatWholeNumber(row.safeProjects, locale)} آمن`
+          : `${formatWholeNumber(row.safeProjects, locale)} safe projects`
+        : null,
+    ].filter((part): part is string => Boolean(part))
+
+    return parts.join(" • ")
+  }
+
+  return [row.area, row.stressGrade, row.timingSignal, row.confidence]
+    .filter((part) => part && part !== "-")
+    .join(" • ")
+}
+
+function rankComparisonRows(rows: ComparisonRow[]) {
+  return [...rows].sort((left, right) => {
+    const scoreDelta = (right.score ?? Number.NEGATIVE_INFINITY) - (left.score ?? Number.NEGATIVE_INFINITY)
+    if (scoreDelta !== 0) return scoreDelta
+
+    const yieldDelta = (right.yield ?? Number.NEGATIVE_INFINITY) - (left.yield ?? Number.NEGATIVE_INFINITY)
+    if (yieldDelta !== 0) return yieldDelta
+
+    return (left.price ?? Number.POSITIVE_INFINITY) - (right.price ?? Number.POSITIVE_INFINITY)
+  })
+}
+
+function buildComparisonFallbackText(rows: ComparisonRow[], locale: string) {
+  const ranked = rankComparisonRows(rows)
+  const leader = ranked[0]
+  if (!leader) return ""
+
+  const runnerUp = ranked[1] ?? null
+  const verdictHeading = locale === "ar" ? "## الحكم السريع" : "## Quick verdict"
+
+  if (leader.kind === "area") {
+    const lines = [
+      verdictHeading,
+      runnerUp
+        ? locale === "ar"
+          ? `${leader.label} تظهر كالسوق الأقوى حالياً ضمن المقارنة الحالية.`
+          : `${leader.label} screens as the stronger market right now in this comparison.`
+        : locale === "ar"
+          ? `${leader.label} هي القراءة الأقوى في النتيجة الحالية.`
+          : `${leader.label} is the strongest area in the current result set.`,
+      `- ${locale === "ar" ? "متوسط السعر" : "Average entry"}: ${formatAed(leader.price, locale)}${runnerUp ? ` vs ${formatAed(runnerUp.price, locale)}` : ""}`,
+      `- ${locale === "ar" ? "متوسط العائد" : "Average yield"}: ${formatPercent(leader.yield, locale)}${runnerUp ? ` vs ${formatPercent(runnerUp.yield, locale)}` : ""}`,
+      `- ${locale === "ar" ? "متوسط نقاط المستثمر" : "Average investor score"}: ${formatMetric(leader.score, locale)}${runnerUp ? ` vs ${formatMetric(runnerUp.score, locale)}` : ""}`,
+      `- ${locale === "ar" ? "اتساع السوق" : "Market breadth"}: ${buildComparisonSubtitle(leader, locale) || "-"}`,
+    ]
+
+    return lines.join("\n")
+  }
+
+  const timingLabel = [leader.timingSignal, leader.stressGrade].filter((part) => part && part !== "-").join(" / ")
+  const runnerTiming = runnerUp ? [runnerUp.timingSignal, runnerUp.stressGrade].filter((part) => part && part !== "-").join(" / ") : ""
+
+  return [
+    verdictHeading,
+    runnerUp
+      ? locale === "ar"
+        ? `${leader.label} تتقدم على ${runnerUp.label} في هذه القراءة الحالية.`
+        : `${leader.label} ranks ahead of ${runnerUp.label} in the current read.`
+      : locale === "ar"
+        ? `${leader.label} هي الصفقة الأقوى في النتيجة الحالية.`
+        : `${leader.label} is the strongest live candidate in this result set.`,
+    `- ${locale === "ar" ? "السعر" : "Entry price"}: ${formatAed(leader.price, locale)}${runnerUp ? ` vs ${formatAed(runnerUp.price, locale)}` : ""}`,
+    `- ${locale === "ar" ? "العائد" : "Yield"}: ${formatPercent(leader.yield, locale)}${runnerUp ? ` vs ${formatPercent(runnerUp.yield, locale)}` : ""}`,
+    `- ${locale === "ar" ? "نقاط المستثمر" : "Investor score"}: ${formatMetric(leader.score, locale)}${runnerUp ? ` vs ${formatMetric(runnerUp.score, locale)}` : ""}`,
+    `- ${locale === "ar" ? "التوقيت / الضغط" : "Timing / stress"}: ${timingLabel || "-"}${runnerUp ? ` vs ${runnerTiming || "-"}` : ""}`,
+  ].join("\n")
+}
+
+function buildMemoFallbackText(outputs: Record<string, unknown>[], locale: string) {
+  for (const output of outputs) {
+    const memo = toRecord(output.memo)
+    const narrative = memo ? toRecord(memo.narrative) : null
+    if (!memo || !narrative) continue
+
+    const projectName = toText(memo.project_name, locale === "ar" ? "المشروع المحدد" : "Selected project")
+    const sections = [
+      typeof narrative.price_reality === "string" ? narrative.price_reality : "",
+      typeof narrative.area_risk === "string" ? narrative.area_risk : "",
+      typeof narrative.developer === "string" ? narrative.developer : "",
+      typeof narrative.stress_test === "string" ? narrative.stress_test : "",
+    ].filter((line) => line.trim().length > 0)
+
+    if (sections.length === 0) continue
+
+    return [
+      locale === "ar" ? `## مذكرة ${projectName}` : `## ${projectName} memo`,
+      ...sections.slice(0, 4).map((line) => `- ${line}`),
+    ].join("\n")
+  }
+
+  return ""
+}
+
+function buildGenericRowsFallbackText(outputs: Record<string, unknown>[], locale: string) {
+  const rows = outputs.flatMap((output) => toRows(output.rows))
+  const first = rows[0]
+  if (!first) return ""
+
+  const subject = toDisplayLabel(first.name ?? first.project_name ?? first.project ?? first.area ?? first.developer ?? first.asset_id, "")
+  if (!subject) {
+    return locale === "ar"
+      ? "اكتمل التحليل. افتح درج الأدلة لمراجعة النتيجة المنظمة."
+      : "Analysis complete. Open the evidence drawer to inspect the structured result set."
+  }
+
+  const details = [
+    `${locale === "ar" ? "السعر" : "Price"}: ${formatAed(toFiniteNumber(first.price_from_aed ?? first.avg_price), locale)}`,
+    `${locale === "ar" ? "العائد" : "Yield"}: ${formatPercent(toFiniteNumber(first.rental_yield ?? first.yield_pct ?? first.avg_yield), locale)}`,
+    `${locale === "ar" ? "المنطقة" : "Area"}: ${toDisplayLabel(first.area, "-")}`,
+  ].filter((entry) => !entry.endsWith(": -"))
+
+  return [
+    locale === "ar" ? "## قراءة سريعة" : "## Quick read",
+    locale === "ar"
+      ? `${subject} هو أبرز سجل في النتيجة الحالية.`
+      : `${subject} is the leading record in the current result set.`,
+    ...details.map((detail) => `- ${detail}`),
+  ].join("\n")
+}
+
+function buildAssistantFallbackText(message: any, locale: string) {
+  const outputs = extractMessageToolOutputs(message)
+  if (outputs.length === 0) return ""
+
+  const comparisonFallback = buildComparisonFallbackText(deriveComparisonRows(outputs, locale), locale)
+  if (comparisonFallback) return comparisonFallback
+
+  const memoFallback = buildMemoFallbackText(outputs, locale)
+  if (memoFallback) return memoFallback
+
+  return buildGenericRowsFallbackText(outputs, locale)
+}
+
+function resolveAssistantDisplayText(message: any, locale: string) {
+  const explicitText = displayMessageText(message)
+  if (explicitText) return explicitText
+  return buildAssistantFallbackText(message, locale)
+}
+
+function deriveGoldenPathPreviewDisplay(preview: GoldenPathPreview | null, locale: string) {
+  if (!preview?.metadata) return null
+
+  const rows = toRows(preview.rows)
+  const intent = preview.metadata.spec?.intent ?? (locale === "ar" ? "معاينة المسار الذهبي" : "Golden Path Preview")
+  const avgPrice = average(rows.map((row) => toFiniteNumber(row.price_from_aed ?? row.avg_price)))
+  const avgYield = average(rows.map((row) => toFiniteNumber(row.yield_pct ?? row.rental_yield ?? row.avg_yield)))
+  const avgGfa = average(rows.map((row) => toFiniteNumber(row.gfa_sqm)))
+  const developers = new Set(
+    rows
+      .map((row) => toDisplayLabel(row.developer, ""))
+      .filter((value) => value.length > 0),
+  )
+
+  const stats = [
+    {
+      label: locale === "ar" ? "الصفوف" : "Rows",
+      value: formatWholeNumber(preview.metadata.rowCount ?? rows.length, locale),
+    },
+    {
+      label: locale === "ar" ? "متوسط السعر" : "Average price",
+      value: formatAed(avgPrice, locale),
+    },
+    {
+      label: locale === "ar" ? "متوسط العائد" : "Average yield",
+      value: formatPercent(avgYield, locale),
+    },
+    {
+      label: locale === "ar" ? "المطورون" : "Developers",
+      value: formatWholeNumber(developers.size, locale),
+    },
+  ].filter((stat) => stat.value !== "-")
+
+  if (stats.length < 4 && avgGfa !== null) {
+    stats.push({
+      label: locale === "ar" ? "متوسط المساحة" : "Average GFA",
+      value: `${formatWholeNumber(avgGfa, locale)} sqm`,
+    })
+  }
+
+  const cards = rows.slice(0, 4).map((row, index) => {
+    const title = toDisplayLabel(row.project ?? row.name ?? row.asset_id ?? row.area, `${intent} ${index + 1}`)
+    const subtitle = [toDisplayLabel(row.area, ""), toDisplayLabel(row.developer, ""), toDisplayLabel(row.status_band, "")]
+      .filter((part) => part.length > 0)
+      .join(" • ")
+
+    const metrics = [
+      { label: locale === "ar" ? "السعر" : "Entry", value: formatAed(toFiniteNumber(row.price_from_aed ?? row.avg_price), locale) },
+      { label: locale === "ar" ? "العائد" : "Yield", value: formatPercent(toFiniteNumber(row.yield_pct ?? row.rental_yield ?? row.avg_yield), locale) },
+      { label: locale === "ar" ? "المخاطر" : "Risk", value: toDisplayLabel(row.risk_band, "-") },
+      { label: locale === "ar" ? "السيولة" : "Liquidity", value: toDisplayLabel(row.liquidity_band, "-") },
+      { label: locale === "ar" ? "التسليم" : "Handover", value: formatDateLabel(row.handover_date, locale) },
+      { label: locale === "ar" ? "المساحة" : "GFA", value: toFiniteNumber(row.gfa_sqm) !== null ? `${formatWholeNumber(toFiniteNumber(row.gfa_sqm), locale)} sqm` : "-" },
+    ]
+      .filter((metric) => metric.value !== "-")
+      .slice(0, 4)
+
+    return {
+      title,
+      subtitle,
+      badge: toDisplayLabel(row.risk_band ?? row.liquidity_band, ""),
+      metrics,
+    }
+  })
+
+  const leadRow = cards[0]
+  const summary = leadRow
+    ? locale === "ar"
+      ? `${leadRow.title} تقود القراءة الحالية ضمن ${formatWholeNumber(preview.metadata.rowCount ?? rows.length, locale)} صفوف مهيكلة.`
+      : `${leadRow.title} leads the current preview across ${formatWholeNumber(preview.metadata.rowCount ?? rows.length, locale)} structured rows.`
+    : locale === "ar"
+      ? "المعاينة جاهزة."
+      : "Preview ready."
+
+  return {
+    title: intent,
+    summary,
+    stats: stats.slice(0, 4),
+    cards,
+  }
 }
 
 function deriveDldNotifications(toolOutputs: Record<string, unknown>[]): DldNotificationRow[] {
@@ -1139,6 +1553,7 @@ export function ChatInterface({
   const comparisonRows = useMemo(() => deriveComparisonRows(toolOutputs, locale), [locale, toolOutputs])
   const dldNotifications = useMemo(() => deriveDldNotifications(toolOutputs), [toolOutputs])
   const dataFreshness = useMemo(() => resolveDataFreshness(toolOutputs), [toolOutputs])
+  const goldenPathPreviewDisplay = useMemo(() => deriveGoldenPathPreviewDisplay(goldenPathPreview, locale), [goldenPathPreview, locale])
 
   const latestAssistantMessage = useMemo(() => {
     const assistant = [...(messages as any[])].reverse().find((message) => message.role === "assistant")
@@ -1147,8 +1562,8 @@ export function ChatInterface({
 
   const latestAssistantText = useMemo(() => {
     if (!latestAssistantMessage) return ""
-    return displayMessageText(latestAssistantMessage)
-  }, [latestAssistantMessage])
+    return resolveAssistantDisplayText(latestAssistantMessage, locale)
+  }, [latestAssistantMessage, locale])
 
   const hasConversation = useMemo(() => {
     const stream = messages as any[]
@@ -1229,6 +1644,17 @@ export function ChatInterface({
 
   const riskMetrics = useMemo(() => {
     if (!selectedRow) return null
+
+    if (selectedRow.kind === "area") {
+      return [
+        { label: "Projects screened", value: formatWholeNumber(selectedRow.projectsCount, locale) },
+        { label: "BUY signals", value: formatWholeNumber(selectedRow.buySignals, locale) },
+        { label: "Safe projects", value: formatWholeNumber(selectedRow.safeProjects, locale) },
+        { label: "Average entry", value: formatAed(selectedRow.price, locale) },
+        { label: "Average yield", value: formatPercent(selectedRow.yield, locale) },
+        { label: "Avg investor score", value: formatMetric(selectedRow.score, locale) },
+      ]
+    }
 
     return [
       { label: "Stress score", value: formatMetric(selectedRow.stressScore, locale) },
@@ -1420,7 +1846,9 @@ export function ChatInterface({
   const runRiskBriefInChat = async () => {
     if (!selectedRow) return
 
-    const prompt = `Show the real V1 stress profile for ${selectedRow.label}. Return stress_score, stress_grade_v1, timing_label, investor_score_v1, decision_label_v1, developer_reliability_score, supply_resilience_score, liquidity_resilience_score, pricing_discipline_score, handover_reliability_score, area_stability_score, and payment_plan_score.`
+    const prompt = selectedRow.kind === "area"
+      ? `Run an area risk brief for ${selectedRow.label}. Return projects, avg_price, avg_yield, avg_score, buy_signals, safe_projects, and tell me whether this market screens stronger than nearby alternatives.`
+      : `Show the real V1 stress profile for ${selectedRow.label}. Return stress_score, stress_grade_v1, timing_label, investor_score_v1, decision_label_v1, developer_reliability_score, supply_resilience_score, liquidity_resilience_score, pricing_discipline_score, handover_reliability_score, area_stability_score, and payment_plan_score.`
 
     await sendPrompt(prompt)
   }
@@ -1628,21 +2056,62 @@ export function ChatInterface({
             {goldenPathError ? (
               <p className="mt-3 text-xs text-rose-500">{goldenPathError}</p>
             ) : null}
-            {goldenPathPreview?.metadata ? (
-              <div className="mt-4 rounded-2xl border border-border/40 bg-background/50 p-4 text-xs">
-                <div className="flex flex-wrap items-center justify-between gap-3 text-muted-foreground">
-                  <span className="font-semibold text-foreground">
-                    {goldenPathPreview.metadata.spec?.intent ?? "Golden Path Preview"}
-                  </span>
-                  <span>Rows: {goldenPathPreview.metadata.rowCount ?? goldenPathPreview.rows?.length ?? 0}</span>
-                  {goldenPathPreview.metadata.hash ? (
-                    <span className="font-mono text-[10px]">{goldenPathPreview.metadata.hash.slice(0, 12)}</span>
+            {goldenPathPreviewDisplay ? (
+              <div className="mt-5 rounded-[1.75rem] border border-border/50 bg-gradient-to-br from-background/95 via-card/80 to-background/70 p-5 shadow-[0_24px_80px_-48px_rgba(37,99,235,0.45)]">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="max-w-2xl">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary/70">
+                      {locale === "ar" ? "معاينة منظمة" : "Structured preview"}
+                    </p>
+                    <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                      {goldenPathPreviewDisplay.title}
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                      {goldenPathPreviewDisplay.summary}
+                    </p>
+                  </div>
+                  {goldenPathPreview?.metadata?.hash ? (
+                    <span className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-[10px] font-mono text-muted-foreground">
+                      {goldenPathPreview.metadata.hash.slice(0, 12)}
+                    </span>
                   ) : null}
                 </div>
-                <div className="mt-3 rounded-lg border border-border/40 bg-background/70 p-3">
-                  <pre className="whitespace-pre-wrap text-[11px] text-muted-foreground">
-                    {JSON.stringify(goldenPathPreview.rows?.slice(0, 4) ?? [], null, 2)}
-                  </pre>
+
+                <div className="mt-4 grid gap-2 md:grid-cols-4">
+                  {goldenPathPreviewDisplay.stats.map((stat) => (
+                    <div key={stat.label} className="rounded-2xl border border-border/50 bg-background/60 px-4 py-3">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{stat.label}</p>
+                      <p className="mt-1 text-base font-semibold tabular-nums text-foreground">{stat.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {goldenPathPreviewDisplay.cards.map((card) => (
+                    <article key={`${card.title}-${card.subtitle}`} className="rounded-2xl border border-border/50 bg-background/55 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{card.title}</p>
+                          {card.subtitle ? (
+                            <p className="mt-1 text-xs text-muted-foreground">{card.subtitle}</p>
+                          ) : null}
+                        </div>
+                        {card.badge ? (
+                          <span className="rounded-full border border-primary/20 bg-primary/8 px-2.5 py-1 text-[10px] font-semibold text-primary/80">
+                            {card.badge}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        {card.metrics.map((metric) => (
+                          <div key={`${card.title}-${metric.label}`} className="rounded-xl border border-border/40 bg-background/70 px-3 py-2">
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{metric.label}</p>
+                            <p className="mt-1 text-sm font-semibold text-foreground">{metric.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </article>
+                  ))}
                 </div>
               </div>
             ) : null}
@@ -1890,7 +2359,7 @@ export function ChatInterface({
 
           {(messages as any[]).map((message) => {
             const cleanMessage = message.role === "assistant"
-              ? stripThinkTags(messageText(message))
+              ? resolveAssistantDisplayText(message, locale)
               : displayMessageText(message)
             const toolTrace = message.role === "assistant" ? deriveToolTrace(message, locale) : null
             const evidenceDrawer = message.role === "assistant" ? buildEvidenceDrawerData(message) : null
@@ -1915,7 +2384,7 @@ export function ChatInterface({
                         {locale === "ar" ? "محطة القرار" : "Decision Terminal"}
                       </span>
                     </div>
-                    <ChatMarkdown text={cleanMessage || "Running analysis..."} />
+                    <ChatMarkdown text={cleanMessage || (locale === "ar" ? "جارٍ تشغيل التحليل..." : "Running analysis...")} />
                     {toolTrace ? (
                       <div className="mt-3 text-[10px] font-mono text-muted-foreground/70">
                         [{toolTrace}]
@@ -2139,7 +2608,7 @@ export function ChatInterface({
                 >
                   <p className="truncate text-xs font-medium text-foreground">{row.label}</p>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {row.area} • {row.stressGrade} • {row.timingSignal} • {row.confidence}
+                    {buildComparisonSubtitle(row, locale) || row.area}
                   </p>
                   <div className="mt-2 space-y-1">
                     <div className="h-1.5 rounded-full bg-secondary">
@@ -2182,7 +2651,9 @@ export function ChatInterface({
             <>
               <p className="text-xs font-medium text-foreground">{selectedRow.label}</p>
               <p className="mt-0.5 text-[11px] text-muted-foreground">
-                {selectedRow.area} • {selectedRow.developer}
+                {selectedRow.kind === "area"
+                  ? buildComparisonSubtitle(selectedRow, locale)
+                  : [selectedRow.area, selectedRow.developer].filter((part) => part && part !== "-").join(" • ")}
               </p>
 
               {riskMetrics ? (

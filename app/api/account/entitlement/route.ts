@@ -7,8 +7,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
-  const accountKey = request.headers.get("x-entrestate-account-key")?.trim() || request.headers.get("x-entrestate-user-id")?.trim()
-  const current = await getCurrentEntitlement(accountKey)
+  const current = await getCurrentEntitlement()
 
   return NextResponse.json(
     {

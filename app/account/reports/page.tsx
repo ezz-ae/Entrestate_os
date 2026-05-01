@@ -7,6 +7,8 @@ import { getSyncedUser } from "@/lib/auth/sync"
 import { prisma } from "@/lib/prisma"
 import { Download, ExternalLink, Filter, MessageSquare } from "lucide-react"
 import { redirect } from "next/navigation"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
 export const metadata: Metadata = {
   title: "Reports & Downloads - Entrestate",
@@ -60,8 +62,9 @@ function deriveTopics(title: string, payload: unknown): string[] {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function ReportsPage() {
+  const locale = await getRequestLocale()
   const user = await getSyncedUser()
-  if (!user) redirect("/login")
+  if (!user) redirect(prefixLocalePath("/login", locale))
 
   const reports = await prisma.assistantReport.findMany({
     where: { userId: user.id },
@@ -111,13 +114,13 @@ export default async function ReportsPage() {
             <p className="mt-2 max-w-xs text-sm text-muted-foreground">
               Start a decision session in the terminal to generate your first institutional report.
             </p>
-            <a
-              href="/chat"
+            <Link
+              href={prefixLocalePath("/chat", locale)}
               className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <MessageSquare className="h-4 w-4" />
               Open Terminal
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -196,7 +199,7 @@ export default async function ReportsPage() {
                           <Download className="h-3.5 w-3.5" />
                         </a>
                         <Link
-                          href={`/reports/${report.publicId}`}
+                          href={prefixLocalePath(`/reports/${report.publicId}`, locale)}
                           className="flex items-center gap-1.5 rounded-lg bg-foreground/[0.06] px-3 py-1.5 text-[11px] font-medium text-foreground/70 transition-all hover:bg-foreground/[0.1] hover:text-foreground"
                         >
                           Open

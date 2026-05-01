@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { getRequestId } from "@/lib/api-errors"
 import { Prisma, dbQuery } from "@/lib/db"
 import { listAreas, getMarketPulse } from "@/lib/decision-infrastructure"
+import { hashApiKey } from "@/lib/api-keys"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -20,8 +21,11 @@ export async function GET(request: Request) {
   }
 
   // Validate the API key
-  const keyRecord = await prisma.apiKey.findUnique({
-    where: { key: apiKey },
+  const hashedKey = hashApiKey(apiKey)
+  const keyRecord = await prisma.apiKey.findFirst({
+    where: {
+      OR: [{ key: hashedKey }, { key: apiKey }],
+    },
     include: { user: { include: { memberships: { include: { team: true } } } } }
   })
 
