@@ -111,6 +111,21 @@
   max-width: 58rem;
 }
 
+@media (max-width: 1023px) {
+  :root[data-shell="mobile"] {
+    --mobile-dock-offset: calc(5.75rem + env(safe-area-inset-bottom));
+  }
+
+  :root[data-shell="mobile"] body {
+    padding-bottom: var(--mobile-dock-offset);
+  }
+
+  :root[data-shell="mobile"] main#main-content,
+  :root[data-shell="mobile"] .seq-scope {
+    padding-bottom: var(--mobile-dock-offset);
+  }
+}
+
 @media (min-width: 768px) {
   main#main-content {
     padding-left: var(--copilot-left-offset);

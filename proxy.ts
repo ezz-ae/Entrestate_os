@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { defaultLocale, isLocale, localeCookieName, prefixLocalePath, stripLocalePrefix } from "@/i18n/locale"
+import { resolveRuntimeShell } from "@/lib/runtime-host"
 
 const AUTOMATION_BUILDER_PATHS = ["/apps/automation-builder", "/api/automation-builder"]
 const KILL_SWITCH_PATHS = ["/api/time-table", "/api/scoring", "/api/profile", "/api/distribution"]
@@ -21,6 +22,8 @@ function applyLocaleCookie(response: NextResponse, locale: string, secure: boole
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const requestHost = request.headers.get("x-forwarded-host") || request.headers.get("host")
+  const runtimeShell = resolveRuntimeShell(requestHost)
   const segments = pathname.split("/").filter(Boolean)
   const pathLocale = segments[0]
   const internalPathname = isLocale(pathLocale) ? stripLocalePrefix(pathname) : pathname
@@ -52,6 +55,7 @@ export function proxy(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-entrestate-locale", activeLocale)
+  requestHeaders.set("x-entrestate-shell", runtimeShell)
 
   if (pathname.length > 1 && pathname.endsWith("/")) {
     const redirectUrl = request.nextUrl.clone()

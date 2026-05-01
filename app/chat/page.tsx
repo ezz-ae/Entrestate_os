@@ -11,6 +11,8 @@ import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { getTranslations } from "next-intl/server"
 import type { GoldenPathId } from "@/components/ChatInterface"
+import { getGoldenPathPrompt } from "@/lib/copilot/mobile-prompts"
+import { getRequestRuntimeShell } from "@/lib/runtime-shell"
 
 export default async function ChatPage({
   searchParams,
@@ -18,6 +20,7 @@ export default async function ChatPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
   const locale = await getRequestLocale()
+  const runtimeShell = await getRequestRuntimeShell()
   const t = await getTranslations({ locale, namespace: "chatPage" })
   // Check for mobile user agent to handle "no chat page on mobile" requirement
   const headersList = await headers()
@@ -26,6 +29,9 @@ export default async function ChatPage({
   const params = (await searchParams) ?? {}
   const sessionId = Array.isArray(params.id) ? params.id[0] : params.id
   const goldenPathParam = Array.isArray(params.goldenPath) ? params.goldenPath[0] : params.goldenPath
+  const promptParam = Array.isArray(params.prompt) ? params.prompt[0] : params.prompt
+  const qParam = Array.isArray(params.q) ? params.q[0] : params.q
+  const mobilePrompt = promptParam ?? qParam ?? getGoldenPathPrompt(goldenPathParam)
   const sessionUser = await getSessionUser()
   const restoredSession = sessionId && sessionUser?.id
     ? await loadChatSession(sessionId)
@@ -33,23 +39,21 @@ export default async function ChatPage({
   const authorizedSession = restoredSession?.userId === sessionUser?.id
     ? restoredSession
     : null
-  const initialMessages = authorizedSession?.messages.map((message) => ({
-    id: message.id,
-    role: message.role,
-    content: typeof message.content === "string" ? message.content : "",
-    ...(Array.isArray(message.parts) && message.parts.length > 0 ? { parts: message.parts } : {}),
-  }))
+  const initialMessages = authorizedSession?.messages
   const initialGoldenPath = goldenPathParam === "underwrite_development_site"
     || goldenPathParam === "compare_area_yields"
     || goldenPathParam === "draft_spa_contract"
     ? goldenPathParam as GoldenPathId
     : undefined
 
-  if (isMobile) {
+  if (isMobile || runtimeShell === "mobile") {
     // On mobile, always use the sidebar chat experience instead of the desktop /chat layout.
     const chatParams = new URLSearchParams({ openChat: "true" })
     if (sessionId) {
       chatParams.set("id", sessionId)
+    }
+    if (mobilePrompt) {
+      chatParams.set("prompt", mobilePrompt)
     }
     redirect(`${prefixLocalePath("/", locale)}?${chatParams.toString()}`)
   }

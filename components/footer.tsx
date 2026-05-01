@@ -6,6 +6,7 @@ import { useLocale } from "next-intl"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useNewReport, markReportSeen } from "@/hooks/use-new-report"
 import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
+import { useRuntimeShell } from "@/hooks/use-runtime-shell"
 import { LATEST_LIBRARY_REPORT } from "@/lib/latest-library-report"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import {
@@ -107,6 +108,8 @@ const socialLinks = [
 
 export function Footer() {
   const locale = useLocale() as AppLocale
+  const runtimeShell = useRuntimeShell()
+  const isDedicatedMobileShell = runtimeShell === "mobile"
   const isArabic = locale === "ar"
   const t = (en: string, ar: string) => (isArabic ? ar : en)
   const toHref = (href: string) => (href.endsWith(".xml") ? href : prefixLocalePath(href, locale))
@@ -200,6 +203,57 @@ export function Footer() {
   const projectCountText = formatter.format(metrics.totalProjects)
   const dldTransactionsText = formatter.format(metrics.dldTransactions)
   const buySignalsText = formatter.format(metrics.buySignals)
+
+  if (isDedicatedMobileShell) {
+    return (
+      <footer className="border-t border-border/60 bg-background/95">
+        <div className="mx-auto max-w-xl px-4 py-8 sm:px-6">
+          <Link href={toHref("/")} className="flex items-center gap-2">
+            <div className="flex gap-0.5" aria-hidden="true">
+              <div className="h-3 w-3 rounded-sm bg-foreground" />
+              <div className="h-3 w-3 rounded-sm bg-foreground/50" />
+              <div className="h-3 w-3 rounded-sm bg-primary" />
+            </div>
+            <span className="text-base font-medium tracking-tight text-foreground">entrestate</span>
+          </Link>
+          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+            {t(
+              "Phone-first access to scored inventory, market evidence, and the decision terminal.",
+              "وصول هاتفي أولاً إلى المخزون المصنّف، وأدلة السوق، ومحطة القرار.",
+            )}
+          </p>
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            {[
+              { label: t("DLD", "DLD"), value: dldTransactionsText },
+              { label: t("Projects", "المشاريع"), value: projectCountText },
+              { label: t("BUY", "BUY"), value: buySignalsText },
+            ].map((item) => (
+              <div key={item.label} className="rounded-2xl border border-border/60 bg-card/60 px-3 py-3">
+                <p className="text-lg font-semibold text-foreground">{item.value}</p>
+                <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground/60">{item.label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-2 text-sm">
+            {[
+              { label: t("Pricing", "التسعير"), href: "/pricing" },
+              { label: t("Contact", "اتصل بنا"), href: "/contact" },
+              { label: t("Privacy", "الخصوصية"), href: "/privacy" },
+              { label: t("Status", "الحالة"), href: "/status" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={toHref(item.href)}
+                className="rounded-2xl border border-border/60 bg-card/50 px-4 py-3 text-sm font-medium text-foreground transition hover:border-primary/30"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </footer>
+    )
+  }
 
   const handleEmailReport = async () => {
     if (!report || reportSending) return

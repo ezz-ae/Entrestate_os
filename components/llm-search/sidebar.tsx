@@ -355,6 +355,8 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
     openSidebar()
   }
 
+  const isBusy = status === "submitted" || status === "streaming"
+
   // Auto-scroll only when new messages arrive (not on every re-render)
   useEffect(() => {
     const count = messages.length
@@ -424,8 +426,6 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
     }
   }
 
-  const isBusy = status === "submitted" || status === "streaming"
-
   const sendPrompt = React.useCallback(async (prompt: string) => {
     const trimmedPrompt = prompt.trim()
     if (!trimmedPrompt) {
@@ -450,29 +450,31 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   }, [isBusy, stop, clearError, sendMessage, setLocalError])
 
   useEffect(() => {
-    if (!promptParam || !isDesktopViewport) {
+    if (!promptParam) {
       return
     }
     if (initialPromptRef.current === promptParam) {
       return
     }
-    initialPromptRef.current = promptParam
 
     if (openPanel !== "chat") {
       setOpenPanel("chat")
+      return
     }
 
     if (!isSidebarOpen) {
       openSidebar()
+      return
     }
 
+    initialPromptRef.current = promptParam
     setInput(promptParam)
     void sendPrompt(promptParam).then((sent) => {
       if (sent) {
         setInput("")
       }
     })
-  }, [promptParam, isDesktopViewport, openPanel, isSidebarOpen, openSidebar, sendPrompt])
+  }, [promptParam, openPanel, isSidebarOpen, openSidebar, sendPrompt])
 
   const submitMessage = async (event?: FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement>) => {
     event?.preventDefault()

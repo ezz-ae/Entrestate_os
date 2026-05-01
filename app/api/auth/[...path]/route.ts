@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAuth } from "@/lib/auth/server"
+import { isMobileWebHost } from "@/lib/runtime-host"
 
 type AuthParams = { params: Promise<{ path: string[] }> }
 
@@ -16,17 +17,28 @@ function firstHeaderValue(value: string | null) {
 }
 
 function deriveOrigin(request: Request) {
-  if (trustedOriginOverride) {
-    return trustedOriginOverride
-  }
-
   const directOrigin = firstHeaderValue(request.headers.get("origin"))
+  if (trustedOriginOverride && directOrigin) {
+    try {
+      if (isMobileWebHost(new URL(directOrigin).host)) {
+        return directOrigin
+      }
+    } catch {}
+  }
   if (directOrigin) return directOrigin
 
   const forwardedHost = firstHeaderValue(request.headers.get("x-forwarded-host"))
   const host = forwardedHost || firstHeaderValue(request.headers.get("host"))
   const forwardedProto = firstHeaderValue(request.headers.get("x-forwarded-proto"))
   const proto = forwardedProto || (host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https")
+
+  if (trustedOriginOverride && host && isMobileWebHost(host)) {
+    return `${proto}://${host}`
+  }
+
+  if (trustedOriginOverride) {
+    return trustedOriginOverride
+  }
 
   if (host) {
     return `${proto}://${host}`

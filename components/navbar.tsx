@@ -8,12 +8,14 @@ import { useLocale, useTranslations } from "next-intl"
 import { Menu, X } from "lucide-react"
 import { AccountMenu } from "@/components/account-menu"
 import { LlmSidebar } from "@/components/llm-search/sidebar"
+import { MobileBottomNav } from "@/components/mobile/mobile-bottom-nav"
 import { LocaleSwitcher } from "@/components/locale-switcher"
 import { useCopilot } from "@/components/copilot-provider"
 import { authClient } from "@/lib/auth/client"
 import { MessageSquare } from "lucide-react"
 import { ReportNudge } from "@/components/report-nudge"
 import { prefixLocalePath, stripLocalePrefix, type AppLocale } from "@/i18n/locale"
+import { useRuntimeShell } from "@/hooks/use-runtime-shell"
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -21,6 +23,8 @@ export function Navbar() {
   const pathname = usePathname()
   const locale = useLocale() as AppLocale
   const t = useTranslations("nav")
+  const runtimeShell = useRuntimeShell()
+  const isDedicatedMobileShell = runtimeShell === "mobile"
   const normalizedPathname = stripLocalePrefix(pathname)
   const navLinks = [
     { label: t("enterprise"), href: "/infrastructure" },
@@ -74,14 +78,29 @@ export function Navbar() {
     setIsMobileMenuOpen(false)
   }
 
+  const openChatShell = () => {
+    if (!isChatPage) {
+      router.replace(prefixLocalePath("/?openChat=true", locale), { scroll: false })
+    }
+    if (!isSidebarOpen) {
+      openSidebar()
+    }
+    setIsMobileMenuOpen(false)
+  }
+
   const handleCopilotClick = () => {
     if (isAuthenticated) {
-      toggleSidebar()
+      if (isDedicatedMobileShell) {
+        openChatShell()
+      } else {
+        toggleSidebar()
+      }
       return
     }
 
     const isMobileViewport = window.matchMedia("(max-width: 1023px)").matches
     if (isMobileViewport) {
+      router.replace(prefixLocalePath("/?openChat=true", locale), { scroll: false })
       openSidebar()
       setIsMobileMenuOpen(false)
       return
@@ -103,19 +122,25 @@ export function Navbar() {
                 <div className="w-3 h-3 rounded-sm bg-foreground/60" />
                 <div className="w-3 h-3 rounded-sm bg-accent" />
               </div>
-              <span className="text-base sm:text-lg font-medium tracking-tight text-foreground">entrestate</span>
+              <div className="flex flex-col leading-none">
+                <span className="text-base sm:text-lg font-medium tracking-tight text-foreground">entrestate</span>
+                {isDedicatedMobileShell ? (
+                  <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/60">
+                    {locale === "ar" ? "نسخة الهاتف" : "Mobile"}
+                  </span>
+                ) : null}
+              </div>
             </Link>
 
-            <div className="hidden lg:flex items-center gap-5 xl:gap-8">
+            <div className={`hidden items-center gap-5 xl:gap-8 ${isDedicatedMobileShell ? "" : "lg:flex"}`}>
               {navLinks.map((link) => {
                 const isActive = link.href === "/" ? normalizedPathname === "/" : normalizedPathname.startsWith(link.href)
                 return (
                   <Link
                     key={link.label}
                     href={prefixLocalePath(link.href, locale)}
-                   
                     onClick={(e) => handleNavClick(e, link.href)}
-                    className={`nav-link-underline text-sm transition-colors ${
+                    className={`nav-link-underline text-sm transition-colors ${isDedicatedMobileShell ? "hidden" : ""} ${
                       isActive
                         ? "text-foreground font-medium"
                         : "text-muted-foreground hover:text-foreground"
@@ -128,10 +153,10 @@ export function Navbar() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden md:block">
+              <div className={`${isDedicatedMobileShell ? "block" : "hidden md:block"}`}>
                 <LocaleSwitcher />
               </div>
-              {!isChatPage && !isAuthenticated ? (
+              {!isChatPage && !isAuthenticated && !isDedicatedMobileShell ? (
                 <button
                   onClick={handleCopilotClick}
                   className="hidden md:flex items-center rounded-full border border-border bg-secondary p-2 text-foreground hover:bg-secondary/80 transition-colors"
@@ -142,30 +167,33 @@ export function Navbar() {
               ) : null}
               <AccountMenu />
 
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden relative z-50 p-2 text-foreground"
-                aria-label={isMobileMenuOpen ? t("closeMenu") : t("openMenu")}
-              >
-                <div className="relative w-5 h-5">
-                  <Menu
-                    className={`absolute inset-0 w-5 h-5 transition-all duration-300 ${
-                      isMobileMenuOpen ? "opacity-0 rotate-90 scale-0" : "opacity-100 rotate-0 scale-100"
-                    }`}
-                  />
-                  <X
-                    className={`absolute inset-0 w-5 h-5 transition-all duration-300 ${
-                      isMobileMenuOpen ? "opacity-100 rotate-0 scale-100" : "opacity-0 -rotate-90 scale-0"
-                    }`}
-                  />
-                </div>
-              </button>
+              {!isDedicatedMobileShell ? (
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="lg:hidden relative z-50 p-2 text-foreground"
+                  aria-label={isMobileMenuOpen ? t("closeMenu") : t("openMenu")}
+                >
+                  <div className="relative w-5 h-5">
+                    <Menu
+                      className={`absolute inset-0 w-5 h-5 transition-all duration-300 ${
+                        isMobileMenuOpen ? "opacity-0 rotate-90 scale-0" : "opacity-100 rotate-0 scale-100"
+                      }`}
+                    />
+                    <X
+                      className={`absolute inset-0 w-5 h-5 transition-all duration-300 ${
+                        isMobileMenuOpen ? "opacity-100 rotate-0 scale-100" : "opacity-0 -rotate-90 scale-0"
+                      }`}
+                    />
+                  </div>
+                </button>
+              ) : null}
             </div>
           </nav>
         </div>
       </header>
 
       {/* Mobile menu */}
+      {!isDedicatedMobileShell ? (
       <div
         className={`fixed inset-0 z-40 lg:hidden transition-all duration-300 ease-out ${
           isMobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"
@@ -216,7 +244,7 @@ export function Navbar() {
             <div className="flex items-center gap-3">
               <LocaleSwitcher />
               <button
-                onClick={() => { handleCopilotClick(); setIsMobileMenuOpen(false) }}
+                onClick={openChatShell}
                 className="flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary/80 transition-colors"
               >
                 <MessageSquare className="h-4 w-4" />
@@ -234,10 +262,18 @@ export function Navbar() {
           </div>
         </div>
       </div>
+      ) : null}
       {shouldRenderSidebar ? (
         <Suspense fallback={null}>
           <LlmSidebar authenticated={isAuthenticated} />
         </Suspense>
+      ) : null}
+      {isDedicatedMobileShell ? (
+        <MobileBottomNav
+          isAuthenticated={isAuthenticated}
+          isSidebarOpen={isSidebarOpen}
+          onOpenChat={openChatShell}
+        />
       ) : null}
       {isAuthenticated ? <ReportNudge /> : null}
     </>

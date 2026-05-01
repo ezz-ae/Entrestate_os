@@ -6,11 +6,13 @@ import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/homepage/hero-section"
 import { GoldenPathsSection } from "@/components/homepage/golden-paths-section"
 import { DecisionTunnelStepper } from "@/components/homepage/decision-tunnel-stepper"
+import { MobileHomePage } from "@/components/mobile/mobile-home-page"
 import { listProperties } from "@/lib/decision-infrastructure"
 import { docsArticles } from "@/lib/docs-articles"
 import { libraryArticles } from "@/lib/library-data"
 import { SEO, absoluteUrl, getLocaleAlternates, getSeoCopy } from "@/lib/seo"
 import { getPlatformMetrics } from "@/lib/platform-metrics.server"
+import { getRequestRuntimeShell } from "@/lib/runtime-shell"
 import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
@@ -348,6 +350,7 @@ const API_PAYLOAD_PREVIEW = {
 
 export default async function HomePage() {
   const locale = await getRequestLocale()
+  const runtimeShell = await getRequestRuntimeShell()
   const isArabic = locale === "ar"
   const structuredDataObj = getStructuredData(locale)
   const trustMarkers = getTrustMarkers(locale)
@@ -429,6 +432,29 @@ export default async function HomePage() {
     hour12: false,
     timeZone: "Asia/Dubai",
   }) + " GST"
+
+  if (runtimeShell === "mobile") {
+    return (
+      <main id="main-content">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredDataObj) }}
+        />
+        <Navbar />
+        <MobileHomePage
+          locale={locale}
+          totalProjects={totalProjects}
+          totalAreas={metrics.totalAreas}
+          ratedDevelopers={metrics.ratedDevelopers}
+          buySignals={buySignals}
+          dldTransactions={metrics.dldTransactions}
+          syncLabel={syncLabel}
+          topProject={topProject}
+        />
+        <Footer />
+      </main>
+    )
+  }
 
   return (
     <main id="main-content">

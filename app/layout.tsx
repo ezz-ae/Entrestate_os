@@ -5,6 +5,8 @@ import { getTranslations } from "next-intl/server"
 import { CookieConsent } from "@/components/CookieConsent"
 import { ThemeProvider } from "@/components/theme-provider"
 import { CopilotProvider } from "@/components/copilot-provider"
+import { RuntimeShellProvider } from "@/components/runtime-shell-provider"
+import { getRequestRuntimeShell } from "@/lib/runtime-shell"
 import { SEO, absoluteUrl, getLocaleAlternates, getOpenGraphLocale, getSeoCopy, getSiteUrl } from "@/lib/seo"
 import { getLocaleDirection } from "@/i18n/locale"
 import { getLocaleMessages, getRequestLocale } from "@/i18n/request"
@@ -91,11 +93,18 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   const locale = await getRequestLocale()
+  const runtimeShell = await getRequestRuntimeShell()
   const messages = await getLocaleMessages(locale)
   const t = await getTranslations({ locale, namespace: "common" })
 
   return (
-    <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className="bg-background">
+    <html
+      lang={locale}
+      dir={getLocaleDirection(locale)}
+      suppressHydrationWarning
+      className="bg-background"
+      data-shell={runtimeShell}
+    >
       <body className="font-sans antialiased">
         <a
           href="#main-content"
@@ -103,14 +112,16 @@ export default async function RootLayout({
         >
           {t("skipToMain")}
         </a>
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-            <CopilotProvider>
-              {children}
-              <CookieConsent />
-            </CopilotProvider>
-          </ThemeProvider>
-        </NextIntlClientProvider>
+        <RuntimeShellProvider shell={runtimeShell}>
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+              <CopilotProvider>
+                {children}
+                <CookieConsent />
+              </CopilotProvider>
+            </ThemeProvider>
+          </NextIntlClientProvider>
+        </RuntimeShellProvider>
       </body>
     </html>
   )

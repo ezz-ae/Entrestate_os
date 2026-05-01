@@ -47,15 +47,21 @@ export async function loadChatSession(sessionId: string) {
 
   if (!session) return null
 
-  // Convert DB messages to AI SDK UIMessage format
-  const messages: UIMessage[] = session.messages.map(msg => ({
-    id: msg.id,
-    role: msg.role as "user" | "assistant" | "system" | "tool",
-    content: msg.content,
-    createdAt: msg.createdAt,
-    // Add tool calls if present
-    ...(msg.toolCalls ? { parts: JSON.parse(JSON.stringify(msg.toolCalls)) } : {})
-  }))
+  // Convert DB messages to AI SDK UIMessage format using text/tool parts.
+  const messages: UIMessage[] = session.messages.map((msg) => {
+    const textParts = msg.content
+      ? [{ type: "text" as const, text: msg.content }]
+      : []
+    const toolParts = Array.isArray(msg.toolCalls)
+      ? JSON.parse(JSON.stringify(msg.toolCalls))
+      : []
+
+    return {
+      id: msg.id,
+      role: msg.role as UIMessage["role"],
+      parts: [...textParts, ...toolParts],
+    }
+  })
 
   return { ...session, messages }
 }
