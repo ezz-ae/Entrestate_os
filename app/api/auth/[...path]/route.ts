@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { applyCookieDomain, getSharedAuthCookieDomain } from "@/lib/auth/cookie-domain"
 import { getAuth } from "@/lib/auth/server"
 import { isMobileWebHost } from "@/lib/runtime-host"
 
@@ -16,6 +17,10 @@ function firstHeaderValue(value: string | null) {
   return value?.split(",")[0]?.trim() || ""
 }
 
+function getRequestHost(request: Request) {
+  return firstHeaderValue(request.headers.get("x-forwarded-host")) || firstHeaderValue(request.headers.get("host"))
+}
+
 function deriveOrigin(request: Request) {
   const directOrigin = firstHeaderValue(request.headers.get("origin"))
   if (trustedOriginOverride && directOrigin) {
@@ -27,8 +32,7 @@ function deriveOrigin(request: Request) {
   }
   if (directOrigin) return directOrigin
 
-  const forwardedHost = firstHeaderValue(request.headers.get("x-forwarded-host"))
-  const host = forwardedHost || firstHeaderValue(request.headers.get("host"))
+  const host = getRequestHost(request)
   const forwardedProto = firstHeaderValue(request.headers.get("x-forwarded-proto"))
   const proto = forwardedProto || (host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https")
 
@@ -45,6 +49,35 @@ function deriveOrigin(request: Request) {
   }
 
   return new URL(request.url).origin
+}
+
+function rewriteResponseCookies(response: Response, request: Request) {
+  const cookieDomain = getSharedAuthCookieDomain(getRequestHost(request))
+  if (!cookieDomain) {
+    return response
+  }
+
+  const getSetCookie = (response.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie
+  if (typeof getSetCookie !== "function") {
+    return response
+  }
+
+  const existingCookies = getSetCookie.call(response.headers)
+  if (!existingCookies.length) {
+    return response
+  }
+
+  const nextHeaders = new Headers(response.headers)
+  nextHeaders.delete("set-cookie")
+  for (const cookie of existingCookies) {
+    nextHeaders.append("set-cookie", applyCookieDomain(cookie, cookieDomain))
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: nextHeaders,
+  })
 }
 
 async function proxyEmailAuth(request: Request, context: AuthParams) {
@@ -105,7 +138,7 @@ async function proxyEmailAuth(request: Request, context: AuthParams) {
     const getSetCookie = (upstreamResponse.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie
     if (typeof getSetCookie === "function") {
       for (const setCookieValue of getSetCookie.call(upstreamResponse.headers)) {
-        responseHeaders.append("set-cookie", setCookieValue)
+        responseHeaders.append("set-cookie", applyCookieDomain(setCookieValue, getSharedAuthCookieDomain(getRequestHost(request))))
       }
     }
 
@@ -128,17 +161,37 @@ const missingAuth = async (_request: Request, context: AuthParams) => {
   return NextResponse.json({ error: "Neon Auth is not configured." }, { status: 501 })
 }
 
-export const GET = handler?.GET ?? (async (request: Request, context: AuthParams) => missingAuth(request, context))
+export const GET = async (request: Request, context: AuthParams) => {
+  const response = handler?.GET
+    ? await handler.GET(request, context)
+    : await missingAuth(request, context)
+  return rewriteResponseCookies(response, request)
+}
 export const POST = async (request: Request, context: AuthParams) => {
   const proxied = await proxyEmailAuth(request, context)
-  if (proxied) return proxied
+  if (proxied) return rewriteResponseCookies(proxied, request)
 
   if (handler?.POST) {
-    return handler.POST(request, context)
+    return rewriteResponseCookies(await handler.POST(request, context), request)
   }
 
-  return missingAuth(request, context)
+  return rewriteResponseCookies(await missingAuth(request, context), request)
 }
-export const PUT = handler?.PUT ?? (async (request: Request, context: AuthParams) => missingAuth(request, context))
-export const DELETE = handler?.DELETE ?? (async (request: Request, context: AuthParams) => missingAuth(request, context))
-export const PATCH = handler?.PATCH ?? (async (request: Request, context: AuthParams) => missingAuth(request, context))
+export const PUT = async (request: Request, context: AuthParams) => {
+  const response = handler?.PUT
+    ? await handler.PUT(request, context)
+    : await missingAuth(request, context)
+  return rewriteResponseCookies(response, request)
+}
+export const DELETE = async (request: Request, context: AuthParams) => {
+  const response = handler?.DELETE
+    ? await handler.DELETE(request, context)
+    : await missingAuth(request, context)
+  return rewriteResponseCookies(response, request)
+}
+export const PATCH = async (request: Request, context: AuthParams) => {
+  const response = handler?.PATCH
+    ? await handler.PATCH(request, context)
+    : await missingAuth(request, context)
+  return rewriteResponseCookies(response, request)
+}

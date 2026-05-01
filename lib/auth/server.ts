@@ -1,8 +1,10 @@
 import "server-only"
 import { createNeonAuth } from "@neondatabase/auth/next/server"
+import { getSharedAuthCookieDomain } from "@/lib/auth/cookie-domain"
 
 const baseUrl = process.env.NEON_AUTH_BASE_URL
 const cookieSecret = process.env.NEON_AUTH_COOKIE_SECRET
+const cookieDomain = getSharedAuthCookieDomain()
 const adminEmails = (process.env.NEON_AUTH_ADMIN_EMAILS ?? "")
   .split(",")
   .map((email) => email.trim().toLowerCase())
@@ -27,6 +29,7 @@ export const auth = authEnabled && !invalidSecret
       baseUrl: baseUrl!,
       cookies: {
         secret: cookieSecret!,
+        ...(cookieDomain ? { domain: cookieDomain } : {}),
       },
     })
   : null
