@@ -1,4 +1,5 @@
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"])
+const SHARED_SITE_SUBDOMAINS = new Set(["www", "m"])
 
 function normalizeHost(value: string) {
   return value.trim().toLowerCase().replace(/:\d+$/, "")
@@ -16,7 +17,10 @@ function toCookieDomain(hostname: string | null | undefined) {
     return undefined
   }
 
-  const apexHostname = normalized.replace(/^www\./, "")
+  const labels = normalized.split(".").filter(Boolean)
+  const apexHostname = labels.length > 2 && SHARED_SITE_SUBDOMAINS.has(labels[0])
+    ? labels.slice(1).join(".")
+    : normalized
   if (!apexHostname.includes(".")) {
     return undefined
   }
@@ -30,23 +34,30 @@ export function getSharedAuthCookieDomain(host?: string | null) {
     return explicitDomain
   }
 
-  if (host) {
-    const derivedFromHost = toCookieDomain(host)
-    if (derivedFromHost) {
-      return derivedFromHost
+  const configuredOrigins = [
+    process.env.NEON_AUTH_TRUSTED_ORIGIN?.trim(),
+    process.env.NEXT_PUBLIC_SITE_URL?.trim(),
+  ].filter(Boolean) as string[]
+
+  for (const origin of configuredOrigins) {
+    try {
+      const configuredDomain = toCookieDomain(new URL(origin).hostname)
+      if (configuredDomain) {
+        return configuredDomain
+      }
+    } catch {
+      const configuredDomain = toCookieDomain(origin)
+      if (configuredDomain) {
+        return configuredDomain
+      }
     }
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim()
-  if (!siteUrl) {
-    return undefined
+  if (host) {
+    return toCookieDomain(host)
   }
 
-  try {
-    return toCookieDomain(new URL(siteUrl).hostname)
-  } catch {
-    return toCookieDomain(siteUrl)
-  }
+  return undefined
 }
 
 export function applyCookieDomain(setCookieValue: string, cookieDomain?: string) {
