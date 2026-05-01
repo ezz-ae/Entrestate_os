@@ -5,9 +5,11 @@ import Link from "next/link"
 import { FileText, X, Mail, ChevronRight } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useNewReport, markReportSeen } from "@/hooks/use-new-report"
+import { stripLocalePrefix } from "@/i18n/locale"
 
 export function ReportNudge() {
   const pathname = usePathname()
+  const normalizedPathname = stripLocalePrefix(pathname)
   const { report, dismiss } = useNewReport()
   const [open, setOpen] = useState(false)
   const [visible, setVisible] = useState(false)
@@ -24,13 +26,13 @@ export function ReportNudge() {
   // Auto-dismiss when user navigates to their reports
   useEffect(() => {
     if (
-      pathname.startsWith("/account/reports") ||
-      pathname.startsWith("/reports/generated") ||
-      pathname.startsWith("/reports/library")
+      normalizedPathname.startsWith("/account/reports") ||
+      normalizedPathname.startsWith("/reports/generated") ||
+      normalizedPathname.startsWith("/reports/library")
     ) {
       setVisible(false)
     }
-  }, [pathname])
+  }, [normalizedPathname])
 
   const handleDismiss = () => {
     setVisible(false)

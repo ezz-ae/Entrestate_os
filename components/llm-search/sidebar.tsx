@@ -347,7 +347,11 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   }
 
   const loadSession = (sessionId: string) => {
-    router.push(`/chat?id=${sessionId}`)
+    const targetPath = !isDesktopViewport
+      ? prefixLocalePath(`/?openChat=true&id=${sessionId}`, locale)
+      : prefixLocalePath(`/chat?id=${sessionId}`, locale)
+
+    router.push(targetPath)
     openSidebar()
   }
 

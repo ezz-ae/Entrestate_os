@@ -17,7 +17,9 @@ export function getLocaleDirection(locale: AppLocale) {
   return locale === "ar" ? "rtl" : "ltr"
 }
 
-export function stripLocalePrefix(pathname: string) {
+export function stripLocalePrefix(pathname: string | null | undefined) {
+  if (!pathname) return "/"
+
   const segments = pathname.split("/").filter(Boolean)
   if (segments.length === 0) return "/"
 

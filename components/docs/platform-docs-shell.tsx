@@ -70,9 +70,8 @@ function getDocsNavGroups(locale: AppLocale): DocsNavGroup[] {
 ]
 }
 
-function isActivePath(pathname: string, href: string) {
+function isActivePath(pathname: string | null | undefined, href: string) {
   const normalizedPath = stripLocalePrefix(pathname)
-  if (href === "/docs") return pathname === "/docs"
   if (href === "/docs") return normalizedPath === "/docs"
   return normalizedPath.startsWith(href)
 }
