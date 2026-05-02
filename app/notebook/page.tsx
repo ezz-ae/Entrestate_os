@@ -1,18 +1,28 @@
 "use client"
 
-import { useEffect, useState, type FormEvent } from "react"
-import { Navbar } from "@/components/navbar"
+import { type FormEvent, useEffect, useState } from "react"
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
-import {
-  BookOpen, Plus, Trash2, Clock, Map, Building2, User, ArrowRight,
-  Sparkles, FileText, Share2, Download, RefreshCcw, Layers, Search,
-  Filter, Activity, Shield,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 import { useLocale } from "next-intl"
-import { formatDate } from "@/lib/format/date"
-import { prefixLocalePath } from "@/i18n/locale"
+import {
+  ArrowRight,
+  BookOpen,
+  Loader2,
+  NotebookPen,
+  Plus,
+  ShieldAlert,
+  Trash2,
+} from "lucide-react"
+
+import { AccountSectionNav } from "@/components/account/account-section-nav"
+import { Footer } from "@/components/footer"
+import { Navbar } from "@/components/navbar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { buildLoginHref } from "@/lib/auth/navigation"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type BookType = "client" | "area" | "project" | "portfolio"
 
@@ -21,405 +31,471 @@ type BookSummary = {
   title: string
   subject: string
   type: BookType
+  metadata: Record<string, unknown> | null
+  lastFedAt: string | null
+  createdAt: string
   updatedAt: string
   pageCount: number
+  feedCount: number
 }
 
-const TYPE_META: Record<BookType, { labelEn: string; labelAr: string; color: string; icon: any }> = {
-  client:    { labelEn: "Client",    labelAr: "عميل",  color: "text-amber-400 border-amber-400/30 bg-amber-400/8",    icon: User },
-  area:      { labelEn: "Area",      labelAr: "منطقة", color: "text-emerald-400 border-emerald-400/30 bg-emerald-400/8", icon: Map },
-  project:   { labelEn: "Project",   labelAr: "مشروع", color: "text-sky-400 border-sky-400/30 bg-sky-400/8",          icon: Building2 },
-  portfolio: { labelEn: "Portfolio", labelAr: "محفظة", color: "text-violet-400 border-violet-400/30 bg-violet-400/8",  icon: Layers },
+type BooksResponse = {
+  books: BookSummary[]
+  error?: string
 }
 
-const FILTERS: { id: BookType | "all"; labelEn: string; labelAr: string }[] = [
-  { id: "all",       labelEn: "All",       labelAr: "الكل" },
-  { id: "project",   labelEn: "Projects",  labelAr: "مشاريع" },
-  { id: "area",      labelEn: "Areas",     labelAr: "مناطق" },
-  { id: "portfolio", labelEn: "Portfolios",labelAr: "محافظ" },
-  { id: "client",    labelEn: "Clients",   labelAr: "عملاء" },
+const COPY = {
+  en: {
+    eyebrow: "Research Workspace",
+    accountEyebrow: "Account notebooks",
+    title: "Research notebooks",
+    description:
+      "Create working notebooks for an area, project, client mandate, or portfolio. Each notebook generates real pages from the existing data tools and keeps the output in one place.",
+    accountDescription:
+      "This is the notebook area inside your account. Keep serious research threads here instead of scattering them across one-off chats.",
+    formTitle: "Create a notebook",
+    formDescription: "Start with a subject. The first overview and risk pages will be generated automatically.",
+    titleLabel: "Notebook title",
+    titlePlaceholder: "Dubai Marina entry review",
+    subjectLabel: "Subject",
+    subjectPlaceholder: "Dubai Marina vs JBR for near-term entry",
+    typeLabel: "Notebook type",
+    create: "Create notebook",
+    creating: "Creating notebook...",
+    libraryTitle: "Your notebook library",
+    libraryDescription: "Open an existing notebook, continue generation, or remove stale drafts.",
+    loading: "Loading notebooks...",
+    emptyTitle: "No notebooks yet",
+    emptyDescription: "Create the first notebook from this account workspace and it will open directly into the working view.",
+    unauthorizedTitle: "Sign in to use notebooks",
+    unauthorizedDescription: "Notebook creation and history are tied to your account session.",
+    signIn: "Go to sign in",
+    open: "Open",
+    delete: "Delete",
+    deleting: "Deleting...",
+    pages: "Pages",
+    feeds: "Feed items",
+    updated: "Updated",
+    launchChat: "Open decision terminal",
+    launchChatDescription: "Use the terminal when you need a fresh live query before committing it to a notebook.",
+    createError: "Failed to create notebook.",
+    loadError: "Failed to load notebooks.",
+    deleteError: "Failed to delete notebook.",
+    deleteConfirm: "Delete this notebook? This cannot be undone.",
+  },
+  ar: {
+    eyebrow: "مساحة البحث",
+    accountEyebrow: "دفاتر الحساب",
+    title: "دفاتر البحث",
+    description:
+      "أنشئ دفتراً عملياً لمنطقة أو مشروع أو تفويض عميل أو محفظة. كل دفتر يولد صفحات حقيقية من أدوات البيانات الحالية ويحفظ الناتج في مكان واحد.",
+    accountDescription:
+      "هذا هو قسم الدفاتر داخل حسابك. احتفظ فيه بخيوط البحث الجدية بدلاً من بعثرة العمل بين جلسات منفصلة.",
+    formTitle: "إنشاء دفتر",
+    formDescription: "ابدأ بموضوع واضح. سيتم توليد صفحتي النظرة العامة والمخاطر تلقائياً.",
+    titleLabel: "عنوان الدفتر",
+    titlePlaceholder: "مراجعة الدخول إلى دبي مارينا",
+    subjectLabel: "الموضوع",
+    subjectPlaceholder: "دبي مارينا مقابل جميرا بيتش ريزيدنس للدخول القريب",
+    typeLabel: "نوع الدفتر",
+    create: "إنشاء دفتر",
+    creating: "جارٍ إنشاء الدفتر...",
+    libraryTitle: "مكتبة الدفاتر",
+    libraryDescription: "افتح دفتراً موجوداً، واصل التوليد، أو احذف المسودات القديمة.",
+    loading: "جارٍ تحميل الدفاتر...",
+    emptyTitle: "لا توجد دفاتر بعد",
+    emptyDescription: "أنشئ أول دفتر من مساحة الحساب هذه وسيفتح مباشرة في الواجهة العملية.",
+    unauthorizedTitle: "سجل الدخول لاستخدام الدفاتر",
+    unauthorizedDescription: "إنشاء الدفاتر وسجلها مرتبطان بجلسة حسابك.",
+    signIn: "اذهب إلى تسجيل الدخول",
+    open: "فتح",
+    delete: "حذف",
+    deleting: "جارٍ الحذف...",
+    pages: "الصفحات",
+    feeds: "عناصر المتابعة",
+    updated: "آخر تحديث",
+    launchChat: "افتح محطة القرار",
+    launchChatDescription: "استخدم المحطة عندما تحتاج إلى استعلام حي جديد قبل تثبيته في دفتر.",
+    createError: "تعذر إنشاء الدفتر.",
+    loadError: "تعذر تحميل الدفاتر.",
+    deleteError: "تعذر حذف الدفتر.",
+    deleteConfirm: "هل تريد حذف هذا الدفتر؟ لا يمكن التراجع عن ذلك.",
+  },
+} as const
+
+const BOOK_TYPE_OPTIONS: { value: BookType; label: { en: string; ar: string } }[] = [
+  { value: "area", label: { en: "Area", ar: "منطقة" } },
+  { value: "project", label: { en: "Project", ar: "مشروع" } },
+  { value: "client", label: { en: "Client", ar: "عميل" } },
+  { value: "portfolio", label: { en: "Portfolio", ar: "محفظة" } },
 ]
 
-const BRAND_STRIP = {
-  en: "Outputs stay in Entrestate branding unless your workspace runs on the enterprise layer.",
-  ar: "تظل المخرجات بعلامة Entrestate ما لم تعمل مساحة العمل على طبقة المؤسسات.",
+function formatDate(value: string, locale: AppLocale) {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-AE" : "en-AE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value))
 }
 
-export default function NotebookPage() {
-  const locale = useLocale()
+type NotebookLibraryViewProps = {
+  basePath?: string
+  accountMode?: boolean
+}
+
+export function NotebookLibraryView({
+  basePath = "/notebook",
+  accountMode = false,
+}: NotebookLibraryViewProps) {
+  const router = useRouter()
+  const locale = useLocale() as AppLocale
+  const copy = COPY[locale] ?? COPY.en
   const isArabic = locale === "ar"
 
   const [books, setBooks] = useState<BookSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ title: "", subject: "", type: "project" as BookType })
-  const [search, setSearch] = useState("")
-  const [activeFilter, setActiveFilter] = useState<BookType | "all">("all")
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [unauthorized, setUnauthorized] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [form, setForm] = useState({
+    title: "",
+    subject: "",
+    type: "area" as BookType,
+  })
 
   useEffect(() => {
-    fetch("/api/notebook/books")
-      .then((r) => r.json())
-      .then((d) => setBooks(d.books ?? []))
-      .catch(() => setBooks([]))
-      .finally(() => setLoading(false))
-  }, [])
+    let active = true
+
+    async function loadBooks() {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const response = await fetch("/api/notebook/books")
+        const data = (await response.json().catch(() => ({}))) as BooksResponse
+
+        if (!active) return
+
+        if (response.status === 401) {
+          setUnauthorized(true)
+          setBooks([])
+          return
+        }
+
+        if (!response.ok) {
+          throw new Error(data.error ?? copy.loadError)
+        }
+
+        setUnauthorized(false)
+        setBooks(data.books ?? [])
+      } catch (loadError) {
+        if (!active) return
+        setError(loadError instanceof Error ? loadError.message : copy.loadError)
+      } finally {
+        if (active) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadBooks()
+
+    return () => {
+      active = false
+    }
+  }, [copy.loadError])
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (creating || !form.title.trim() || !form.subject.trim()) return
+    if (creating || unauthorized) return
+
     setCreating(true)
+    setError(null)
+
     try {
-      const res = await fetch("/api/notebook/books", {
+      const response = await fetch("/api/notebook/books", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       })
-      const data = await res.json()
-      if (data?.book) {
-        setBooks((prev) => [data.book as BookSummary, ...prev])
-        setShowForm(false)
-        setForm({ title: "", subject: "", type: "project" })
+      const data = (await response.json().catch(() => ({}))) as {
+        book?: BookSummary
+        error?: string
       }
+
+      if (response.status === 401) {
+        setUnauthorized(true)
+        return
+      }
+
+      if (!response.ok || !data.book) {
+        throw new Error(data.error ?? copy.createError)
+      }
+
+      router.push(prefixLocalePath(`${basePath}/${data.book.id}`, locale))
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : copy.createError)
     } finally {
       setCreating(false)
     }
   }
 
-  async function handleDelete(bookId: string, e: React.MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    const res = await fetch(`/api/notebook/books/${bookId}`, { method: "DELETE" })
-    if (!res.ok) return
-    setBooks((prev) => prev.filter((b) => b.id !== bookId))
-  }
+  async function handleDelete(bookId: string) {
+    if (deletingId) return
+    if (!window.confirm(copy.deleteConfirm)) return
 
-  const filtered = books.filter((b) => {
-    const matchesFilter = activeFilter === "all" || b.type === activeFilter
-    const matchesSearch = !search || b.title.toLowerCase().includes(search.toLowerCase()) || b.subject.toLowerCase().includes(search.toLowerCase())
-    return matchesFilter && matchesSearch
-  })
+    setDeletingId(bookId)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/notebook/books/${bookId}`, {
+        method: "DELETE",
+      })
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error ?? copy.deleteError)
+      }
+
+      setBooks((current) => current.filter((book) => book.id !== bookId))
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : copy.deleteError)
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   return (
     <main id="main-content" className="min-h-screen bg-background" dir={isArabic ? "rtl" : "ltr"}>
       <Navbar />
 
-      {/* Ambient */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
-        <div className="absolute top-[-5%] left-[30%] w-[40%] h-[35%] bg-primary/3 blur-[130px] rounded-full" />
-        <div className="absolute bottom-[5%] right-[5%] w-[25%] h-[25%] bg-violet-500/3 blur-[100px] rounded-full" />
-      </div>
+      <div className="mx-auto max-w-6xl px-4 pb-20 pt-24 sm:px-6 md:pt-28">
+        <header className="rounded-[2rem] border border-border bg-card p-6 shadow-sm md:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            {accountMode ? copy.accountEyebrow : copy.eyebrow}
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
+            {copy.title}
+          </h1>
+          <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">
+            {accountMode ? copy.accountDescription : copy.description}
+          </p>
 
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 pb-24 pt-28 md:pt-36">
-
-        {/* ── Header ── */}
-        <header className="mb-10">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-6">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary mb-4">
-                <Activity className="h-3 w-3 animate-pulse" />
-                {isArabic ? "دفاتر التحليل" : "Intelligence Books"}
-              </div>
-              <h1 className="text-3xl md:text-5xl font-serif font-semibold text-foreground tracking-tight">
-                {isArabic ? "دفتر السوق الشخصي" : "Personal Market Book"}
-              </h1>
-              <p className="mt-3 text-base text-muted-foreground max-w-xl leading-relaxed">
-                {isArabic
-                  ? "كل مشروع أو منطقة أو محفظة — موثّقة كدفتر تحليلي حي. توليد، كتابة، مشاركة، تنفيذ."
-                  : "Every project, area, or portfolio — documented as a living intelligence book. Generate, write, share, implement."}
-              </p>
-            </div>
-            <Button
-              onClick={() => setShowForm((v) => !v)}
-              className="gap-2 h-11 rounded-full px-6 shrink-0 shadow-lg shadow-primary/20"
-            >
-              <Plus className="h-4 w-4" />
-              {isArabic ? "دفتر جديد" : "New Book"}
-            </Button>
-          </div>
-
-          {/* Brand strip */}
-          <div className="flex items-center gap-2.5 rounded-xl border border-border/40 bg-muted/20 px-4 py-2.5">
-            <Shield className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
-            <p className="text-[11px] text-muted-foreground/70">
-              {isArabic ? BRAND_STRIP.ar : BRAND_STRIP.en}
-            </p>
-            <Link href={prefixLocalePath("/pricing", locale === "ar" ? "ar" : "en")} className="text-[11px] font-semibold text-primary hover:underline underline-offset-2 ms-auto shrink-0">
-              {isArabic ? "طبقة المؤسسات" : "Enterprise layer"}
-            </Link>
-          </div>
+          {accountMode ? <AccountSectionNav active="notebooks" locale={locale} /> : null}
         </header>
 
-        {/* ── New book form ── */}
-        <AnimatePresence>
-          {showForm && (
-            <motion.form
-              key="form"
-              initial={{ opacity: 0, y: -16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              onSubmit={handleCreate}
-              className="mb-8 rounded-2xl border border-primary/20 bg-card p-6 shadow-xl shadow-primary/5"
-            >
-              <h2 className="text-base font-semibold text-foreground mb-5">
-                {isArabic ? "إنشاء دفتر جديد" : "Create new intelligence book"}
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                    {isArabic ? "العنوان" : "Title"}
+        <div className="mt-8 grid gap-6 lg:grid-cols-[360px,minmax(0,1fr)]">
+          <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="rounded-2xl border border-primary/20 bg-primary/10 p-3 text-primary">
+                <NotebookPen className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">{copy.formTitle}</h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {copy.formDescription}
+                </p>
+              </div>
+            </div>
+
+            {unauthorized ? (
+              <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4">
+                <div className="flex items-start gap-3">
+                  <ShieldAlert className="mt-0.5 h-5 w-5 text-amber-500" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{copy.unauthorizedTitle}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {copy.unauthorizedDescription}
+                    </p>
+                    <Button asChild className="mt-4">
+                      <Link href={buildLoginHref(locale, basePath)}>{copy.signIn}</Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <form className="mt-6 space-y-4" onSubmit={handleCreate}>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground" htmlFor="notebook-title">
+                    {copy.titleLabel}
                   </label>
-                  <input
-                    autoFocus
-                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                    placeholder={isArabic ? "مثال: مراجعة إعمار Q2" : "e.g. Emaar Q2 Review"}
+                  <Input
+                    id="notebook-title"
                     value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+                    placeholder={copy.titlePlaceholder}
+                    required
+                    maxLength={200}
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                    {isArabic ? "الموضوع" : "Subject"}
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground" htmlFor="notebook-subject">
+                    {copy.subjectLabel}
                   </label>
-                  <input
-                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                    placeholder={isArabic ? "مثال: أداء دبي مارينا" : "e.g. Dubai Marina performance"}
+                  <Textarea
+                    id="notebook-subject"
                     value={form.subject}
-                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                    onChange={(event) => setForm((current) => ({ ...current, subject: event.target.value }))}
+                    placeholder={copy.subjectPlaceholder}
+                    required
+                    maxLength={500}
+                    rows={4}
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                    {isArabic ? "النوع" : "Type"}
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground" htmlFor="notebook-type">
+                    {copy.typeLabel}
                   </label>
                   <select
-                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
+                    id="notebook-type"
                     value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value as BookType })}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, type: event.target.value as BookType }))
+                    }
+                    className="border-input dark:bg-input/30 h-10 w-full rounded-md border bg-transparent px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                   >
-                    <option value="project">{isArabic ? "ملف مشروع" : "Project Intelligence"}</option>
-                    <option value="area">{isArabic ? "أداء منطقة" : "Area Performance"}</option>
-                    <option value="client">{isArabic ? "إحاطة عميل" : "Client Briefing"}</option>
-                    <option value="portfolio">{isArabic ? "مراجعة محفظة" : "Portfolio Review"}</option>
+                    {BOOK_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label[locale]}
+                      </option>
+                    ))}
                   </select>
                 </div>
-              </div>
-              <div className="mt-5 flex items-center justify-between">
-                <p className="text-[10px] text-muted-foreground/50">
-                  {isArabic ? "سيُولّد الذكاء الاصطناعي محتوى الدفتر الأول تلقائياً." : "AI will auto-generate initial book content."}
-                </p>
-                <div className="flex gap-3">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>
-                    {isArabic ? "إلغاء" : "Cancel"}
-                  </Button>
-                  <Button type="submit" size="sm" disabled={creating} className="gap-2">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {creating ? (isArabic ? "جاري الإنشاء…" : "Creating…") : (isArabic ? "تهيئة الدفتر" : "Initialize Book")}
-                  </Button>
-                </div>
-              </div>
-            </motion.form>
-          )}
-        </AnimatePresence>
 
-        {/* ── Search + filter bar ── */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-8">
-          <div className="relative flex-1 max-w-sm">
-            <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 ${isArabic ? "right-3" : "left-3"}`} />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={isArabic ? "بحث في الدفاتر…" : "Search books…"}
-              dir={isArabic ? "rtl" : "ltr"}
-              className={`w-full rounded-xl border border-border/60 bg-card/50 py-2.5 text-sm text-foreground placeholder-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all ${isArabic ? "pr-9 pl-4" : "pl-9 pr-4"}`}
-            />
-          </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto">
-            {FILTERS.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setActiveFilter(f.id)}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
-                  activeFilter === f.id
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border/60 text-muted-foreground hover:border-border hover:text-foreground"
-                }`}
-              >
-                {isArabic ? f.labelAr : f.labelEn}
-              </button>
-            ))}
-          </div>
-        </div>
+                <Button className="w-full" disabled={creating}>
+                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  {creating ? copy.creating : copy.create}
+                </Button>
+              </form>
+            )}
 
-        {/* ── Books grid ── */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground/60">{isArabic ? "جاري تحميل الدفاتر…" : "Loading books…"}</p>
-          </div>
-        ) : filtered.length === 0 && books.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-border/40 bg-card/20 py-24 text-center">
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-6">
-              <BookOpen className="h-8 w-8 text-muted-foreground/40" />
-            </div>
-            <h3 className="text-xl font-serif font-semibold text-foreground mb-2">
-              {isArabic ? "لا توجد دفاتر بعد" : "No books yet"}
-            </h3>
-            <p className="text-sm text-muted-foreground/60 max-w-xs mx-auto mb-8 leading-relaxed">
-              {isArabic
-                ? "ابدأ بإنشاء دفتر تحليلي، أو اسأل مساعد القرار وسيبنيه لك تلقائياً."
-                : "Create an intelligence book, or ask the copilot and it'll build one automatically."}
-            </p>
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <Button onClick={() => setShowForm(true)} className="gap-2">
-                <Plus className="h-4 w-4" />
-                {isArabic ? "دفتر جديد" : "New Book"}
-              </Button>
-              <Button asChild variant="outline" className="gap-2">
-                <Link href={prefixLocalePath("/chat", locale === "ar" ? "ar" : "en")}>
-                  <Sparkles className="h-4 w-4" />
-                  {isArabic ? "اسأل المساعد" : "Ask copilot"}
+            <div className="mt-6 rounded-2xl border border-border/70 bg-background/60 p-4">
+              <p className="text-sm font-medium text-foreground">{copy.launchChat}</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                {copy.launchChatDescription}
+              </p>
+              <Button asChild variant="outline" className="mt-4">
+                <Link href={prefixLocalePath("/chat", locale)}>
+                  {copy.launchChat}
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-border/40 py-12 text-center">
-            <p className="text-sm text-muted-foreground/60">
-              {isArabic ? "لا توجد نتائج مطابقة." : "No books match your search."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <AnimatePresence mode="popLayout">
-              {filtered.map((book) => {
-                const meta = TYPE_META[book.type]
-                const Icon = meta.icon
-                return (
-                  <motion.div
+
+            {error ? (
+              <div className="mt-4 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {error}
+              </div>
+            ) : null}
+          </section>
+
+          <section className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">{copy.libraryTitle}</h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {copy.libraryDescription}
+                </p>
+              </div>
+              {!loading && !unauthorized ? (
+                <Badge variant="outline" className="text-xs">{books.length}</Badge>
+              ) : null}
+            </div>
+
+            {loading ? (
+              <div className="mt-10 flex items-center gap-3 rounded-2xl border border-border/70 bg-background/60 p-5 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {copy.loading}
+              </div>
+            ) : null}
+
+            {!loading && !unauthorized && books.length === 0 ? (
+              <div className="mt-8 rounded-3xl border border-dashed border-border/70 bg-background/60 px-6 py-12 text-center">
+                <BookOpen className="mx-auto h-8 w-8 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-semibold text-foreground">{copy.emptyTitle}</h3>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                  {copy.emptyDescription}
+                </p>
+              </div>
+            ) : null}
+
+            {!loading && !unauthorized && books.length > 0 ? (
+              <div className="mt-6 space-y-4">
+                {books.map((book) => (
+                  <article
                     key={book.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.96 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.96 }}
-                    whileHover={{ y: -4 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 22 }}
-                    className="group"
+                    className="rounded-3xl border border-border/70 bg-background/60 p-5 transition hover:border-border"
                   >
-                    <Link href={`/notebook/${book.id}`}>
-                      <div className="h-full rounded-2xl border border-border/50 bg-card hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all p-5 flex flex-col">
-
-                        {/* Top row */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${meta.color}`}>
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {/* Brand badge */}
-                            <span className="rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary/60">
-                              Entrestate
-                            </span>
-                            <button
-                              onClick={(e) => handleDelete(book.id, e)}
-                              className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-all"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Type chip */}
-                        <span className={`self-start rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider mb-3 ${meta.color}`}>
-                          {isArabic ? meta.labelAr : meta.labelEn}
-                        </span>
-
-                        <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors leading-snug mb-1.5">
-                          {book.title}
-                        </h3>
-                        <p className="text-xs text-muted-foreground/65 line-clamp-2 flex-1 leading-relaxed">
-                          {book.subject}
-                        </p>
-
-                        {/* Footer */}
-                        <div className="mt-4 pt-3.5 border-t border-border/30 flex items-center justify-between">
-                          <div className="flex items-center gap-3 text-[10px] text-muted-foreground/50">
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {formatDate(book.updatedAt, locale, { month: "short", day: "numeric" })}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <FileText className="h-3 w-3" />
-                              {book.pageCount} {isArabic ? "ص" : "p"}
-                            </span>
-                          </div>
-                          <ArrowRight className={`h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-primary transition-all ${isArabic ? "rotate-180 group-hover:-translate-x-0.5" : "group-hover:translate-x-0.5"}`} />
-                        </div>
-
-                        {/* Quick actions — appear on hover */}
-                        <div className="mt-3 grid grid-cols-3 gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          {[
-                            { label: isArabic ? "تقرير" : "Report", icon: FileText },
-                            { label: isArabic ? "مشاركة" : "Share", icon: Share2 },
-                            { label: isArabic ? "تحديث" : "Refresh", icon: RefreshCcw },
-                          ].map(({ label, icon: Ic }) => (
-                            <button
-                              key={label}
-                              onClick={(e) => e.preventDefault()}
-                              className="flex items-center justify-center gap-1 rounded-lg border border-border/40 bg-muted/20 py-1.5 text-[10px] font-semibold text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-colors"
-                            >
-                              <Ic className="h-3 w-3" />
-                              {label}
-                            </button>
-                          ))}
-                        </div>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <Badge variant="outline">{BOOK_TYPE_OPTIONS.find((option) => option.value === book.type)?.label[locale]}</Badge>
+                        <h3 className="mt-3 text-lg font-semibold text-foreground">{book.title}</h3>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{book.subject}</p>
                       </div>
-                    </Link>
-                  </motion.div>
-                )
-              })}
-            </AnimatePresence>
 
-            {/* Start from chat tile */}
-            <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300, damping: 22 }}>
-              <Link href={prefixLocalePath("/chat", locale === "ar" ? "ar" : "en")}>
-                <div className="h-full min-h-[200px] rounded-2xl border-2 border-dashed border-primary/20 hover:border-primary/40 bg-primary/3 hover:bg-primary/5 transition-all p-5 flex flex-col items-center justify-center text-center gap-3 group cursor-pointer">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {isArabic ? "ابدأ من المحادثة" : "Start from copilot"}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground/55 mt-1 leading-relaxed">
-                      {isArabic
-                        ? "اسأل المساعد وسيبني الدفتر تلقائياً"
-                        : "Ask a question — AI builds the book automatically"}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          </div>
-        )}
+                      <div className="flex items-center gap-2">
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={prefixLocalePath(`${basePath}/${book.id}`, locale)}>
+                            {copy.open}
+                            <ArrowRight className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleDelete(book.id)}
+                          disabled={deletingId === book.id}
+                          aria-label={copy.delete}
+                        >
+                          {deletingId === book.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
 
-        {/* ── Bottom links ── */}
-        {books.length > 0 && (
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground/50">
-            <Link href={prefixLocalePath("/reports/generated", locale === "ar" ? "ar" : "en")} className="hover:text-foreground transition-colors flex items-center gap-1.5">
-              <Download className="h-3.5 w-3.5" />
-              {isArabic ? "الملفات المصدّرة" : "Exported files"}
-            </Link>
-            <Link href={prefixLocalePath("/tools/memo", locale === "ar" ? "ar" : "en")} className="hover:text-foreground transition-colors flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5" />
-              {isArabic ? "إنشاء مذكرة" : "Generate memo"}
-            </Link>
-            <Link href={prefixLocalePath("/account/book", locale === "ar" ? "ar" : "en")} className="hover:text-foreground transition-colors flex items-center gap-1.5">
-              <BookOpen className="h-3.5 w-3.5" />
-              {isArabic ? "دفتر السوق الشخصي" : "Personal Market Book"}
-            </Link>
-          </div>
-        )}
+                    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+                      <div className="rounded-2xl border border-border/70 bg-card px-4 py-3">
+                        <dt className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                          {copy.pages}
+                        </dt>
+                        <dd className="mt-1 text-base font-semibold text-foreground">{book.pageCount}</dd>
+                      </div>
+                      <div className="rounded-2xl border border-border/70 bg-card px-4 py-3">
+                        <dt className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                          {copy.feeds}
+                        </dt>
+                        <dd className="mt-1 text-base font-semibold text-foreground">{book.feedCount}</dd>
+                      </div>
+                      <div className="rounded-2xl border border-border/70 bg-card px-4 py-3">
+                        <dt className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                          {copy.updated}
+                        </dt>
+                        <dd className="mt-1 text-base font-semibold text-foreground">
+                          {formatDate(book.updatedAt, locale)}
+                        </dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        </div>
       </div>
+
+      <Footer />
     </main>
   )
+}
+
+export default function NotebookPage() {
+  return <NotebookLibraryView />
 }

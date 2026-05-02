@@ -13,8 +13,8 @@ import {
   Zap,
   Target,
   Filter,
-  Database,
-  Bot,
+  Search,
+  BookOpen,
   LayoutGrid,
   FileText,
   PenLine,
@@ -53,9 +53,9 @@ const INTENT_META: Record<string, { label: string; description: string }> = {
 
 const INPUT_MODULES = [
   { label: "AI Chat", labelAr: "الدردشة الذكية", description: "Get scored answers instantly", descAr: "احصل على إجابات مصنّفة فوراً", href: "/chat", icon: Sparkles, accent: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10", border: "border-blue-200/60 dark:border-blue-500/20", tag: "Decision engine", tagAr: "محرك القرار" },
-  { label: "Workspace", labelAr: "مساحة العمل", description: "All tools, research desks & builders", descAr: "جميع الأدوات ومسارات البحث والبناء", href: "/workspace", icon: LayoutGrid, accent: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-50 dark:bg-cyan-500/10", border: "border-cyan-200/60 dark:border-cyan-500/20", tag: "Tools hub", tagAr: "مركز الأدوات" },
-  { label: "Market Research", labelAr: "أبحاث السوق", description: "Advanced data modeling & EDA", descAr: "نمذجة بيانات متقدمة واستكشاف", href: "/workspace/data-scientist", icon: Database, accent: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-500/10", border: "border-purple-200/60 dark:border-purple-500/20", tag: "Analysis", tagAr: "تحليل" },
-  { label: "Agent Builder", labelAr: "بناء الوكلاء", description: "Design automated execution agents", descAr: "صمّم وكلاء تنفيذ آليين", href: "/apps/agent-builder", icon: Bot, accent: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-500/10", border: "border-rose-200/60 dark:border-rose-500/20", tag: "Automation", tagAr: "أتمتة" },
+  { label: "Workspace", labelAr: "مساحة العمل", description: "Your guided hub for market work", descAr: "المركز الموجّه للعمل اليومي في السوق", href: "/workspace", icon: LayoutGrid, accent: "text-cyan-600 dark:text-cyan-400", bg: "bg-cyan-50 dark:bg-cyan-500/10", border: "border-cyan-200/60 dark:border-cyan-500/20", tag: "Tools hub", tagAr: "مركز الأدوات" },
+  { label: "Search & Screening", labelAr: "البحث والفرز", description: "Screen areas, projects, and developers", descAr: "افحص المناطق والمشاريع والمطورين", href: "/search", icon: Search, accent: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-500/10", border: "border-purple-200/60 dark:border-purple-500/20", tag: "Analysis", tagAr: "تحليل" },
+  { label: "Research Notebooks", labelAr: "دفاتر الأبحاث", description: "Keep briefs and market context under your account", descAr: "احفظ المذكرات وسياق السوق داخل الحساب", href: "/account/book", icon: BookOpen, accent: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-500/10", border: "border-rose-200/60 dark:border-rose-500/20", tag: "Research", tagAr: "بحث" },
 ]
 
 const OUTPUT_MODULES = [
@@ -64,8 +64,7 @@ const OUTPUT_MODULES = [
   { label: "Developers", labelAr: "المطورون", description: "Reliability index & track record", descAr: "مؤشر الموثوقية وسجل الأداء", href: "/developers", icon: Users2, accent: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-500/10", border: "border-violet-200/60 dark:border-violet-500/20", tag: "Counterparty", tagAr: "الطرف المقابل" },
   { label: "Market Data", labelAr: "بيانات السوق", description: "Pulse, timing, stress, supply", descAr: "نبض · توقيت · ضغط · عرض", href: "/top-data", icon: BarChart3, accent: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10", border: "border-amber-200/60 dark:border-amber-500/20", tag: "Intelligence", tagAr: "استخبارات" },
   { label: "Market Score", labelAr: "قراءة السوق", description: "Score validation & match checks", descAr: "تحقق من الدرجة والملاءمة", href: "/market-score", icon: ShieldCheck, accent: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10", border: "border-emerald-200/60 dark:border-emerald-500/20", tag: "Validation", tagAr: "تحقق" },
-  { label: "Reports", labelAr: "التقارير", description: "Generated memos & research", descAr: "المذكرات والأبحاث المُنشأة", href: "/reports/library", icon: FileText, accent: "text-sky-600 dark:text-sky-400", bg: "bg-sky-50 dark:bg-sky-500/10", border: "border-sky-200/60 dark:border-sky-500/20", tag: "Output", tagAr: "المخرجات" },
-  { label: "System Status", labelAr: "حالة النظام", description: "Data freshness & pipeline", descAr: "حداثة البيانات والأنابيب", href: "/status", icon: Activity, accent: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-500/10", border: "border-gray-200/60 dark:border-gray-500/20", tag: "Health", tagAr: "الحالة" },
+  { label: "Reports", labelAr: "التقارير", description: "Institutional briefs and research", descAr: "تقارير ومذكرات مؤسسية", href: "/reports/library", icon: FileText, accent: "text-sky-600 dark:text-sky-400", bg: "bg-sky-50 dark:bg-sky-500/10", border: "border-sky-200/60 dark:border-sky-500/20", tag: "Output", tagAr: "المخرجات" },
 ]
 
 const QUICK_FILTERS = [
@@ -383,7 +382,7 @@ export default async function OverviewPage() {
           <Link href={prefixLocalePath("/workspace", locale)} className="group flex items-center justify-between rounded-2xl border border-cyan-500/25 bg-cyan-500/5 px-5 py-4 transition-all hover:bg-cyan-500/10 hover:-translate-y-0.5">
             <div>
               <p className="text-sm font-semibold text-foreground">{isArabic ? "مساحة العمل" : "Investor Workspace"}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "أبحاث · أدوات · حاسبات · مصادر" : "Research · Tools · Calculators · Sources"}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "بحث · دفاتر · مقارنات · تقارير" : "Search · Notebooks · Comparisons · Reports"}</p>
             </div>
             <div className="ms-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 transition group-hover:bg-cyan-500/20">
               <LayoutGrid className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />

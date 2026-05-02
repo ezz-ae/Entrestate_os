@@ -104,41 +104,41 @@ function getAutomationCards(locale: "en" | "ar") {
   return locale === "ar"
     ? [
         {
-          icon: Zap,
-          title: "ProAgent Studio",
+          icon: BookOpen,
+          title: "دفاتر الأبحاث",
           body:
-            "شغّل وكلاء مستقلين يعملون كمحللين دائمين يراقبون سرعة DLD وتحولات القوائم، وينفّذون فقط عند توافق ضوابط الحوكمة.",
-          cta: "إطلاق البنية التنفيذية",
-          href: "/apps/agent-builder",
+            "حوّل الأسئلة، والفرضيات، والنتائج إلى دفاتر بحث منظمة تبقى مرتبطة بحساب المستخدم ونفس طبقة الأدلة.",
+          cta: "افتح دفاتر الأبحاث",
+          href: "/account/book",
           accent: "text-blue-400",
         },
         {
           icon: FileText,
-          title: "Institutional Output Layer",
+          title: "طبقة التقارير المؤسسية",
           body:
-            "حوّل الحقيقة الموثقة إلى مذكرات استثمار، تقارير استخبارات سوق، وتحديثات مؤسسية مع نفس استمرارية الأدلة التي تقود كل حكم.",
-          cta: "عرض طبقة المخرجات",
-          href: "/infrastructure",
+            "انتقل من البيانات الموثقة إلى مذكرات استثمار وتقارير سوق منشورة من دون فقد سلسلة الأدلة أو السياق.",
+          cta: "تصفح مكتبة التقارير",
+          href: "/reports/library",
           accent: "text-violet-400",
         },
       ]
     : [
         {
-          icon: Zap,
-          title: "ProAgent Studio",
+          icon: BookOpen,
+          title: "Research Notebooks",
           body:
-            "Deploy autonomous market agents that monitor DLD and listing signals, then act when mandate rules align.",
-          cta: "Launch execution stack",
-          href: "/apps/agent-builder",
+            "Turn questions, hypotheses, and findings into reusable notebooks tied to the same evidence layer.",
+          cta: "Open notebooks",
+          href: "/account/book",
           accent: "text-blue-400",
         },
         {
           icon: FileText,
-          title: "Institutional Output Layer",
+          title: "Institutional Reports",
           body:
-            "Turn verified market data into investor briefs and institutional updates backed by the same evidence layer.",
-          cta: "View output layer",
-          href: "/infrastructure",
+            "Move from verified market data to publishable investor briefs and team reports without losing provenance.",
+          cta: "Browse reports",
+          href: "/reports/library",
           accent: "text-violet-400",
         },
       ]
@@ -252,7 +252,7 @@ function getResourceCards(locale: "en" | "ar") {
         {
           title: "Decision Tunnel",
           body: "شرح كيف تتحول النية إلى TableSpec ثم إلى أدلة وحكم ومخرج نهائي.",
-          href: "/docs/decision-engine-summary",
+          href: "/docs/documentation",
         },
         {
           title: "Evidence Stack",
@@ -269,7 +269,7 @@ function getResourceCards(locale: "en" | "ar") {
         {
           title: "Decision Tunnel",
           body: "See how user intent becomes TableSpec, evidence, judgment, and a final artifact.",
-          href: "/docs/decision-engine-summary",
+          href: "/docs/documentation",
         },
         {
           title: "Evidence Stack",
@@ -284,49 +284,50 @@ function getResourceCards(locale: "en" | "ar") {
       ]
 }
 
-function getProofCounters(locale: "en" | "ar", docsCount: number, libraryCount: number) {
+function getProofCounters(locale: "en" | "ar", docsCount: number, libraryCount: number, totalProjects: number, trustSurfaceCount: number) {
+  const formatter = new Intl.NumberFormat(locale === "ar" ? "ar-AE" : "en-US")
   return locale === "ar"
     ? [
         {
           label: "المشاريع المقيّمة",
-          value: "2.8K+",
+          value: formatter.format(totalProjects),
           body: "طبقة العرض تسحب من نفس العمود الفقري المستخدم في البحث والخريطة والدردشة.",
         },
         {
           label: "صفحات توثيق عامة",
-          value: `${docsCount}+`,
+          value: formatter.format(docsCount),
           body: "المعمارية، طبقات الأدلة، ونموذج القرار متاحة قبل التعاقد أو الدمج.",
         },
         {
           label: "تقارير ومكتبة",
-          value: `${libraryCount}+`,
+          value: formatter.format(libraryCount),
           body: "قراءات معمقة وتقارير طويلة مرتبطة بنفس طبقة البيانات.",
         },
         {
           label: "أسطح ثقة علنية",
-          value: "4",
+          value: formatter.format(trustSurfaceCount),
           body: "الحالة، التوثيق، الخصوصية، والشروط متاحة علناً وتربط حدود الاعتماد.",
         },
       ]
     : [
         {
           label: "Scored assets",
-          value: "2.8K+",
+          value: formatter.format(totalProjects),
           body: "Chat, Search, and Map all read from the same underlying inventory and scoring spine.",
         },
         {
           label: "Public docs",
-          value: `${docsCount}+`,
+          value: formatter.format(docsCount),
           body: "Architecture, evidence rules, and the decision model are visible before rollout.",
         },
         {
           label: "Library deep dives",
-          value: `${libraryCount}+`,
+          value: formatter.format(libraryCount),
           body: "Reports and long-form market reads are linked from the product, not hidden behind sales copy.",
         },
         {
           label: "Trust surfaces",
-          value: "4",
+          value: formatter.format(trustSurfaceCount),
           body: "Status, docs, privacy, and terms are public and define the platform's reliance boundaries.",
         },
       ]
@@ -358,7 +359,6 @@ export default async function HomePage() {
   const surfaceCards = getSurfaceCards(locale)
   const trustProofCards = getTrustProofCards(locale)
   const resourceCards = getResourceCards(locale)
-  const proofCounters = getProofCounters(locale, docsArticles.length, libraryArticles.length)
   const goldenPathShortcuts = [
     {
       label: isArabic ? "اكتب موقع تطوير" : "Underwrite Development Site",
@@ -375,6 +375,7 @@ export default async function HomePage() {
   ]
 
   const metrics = await getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK)
+  const proofCounters = getProofCounters(locale, docsArticles.length, libraryArticles.length, metrics.totalProjects, trustProofCards.length)
   const featured = await listProperties({
     page: 1,
     pageSize: 1,
@@ -636,15 +637,15 @@ export default async function HomePage() {
         <section className="mt-24">
           <div className="mb-10 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/50">
-              {isArabic ? "طبقة التنفيذ" : "Execution Infrastructure"}
+              {isArabic ? "مسارات العمل" : "Operational workflows"}
             </p>
             <h2 className="mt-2 text-2xl font-bold md:text-3xl">
-              {isArabic ? "ذكاء مستقل يحافظ على تنفيذ التفويضات" : "Autonomous intelligence for institutional execution"}
+              {isArabic ? "بعد الحكم تبدأ دورة العمل الحقيقية" : "The real workflow starts after the first verdict"}
             </h2>
             <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
               {isArabic
-                ? "وكلاء يراقبون الإشارات الموثقة ويشغلون التنفيذ والمخرجات المؤسسية داخل نفس طبقة الأدلة."
-                : "Agents monitor verified signals and power execution and institutional output from the same evidence layer."}
+                ? "الدفاتر، والتقارير، ومسارات التسليم كلها تقرأ من نفس طبقة الأدلة حتى لا يبدأ الفريق من الصفر في كل مرة."
+                : "Notebooks, reports, and delivery surfaces all read from the same evidence layer so teams do not restart from zero."}
             </p>
           </div>
 

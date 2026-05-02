@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     return response
   }
 
-  const successUrl = `${requestUrl.origin}${prefixLocalePath("/account", locale)}?billing=success&tier=${tier}`
+  const successUrl = `${requestUrl.origin}${prefixLocalePath("/account/billing", locale)}?billing=success&tier=${tier}`
   const cancelUrl = `${requestUrl.origin}${prefixLocalePath("/pricing", locale)}?billing=cancelled&tier=${tier}`
 
   const attemptProcessors: BillingProcessor[] =

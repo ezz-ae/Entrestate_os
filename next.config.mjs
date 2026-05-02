@@ -1,10 +1,9 @@
 import { fileURLToPath } from "node:url"
-import { dirname } from "node:path"
-import createNextIntlPlugin from "next-intl/plugin"
+import { dirname, resolve } from "node:path"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const withNextIntl = createNextIntlPlugin("./i18n/request.ts")
 const cspMode = process.env.CSP_MODE ?? "enforce"
+const nextIntlRequestConfig = "./i18n/request.ts"
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -26,9 +25,18 @@ const contentSecurityPolicy = [
 const nextConfig = {
   turbopack: {
     root: __dirname,
+    resolveAlias: {
+      "next-intl/config": nextIntlRequestConfig,
+    },
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  webpack(config) {
+    config.resolve ||= {}
+    config.resolve.alias ||= {}
+    config.resolve.alias["next-intl/config"] = resolve(__dirname, nextIntlRequestConfig)
+    return config
   },
   images: {
     unoptimized: true,
@@ -101,4 +109,4 @@ const nextConfig = {
   },
 }
 
-export default withNextIntl(nextConfig)
+export default nextConfig

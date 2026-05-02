@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
 import { Home, LayoutGrid, MessageSquare, Search, User2 } from "lucide-react"
 import { prefixLocalePath, stripLocalePrefix, type AppLocale } from "@/i18n/locale"
+import { buildLoginHref } from "@/lib/auth/navigation"
 
 type Props = {
   isAuthenticated: boolean
@@ -20,6 +21,7 @@ export function MobileBottomNav({ isAuthenticated, isSidebarOpen, onOpenChat }: 
   const t = useTranslations("nav")
   const normalizedPathname = stripLocalePrefix(pathname)
   const hasOpenChatIntent = searchParams?.get("openChat") === "true"
+  const accountLabel = isAuthenticated ? t("account") : locale === "ar" ? "تسجيل الدخول" : "Sign in"
 
   const items = [
     { key: "home", href: prefixLocalePath("/", locale), label: t("overview"), icon: Home },
@@ -28,8 +30,8 @@ export function MobileBottomNav({ isAuthenticated, isSidebarOpen, onOpenChat }: 
     { key: "chat", href: prefixLocalePath("/?openChat=true", locale), label: t("chat"), icon: MessageSquare },
     {
       key: "account",
-      href: prefixLocalePath(isAuthenticated ? "/account" : "/login", locale),
-      label: t("account"),
+      href: isAuthenticated ? prefixLocalePath("/account", locale) : buildLoginHref(locale, "/account"),
+      label: accountLabel,
       icon: User2,
     },
   ] as const

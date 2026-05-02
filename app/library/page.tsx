@@ -21,6 +21,7 @@ import { libraryArticles, type LibraryCategory } from "@/lib/library-data"
 import { ReadingControls } from "@/components/reading-controls"
 import { ExplainWithChat } from "@/components/explain-with-chat"
 import type { InventoryRow, MarketScoreInventoryResponse } from "@/lib/market-score/types"
+import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type Category = "all" | LibraryCategory
@@ -47,19 +48,19 @@ const categoryIcons: Record<LibraryCategory, typeof TrendingUp> = {
   contracts: Scale,
 }
 
-function getCoverageStats(locale: AppLocale) {
+function getCoverageStats(locale: AppLocale, stats: { totalProjects: string; totalAreas: string; ratedDevelopers: string; dldTransactions: string }) {
   return locale === "ar"
     ? [
-        { label: "المشاريع تحت المتابعة", value: "2,813", note: "مخزون نشط ومُقيَّم" },
-        { label: "المناطق المفهرسة", value: "246", note: "تغطية على مستوى المدينة والمنطقة" },
-        { label: "المطورون محل القراءة", value: "75", note: "سجل التنفيذ وتوزيع المخاطر" },
-        { label: "وتيرة التحديث", value: "مستمر", note: "مع مراجعات متكررة للإشارات" },
+        { label: "المشاريع تحت المتابعة", value: stats.totalProjects, note: "مخزون نشط ومُقيَّم" },
+        { label: "المناطق المفهرسة", value: stats.totalAreas, note: "تغطية على مستوى المدينة والمنطقة" },
+        { label: "المطورون محل القراءة", value: stats.ratedDevelopers, note: "سجل التنفيذ وتوزيع المخاطر" },
+        { label: "معاملات DLD", value: stats.dldTransactions, note: "العمود الفقري المرجعي للتقارير" },
       ]
     : [
-        { label: "Projects tracked", value: "2,813", note: "Active scored inventory" },
-        { label: "Areas indexed", value: "246", note: "City + district coverage" },
-        { label: "Developers profiled", value: "75", note: "Track record and delivery mix" },
-        { label: "Update cadence", value: "Continuous", note: "With repeated signal reviews" },
+        { label: "Projects tracked", value: stats.totalProjects, note: "Active scored inventory" },
+        { label: "Areas indexed", value: stats.totalAreas, note: "City + district coverage" },
+        { label: "Developers profiled", value: stats.ratedDevelopers, note: "Track record and delivery mix" },
+        { label: "DLD transactions", value: stats.dldTransactions, note: "Canonical transaction backbone" },
       ]
 }
 
@@ -124,8 +125,15 @@ function getTableLegend(locale: AppLocale) {
 export default function LibraryPage() {
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
+  const metrics = usePlatformMetrics()
+  const numberFormatter = new Intl.NumberFormat(isArabic ? "ar-AE" : "en-US")
   const categories = getCategories(locale)
-  const coverageStats = getCoverageStats(locale)
+  const coverageStats = getCoverageStats(locale, {
+    totalProjects: numberFormatter.format(metrics.totalProjects),
+    totalAreas: numberFormatter.format(metrics.totalAreas),
+    ratedDevelopers: numberFormatter.format(metrics.ratedDevelopers),
+    dldTransactions: numberFormatter.format(metrics.dldTransactions),
+  })
   const tableLegend = getTableLegend(locale)
   const [activeCategory, setActiveCategory] = useState<Category>("all")
   const [sampleRows, setSampleRows] = useState<InventoryRow[]>([])
@@ -237,19 +245,24 @@ export default function LibraryPage() {
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {isArabic ? "كل مادة في هذه المكتبة تمر بقراءة وتحليل وصياغة داخل Entrestate. هدفنا أن نحول الإشارة السوقية إلى معنى مفهوم يمكن الرجوع إليه، من دون دفعك إلى قرار شراء أو بيع." : "Every piece in the Library is researched, written, and signed by Entrestate analysts. We translate signals into plain market language and explain how to read the numbers without pushing buy or sell decisions."}
                 </p>
+                <p className="mt-3 text-xs text-muted-foreground/80">
+                  {isArabic
+                    ? `آخر تحديث للبيانات: ${new Date(metrics.dataAsOf).toLocaleString("ar-AE-u-nu-latn", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Dubai" })} GST`
+                    : `Data refreshed ${new Date(metrics.dataAsOf).toLocaleString("en-AE", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Dubai" })} GST`}
+                </p>
               </div>
               <div className="mt-8 grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-2xl font-serif text-foreground">2,813</p>
+                  <p className="text-2xl font-serif text-foreground">{numberFormatter.format(metrics.totalProjects)}</p>
                   <p className="text-xs text-muted-foreground mt-1">{isArabic ? "مشروع مُقيَّم" : "Projects tracked"}</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-serif text-foreground">246</p>
+                  <p className="text-2xl font-serif text-foreground">{numberFormatter.format(metrics.totalAreas)}</p>
                   <p className="text-xs text-muted-foreground mt-1">{isArabic ? "منطقة مفهرسة" : "Areas indexed"}</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-serif text-foreground">{isArabic ? "مستمر" : "Continuous"}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{isArabic ? "تحديث الإشارات" : "Signal refresh"}</p>
+                  <p className="text-2xl font-serif text-foreground">{numberFormatter.format(metrics.ratedDevelopers)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{isArabic ? "مطور محل قراءة" : "Developers profiled"}</p>
                 </div>
               </div>
             </div>

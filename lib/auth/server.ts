@@ -63,6 +63,11 @@ export async function getSessionUserId(): Promise<string> {
   return user?.id ?? "system"
 }
 
+export async function requireSessionUserId(): Promise<string | null> {
+  const user = await getSessionUser()
+  return user?.id ?? null
+}
+
 export async function isAdminUser(): Promise<boolean> {
   if (adminModeEnabled) {
     if (!adminModeWarned) {

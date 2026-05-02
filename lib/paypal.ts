@@ -140,7 +140,7 @@ async function paypalApiRequest(path: string, init?: RequestInit) {
 
 export async function createPaypalSubscription(input: CreateSubscriptionInput) {
   const { tier, requestOrigin, customId } = input
-  const returnUrl = input.returnUrl || process.env.PAYPAL_RETURN_URL || `${requestOrigin}/account?billing=success&tier=${tier}`
+  const returnUrl = input.returnUrl || process.env.PAYPAL_RETURN_URL || `${requestOrigin}/account/billing?billing=success&tier=${tier}`
   const cancelUrl = input.cancelUrl || process.env.PAYPAL_CANCEL_URL || `${requestOrigin}/pricing?billing=cancelled&tier=${tier}`
   const planId = getPlanIdForTier(tier)
   const brandName = process.env.PAYPAL_BRAND_NAME || "Entrestate"

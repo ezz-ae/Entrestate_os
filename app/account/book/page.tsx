@@ -1,22 +1,22 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
-import NotebookPage from "@/app/notebook/page"
+import { NotebookLibraryView } from "@/app/notebook/page"
+import { buildLoginHref } from "@/lib/auth/navigation"
 import { getSyncedUser } from "@/lib/auth/sync"
-import { prefixLocalePath } from "@/i18n/locale"
 import { getRequestLocale } from "@/i18n/request"
 
 export const metadata: Metadata = {
-  title: "Personal Market Book - Entrestate",
-  description: "Generate and manage your personal market books, research notebooks, and export-ready artifacts.",
+  title: "Research Notebooks - Entrestate",
+  description: "Create and manage working research notebooks for areas, projects, clients, and portfolios.",
 }
 
 export default async function AccountBookPage() {
   const locale = await getRequestLocale()
   const user = await getSyncedUser()
   if (!user) {
-    redirect(prefixLocalePath("/login", locale))
+    redirect(buildLoginHref(locale, "/account/book"))
   }
 
-  return <NotebookPage />
+  return <NotebookLibraryView basePath="/account/book" accountMode />
 }

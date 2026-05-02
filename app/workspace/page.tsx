@@ -17,18 +17,13 @@ import Link from "next/link"
 import {
   BarChart3,
   Search,
-  Bookmark,
+  BookOpen,
   GitCompare,
-  Import,
-  Calculator,
   ArrowRight,
   ArrowUpRight,
   TrendingUp,
   ChevronRight,
   Activity,
-  Bot,
-  Database,
-  Layers,
   ShieldCheck,
   Menu,
   Eye,
@@ -46,17 +41,93 @@ function getWorkspaceTools(locale: AppLocale) {
   const isArabic = locale === "ar"
 
   return [
-    { icon: BarChart3, label: isArabic ? "لوحة السوق" : "Dashboards", description: isArabic ? "قراءات مركبة لحركة السوق" : "Layered market views", href: "/workspace/dashboards", outputs: [{ label: isArabic ? "بيانات السوق" : "Market Data", href: "/top-data" }] },
-    { icon: Database, label: isArabic ? "أبحاث السوق" : "Market Research Desk", description: isArabic ? "استكشف الإشارات وابنِ ملخصاتك" : "Explore market signals and build briefs", href: "/workspace/data-scientist", outputs: [{ label: isArabic ? "التقارير" : "Reports", href: "/reports/library" }, { label: isArabic ? "بيانات السوق" : "Market Data", href: "/top-data" }] },
-    { icon: ShieldCheck, label: isArabic ? "قراءة المشروع" : "Market Score", description: isArabic ? "تحقق من الدرجة والملاءمة قبل القرار" : "Score validation and match checks", href: "/market-score", outputs: [{ label: isArabic ? "المشاريع" : "Properties", href: "/properties" }] },
-    { icon: TrendingUp, label: isArabic ? "مطابقة المستثمر" : "Investor Match Desk", description: isArabic ? "اربط ملف العميل بالمخزون الأنسب" : "Match client profiles to the right inventory", href: "/agent-runtime", outputs: [{ label: isArabic ? "المشاريع" : "Properties", href: "/properties" }, { label: isArabic ? "المناطق" : "Areas", href: "/areas" }] },
-    { icon: Layers, label: isArabic ? "حزم البيانات" : "Market Data Packs", description: isArabic ? "منتجات بيانات وحزم جاهزة للتحميل" : "Data products and download packs", href: "/workspace/daas", outputs: [] },
-    { icon: Bot, label: isArabic ? "مسار العملاء" : "Lead Flow Builder", description: isArabic ? "ابنِ مسارات الاستقبال والتحويل" : "Set up client intake and routing flows", href: "/workspace/agent-creator", outputs: [] },
-    { icon: Search, label: isArabic ? "البحث" : "Search", description: isArabic ? "ابحث في المدن والمناطق والمشاريع" : "City, area, project search", href: "/workspace/search", outputs: [{ label: isArabic ? "المشاريع" : "Properties", href: "/properties" }, { label: isArabic ? "المناطق" : "Areas", href: "/areas" }, { label: isArabic ? "المطورون" : "Developers", href: "/developers" }] },
-    { icon: Bookmark, label: isArabic ? "المحفوظات" : "Saved Searches", description: isArabic ? "عمليات البحث التي رجعت إليها" : "Your bookmarked queries", href: "/workspace/saved-searches", outputs: [] },
-    { icon: GitCompare, label: isArabic ? "المقارنات" : "Comparisons", description: isArabic ? "ضع سيناريوهين جنبًا إلى جنب" : "Side-by-side scenarios", href: "/workspace/comparisons", outputs: [{ label: isArabic ? "المشاريع" : "Properties", href: "/properties" }] },
-    { icon: Import, label: isArabic ? "مصادر البيانات" : "Data Sources", description: isArabic ? "إدارة الإدخال والحوكمة" : "Managed ingestion and governance", href: "/workspace/imports", outputs: [] },
-    { icon: Calculator, label: isArabic ? "حاسبات سريعة" : "Math Tools", description: isArabic ? "حسابات سريعة وبناة مساعدة" : "Calculators and builders", href: "/workspace/math-tools", outputs: [] },
+    {
+      icon: Sparkles,
+      label: isArabic ? "محطة القرار" : "Decision Terminal",
+      description: isArabic ? "اسأل مباشرةً واحصل على حكم مدعوم بالأدلة." : "Ask directly and get an evidence-backed verdict.",
+      href: "/chat",
+      outputs: [
+        { label: isArabic ? "بيانات السوق" : "Market Data", href: "/top-data" },
+        { label: isArabic ? "التقارير" : "Reports", href: "/reports/library" },
+      ],
+    },
+    {
+      icon: Search,
+      label: isArabic ? "البحث والفرز" : "Search & Screening",
+      description: isArabic ? "اعبر السوق من استعلام واحد عبر المشاريع والمناطق والمطورين." : "Screen inventory, areas, and developers from one query surface.",
+      href: "/search",
+      outputs: [
+        { label: isArabic ? "المشاريع" : "Properties", href: "/properties" },
+        { label: isArabic ? "المناطق" : "Areas", href: "/areas" },
+        { label: isArabic ? "المطورون" : "Developers", href: "/developers" },
+      ],
+    },
+    {
+      icon: ShieldCheck,
+      label: isArabic ? "قراءة السوق" : "Market Score",
+      description: isArabic ? "تحقق من التوقيت، والأمان، وملاءمة القرار قبل التحرك." : "Validate timing, safety, and fit before you move.",
+      href: "/market-score",
+      outputs: [{ label: isArabic ? "المشاريع" : "Properties", href: "/properties" }],
+    },
+    {
+      icon: BookOpen,
+      label: isArabic ? "دفاتر الأبحاث" : "Research Notebooks",
+      description: isArabic ? "احفظ المذكرات والفرضيات والملفات البحثية تحت حسابك." : "Keep notebooks, briefs, and research context under your account.",
+      href: "/account/book",
+      outputs: [
+        { label: isArabic ? "الحساب" : "Account", href: "/account" },
+        { label: isArabic ? "التقارير" : "Reports", href: "/account/reports" },
+      ],
+    },
+    {
+      icon: BarChart3,
+      label: isArabic ? "لوحات السوق" : "Market Dashboards",
+      description: isArabic ? "قراءات حية للسوق والحركة والإشارات." : "Live market pulse, scoring, and evidence boards.",
+      href: "/workspace/dashboards",
+      outputs: [{ label: isArabic ? "بيانات السوق" : "Market Data", href: "/top-data" }],
+    },
+    {
+      icon: GitCompare,
+      label: isArabic ? "المقارنات" : "Comparison Desk",
+      description: isArabic ? "ضع سيناريوهين أو أكثر جنبًا إلى جنب قبل القرار." : "Run side-by-side scenarios before you commit.",
+      href: "/workspace/comparisons",
+      outputs: [{ label: isArabic ? "المشاريع" : "Properties", href: "/properties" }],
+    },
+    {
+      icon: Building2,
+      label: isArabic ? "المشاريع" : "Properties",
+      description: isArabic ? "الدليل الكامل للمخزون المصنف." : "Full directory of scored inventory.",
+      href: "/properties",
+      outputs: [],
+    },
+    {
+      icon: MapPin,
+      label: isArabic ? "المناطق" : "Areas",
+      description: isArabic ? "اقرأ العائد والسعر والعرض حسب المنطقة." : "Read yield, pricing, and supply by location.",
+      href: "/areas",
+      outputs: [],
+    },
+    {
+      icon: Users2,
+      label: isArabic ? "المطورون" : "Developers",
+      description: isArabic ? "راقب الموثوقية وسجل التسليم." : "Track reliability and delivery history.",
+      href: "/developers",
+      outputs: [],
+    },
+    {
+      icon: Activity,
+      label: isArabic ? "بيانات السوق" : "Market Data",
+      description: isArabic ? "إشارات السوق وحداثة البيانات والنبض التشغيلي." : "Signals, freshness, and operating pulse.",
+      href: "/top-data",
+      outputs: [],
+    },
+    {
+      icon: FileText,
+      label: isArabic ? "مكتبة التقارير" : "Reports Library",
+      description: isArabic ? "تقارير عامة وقراءات مطولة مرتبطة بنفس طبقة البيانات." : "Public research and long-form reads linked to the same data spine.",
+      href: "/reports/library",
+      outputs: [],
+    },
   ]
 }
 
@@ -131,7 +202,7 @@ export default function WorkspacePage() {
   const [dataLoading, setDataLoading] = useState(true)
 
   const coreToolLabels = useMemo(
-    () => (isArabic ? ["أبحاث السوق", "قراءة المشروع", "مطابقة المستثمر", "لوحة السوق"] : ["Market Research Desk", "Market Score", "Investor Match Desk", "Dashboards"]),
+    () => (isArabic ? ["محطة القرار", "البحث والفرز", "قراءة السوق", "دفاتر الأبحاث"] : ["Decision Terminal", "Search & Screening", "Market Score", "Research Notebooks"]),
     [isArabic],
   )
   const coreTools = useMemo(() => tools.filter((tool) => coreToolLabels.includes(tool.label)), [tools, coreToolLabels])
@@ -416,9 +487,9 @@ export default function WorkspacePage() {
                       : "Use these when you need a specific output. Each workflow is focused and short."}
                   </p>
                   <div className="mt-6 space-y-3 text-sm text-muted-foreground">
-                    <p>{isArabic ? "• بحث سريع في المشاريع والمخزون." : "• Quick searches for listings and inventory."}</p>
-                    <p>{isArabic ? "• مقارنات وملاحظات قرار محفوظة." : "• Comparisons and saved decision notes."}</p>
-                    <p>{isArabic ? "• مصادر بيانات وأدوات حساب ومسارات استقبال." : "• Data sources, math tools, and intake flows."}</p>
+                    <p>{isArabic ? "• وصول مباشر إلى أدلة المشاريع والمناطق والمطورين." : "• Direct access to property, area, and developer directories."}</p>
+                    <p>{isArabic ? "• دفاتر أبحاث ومقارنات وتقارير مرتبطة بحساب المستخدم." : "• Notebooks, comparisons, and reports tied to the user account."}</p>
+                    <p>{isArabic ? "• لوحات السوق والإشارات التشغيلية متاحة من نفس المسار." : "• Live market boards and operating signals stay in the same path."}</p>
                   </div>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-background/40 p-6">

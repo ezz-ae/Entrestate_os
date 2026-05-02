@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   const couponCode = url.searchParams.get("coupon")?.trim() ?? null
   const subscriptionId = getSubscriptionIdFromParams(url.searchParams)
 
-  const redirectUrl = new URL("/account", url.origin)
+  const redirectUrl = new URL("/account/billing", url.origin)
 
   if (!subscriptionId) {
     redirectUrl.searchParams.set("billing", "missing_subscription")

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { getRequestId, getPublicErrorMessage } from "@/lib/api-errors"
-import { getSessionUserId } from "@/lib/auth/server"
+import { requireSessionUserId } from "@/lib/auth/server"
 import { getBook } from "@/lib/notebook/queries"
 import { generateBookPages } from "@/lib/notebook/generator"
 
@@ -20,7 +20,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const requestId = getRequestId(request)
   try {
     const { id } = await params
-    const ownerId = await getSessionUserId()
+    const ownerId = await requireSessionUserId()
+    if (!ownerId) {
+      return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401 })
+    }
 
     const book = await getBook(id, ownerId)
     if (!book) {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getRequestId, getPublicErrorMessage } from "@/lib/api-errors"
-import { getSessionUserId } from "@/lib/auth/server"
+import { requireSessionUserId } from "@/lib/auth/server"
 import { getBook, deleteBook } from "@/lib/notebook/queries"
 
 export const runtime = "nodejs"
@@ -10,7 +10,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const requestId = getRequestId(request)
   try {
     const { id } = await params
-    const ownerId = await getSessionUserId()
+    const ownerId = await requireSessionUserId()
+    if (!ownerId) {
+      return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401 })
+    }
     const book = await getBook(id, ownerId)
     if (!book) {
       return NextResponse.json({ error: "Notebook not found.", requestId }, { status: 404 })
@@ -28,7 +31,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const requestId = getRequestId(request)
   try {
     const { id } = await params
-    const ownerId = await getSessionUserId()
+    const ownerId = await requireSessionUserId()
+    if (!ownerId) {
+      return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401 })
+    }
     const deleted = await deleteBook(id, ownerId)
     if (!deleted) {
       return NextResponse.json({ error: "Notebook not found.", requestId }, { status: 404 })

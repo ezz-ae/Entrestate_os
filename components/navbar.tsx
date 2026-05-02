@@ -16,6 +16,7 @@ import { MessageSquare } from "lucide-react"
 import { ReportNudge } from "@/components/report-nudge"
 import { prefixLocalePath, stripLocalePrefix, type AppLocale } from "@/i18n/locale"
 import { useRuntimeShell } from "@/hooks/use-runtime-shell"
+import { buildLoginHref } from "@/lib/auth/navigation"
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -42,6 +43,8 @@ export function Navbar() {
   const isAuthenticated = Boolean(session?.user)
   const shouldRenderSidebar = !isChatPage && (isAuthenticated || isSidebarOpen || hasOpenChatIntent)
   const logoHref = "/"
+  const accountEntryHref = isAuthenticated ? prefixLocalePath("/account", locale) : buildLoginHref(locale, "/account")
+  const accountEntryLabel = isAuthenticated ? t("account") : locale === "ar" ? "تسجيل الدخول" : "Sign in"
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -252,12 +255,12 @@ export function Navbar() {
               </button>
             </div>
             <Link
-              href={prefixLocalePath("/account", locale)}
+              href={accountEntryHref}
              
               onClick={() => setIsMobileMenuOpen(false)}
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
-              {t("account")}
+              {accountEntryLabel}
             </Link>
           </div>
         </div>

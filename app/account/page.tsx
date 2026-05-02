@@ -1,393 +1,546 @@
-import type { Metadata } from "next"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import {
-  Building2,
-  ShieldCheck,
-  CreditCard,
   ArrowRight,
-  MessageSquareText,
-  FileText,
-  CheckCircle2,
-  Clock,
-  Zap,
   BookOpen,
-  Sparkles,
-  Download,
-  Share2,
-  PenLine,
+  CheckCircle2,
+  CreditCard,
+  FileText,
+  Gauge,
   LayoutGrid,
+  MessageSquareText,
+  PenLine,
+  ShieldCheck,
+  Sparkles,
+  Zap,
 } from "lucide-react"
-import { Navbar } from "@/components/navbar"
+
+import { AccountSectionNav } from "@/components/account/account-section-nav"
 import { Footer } from "@/components/footer"
-import { AccountIdentity } from "@/components/account-identity"
-import { AccountBillingControls } from "@/components/account-billing-controls"
+import { Navbar } from "@/components/navbar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { buildLoginHref } from "@/lib/auth/navigation"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
-import { listBillingEventsByAccountKey, type BillingActivityEvent } from "@/lib/billing-entitlements"
-import { getCopilotDailyLimit, getCopilotDailyUsage } from "@/lib/copilot-usage"
+import { getSyncedUser } from "@/lib/auth/sync"
+import { getCopilotDailyUsage } from "@/lib/copilot-usage"
+import { prisma } from "@/lib/prisma"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
-import { formatDate } from "@/lib/format/date"
-import { getNumberLocale } from "@/lib/format/locale"
-import { getTranslations } from "next-intl/server"
 
-const PLAN_COLORS: Record<"free" | "pro" | "team" | "institutional", string> = {
-  free: "text-muted-foreground",
-  pro: "text-blue-500",
-  team: "text-violet-500",
-  institutional: "text-amber-500",
+function formatTierLabel(tier: "free" | "pro" | "team" | "institutional", locale: AppLocale) {
+  const labels = {
+    free: { en: "Free", ar: "مجاني" },
+    pro: { en: "Pro", ar: "احترافي" },
+    team: { en: "Team", ar: "فريق" },
+    institutional: { en: "Institutional", ar: "مؤسسي" },
+  } as const
+  return labels[tier][locale]
 }
 
-function humanizeStatus(value: string | null | undefined, locale: AppLocale) {
-  if (!value) return locale === "ar" ? "غير مشترك" : "not subscribed"
+function formatStatus(value: string | null | undefined, locale: AppLocale) {
+  if (!value) return locale === "ar" ? "غير مرتبط" : "Not linked"
 
   const normalized = value.replaceAll("_", " ").toLowerCase()
-  if (locale !== "ar") return normalized
-
-  switch (normalized) {
-    case "active":
-      return "نشطة"
-    case "approval pending":
-    case "approved":
-      return "قيد الاعتماد"
-    case "cancelled":
-      return "ملغاة"
-    case "suspended":
-      return "معلّقة"
-    case "expired":
-      return "منتهية"
-    case "inactive":
-      return "غير مفعّلة"
-    default:
-      return normalized
+  if (locale === "ar") {
+    switch (normalized) {
+      case "active":
+        return "نشط"
+      case "approved":
+      case "approval pending":
+        return "قيد الاعتماد"
+      case "cancelled":
+        return "ملغى"
+      case "suspended":
+        return "معلق"
+      case "inactive":
+        return "غير مفعّل"
+      default:
+        return normalized
+    }
   }
+
+  return normalized.replace(/^\w/, (char) => char.toUpperCase())
 }
 
-export default async function AccountPage() {
-  const locale = await getRequestLocale()
-  const t = await getTranslations({ locale, namespace: "account" })
-  const entitlement = await getCurrentEntitlement()
-  const isArabic = locale === "ar"
-  const numberLocale = getNumberLocale(locale)
+function formatHorizon(value: string | null | undefined, locale: AppLocale) {
+  const normalized = value?.trim().toLowerCase() ?? "ready"
+  const labels = {
+    ready: { en: "Ready now", ar: "جاهز الآن" },
+    "6-12mo": { en: "6-12 months", ar: "خلال 6-12 شهر" },
+    "1-2yr": { en: "1-2 years", ar: "خلال 1-2 سنة" },
+    "2-4yr": { en: "2-4 years", ar: "خلال 2-4 سنوات" },
+    "4yr+": { en: "4+ years", ar: "أكثر من 4 سنوات" },
+  } as const
 
-  const quickAccess = [
+  if (normalized in labels) {
+    return labels[normalized as keyof typeof labels][locale]
+  }
+
+  return locale === "ar" ? "جاهز الآن" : "Ready now"
+}
+
+function formatArchetype(yieldVsSafety: number, locale: AppLocale) {
+  if (locale === "ar") {
+    if (yieldVsSafety < 0.35) return "حذر"
+    if (yieldVsSafety < 0.65) return "متوازن"
+    if (yieldVsSafety < 0.85) return "نمائي"
+    return "انتهازي"
+  }
+
+  if (yieldVsSafety < 0.35) return "Conservative"
+  if (yieldVsSafety < 0.65) return "Balanced"
+  if (yieldVsSafety < 0.85) return "Growth"
+  return "Opportunistic"
+}
+
+function formatDate(value: Date, locale: AppLocale) {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-AE" : "en-AE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(value)
+}
+
+function getSingleQueryValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value
+}
+
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
+  const user = await getSyncedUser()
+
+  if (!user) {
+    redirect(buildLoginHref(locale, "/account"))
+  }
+
+  const profile = user.profile
+  const entitlement = await getCurrentEntitlement(user.id)
+  const usage = await getCopilotDailyUsage(user.id, entitlement.tier)
+  const params = (await searchParams) ?? {}
+  const billingState = getSingleQueryValue(params.billing)?.trim() ?? null
+
+  const [notebookCount, latestBook, reportCount, latestReport, apiKeyCount] = await Promise.all([
+    prisma.marketBook.count({ where: { ownerId: user.id } }),
+    prisma.marketBook.findFirst({
+      where: { ownerId: user.id },
+      orderBy: { updatedAt: "desc" },
+      select: { id: true, title: true, updatedAt: true },
+    }),
+    prisma.assistantReport.count({ where: { userId: user.id } }),
+    prisma.assistantReport.findFirst({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      select: { publicId: true, title: true, createdAt: true },
+    }),
+    prisma.apiKey.count({ where: { userId: user.id } }),
+  ])
+
+  const copy = {
+    eyebrow: isArabic ? "واجهة الحساب" : "Account hub",
+    title: isArabic ? `أهلاً، ${user.name || user.email || "عضو Entrestate"}` : `Welcome, ${user.name || user.email || "Entrestate member"}`,
+    description: isArabic
+      ? "هذه هي واجهتك الهادئة. اضبط ملف القرار، افتح دفترك، ثم انتقل إلى المحطة أو التقارير عند الحاجة."
+      : "This is your calm operating surface. Tune the decision profile, open your notebook, then move into the terminal or report library only when needed.",
+    billingNotice:
+      billingState === "success"
+        ? isArabic
+          ? "تم تفعيل الاشتراك. تفاصيل الخطة الآن داخل مركز الفوترة."
+          : "Your subscription is active. Plan details now live in the billing center."
+        : billingState
+          ? isArabic
+            ? "هناك تحديث متعلق بالفوترة. راجع مركز الفوترة للاطلاع على الحالة."
+            : "There is a billing update. Review the billing center for the current status."
+          : null,
+    openTerminal: isArabic ? "افتح محطة القرار" : "Open decision terminal",
+    openNotebook: isArabic ? "افتح الدفاتر" : "Open notebooks",
+    openBilling: isArabic ? "مركز الفوترة" : "Billing center",
+    startHere: isArabic ? "ابدأ من هنا" : "Start here",
+    startHereDescription: isArabic
+      ? "قسم واحد لكل خطوة حتى لا تتحول الواجهة إلى لوحة مزدحمة."
+      : "One clear destination for each next step so the account never turns into an overloaded operations board.",
+    workMap: isArabic ? "خريطة الاستخدام" : "How the account works",
+    workMapDescription: isArabic
+      ? "الترتيب المقترح لاستخدام المنصة من دون إرباك."
+      : "The recommended order for using the platform without overwhelm.",
+    snapshot: isArabic ? "ملخص الحساب" : "Account snapshot",
+    usageTitle: isArabic ? "استخدام المساعد" : "Assistant usage",
+    workspaceTitle: isArabic ? "حالة المكتبة" : "Workspace status",
+    status: isArabic ? "الحالة" : "Status",
+    tier: isArabic ? "الخطة" : "Plan",
+    horizon: isArabic ? "الأفق" : "Horizon",
+    archetype: isArabic ? "الأسلوب" : "Archetype",
+    preferredMarkets: isArabic ? "الأسواق المفضلة" : "Preferred markets",
+    reports: isArabic ? "التقارير" : "Reports",
+    notebooks: isArabic ? "الدفاتر" : "Notebooks",
+    apiKeys: isArabic ? "مفاتيح API" : "API keys",
+    dailyLimit: isArabic ? "الحد اليومي" : "Daily limit",
+    used: isArabic ? "مستخدم" : "Used",
+    reset: isArabic ? "يُعاد التصفير يومياً عند منتصف الليل بتوقيت دبي." : "Resets daily at midnight Dubai time.",
+    latestBook: isArabic ? "آخر دفتر" : "Latest notebook",
+    latestReport: isArabic ? "آخر تقرير" : "Latest report",
+  }
+
+  const usagePct = usage.limit ? Math.min((usage.used / usage.limit) * 100, 100) : 0
+  const preferredMarkets = profile?.preferredMarkets ?? []
+  const riskBias = Math.round((profile?.riskBias ?? 0.65) * 100)
+  const yieldVsSafety = profile?.yieldVsSafety ?? 0.5
+
+  const guidedCards = [
     {
-      label: isArabic ? "دفتر السوق الشخصي" : "Personal Market Book",
-      description: isArabic ? "توليد، تقرير، مشاركة، وتنفيذ" : "Generate, report, share, and implement",
-      href: "/account/book",
-      icon: BookOpen,
-      tiers: ["free", "pro", "team", "institutional"] as const,
-      highlight: true,
-    },
-    {
-      label: isArabic ? "إعدادات الملف" : "Profile Settings",
-      description: isArabic ? "الأولويات، الأفق، وأسواقك المفضلة" : "Risk weighting, horizon, and preferred markets",
+      title: isArabic ? "اضبط ملف القرار" : "Tune the decision profile",
+      description: isArabic
+        ? "حدد وزن السوق، أفق الاستثمار، والأسواق المفضلة قبل بدء أي تحليل."
+        : "Set market weighting, investment horizon, and preferred markets before running analysis.",
       href: "/account/profile",
+      cta: isArabic ? "افتح الملف" : "Open profile",
       icon: PenLine,
-      tiers: ["free", "pro", "team", "institutional"] as const,
+      meta: `${riskBias}% ${isArabic ? "وزن السوق" : "market bias"}`,
     },
     {
-      label: isArabic ? "التقارير والتنزيلات" : "Reports & Downloads",
-      description: isArabic ? "المذكرات، التقارير، والملفات القابلة للتنزيل" : "Decision artifacts, memos, and downloadable files",
-      href: "/account/reports",
-      icon: FileText,
-      tiers: ["free", "pro", "team", "institutional"] as const,
+      title: isArabic ? "افتح دفتر البحث" : "Open a research notebook",
+      description: isArabic
+        ? "احتفظ بالنظرة العامة والمخاطر والمذكرة في مساحة عمل واحدة قابلة للمتابعة."
+        : "Keep the overview, risk, and memo inside one working space you can revisit.",
+      href: latestBook ? `/account/book/${latestBook.id}` : "/account/book",
+      cta: latestBook ? (isArabic ? "تابع آخر دفتر" : "Continue latest notebook") : copy.openNotebook,
+      icon: BookOpen,
+      meta: latestBook
+        ? `${latestBook.title} · ${formatDate(latestBook.updatedAt, locale)}`
+        : isArabic
+          ? "ابدأ أول دفتر للحساب"
+          : "Start the first notebook for this account",
     },
     {
-      label: isArabic ? "سجل الفوترة" : "Billing Activity",
-      description: isArabic ? "مراجعة الاشتراكات، التحديثات، وآخر أحداث الدفع" : "Audit subscriptions, plan changes, and payment events",
-      href: "/account/billing-activity",
-      icon: CreditCard,
-      tiers: ["free", "pro", "team", "institutional"] as const,
-    },
-    {
-      label: isArabic ? "اتصالات API" : "API Connections",
-      description: isArabic ? "مفاتيح مؤسسية للربط مع المواقع ولوحات التحكم" : "Institutional feed keys for external sites and dashboards",
-      href: "/account/api-keys",
-      icon: LayoutGrid,
-      tiers: ["institutional"] as const,
-    },
-    {
-      label: isArabic ? "محطة القرار" : "Decision Terminal",
-      description: isArabic ? "ابدأ جلسة تحليل جديدة على البيانات الحية" : "Start a new live market analysis session",
+      title: isArabic ? "شغّل المحطة عند الحاجة" : "Run the terminal when needed",
+      description: isArabic
+        ? "استخدم المحطة للاستعلامات الحية بعد ضبط الملف والموضوع، لا قبل ذلك."
+        : "Use the terminal for live questions after the profile and research subject are clear, not before.",
       href: "/chat",
+      cta: copy.openTerminal,
       icon: MessageSquareText,
-      tiers: ["free", "pro", "team", "institutional"] as const,
+      meta: isArabic ? "استعلامات حيّة مع أدلة" : "Live evidence-backed queries",
     },
   ]
 
-  const billingEvents = entitlement.accountKey
-    ? await listBillingEventsByAccountKey(entitlement.accountKey)
-    : []
+  const workspaceCards = [
+    {
+      title: isArabic ? "دفاتر البحث" : "Research notebooks",
+      description: isArabic ? "المكان الرئيسي للعمل التراكمي." : "The main surface for cumulative work.",
+      href: "/account/book",
+      stat: notebookCount,
+      icon: BookOpen,
+    },
+    {
+      title: isArabic ? "التقارير" : "Reports",
+      description: isArabic ? "المخرجات الجاهزة للمراجعة أو الإرسال." : "Generated outputs ready for review or delivery.",
+      href: "/account/reports",
+      stat: reportCount,
+      icon: FileText,
+    },
+    {
+      title: isArabic ? "الفوترة" : "Billing",
+      description: isArabic ? "الخطة والاشتراك وسجل المدفوعات في مكان مستقل." : "Plan, subscription controls, and payment history in a dedicated destination.",
+      href: "/account/billing",
+      stat: formatTierLabel(entitlement.tier, locale),
+      icon: CreditCard,
+    },
+    {
+      title: isArabic ? "API" : "API",
+      description: isArabic ? "مفاتيح الربط للفرق المؤسسية فقط." : "Connection keys reserved for institutional teams.",
+      href: "/account/api-keys",
+      stat: entitlement.tier === "institutional" ? apiKeyCount : isArabic ? "مؤسسي" : "Institutional",
+      icon: LayoutGrid,
+    },
+  ]
 
-  const usageData = entitlement.accountKey
-    ? await getCopilotDailyUsage(entitlement.accountKey, entitlement.tier)
-    : null
-
-  const usage = {
-    used: usageData?.used ?? 0,
-    limit: usageData?.limit ?? 100
-  }
-
-  const tierLabel = t(`tier.${entitlement.tier}`)
-
-  const usagePct = usage.limit ? Math.min((usage.used / usage.limit) * 100, 100) : 0
+  const journey = [
+    {
+      title: isArabic ? "1. ابدأ بالملف" : "1. Start with the profile",
+      body: isArabic
+        ? "اضبط التفضيلات مرة واحدة لتنعكس على الشات، البحث، والتقارير."
+        : "Tune preferences once so chat, search, and reports inherit the same lens.",
+    },
+    {
+      title: isArabic ? "2. ابنِ دفتر العمل" : "2. Build the working notebook",
+      body: isArabic
+        ? "كل موضوع مهم يحتاج دفتره الخاص بدل بعثرة الجلسات."
+        : "Each serious topic should live in its own notebook instead of scattered sessions.",
+    },
+    {
+      title: isArabic ? "3. ولّد التقرير عند الحاجة" : "3. Generate only when ready",
+      body: isArabic
+        ? "عندما تتضح الفرضية، صدّر التقرير أو المذكرة من المسار المناسب."
+        : "Once the thesis is clear, export the report or memo from the right surface.",
+    },
+  ]
 
   return (
-    <main id="main-content" dir={isArabic ? "rtl" : "ltr"}>
+    <main id="main-content" className="min-h-screen bg-background" dir={isArabic ? "rtl" : "ltr"}>
       <Navbar />
 
-      {/* ── Mobile section tabs ── */}
-      <div className="sticky top-16 z-30 lg:hidden bg-background/95 backdrop-blur-md border-b border-border/50">
-        <div className="flex overflow-x-auto scrollbar-none px-4 gap-1 py-2">
-          {[
-            { id: "identity", label: isArabic ? "الهوية" : "Identity", icon: Building2 },
-            { id: "billing",  label: isArabic ? "الفاتورة" : "Billing",  icon: CreditCard },
-            { id: "activity", label: isArabic ? "السجل" : "Activity",  icon: ShieldCheck },
-            { id: "usage",    label: isArabic ? "الاستخدام" : "Usage",   icon: Zap },
-            { id: "access",   label: isArabic ? "وصول" : "Access",      icon: ArrowRight },
-          ].map(({ id, label, icon: Icon }) => (
-            <a
-              key={id}
-              href={`#${id}`}
-              className="shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-            >
-              <Icon className="h-3 w-3" />
-              {label}
-            </a>
-          ))}
-        </div>
-      </div>
+      <div className="mx-auto max-w-7xl px-4 pb-24 pt-24 sm:px-6 md:pt-28">
+        <header className="rounded-[2rem] border border-border bg-card p-6 shadow-sm md:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                {copy.eyebrow}
+              </p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
+                {copy.title}
+              </h1>
+              <p className="mt-4 text-sm leading-6 text-muted-foreground md:text-base">
+                {copy.description}
+              </p>
+            </div>
 
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 pb-20 pt-6 md:pt-10 lg:pt-16">
-        <header className="mb-8 lg:mb-10">
-          <h1 className="text-2xl font-semibold text-foreground md:text-4xl lg:text-5xl">{t("title")}</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {isArabic ? "إدارة اشتراكك، بيانات الحساب، والوصول إلى أدوات القرار." : "Manage your subscription, identity, and decision tool access."}
-          </p>
-        </header>
-
-        {/* ── Personal Market Book banner ── */}
-        <Link href={prefixLocalePath("/account/book", locale)} className="group block mb-8">
-          <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/6 via-card to-card p-5 md:p-7 transition-all hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5">
-            {/* Ambient glow */}
-            <div className="pointer-events-none absolute -top-10 -right-10 w-48 h-48 bg-primary/8 blur-[60px] rounded-full" />
-
-            <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
-              {/* Icon */}
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 group-hover:bg-primary/15 transition-colors">
-                <BookOpen className="h-7 w-7 text-primary" />
-              </div>
-
-              {/* Text */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <span className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {isArabic ? "دفتر السوق الشخصي" : "Personal Market Book"}
-                  </span>
-                  <span className="rounded-full border border-primary/20 bg-primary/8 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary/80">
-                    {isArabic ? "جديد" : "New"}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground/75 leading-relaxed">
-                  {isArabic
-                    ? "توليد كتب الاستخبارات، إنشاء التقارير، المشاركة والتنفيذ — كل شيء مرتبط بسوق دبي الحي."
-                    : "Generate intelligence books, create reports, share and implement — all connected to the live Dubai market."}
-                </p>
-                {/* Capability chips */}
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {[
-                    { icon: Sparkles, label: isArabic ? "توليد" : "Generate" },
-                    { icon: FileText, label: isArabic ? "تقرير" : "Report" },
-                    { icon: PenLine, label: isArabic ? "إعادة كتابة" : "Rewrite" },
-                    { icon: Share2, label: isArabic ? "مشاركة" : "Share" },
-                    { icon: Download, label: isArabic ? "تصدير" : "Export" },
-                    { icon: Zap, label: isArabic ? "تنفيذ" : "Implement" },
-                  ].map(({ icon: Ic, label }) => (
-                    <span key={label} className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/30 px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground/70">
-                      <Ic className="h-2.5 w-2.5" />
-                      {label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <ArrowRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0 hidden sm:block" />
+            <div className="flex flex-wrap gap-3">
+              <Button asChild variant="outline">
+                <Link href={prefixLocalePath("/account/book", locale)}>
+                  <BookOpen className="h-4 w-4" />
+                  {copy.openNotebook}
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link href={prefixLocalePath("/chat", locale)}>
+                  <MessageSquareText className="h-4 w-4" />
+                  {copy.openTerminal}
+                </Link>
+              </Button>
             </div>
           </div>
-        </Link>
 
-        <div className="grid grid-cols-1 gap-5 lg:gap-8 lg:grid-cols-3">
-          {/* Left Column: Profile & Subscription */}
-          <div className="space-y-5 lg:space-y-8 lg:col-span-2">
+          <AccountSectionNav
+            active="overview"
+            locale={locale}
+            apiEnabled={entitlement.tier === "institutional"}
+          />
+        </header>
 
-            <section id="identity" className="rounded-2xl border border-border bg-card p-5 md:p-8 scroll-mt-32 lg:scroll-mt-24">
-              <div className="mb-5 flex items-center gap-3">
-                <Building2 className="h-5 w-5 text-primary" />
-                <h2 className="text-base md:text-xl font-medium">{t("identity")}</h2>
-              </div>
-              <AccountIdentity />
-            </section>
-
-            <section id="billing" className="rounded-2xl border border-border bg-card p-5 md:p-8 scroll-mt-32 lg:scroll-mt-24">
-              <div className="mb-5 md:mb-8 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                  <h2 className="text-base md:text-xl font-medium">{t("billing")}</h2>
-                </div>
-                <div className={`flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider ${PLAN_COLORS[entitlement.tier]}`}>
-                  <Zap className="h-3 w-3" />
-                  {tierLabel}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-border/60 bg-muted/30 p-3 md:p-4">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("activePlan")}</p>
-                  <p className="mt-1 text-base md:text-lg font-semibold text-foreground capitalize">{tierLabel}</p>
-                </div>
-                <div className="rounded-xl border border-border/60 bg-muted/30 p-3 md:p-4">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("status")}</p>
-                  <p className="mt-1 text-base md:text-lg font-semibold text-foreground capitalize">{humanizeStatus(entitlement.status, locale)}</p>
-                </div>
-                {entitlement.subscriptionId && (
-                  <div className="rounded-xl border border-border/60 bg-muted/30 p-3 md:p-4 col-span-2 sm:col-span-1">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("nextBilling")}</p>
-                    <p className="mt-1 text-base md:text-lg font-semibold text-foreground">—</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-5 md:mt-8">
-                <AccountBillingControls
-                  tier={entitlement.tier}
-                  provider={entitlement.provider}
-                  subscriptionId={entitlement.subscriptionId}
-                  status={entitlement.status}
-                />
-              </div>
-            </section>
-
-            <section id="activity" className="rounded-2xl border border-border bg-card p-5 md:p-8 scroll-mt-32 lg:scroll-mt-24">
-              <div className="mb-5 flex items-center gap-3">
-                <ShieldCheck className="h-5 w-5 text-emerald-500" />
-                <h2 className="text-base md:text-xl font-medium">{isArabic ? "سجل الفوترة" : "Billing Activity"}</h2>
-              </div>
-
-              {billingEvents.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-10 text-center">
-                  <Clock className="mb-3 h-8 w-8 text-muted-foreground/40" />
-                  <p className="text-sm text-muted-foreground">{isArabic ? "لا توجد معاملات سابقة لهذا الحساب." : "No previous transactions for this account."}</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto -mx-5 md:mx-0 rounded-none md:rounded-xl border-y md:border border-border">
-                  <table className="w-full min-w-[400px] text-left text-sm">
-                    <thead className="bg-muted/50 text-muted-foreground rtl:text-right">
-                      <tr>
-                        <th className="px-4 py-3 font-medium">{isArabic ? "التاريخ" : "Date"}</th>
-                        <th className="px-4 py-3 font-medium">{isArabic ? "الوصف" : "Description"}</th>
-                        <th className="px-4 py-3 font-medium text-right">{isArabic ? "المبلغ" : "Amount"}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {billingEvents.map((event: BillingActivityEvent) => (
-                        <tr key={event.event_id} className="hover:bg-muted/30">
-                          <td className="px-4 py-3 font-medium tabular-nums whitespace-nowrap">{formatDate(event.received_at, locale)}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                              <span className="capitalize">{event.event_type?.replace(/_/g, ' ') || "Event"}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-right font-medium tabular-nums whitespace-nowrap">-</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
+        {copy.billingNotice ? (
+          <div className="mt-6 flex flex-col gap-3 rounded-3xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4 text-sm text-foreground sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
+              <p>{copy.billingNotice}</p>
+            </div>
+            <Button asChild variant="outline">
+              <Link href={prefixLocalePath("/account/billing", locale)}>{copy.openBilling}</Link>
+            </Button>
           </div>
+        ) : null}
 
-          {/* Right Column: Usage & Quick Access */}
-          <div className="space-y-5 lg:space-y-8">
-
-            <section id="usage" className="rounded-2xl border border-border bg-card p-5 md:p-8 scroll-mt-32 lg:scroll-mt-24">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-medium text-sm md:text-base">{isArabic ? "حدود الاستخدام" : "Usage Limits"}</h2>
-                <div className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary">DAILY</div>
-              </div>
-
-              <div className="space-y-4">
+        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.55fr),380px]">
+          <div className="space-y-6">
+            <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <Sparkles className="mt-0.5 h-5 w-5 text-primary" />
                 <div>
-                  <div className="mb-2.5 flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">{isArabic ? "مساعد القرار" : "Decision Assistant"}</span>
-                    <span className="font-semibold text-foreground tabular-nums">
-                      {usage.used.toLocaleString(numberLocale)} / {usage.limit.toLocaleString(numberLocale)}
-                    </span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                    <div
-                      className={`h-full transition-all duration-700 ${usagePct >= 90 ? "bg-destructive" : usagePct >= 70 ? "bg-amber-500" : "bg-primary"}`}
-                      style={{ width: `${usagePct}%` }}
-                    />
-                  </div>
-                  <p className="mt-1.5 text-[10px] text-muted-foreground/60 text-right tabular-nums">
-                    {usagePct.toFixed(0)}% {isArabic ? "مستخدم" : "used"}
-                  </p>
+                  <h2 className="text-xl font-semibold text-foreground">{copy.startHere}</h2>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{copy.startHereDescription}</p>
                 </div>
-                <p className="text-[10px] leading-relaxed text-muted-foreground/70 border-t border-border/30 pt-3">
-                  {isArabic
-                    ? "يتم تصفير الحدود يومياً الساعة 12:00 صباحاً بتوقيت دبي."
-                    : "Limits reset daily at 12:00 AM GST. Feature access varies by active tier."}
-                </p>
               </div>
-            </section>
 
-            <section id="access" className="rounded-2xl border border-border bg-card p-5 md:p-8 scroll-mt-32 lg:scroll-mt-24">
-              <h2 className="mb-4 font-medium text-sm md:text-base">{isArabic ? "وصول سريع" : "Quick Access"}</h2>
-              <div className="grid grid-cols-1 gap-2.5">
-                {quickAccess.map((item) => {
-                  const Icon = item.icon
-                  const hasAccess = item.tiers.includes(entitlement.tier as any)
-                  const isHighlight = (item as any).highlight
-
+              <div className="mt-5 grid gap-4 lg:grid-cols-3">
+                {guidedCards.map((card) => {
+                  const Icon = card.icon
                   return (
                     <Link
-                      key={item.label}
-                      href={hasAccess ? prefixLocalePath(item.href, locale) : prefixLocalePath("/pricing", locale)}
-                      className={`group flex items-center justify-between rounded-xl border p-3.5 transition-all ${
-                        isHighlight
-                          ? "border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 active:scale-[0.98]"
-                          : hasAccess
-                          ? "border-border bg-muted/20 hover:-translate-y-0.5 hover:bg-muted/50 active:scale-[0.98]"
-                          : "border-border opacity-50"
-                      }`}
+                      key={card.title}
+                      href={prefixLocalePath(card.href, locale)}
+                      className="group rounded-3xl border border-border/70 bg-background/60 p-5 transition hover:border-primary/30 hover:bg-card"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`rounded-lg p-2 transition-colors ${
-                          isHighlight
-                            ? "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
-                            : hasAccess
-                            ? "bg-background text-primary group-hover:bg-primary group-hover:text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}>
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className={`text-sm font-semibold ${isHighlight ? "text-primary" : "text-foreground"}`}>{item.label}</p>
-                          <p className="text-[11px] text-muted-foreground leading-tight">{item.description}</p>
-                        </div>
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                        <Icon className="h-5 w-5" />
                       </div>
-                      <ArrowRight className={`h-4 w-4 shrink-0 rtl:rotate-180 transition-all ${hasAccess || isHighlight ? "text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5" : "text-muted-foreground/30"}`} />
+                      <h3 className="mt-5 text-lg font-semibold text-foreground">{card.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{card.description}</p>
+                      <p className="mt-4 text-xs font-medium text-muted-foreground">{card.meta}</p>
+                      <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary">
+                        <span>{card.cta}</span>
+                        <ArrowRight className={`h-4 w-4 transition group-hover:translate-x-1 ${isArabic ? "rotate-180 group-hover:-translate-x-1 group-hover:translate-x-0" : ""}`} />
+                      </div>
                     </Link>
                   )
                 })}
               </div>
             </section>
 
+            <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">{copy.workMap}</h2>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{copy.workMapDescription}</p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+                {journey.map((step) => (
+                  <div key={step.title} className="rounded-3xl border border-border/70 bg-background/60 p-5">
+                    <h3 className="text-base font-semibold text-foreground">{step.title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{step.body}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <LayoutGrid className="mt-0.5 h-5 w-5 text-primary" />
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">{copy.workspaceTitle}</h2>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    {isArabic
+                      ? "كل سطح له وظيفة واضحة. الفوترة هنا كرابط فقط وليست قسماً مفروضاً على أول شاشة."
+                      : "Each surface has a clear job. Billing appears here only as a destination, not as forced content on first load."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                {workspaceCards.map((card) => {
+                  const Icon = card.icon
+                  return (
+                    <Link
+                      key={card.title}
+                      href={prefixLocalePath(card.href, locale)}
+                      className="rounded-3xl border border-border/70 bg-background/60 p-5 transition hover:border-primary/30 hover:bg-card"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                            <Icon className="h-4.5 w-4.5" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-semibold text-foreground">{card.title}</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">{card.description}</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline">{card.stat}</Badge>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </section>
           </div>
+
+          <aside className="space-y-6">
+            <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">{copy.snapshot}</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
+                </div>
+                <Badge variant="outline">{formatTierLabel(entitlement.tier, locale)}</Badge>
+              </div>
+
+              <dl className="mt-5 grid gap-3">
+                <div className="rounded-2xl border border-border/70 bg-background/60 px-4 py-3">
+                  <dt className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.status}</dt>
+                  <dd className="mt-1 text-sm font-semibold text-foreground">{formatStatus(entitlement.status, locale)}</dd>
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-background/60 px-4 py-3">
+                  <dt className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.horizon}</dt>
+                  <dd className="mt-1 text-sm font-semibold text-foreground">{formatHorizon(profile?.horizon, locale)}</dd>
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-background/60 px-4 py-3">
+                  <dt className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.archetype}</dt>
+                  <dd className="mt-1 text-sm font-semibold text-foreground">{formatArchetype(yieldVsSafety, locale)}</dd>
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-background/60 px-4 py-3">
+                  <dt className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.preferredMarkets}</dt>
+                  <dd className="mt-1 text-sm font-semibold text-foreground">
+                    {preferredMarkets.length > 0 ? preferredMarkets.join(" · ") : isArabic ? "غير محدد بعد" : "Not set yet"}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <Gauge className="mt-0.5 h-5 w-5 text-primary" />
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">{copy.usageTitle}</h2>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    {isArabic
+                      ? "مؤشر سريع لاستهلاك مساعد القرار اليومي."
+                      : "A quick read on today’s decision-assistant usage."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-3xl border border-border/70 bg-background/60 p-5">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-muted-foreground">{copy.dailyLimit}</span>
+                  <span className="font-semibold text-foreground">
+                    {usage.used} / {usage.limit}
+                  </span>
+                </div>
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className={`h-full transition-all ${usagePct >= 90 ? "bg-destructive" : usagePct >= 70 ? "bg-amber-500" : "bg-primary"}`}
+                    style={{ width: `${usagePct}%` }}
+                  />
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {copy.used}: {usagePct.toFixed(0)}%. {copy.reset}
+                </p>
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <Zap className="mt-0.5 h-5 w-5 text-primary" />
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {isArabic ? "آخر النشاطات" : "Recent account signals"}
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    {isArabic
+                      ? "قراءة سريعة لآخر ما تم إنشاؤه داخل الحساب."
+                      : "A quick read on the latest items created inside this account."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                <div className="rounded-2xl border border-border/70 bg-background/60 p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.latestBook}</p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">
+                    {latestBook?.title ?? (isArabic ? "لا يوجد بعد" : "None yet")}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {latestBook ? formatDate(latestBook.updatedAt, locale) : notebookCount === 0 ? (isArabic ? "أنشئ أول دفتر للبدء." : "Create the first notebook to begin.") : ""}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-background/60 p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.latestReport}</p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">
+                    {latestReport?.title ?? (isArabic ? "لا يوجد بعد" : "None yet")}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {latestReport ? formatDate(latestReport.createdAt, locale) : reportCount === 0 ? (isArabic ? "سيظهر بعد توليد أول تقرير." : "Appears after your first generated report.") : ""}
+                  </p>
+                </div>
+              </div>
+
+              <Button asChild variant="outline" className="mt-5 w-full">
+                <Link href={prefixLocalePath("/account/billing", locale)}>
+                  <CreditCard className="h-4 w-4" />
+                  {copy.openBilling}
+                </Link>
+              </Button>
+            </section>
+          </aside>
         </div>
       </div>
+
       <Footer />
     </main>
   )

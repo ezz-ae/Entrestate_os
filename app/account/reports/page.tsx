@@ -1,27 +1,31 @@
 import type { Metadata } from "next"
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
+
 import Link from "next/link"
-import { Navbar } from "@/components/navbar"
+import { ArrowLeft, Download, ExternalLink, FileText, MessageSquare, Sparkles } from "lucide-react"
+import { redirect } from "next/navigation"
+
+import { AccountSectionNav } from "@/components/account/account-section-nav"
 import { Footer } from "@/components/footer"
+import { Navbar } from "@/components/navbar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { buildLoginHref } from "@/lib/auth/navigation"
 import { getSyncedUser } from "@/lib/auth/sync"
 import { prisma } from "@/lib/prisma"
-import { Download, ExternalLink, Filter, MessageSquare } from "lucide-react"
-import { redirect } from "next/navigation"
-import { getRequestLocale } from "@/i18n/request"
-import { prefixLocalePath } from "@/i18n/locale"
 
 export const metadata: Metadata = {
   title: "Reports & Downloads - Entrestate",
   description: "Browse and download your generated decision objects, memos, and reports.",
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const AUDIENCE_LABEL: Record<string, string> = {
-  investor: "Investor Brief",
-  client: "Client Report",
-  executive: "Executive Summary",
-  social: "Market Update",
+const AUDIENCE_LABEL: Record<string, { en: string; ar: string }> = {
+  investor: { en: "Investor brief", ar: "موجز مستثمر" },
+  client: { en: "Client report", ar: "تقرير عميل" },
+  executive: { en: "Executive summary", ar: "ملخص تنفيذي" },
+  social: { en: "Market update", ar: "تحديث سوقي" },
 }
 
 const STOPWORDS = new Set([
@@ -29,215 +33,189 @@ const STOPWORDS = new Set([
   "report", "analysis", "brief", "summary", "overview", "review",
 ])
 
-function deriveTopics(title: string, payload: unknown): string[] {
-  const p = payload as Record<string, any> | null
-  const profile = p?.profile as Record<string, any> | undefined
+function deriveTopics(title: string, payload: unknown, locale: AppLocale): string[] {
+  const parsedPayload = payload as Record<string, unknown> | null
+  const profile = parsedPayload?.profile as Record<string, unknown> | undefined
   const topics: string[] = []
 
-  const audience = profile?.audience as string | undefined
-  if (audience && AUDIENCE_LABEL[audience]) topics.push(AUDIENCE_LABEL[audience])
+  const audience = typeof profile?.audience === "string" ? profile.audience : null
+  if (audience && AUDIENCE_LABEL[audience]) {
+    topics.push(AUDIENCE_LABEL[audience][locale])
+  }
 
-  const templateName = profile?.templateName as string | undefined
+  const templateName = typeof profile?.templateName === "string" ? profile.templateName : null
   if (templateName) topics.push(templateName)
 
-  const clientName = profile?.clientName as string | undefined
+  const clientName = typeof profile?.clientName === "string" ? profile.clientName : null
   if (clientName) topics.push(clientName)
 
-  // Extract meaningful title words
   const words = title
     .split(/[\s·—\-:,]+/)
-    .map((w) => w.trim())
-    .filter((w) => w.length > 3 && !STOPWORDS.has(w.toLowerCase()))
+    .map((word) => word.trim())
+    .filter((word) => word.length > 3 && !STOPWORDS.has(word.toLowerCase()))
 
-  for (const w of words) {
+  for (const word of words) {
     if (topics.length >= 5) break
-    if (!topics.some((t) => t.toLowerCase().includes(w.toLowerCase()))) {
-      topics.push(w)
+    if (!topics.some((topic) => topic.toLowerCase().includes(word.toLowerCase()))) {
+      topics.push(word)
     }
   }
 
   return topics.slice(0, 5)
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────────
+function formatDate(value: Date, locale: AppLocale) {
+  return new Intl.DateTimeFormat(locale === "ar" ? "ar-AE" : "en-AE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(value)
+}
 
 export default async function ReportsPage() {
   const locale = await getRequestLocale()
+  const isArabic = locale === "ar"
   const user = await getSyncedUser()
-  if (!user) redirect(prefixLocalePath("/login", locale))
+
+  if (!user) redirect(buildLoginHref(locale, "/account/reports"))
 
   const reports = await prisma.assistantReport.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
   })
 
-  return (
-    <main className="min-h-screen bg-background">
-      <Navbar />
-      <div className="mx-auto max-w-[1400px] px-6 pb-24 pt-28 md:pt-36">
+  const latestReportDate = reports[0] ? formatDate(reports[0].createdAt, locale) : isArabic ? "لا يوجد" : "None yet"
 
-        {/* Page header */}
-        <header className="mb-12 flex items-end justify-between border-b border-border/40 pb-8">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-              Decision Artifacts
-            </p>
-            <h1 className="mt-3 font-serif text-4xl font-medium text-foreground md:text-5xl">
-              Reports Gallery
-            </h1>
-            <p className="mt-3 text-sm text-muted-foreground">
-              {reports.length} artifact{reports.length !== 1 ? "s" : ""} — each with an auditable evidence trail.
-            </p>
+  return (
+    <main className="min-h-screen bg-background" dir={isArabic ? "rtl" : "ltr"}>
+      <Navbar />
+
+      <div className="mx-auto max-w-6xl px-4 pb-24 pt-24 sm:px-6 md:pt-28">
+        <header className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <Link
+            href={prefixLocalePath("/account", locale)}
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {isArabic ? "العودة إلى الحساب" : "Back to account"}
+          </Link>
+
+          <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                {isArabic ? "مخرجات القرار" : "Decision Outputs"}
+              </p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
+                {isArabic ? "التقارير والتنزيلات" : "Reports and downloads"}
+              </h1>
+              <p className="mt-4 text-sm leading-6 text-muted-foreground md:text-base">
+                {isArabic
+                  ? "هنا تجد التقارير التي تم توليدها من جلسات القرار، مع فتح مباشر، تنزيل، وسياق واضح لكل ملف."
+                  : "This is the working library for reports generated from your decision sessions, with direct open and download actions for each file."}
+              </p>
+            </div>
+
+            <Button asChild>
+              <Link href={prefixLocalePath("/chat", locale)}>
+                <MessageSquare className="h-4 w-4" />
+                {isArabic ? "افتح محطة القرار" : "Open decision terminal"}
+              </Link>
+            </Button>
           </div>
-          <div className="hidden lg:flex items-center gap-2 rounded-xl border border-border bg-card/50 p-1.5">
-            <button className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-xs font-medium text-foreground">
-              <Filter className="h-3 w-3" />
-              All Artifacts
-            </button>
-          </div>
+
+          <AccountSectionNav active="reports" locale={locale} />
         </header>
 
-        {/* Empty state */}
-        {reports.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div
-              className="mb-6 font-serif font-medium leading-none text-foreground"
-              style={{ fontSize: "80px", WebkitTextStroke: "1px currentColor", color: "transparent", opacity: 0.08 }}
-              aria-hidden
-            >
-              ∅
-            </div>
-            <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/35">
-              Entrestate Research
+        <section className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-border bg-card px-4 py-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              {isArabic ? "إجمالي التقارير" : "Total reports"}
             </p>
-            <h3 className="text-xl font-medium text-foreground">No reports yet</h3>
-            <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-              Start a decision session in the terminal to generate your first institutional report.
-            </p>
-            <Link
-              href={prefixLocalePath("/chat", locale)}
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <MessageSquare className="h-4 w-4" />
-              Open Terminal
-            </Link>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{reports.length}</p>
           </div>
+          <div className="rounded-2xl border border-border bg-card px-4 py-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              {isArabic ? "أحدث إنشاء" : "Latest generated"}
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{latestReportDate}</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-card px-4 py-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              {isArabic ? "المصدر" : "Source"}
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">
+              {isArabic ? "جلسات القرار" : "Decision sessions"}
+            </p>
+          </div>
+        </section>
+
+        {reports.length === 0 ? (
+          <section className="mt-6 rounded-3xl border border-dashed border-border bg-card px-6 py-16 text-center">
+            <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h2 className="mt-4 text-2xl font-semibold text-foreground">
+              {isArabic ? "لا توجد تقارير بعد" : "No reports yet"}
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+              {isArabic
+                ? "ابدأ جلسة قرار أو ولّد تقريراً من الدفتر ليظهر هنا تلقائياً ضمن مكتبة الحساب."
+                : "Start a decision session or generate a notebook memo and it will appear here automatically in your account library."}
+            </p>
+            <Button asChild className="mt-6">
+              <Link href={prefixLocalePath("/chat", locale)}>
+                <Sparkles className="h-4 w-4" />
+                {isArabic ? "ابدأ أول تقرير" : "Generate your first report"}
+              </Link>
+            </Button>
+          </section>
         ) : (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {reports.map((report, index) => {
-              const topics = deriveTopics(report.title, report.payload)
-              const num = String(index + 1).padStart(2, "0")
-              const dateLabel = new Date(report.createdAt).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })
+          <section className="mt-6 space-y-4">
+            {reports.map((report) => {
+              const topics = deriveTopics(report.title, report.payload, locale)
 
               return (
                 <article
                   key={report.id}
-                  className="group relative flex min-h-[220px] overflow-hidden rounded-2xl border border-border/50 bg-card transition-all duration-300 hover:border-border hover:shadow-xl hover:shadow-black/10"
+                  className="rounded-3xl border border-border bg-card p-5 shadow-sm"
                 >
-                  {/* ── Main content ── */}
-                  <div className="relative flex flex-1 flex-col overflow-hidden p-6">
-
-                    {/* Stroke number — background decoration */}
-                    <div
-                      className="pointer-events-none absolute -right-2 -top-3 select-none font-black leading-none transition-opacity duration-500 group-hover:opacity-[0.09]"
-                      aria-hidden
-                      style={{
-                        fontSize: "88px",
-                        WebkitTextStroke: "1.5px currentColor",
-                        color: "transparent",
-                        opacity: 0.05,
-                      }}
-                    >
-                      {num}
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0 max-w-3xl">
+                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                        {formatDate(report.createdAt, locale)}
+                      </p>
+                      <h2 className="mt-2 text-xl font-semibold text-foreground">{report.title}</h2>
+                      {topics.length > 0 ? (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {topics.map((topic) => (
+                            <Badge key={topic} variant="outline">
+                              {topic}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
 
-                    {/* Subtle top accent line */}
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-                    {/* Byline */}
-                    <p className="mb-4 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/30 transition-colors duration-300 group-hover:text-muted-foreground/50">
-                      by Entrestate Research
-                    </p>
-
-                    {/* Title — typography hero */}
-                    <h2 className="flex-1 font-serif text-xl font-medium leading-snug text-foreground md:text-[22px]">
-                      {report.title}
-                    </h2>
-
-                    {/* Mobile-only topics (compact inline tags) */}
-                    {topics.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1 xl:hidden">
-                        {topics.slice(0, 3).map((topic) => (
-                          <span
-                            key={topic}
-                            className="rounded-md border border-border/40 px-2 py-0.5 text-[10px] text-muted-foreground/40"
-                          >
-                            {topic}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Bottom bar */}
-                    <div className="mt-5 flex items-center justify-between border-t border-border/30 pt-4">
-                      <time
-                        className="text-[11px] text-muted-foreground/40"
-                        dateTime={report.createdAt.toISOString()}
-                      >
-                        {dateLabel}
-                      </time>
-                      <div className="flex items-center gap-1.5">
-                        <a
-                          href={`/api/reports/${report.id}/download`}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/40 text-muted-foreground/50 transition-colors hover:border-border/70 hover:text-foreground"
-                          title="Download"
-                        >
-                          <Download className="h-3.5 w-3.5" />
+                    <div className="flex flex-wrap gap-2">
+                      <Button asChild variant="outline">
+                        <a href={`/api/reports/${report.id}/download`}>
+                          <Download className="h-4 w-4" />
+                          {isArabic ? "تنزيل" : "Download"}
                         </a>
-                        <Link
-                          href={prefixLocalePath(`/reports/${report.publicId}`, locale)}
-                          className="flex items-center gap-1.5 rounded-lg bg-foreground/[0.06] px-3 py-1.5 text-[11px] font-medium text-foreground/70 transition-all hover:bg-foreground/[0.1] hover:text-foreground"
-                        >
-                          Open
-                          <ExternalLink className="h-3 w-3" />
+                      </Button>
+                      <Button asChild>
+                        <Link href={prefixLocalePath(`/reports/${report.publicId}`, locale)}>
+                          {isArabic ? "فتح التقرير" : "Open report"}
+                          <ExternalLink className="h-4 w-4" />
                         </Link>
-                      </div>
+                      </Button>
                     </div>
                   </div>
-
-                  {/* ── Right rail — desktop only ── */}
-                  {topics.length > 0 && (
-                    <aside className="hidden xl:flex w-[110px] shrink-0 flex-col border-l border-border/30 bg-card/20 p-4 pt-5">
-                      <p className="mb-3 text-[8px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/25">
-                        Topics
-                      </p>
-                      <div className="flex flex-col gap-1.5">
-                        {topics.map((topic) => (
-                          <span
-                            key={topic}
-                            className="inline-block rounded-md border border-border/30 bg-background/30 px-2 py-1.5 text-[10px] leading-tight text-muted-foreground/45 transition-colors duration-200 group-hover:text-muted-foreground/65"
-                          >
-                            {topic}
-                          </span>
-                        ))}
-                      </div>
-
-                      {/* Decorative fade line at bottom */}
-                      <div className="mt-auto flex justify-center pt-4">
-                        <div className="h-10 w-px bg-gradient-to-b from-border/20 to-transparent" />
-                      </div>
-                    </aside>
-                  )}
                 </article>
               )
             })}
-          </div>
+          </section>
         )}
       </div>
+
       <Footer />
     </main>
   )

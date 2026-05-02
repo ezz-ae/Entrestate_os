@@ -13,9 +13,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, CreditCard, FileText, KeyRound, LogOut } from "lucide-react"
+import { BookOpen, User, CreditCard, FileText, KeyRound, LogOut } from "lucide-react"
 import { authClient } from "@/lib/auth/client"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { buildLoginHref } from "@/lib/auth/navigation"
 
 const FALLBACK_USER = {
   name: "Entrestate Member",
@@ -28,6 +29,7 @@ const COPY = {
     account: "Account",
     signIn: "Sign in",
     overview: "Account overview",
+    notebooks: "Research notebooks",
     profile: "Profile settings",
     billing: "Billing",
     reports: "Reports",
@@ -38,6 +40,7 @@ const COPY = {
     account: "الحساب",
     signIn: "تسجيل الدخول",
     overview: "نظرة عامة على الحساب",
+    notebooks: "دفاتر البحث",
     profile: "إعدادات الملف",
     billing: "الفوترة",
     reports: "التقارير",
@@ -69,7 +72,7 @@ export function AccountMenu() {
   if (!session?.user) {
     return (
       <Link
-        href={prefixLocalePath("/login", locale)}
+        href={buildLoginHref(locale, "/account")}
         className="flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-1.5 text-sm text-foreground hover:bg-secondary/80 transition-colors"
       >
         {copy.signIn}
@@ -89,7 +92,7 @@ export function AccountMenu() {
 
   const handleSignOut = async () => {
     await authClient.signOut()
-    router.push(prefixLocalePath("/login", locale))
+    router.push(prefixLocalePath("/", locale))
     router.refresh()
   }
 
@@ -115,13 +118,19 @@ export function AccountMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
+          <Link href={prefixLocalePath("/account/book", locale)} className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            {copy.notebooks}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link href={prefixLocalePath("/account/profile", locale)} className="flex items-center gap-2">
             <User className="h-4 w-4" />
             {copy.profile}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={prefixLocalePath("/account#billing", locale)} className="flex items-center gap-2">
+          <Link href={prefixLocalePath("/account/billing", locale)} className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" />
             {copy.billing}
           </Link>

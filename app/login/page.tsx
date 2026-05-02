@@ -3,12 +3,13 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useLocale } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Eye, EyeOff } from "lucide-react"
 import { authClient } from "@/lib/auth/client"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { resolvePostLoginHref } from "@/lib/auth/navigation"
 
 const COPY = {
   en: {
@@ -71,6 +72,7 @@ const COPY = {
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const locale = useLocale() as AppLocale
   const copy = COPY[locale] ?? COPY.en
   const { data: session, isPending } = authClient.useSession()
@@ -82,9 +84,12 @@ export default function LoginPage() {
   const [formError, setFormError] = useState<string | null>(null)
 
   const homeHref = prefixLocalePath("/", locale)
-  const workspaceHref = prefixLocalePath("/workspace", locale)
+  const targetHref = resolvePostLoginHref(locale, searchParams?.get("next"), "/account")
   const forgotHref = prefixLocalePath("/forgot-password", locale)
-  const signupHref = prefixLocalePath("/signup", locale)
+  const nextQuery = searchParams?.get("next")
+  const signupHref = nextQuery
+    ? prefixLocalePath(`/signup?next=${encodeURIComponent(nextQuery)}`, locale)
+    : prefixLocalePath("/signup", locale)
 
   const toFriendlyAuthError = (message?: string | null) => {
     const normalized = (message ?? "").toLowerCase()
@@ -114,9 +119,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (session?.user) {
-      router.replace(workspaceHref)
+      router.replace(targetHref)
     }
-  }, [session, router, workspaceHref])
+  }, [session, router, targetHref])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -131,7 +136,7 @@ export default function LoginPage() {
         return
       }
 
-      router.push(workspaceHref)
+      router.push(targetHref)
     } catch (err) {
       setFormError(toFriendlyAuthError(err instanceof Error ? err.message : null))
     } finally {
@@ -147,7 +152,7 @@ export default function LoginPage() {
       const { error } = await withTimeout(
         authClient.signIn.social({
           provider: "google",
-          callbackURL: workspaceHref,
+          callbackURL: targetHref,
         }),
         15000,
         copy.googleTimeout,

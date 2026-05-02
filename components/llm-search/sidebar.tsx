@@ -249,6 +249,7 @@ function UserIcon(props: any) {
 
 export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }) {
   const locale = useLocale() as AppLocale
+  const isArabic = locale === "ar"
   const t = useTranslations("sidebar")
   const { messages, sendMessage, clearError, status, error, stop, isSidebarOpen, closeSidebar, toggleSidebar, id: currentId, openSidebar } = useCopilot()
   const [input, setInput] = useState("")
@@ -285,27 +286,69 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const avatar = user?.image || "/avatars/avatar-01.svg"
 
   const inputLinks = [
-    { label: t("workspace.links.workspaceHome"), href: "/workspace", icon: LayoutGrid, description: t("workspace.links.workspaceHomeDesc") },
-    { label: t("workspace.links.notebook"), href: "/notebook", icon: BookOpen, description: t("workspace.links.notebookDesc") },
-    { label: t("workspace.links.dashboards"), href: "/workspace/dashboards", icon: BarChart3, description: t("workspace.links.dashboardsDesc") },
-    { label: t("workspace.links.marketResearch"), href: "/workspace/data-scientist", icon: Database, description: t("workspace.links.marketResearchDesc") },
-    { label: t("workspace.links.investorMatch"), href: "/agent-runtime", icon: TrendingUp, description: t("workspace.links.investorMatchDesc") },
-    { label: t("workspace.links.leadFlow"), href: "/workspace/agent-creator", icon: Bot, description: t("workspace.links.leadFlowDesc") },
-    { label: t("workspace.links.search"), href: "/workspace/search", icon: Search, description: t("workspace.links.searchDesc") },
-    { label: t("workspace.links.comparisons"), href: "/workspace/comparisons", icon: GitCompare, description: t("workspace.links.comparisonsDesc") },
-    { label: t("workspace.links.mathTools"), href: "/workspace/math-tools", icon: Calculator, description: t("workspace.links.mathToolsDesc") },
+    {
+      label: isArabic ? "مساحة العمل" : "Workspace",
+      href: "/workspace",
+      icon: LayoutGrid,
+      description: isArabic ? "مركز المسارات الأساسية واللوحات." : "Hub for the core workflows and live desks.",
+    },
+    {
+      label: isArabic ? "دفاتر الأبحاث" : "Research Notebooks",
+      href: "/account/book",
+      icon: BookOpen,
+      description: isArabic ? "احفظ الفرضيات والمذكرات والتحليلات داخل الحساب." : "Keep briefs, hypotheses, and market notes under the account.",
+    },
+    {
+      label: isArabic ? "البحث والفرز" : "Search & Screening",
+      href: "/search",
+      icon: Search,
+      description: isArabic ? "استعلام واحد يربط المناطق والمطورين والمشاريع." : "One query surface for areas, developers, and projects.",
+    },
+    {
+      label: isArabic ? "المقارنات" : "Comparison Desk",
+      href: "/workspace/comparisons",
+      icon: GitCompare,
+      description: isArabic ? "قارن بين المسارات قبل اتخاذ القرار." : "Run side-by-side scenarios before you decide.",
+    },
   ]
 
   const outputLinks = [
-    { label: t("workspace.links.properties"), href: "/properties", icon: Building2, description: t("workspace.links.propertiesDesc") },
-    { label: t("workspace.links.areas"), href: "/areas", icon: MapPin, description: t("workspace.links.areasDesc") },
-    { label: t("workspace.links.developers"), href: "/developers", icon: Users2, description: t("workspace.links.developersDesc") },
-    { label: t("workspace.links.marketData"), href: "/top-data", icon: BarChart3, description: t("workspace.links.marketDataDesc") },
-    { label: t("workspace.links.marketScore"), href: "/market-score", icon: ShieldCheck, description: t("workspace.links.marketScoreDesc") },
-    { label: t("workspace.links.reports"), href: "/reports/library", icon: FileText, description: t("workspace.links.reportsDesc") },
-    { label: t("workspace.links.dataPacks"), href: "/workspace/daas", icon: Layers, description: t("workspace.links.dataPacksDesc") },
-    { label: t("workspace.links.savedSearches"), href: "/workspace/saved-searches", icon: Bookmark, description: t("workspace.links.savedSearchesDesc") },
-    { label: t("workspace.links.dataSources"), href: "/workspace/imports", icon: Import, description: t("workspace.links.dataSourcesDesc") },
+    {
+      label: isArabic ? "المشاريع" : "Properties",
+      href: "/properties",
+      icon: Building2,
+      description: isArabic ? "الدليل الكامل للمخزون المصنف." : "Full directory of scored inventory.",
+    },
+    {
+      label: isArabic ? "المناطق" : "Areas",
+      href: "/areas",
+      icon: MapPin,
+      description: isArabic ? "العائد والسعر والمعروض حسب المنطقة." : "Yield, price, and supply by area.",
+    },
+    {
+      label: isArabic ? "المطورون" : "Developers",
+      href: "/developers",
+      icon: Users2,
+      description: isArabic ? "الموثوقية، التنفيذ، وتاريخ التسليم." : "Reliability, execution quality, and delivery history.",
+    },
+    {
+      label: isArabic ? "بيانات السوق" : "Market Data",
+      href: "/top-data",
+      icon: BarChart3,
+      description: isArabic ? "نبض السوق وحداثة البيانات والإشارات." : "Market pulse, freshness, and signal intelligence.",
+    },
+    {
+      label: isArabic ? "قراءة السوق" : "Market Score",
+      href: "/market-score",
+      icon: ShieldCheck,
+      description: isArabic ? "ملاءمة القرار، التوقيت، ومستوى الأمان." : "Timing, fit, and safety validation before action.",
+    },
+    {
+      label: isArabic ? "مكتبة التقارير" : "Reports Library",
+      href: "/reports/library",
+      icon: FileText,
+      description: isArabic ? "تقارير عامة وقراءات معمقة من نفس طبقة البيانات." : "Public reports and deep dives from the same evidence layer.",
+    },
   ]
 
   // Handle auto-open and session loading from URL

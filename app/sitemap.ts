@@ -31,10 +31,8 @@ const staticRoutes = [
   "/properties",
   "/infrastructure",
   "/enterprise",
-  "/enterprise/demo",
   "/markets",
   "/reports/library",
-  "/reports/generated",
   "/library",
   "/library/reports",
   "/library/insights",
@@ -52,7 +50,6 @@ const staticRoutes = [
   "/careers",
   "/media",
   "/pricing",
-  "/reports",
 ]
 
 function buildAlternates(path: string) {

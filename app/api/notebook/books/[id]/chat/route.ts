@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { generateText } from "ai"
 import { getRequestId, getPublicErrorMessage } from "@/lib/api-errors"
-import { getSessionUserId } from "@/lib/auth/server"
+import { requireSessionUserId } from "@/lib/auth/server"
 import { resolveCopilotModel } from "@/lib/ai-provider"
 import { getBook } from "@/lib/notebook/queries"
 
@@ -19,7 +19,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   try {
     const { id } = await params
-    const ownerId = await getSessionUserId()
+    const ownerId = await requireSessionUserId()
+    if (!ownerId) {
+      return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401 })
+    }
     const body = await request.json().catch(() => ({}))
     const parsed = chatSchema.safeParse(body)
 
