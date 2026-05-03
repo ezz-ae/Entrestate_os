@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { Activity, ArrowRight, BookOpen, CreditCard, FileText, Lock, Map, Search, Server, ShieldCheck, Zap, MessageSquare } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -14,6 +15,7 @@ import { SEO, absoluteUrl, getLocaleAlternates, getSeoCopy } from "@/lib/seo"
 import { getPlatformMetrics } from "@/lib/platform-metrics.server"
 import { getRequestRuntimeShell } from "@/lib/runtime-shell"
 import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
+import { getSessionUser } from "@/lib/auth/server"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { VerdictCard } from "@/components/platform/verdict-card"
@@ -351,6 +353,10 @@ const API_PAYLOAD_PREVIEW = {
 
 export default async function HomePage() {
   const locale = await getRequestLocale()
+  const sessionUser = await getSessionUser()
+  if (sessionUser) {
+    redirect(prefixLocalePath("/me", locale))
+  }
   const runtimeShell = await getRequestRuntimeShell()
   const isArabic = locale === "ar"
   const structuredDataObj = getStructuredData(locale)

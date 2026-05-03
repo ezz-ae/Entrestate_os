@@ -9,35 +9,37 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 /**
- * Public API for Enterprise users to connect Entrestate data to their sites.
- * Requires an x-api-key header for authentication.
+ * Public read API.
+ *
+ * Product rule:
+ *   - Entrestate market data is open to read.
+ *   - Paid plans start when customers connect their own platform, inventory,
+ *     or write flows into Entrestate.
+ *
+ * So this route works anonymously. When an API key is present we still validate
+ * it and update last-used telemetry, but a key is not required for the public
+ * market feed.
  */
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
   const apiKey = request.headers.get("x-api-key")
+  if (apiKey) {
+    const hashedKey = hashApiKey(apiKey)
+    const keyRecord = await prisma.apiKey.findFirst({
+      where: {
+        OR: [{ key: hashedKey }, { key: apiKey }],
+      },
+    })
 
-  if (!apiKey) {
-    return NextResponse.json({ error: "Missing x-api-key header", requestId }, { status: 401 })
+    if (!keyRecord) {
+      return NextResponse.json({ error: "Invalid API key", requestId }, { status: 403 })
+    }
+
+    await prisma.apiKey.update({
+      where: { id: keyRecord.id },
+      data: { lastUsedAt: new Date() },
+    })
   }
-
-  // Validate the API key
-  const hashedKey = hashApiKey(apiKey)
-  const keyRecord = await prisma.apiKey.findFirst({
-    where: {
-      OR: [{ key: hashedKey }, { key: apiKey }],
-    },
-    include: { user: { include: { memberships: { include: { team: true } } } } }
-  })
-
-  if (!keyRecord) {
-    return NextResponse.json({ error: "Invalid API key", requestId }, { status: 403 })
-  }
-
-  // Update last used at
-  await prisma.apiKey.update({
-    where: { id: keyRecord.id },
-    data: { lastUsedAt: new Date() }
-  })
 
   try {
     const { searchParams } = new URL(request.url)

@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
 import { PaidUpsell } from "@/components/me/paid-upsell"
 import { NewListingForm } from "@/components/me/new-listing-form"

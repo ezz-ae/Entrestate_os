@@ -24,7 +24,7 @@ export function MobileBottomNav({ isAuthenticated, isSidebarOpen, onOpenChat }: 
   const accountLabel = isAuthenticated ? t("account") : locale === "ar" ? "تسجيل الدخول" : "Sign in"
 
   const items = [
-    { key: "home", href: prefixLocalePath("/", locale), label: t("overview"), icon: Home },
+    { key: "home", href: isAuthenticated ? prefixLocalePath("/me", locale) : prefixLocalePath("/", locale), label: isAuthenticated ? (locale === "ar" ? "الواجهة" : "Home") : t("overview"), icon: Home },
     { key: "search", href: prefixLocalePath("/search", locale), label: locale === "ar" ? "البحث" : "Search", icon: Search },
     { key: "workspace", href: prefixLocalePath("/workspace", locale), label: t("workspace"), icon: LayoutGrid },
     { key: "chat", href: prefixLocalePath("/?openChat=true", locale), label: t("chat"), icon: MessageSquare },
@@ -42,7 +42,7 @@ export function MobileBottomNav({ isAuthenticated, isSidebarOpen, onOpenChat }: 
         {items.map(({ key, href, label, icon: Icon }) => {
           const isActive =
             key === "home"
-              ? normalizedPathname === "/" && !hasOpenChatIntent
+              ? (isAuthenticated ? normalizedPathname.startsWith("/me") : normalizedPathname === "/") && !hasOpenChatIntent
               : key === "chat"
                 ? isSidebarOpen || hasOpenChatIntent || normalizedPathname.startsWith("/chat")
                 : key === "account"

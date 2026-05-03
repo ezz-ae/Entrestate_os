@@ -28,7 +28,8 @@ const COPY = {
   en: {
     account: "Account",
     signIn: "Sign in",
-    overview: "Account overview",
+    home: "Personal home",
+    overview: "Account center",
     notebooks: "Research notebooks",
     profile: "Profile settings",
     billing: "Billing",
@@ -39,7 +40,8 @@ const COPY = {
   ar: {
     account: "الحساب",
     signIn: "تسجيل الدخول",
-    overview: "نظرة عامة على الحساب",
+    home: "الواجهة الشخصية",
+    overview: "مركز الحساب",
     notebooks: "دفاتر البحث",
     profile: "إعدادات الملف",
     billing: "الفوترة",
@@ -111,6 +113,12 @@ export function AccountMenu() {
           <p className="text-xs text-muted-foreground">{displayEmail}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href={prefixLocalePath("/me", locale)} className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            {copy.home}
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href={prefixLocalePath("/account", locale)} className="flex items-center gap-2">
             <User className="h-4 w-4" />

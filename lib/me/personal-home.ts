@@ -3,6 +3,7 @@ import { getSyncedUser } from "@/lib/auth/sync"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
 import { listUserListings } from "@/lib/listings/server"
 import { getMarketPulse, listAreas } from "@/lib/decision-infrastructure"
+import { prisma } from "@/lib/prisma"
 
 /**
  * Aggregator for /me — the personal home.
@@ -34,24 +35,46 @@ export async function getPersonalHomeBundle(): Promise<PersonalHomeBundle | null
   const user = await getSyncedUser()
   if (!user) return null
 
-  const [entitlement, marketPulse, allAreas] = await Promise.all([
+  const [entitlement, marketPulse, allAreas, savedAreaRows, watchedProjectRows, alertRows] = await Promise.all([
     getCurrentEntitlement(),
     getMarketPulse(),
     listAreas(),
+    prisma.userSavedArea.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    }).catch(() => []),
+    prisma.userWatchedProject.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    }).catch(() => []),
+    prisma.marketAlert.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+    }).catch(() => []),
   ])
 
   const initials = (user.name?.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join("") || user.email?.[0] || "U").toUpperCase()
 
-  // Saved areas — wired to a future UserSavedArea model. Until that ships,
-  // return the top 5 areas by activity as a sensible default for new users.
-  const savedAreas = allAreas.areas.slice(0, 5).map((a) => ({
-    name: String((a as any).area ?? ""),
-    slug: String((a as any).slug ?? ""),
-    pulse: {
-      avg_yield: typeof (a as any).avg_yield === "number" ? (a as any).avg_yield : null,
-      avg_price: typeof (a as any).avg_price === "number" ? (a as any).avg_price : null,
-    },
-  }))
+  const areaMap = new Map(
+    allAreas.areas.map((area) => [
+      String((area as any).slug ?? ""),
+      {
+        name: String((area as any).area ?? ""),
+        slug: String((area as any).slug ?? ""),
+        pulse: {
+          avg_yield: typeof (area as any).avg_yield === "number" ? (area as any).avg_yield : null,
+          avg_price: typeof (area as any).avg_price === "number" ? (area as any).avg_price : null,
+        },
+      },
+    ]),
+  )
+
+  const savedAreas = savedAreaRows
+    .map((row) => areaMap.get(row.areaSlug))
+    .filter((area): area is NonNullable<typeof area> => Boolean(area))
 
   // Listings — only relevant to paid tiers, but show empty + upgrade nudge for free.
   let listings: PersonalHomeBundle["listings"] = []
@@ -72,13 +95,24 @@ export async function getPersonalHomeBundle(): Promise<PersonalHomeBundle | null
     }
   }
 
-  // Watched projects — placeholder until UserWatchedProject lands. Show nothing
-  // rather than fake data to honour the "no test data" guarantee.
-  const watchedProjects: PersonalHomeBundle["watchedProjects"] = []
+  const watchedProjects: PersonalHomeBundle["watchedProjects"] = watchedProjectRows.map((row) => ({
+    slug: row.projectSlug,
+    name: row.projectSlug
+      .split("-")
+      .filter(Boolean)
+      .map((part) => part[0]?.toUpperCase() + part.slice(1))
+      .join(" "),
+    verdict: null,
+    updatedAt: null,
+  }))
 
-  // Alerts — placeholder. The MarketAlert model in this PR backs the UI; until
-  // alerts have been generated this is empty.
-  const alerts: PersonalHomeBundle["alerts"] = []
+  const alerts: PersonalHomeBundle["alerts"] = alertRows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    createdAt: row.createdAt.toISOString(),
+    read: row.read,
+  }))
 
   const greeting = buildGreeting(user.name ?? user.email ?? "there")
   const upgradeNudge = entitlement.tier === "free"

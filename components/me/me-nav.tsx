@@ -1,8 +1,10 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useLocale } from "next-intl"
 import { Home, ListChecks, Plug, Bell, KeyRound, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 interface Props {
   tier: "free" | "pro" | "team" | "institutional"
@@ -17,14 +19,17 @@ const TABS = [
 ] as const
 
 export function MeNav({ tier }: Props) {
-  const pathname = usePathname()
+  const pathname = usePathname() ?? ""
+  const locale = useLocale() as AppLocale
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/")
   const isFree = tier === "free"
+
+  const tabs = TABS.map((tab) => ({ ...tab, href: prefixLocalePath(tab.href, locale) }))
 
   return (
     <nav aria-label="Personal home navigation" className="border-b border-border">
       <ul className="-mb-px flex flex-wrap gap-1 sm:gap-3 text-sm">
-        {TABS.map(({ href, label, icon: Icon, paid }) => {
+        {tabs.map(({ href, label, icon: Icon, paid }) => {
           const active = isActive(href)
           const locked = paid && isFree
           return (

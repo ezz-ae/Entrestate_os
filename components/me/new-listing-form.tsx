@@ -1,14 +1,17 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useLocale } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
+import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 export function NewListingForm() {
   const router = useRouter()
+  const locale = useLocale() as AppLocale
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ name: "", developer: "", area: "", bedrooms: "", priceAed: "", yieldPct: "", description: "" })
@@ -36,7 +39,7 @@ export function NewListingForm() {
       })
       const json = await res.json()
       if (!res.ok) { setError(json.error ?? "Failed to create listing"); return }
-      router.push(`/me/listings/${json.listing.id}`)
+      router.push(prefixLocalePath(`/me/listings/${json.listing.id}`, locale))
     } catch (err: any) {
       setError(err?.message ?? "Failed")
     } finally {
@@ -79,7 +82,7 @@ export function NewListingForm() {
           {error && <p className="sm:col-span-2 text-sm text-rose-600">{error}</p>}
           <div className="sm:col-span-2 flex gap-2">
             <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Add listing"}</Button>
-            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => router.push(prefixLocalePath("/me/listings", locale))}>Cancel</Button>
           </div>
         </form>
       </CardContent>

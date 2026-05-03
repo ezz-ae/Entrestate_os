@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
 import { Plus, Filter } from "lucide-react"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
 import { listUserListings } from "@/lib/listings/server"
@@ -8,10 +7,13 @@ import { Button } from "@/components/ui/button"
 import { VerdictPill } from "@/components/me/verdict-pill"
 import { PaidUpsell } from "@/components/me/paid-upsell"
 import { formatAed } from "@/lib/format/currency"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
 export const dynamic = "force-dynamic"
 
 export default async function MyListingsPage() {
+  const locale = await getRequestLocale()
   const entitlement = await getCurrentEntitlement()
   if (entitlement.tier === "free") {
     return <PaidUpsell capability="listings_ingest" />
@@ -28,10 +30,10 @@ export default async function MyListingsPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href="/me/connections"><Filter className="h-4 w-4 mr-1" /> Connect a portal</Link>
+            <Link href={prefixLocalePath("/me/connections", locale)}><Filter className="h-4 w-4 mr-1" /> Connect a portal</Link>
           </Button>
           <Button asChild>
-            <Link href="/me/listings/new"><Plus className="h-4 w-4 mr-1" /> New listing</Link>
+            <Link href={prefixLocalePath("/me/listings/new", locale)}><Plus className="h-4 w-4 mr-1" /> New listing</Link>
           </Button>
         </div>
       </header>
@@ -42,8 +44,8 @@ export default async function MyListingsPage() {
             <p className="text-muted-foreground">No listings yet.</p>
             <p className="text-sm text-muted-foreground mt-1">Add one manually, upload a CSV, or connect Bayut / Property Finder.</p>
             <div className="mt-4 flex justify-center gap-2">
-              <Button asChild><Link href="/me/listings/new">Add manually</Link></Button>
-              <Button variant="outline" asChild><Link href="/me/connections">Connect portal</Link></Button>
+              <Button asChild><Link href={prefixLocalePath("/me/listings/new", locale)}>Add manually</Link></Button>
+              <Button variant="outline" asChild><Link href={prefixLocalePath("/me/connections", locale)}>Connect portal</Link></Button>
             </div>
           </CardContent>
         </Card>
@@ -66,7 +68,7 @@ export default async function MyListingsPage() {
               {listings.map((l) => (
                 <tr key={l.id} className="border-t border-border hover:bg-muted/20">
                   <td className="px-4 py-3">
-                    <Link href={`/me/listings/${l.id}`} className="font-semibold hover:underline">{l.name}</Link>
+                    <Link href={prefixLocalePath(`/me/listings/${l.id}`, locale)} className="font-semibold hover:underline">{l.name}</Link>
                     {l.developer && <div className="text-xs text-muted-foreground">{l.developer}</div>}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{l.area ?? "—"}</td>

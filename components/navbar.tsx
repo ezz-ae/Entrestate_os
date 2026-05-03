@@ -44,7 +44,7 @@ export function Navbar() {
   const shouldRenderSidebar = !isChatPage && (isAuthenticated || isSidebarOpen || hasOpenChatIntent)
   // Logged-in users see /me as their home — a personalised whole-site experience,
   // not a dashboard. Public users keep the marketing home at /.
-  const logoHref = isAuthenticated ? prefixLocalePath("/me", locale) : "/"
+  const logoHref = isAuthenticated ? "/me" : "/"
   const accountEntryHref = isAuthenticated ? prefixLocalePath("/account", locale) : buildLoginHref(locale, "/account")
   const accountEntryLabel = isAuthenticated ? t("account") : locale === "ar" ? "تسجيل الدخول" : "Sign in"
 

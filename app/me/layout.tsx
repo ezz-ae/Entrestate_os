@@ -27,7 +27,7 @@ export default async function MeLayout({ children }: { children: React.ReactNode
   return (
     <main id="main-content" className="min-h-screen bg-background">
       <Navbar />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 pb-24">
+      <div className="mx-auto max-w-7xl px-4 pb-24 pt-28 sm:px-6 md:pt-32 lg:px-8">
         <MeNav tier={entitlement.tier} />
         <div className="mt-6">{children}</div>
       </div>

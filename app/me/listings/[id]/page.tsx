@@ -1,26 +1,35 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
-import { getUserListing } from "@/lib/listings/server"
+import { deleteUserListing, getUserListing } from "@/lib/listings/server"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
 import { PaidUpsell } from "@/components/me/paid-upsell"
 import { Card, CardContent } from "@/components/ui/card"
 import { VerdictPill } from "@/components/me/verdict-pill"
 import { Button } from "@/components/ui/button"
 import { formatAed } from "@/lib/format/currency"
+import { getRequestLocale } from "@/i18n/request"
+import { prefixLocalePath } from "@/i18n/locale"
 
 export const dynamic = "force-dynamic"
 
 export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const locale = await getRequestLocale()
   const { id } = await params
   const entitlement = await getCurrentEntitlement()
   if (entitlement.tier === "free") return <PaidUpsell capability="listings_ingest" />
   const listing = await getUserListing(id)
   if (!listing) notFound()
 
+  async function deleteAction() {
+    "use server"
+    await deleteUserListing(id)
+    redirect(prefixLocalePath("/me/listings", locale))
+  }
+
   return (
     <div className="space-y-6">
-      <Link href="/me/listings" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+      <Link href={prefixLocalePath("/me/listings", locale)} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4 mr-1" /> All listings
       </Link>
 
@@ -46,8 +55,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       </Card>
 
       <div className="flex gap-2">
-        <form action={`/api/v1/listings/${id}`} method="post" data-method="DELETE">
-          <Button variant="destructive" type="submit" formAction={`/api/v1/listings/${id}?_method=DELETE`}>Delete listing</Button>
+        <form action={deleteAction}>
+          <Button variant="destructive" type="submit">Delete listing</Button>
         </form>
       </div>
     </div>
