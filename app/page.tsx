@@ -351,11 +351,28 @@ const API_PAYLOAD_PREVIEW = {
   },
 }
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
   const locale = await getRequestLocale()
   const sessionUser = await getSessionUser()
   if (sessionUser) {
-    redirect(prefixLocalePath("/me", locale))
+    const resolvedSearchParams = (await searchParams) ?? {}
+    const nextSearchParams = new URLSearchParams()
+
+    for (const [key, value] of Object.entries(resolvedSearchParams)) {
+      if (Array.isArray(value)) {
+        value.forEach((entry) => nextSearchParams.append(key, entry))
+      } else if (typeof value === "string") {
+        nextSearchParams.set(key, value)
+      }
+    }
+
+    redirect(
+      prefixLocalePath(`/me${nextSearchParams.toString() ? `?${nextSearchParams.toString()}` : ""}`, locale),
+    )
   }
   const runtimeShell = await getRequestRuntimeShell()
   const isArabic = locale === "ar"

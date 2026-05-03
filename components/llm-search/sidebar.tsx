@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl"
 import { useCopilot } from "@/components/copilot-provider"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   Clock,
   Pin,
@@ -39,6 +39,7 @@ import Image from "next/image"
 import { UpgradeModal } from "./upgrade-modal"
 import { authClient } from "@/lib/auth/client"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { buildCopilotShellHref } from "@/lib/copilot/navigation"
 
 function getMessageText(message: any): string {
   if (typeof message?.content === "string") {
@@ -267,6 +268,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const prevMessageCountRef = useRef(0)
   const inputContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
   const hasOpenChatQuery = searchParams?.get("openChat") === "true"
@@ -390,11 +392,15 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   }
 
   const loadSession = (sessionId: string) => {
-    const targetPath = !isDesktopViewport
-      ? prefixLocalePath(`/?openChat=true&id=${sessionId}`, locale)
-      : prefixLocalePath(`/chat?id=${sessionId}`, locale)
-
-    router.push(targetPath)
+    router.push(
+      buildCopilotShellHref({
+        authenticated,
+        locale,
+        pathname,
+        search: searchParams?.toString() ?? "",
+        sessionId,
+      }),
+    )
     openSidebar()
   }
 

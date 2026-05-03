@@ -17,6 +17,7 @@ import { ReportNudge } from "@/components/report-nudge"
 import { prefixLocalePath, stripLocalePrefix, type AppLocale } from "@/i18n/locale"
 import { useRuntimeShell } from "@/hooks/use-runtime-shell"
 import { buildLoginHref } from "@/lib/auth/navigation"
+import { buildCopilotShellHref } from "@/lib/copilot/navigation"
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -85,7 +86,15 @@ export function Navbar() {
 
   const openChatShell = () => {
     if (!isChatPage) {
-      router.replace(prefixLocalePath("/?openChat=true", locale), { scroll: false })
+      router.replace(
+        buildCopilotShellHref({
+          authenticated: isAuthenticated,
+          locale,
+          pathname,
+          search: window.location.search,
+        }),
+        { scroll: false },
+      )
     }
     if (!isSidebarOpen) {
       openSidebar()
@@ -105,7 +114,15 @@ export function Navbar() {
 
     const isMobileViewport = window.matchMedia("(max-width: 1023px)").matches
     if (isMobileViewport) {
-      router.replace(prefixLocalePath("/?openChat=true", locale), { scroll: false })
+      router.replace(
+        buildCopilotShellHref({
+          authenticated: false,
+          locale,
+          pathname,
+          search: window.location.search,
+        }),
+        { scroll: false },
+      )
       openSidebar()
       setIsMobileMenuOpen(false)
       return

@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl"
 import { Home, LayoutGrid, MessageSquare, Search, User2 } from "lucide-react"
 import { prefixLocalePath, stripLocalePrefix, type AppLocale } from "@/i18n/locale"
 import { buildLoginHref } from "@/lib/auth/navigation"
+import { buildCopilotShellHref } from "@/lib/copilot/navigation"
 
 type Props = {
   isAuthenticated: boolean
@@ -22,12 +23,18 @@ export function MobileBottomNav({ isAuthenticated, isSidebarOpen, onOpenChat }: 
   const normalizedPathname = stripLocalePrefix(pathname)
   const hasOpenChatIntent = searchParams?.get("openChat") === "true"
   const accountLabel = isAuthenticated ? t("account") : locale === "ar" ? "تسجيل الدخول" : "Sign in"
+  const chatHref = buildCopilotShellHref({
+    authenticated: isAuthenticated,
+    locale,
+    pathname,
+    search: searchParams?.toString() ?? "",
+  })
 
   const items = [
     { key: "home", href: isAuthenticated ? prefixLocalePath("/me", locale) : prefixLocalePath("/", locale), label: isAuthenticated ? (locale === "ar" ? "الواجهة" : "Home") : t("overview"), icon: Home },
     { key: "search", href: prefixLocalePath("/search", locale), label: locale === "ar" ? "البحث" : "Search", icon: Search },
     { key: "workspace", href: prefixLocalePath("/workspace", locale), label: t("workspace"), icon: LayoutGrid },
-    { key: "chat", href: prefixLocalePath("/?openChat=true", locale), label: t("chat"), icon: MessageSquare },
+    { key: "chat", href: chatHref, label: t("chat"), icon: MessageSquare },
     {
       key: "account",
       href: isAuthenticated ? prefixLocalePath("/account", locale) : buildLoginHref(locale, "/account"),
@@ -55,7 +62,7 @@ export function MobileBottomNav({ isAuthenticated, isSidebarOpen, onOpenChat }: 
                 key={key}
                 type="button"
                 onClick={() => {
-                  router.replace(prefixLocalePath("/?openChat=true", locale), { scroll: false })
+                  router.replace(chatHref, { scroll: false })
                   onOpenChat()
                 }}
                 className={`flex min-h-[4.25rem] flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[10px] font-semibold transition-colors ${

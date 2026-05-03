@@ -12,6 +12,7 @@ import { prefixLocalePath } from "@/i18n/locale"
 import { getTranslations } from "next-intl/server"
 import type { GoldenPathId } from "@/components/ChatInterface"
 import { getGoldenPathPrompt } from "@/lib/copilot/mobile-prompts"
+import { buildCopilotShellHref } from "@/lib/copilot/navigation"
 import { getRequestRuntimeShell } from "@/lib/runtime-shell"
 
 export default async function ChatPage({
@@ -47,15 +48,15 @@ export default async function ChatPage({
     : undefined
 
   if (isMobile || runtimeShell === "mobile") {
-    // On mobile, always use the sidebar chat experience instead of the desktop /chat layout.
-    const chatParams = new URLSearchParams({ openChat: "true" })
-    if (sessionId) {
-      chatParams.set("id", sessionId)
-    }
-    if (mobilePrompt) {
-      chatParams.set("prompt", mobilePrompt)
-    }
-    redirect(`${prefixLocalePath("/", locale)}?${chatParams.toString()}`)
+    redirect(
+      buildCopilotShellHref({
+        authenticated: Boolean(sessionUser),
+        locale,
+        pathname: sessionUser ? "/me" : "/",
+        prompt: mobilePrompt,
+        sessionId,
+      }),
+    )
   }
 
   const entitlement = await getCurrentEntitlement()

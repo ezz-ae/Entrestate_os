@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { defaultLocale, isLocale, localeCookieName, prefixLocalePath, stripLocalePrefix } from "@/i18n/locale"
-import { resolveRuntimeShell } from "@/lib/runtime-host"
+import { getMobileWebHostname, isPrimaryWebHost, resolveRuntimeShell } from "@/lib/runtime-host"
 
 const AUTOMATION_BUILDER_PATHS = ["/apps/automation-builder", "/api/automation-builder"]
 const KILL_SWITCH_PATHS = ["/api/time-table", "/api/scoring", "/api/profile", "/api/distribution"]
@@ -18,6 +18,10 @@ function applyLocaleCookie(response: NextResponse, locale: string, secure: boole
     httpOnly: false,
   })
   return response
+}
+
+function isMobileUserAgent(userAgent: string | null) {
+  return /mobile|android|iphone|ipad|phone/i.test(userAgent ?? "")
 }
 
 export function proxy(request: NextRequest) {
@@ -41,6 +45,24 @@ export function proxy(request: NextRequest) {
   const isAutomationBuilderRoute = AUTOMATION_BUILDER_PATHS.some((path) => internalPathname.startsWith(path))
   const isKillSwitchRoute = KILL_SWITCH_PATHS.some((path) => internalPathname.startsWith(path))
   const secureCookie = request.nextUrl.protocol === "https:"
+  const userAgent = request.headers.get("user-agent")
+
+  if (
+    request.method === "GET"
+    && isPrimaryWebHost(requestHost)
+    && isMobileUserAgent(userAgent)
+    && !pathname.startsWith("/_next/")
+    && !pathname.startsWith("/api/")
+    && !/\.[a-z0-9]+$/i.test(pathname)
+    && request.nextUrl.searchParams.get("desktop") !== "1"
+  ) {
+    const mobileHostname = getMobileWebHostname(requestHost)
+    if (mobileHostname) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.hostname = mobileHostname
+      return applyLocaleCookie(NextResponse.redirect(redirectUrl, 307), activeLocale, secureCookie)
+    }
+  }
 
   if (isAutomationBuilderRoute) {
     const enabled = process.env.NEXT_PUBLIC_ENABLE_AUTOMATION_BUILDER === "true"
