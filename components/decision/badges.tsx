@@ -37,7 +37,7 @@ function normalizeBadgeValue(value: string | number | null | undefined, fallback
 
 function formatBadgeLabel(locale: string, value: string, arabicLabel?: string) {
   if (locale !== "ar" || !arabicLabel) return value
-  return `${value} · ${arabicLabel}`
+  return arabicLabel
 }
 
 export function TimingSignalBadge({ signal }: { signal: string | null | undefined }) {

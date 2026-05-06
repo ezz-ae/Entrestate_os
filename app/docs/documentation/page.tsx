@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ArrowRight, Bot, Layers, Target, Zap, Factory, FileText, Shield } from "lucide-react"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { DocumentationMindMap } from "@/components/docs/documentation-mind-map"
 
 import { getRequestLocale } from "@/i18n/request"
@@ -329,10 +330,10 @@ export default async function DocumentationDocsPage() {
           Ask the AI assistant to explain any architectural component, compare scoring profiles, or generate
           investor-ready summaries from this documentation.
         </p>
-        <Link href="/chat" className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-emerald-100">
+        <CopilotEntryLink className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-emerald-100">
           Open AI assistant
           <ArrowRight className="h-4 w-4" />
-        </Link>
+        </CopilotEntryLink>
       </section>
 
       {/* Interactive Mind Map */}

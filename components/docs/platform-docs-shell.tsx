@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useLocale } from "next-intl"
 import { Bot, Command, FileText, Handshake, Building2, Briefcase, BarChart3, BookOpen, Server, ShieldCheck } from "lucide-react"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { prefixLocalePath, stripLocalePrefix, type AppLocale } from "@/i18n/locale"
 
 type DocsNavItem = {
@@ -134,13 +135,12 @@ export function PlatformDocsShell({ children }: { children: ReactNode }) {
               <Command className="h-3.5 w-3.5" />
               <span>{copy.searchDocs}</span>
             </Link>
-            <Link
-              href={prefixLocalePath("/chat", locale)}
+            <CopilotEntryLink
               className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
             >
               <Bot className="h-3.5 w-3.5" />
               {copy.aiSupport}
-            </Link>
+            </CopilotEntryLink>
           </div>
         </div>
       </header>
@@ -180,9 +180,9 @@ export function PlatformDocsShell({ children }: { children: ReactNode }) {
               <p className="mt-1 text-xs text-emerald-100/90">
                 {copy.aiWorkflowBody}
               </p>
-              <Link href={prefixLocalePath("/chat", locale)} className="mt-2 inline-block text-xs font-medium text-emerald-100 underline-offset-2 hover:underline">
+              <CopilotEntryLink className="mt-2 inline-block text-xs font-medium text-emerald-100 underline-offset-2 hover:underline">
                 {copy.openAssistant}
-              </Link>
+              </CopilotEntryLink>
             </div>
           </div>
         </aside>

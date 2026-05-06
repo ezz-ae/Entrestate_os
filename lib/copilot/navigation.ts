@@ -13,6 +13,26 @@ export function getCopilotShellBasePath(authenticated: boolean) {
   return authenticated ? "/me" : "/"
 }
 
+export function buildLocalizedChatHref(
+  locale: AppLocale,
+  options?: {
+    prompt?: string | null
+    sessionId?: string | null
+  },
+) {
+  const url = new URL(prefixLocalePath("/chat", locale), "https://entrestate.local")
+
+  if (options?.sessionId) {
+    url.searchParams.set("id", options.sessionId)
+  }
+
+  if (options?.prompt) {
+    url.searchParams.set("q", options.prompt)
+  }
+
+  return `${url.pathname}${url.search}${url.hash}`
+}
+
 export function buildCopilotShellHref({
   authenticated,
   locale,
@@ -48,4 +68,19 @@ export function buildCopilotShellHref({
   url.search = searchParams.toString()
 
   return `${url.pathname}${url.search}${url.hash}`
+}
+
+export function buildCopilotEntryHref(
+  options: BuildCopilotShellHrefOptions & {
+    preferShell?: boolean
+  },
+) {
+  if (options.authenticated || options.preferShell) {
+    return buildCopilotShellHref(options)
+  }
+
+  return buildLocalizedChatHref(options.locale, {
+    prompt: options.prompt,
+    sessionId: options.sessionId,
+  })
 }

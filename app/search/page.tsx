@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { SearchTimeTableBuilder } from "@/components/search/time-table-builder"
 import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
 import { formatAed } from "@/lib/format/currency"
@@ -843,12 +844,10 @@ export default function SearchPage() {
             <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
               {flowLinks.map((item) => {
                 const Icon = item.icon
-                return (
-                  <Link
-                    key={item.title}
-                    href={prefixLocalePath(item.href, locale)}
-                    className="group rounded-2xl border border-border/60 bg-background/50 p-4 transition hover:border-primary/30 hover:bg-background"
-                  >
+                const className =
+                  "group rounded-2xl border border-border/60 bg-background/50 p-4 transition hover:border-primary/30 hover:bg-background"
+                const content = (
+                  <>
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <Icon className="h-4 w-4" />
                     </div>
@@ -858,6 +857,20 @@ export default function SearchPage() {
                       {isArabic ? "افتح" : "Open"}
                       <ArrowRight className="h-3 w-3" />
                     </span>
+                  </>
+                )
+
+                return item.href === "/chat" ? (
+                  <CopilotEntryLink key={item.title} className={className}>
+                    {content}
+                  </CopilotEntryLink>
+                ) : (
+                  <Link
+                    key={item.title}
+                    href={prefixLocalePath(item.href, locale)}
+                    className={className}
+                  >
+                    {content}
                   </Link>
                 )
               })}

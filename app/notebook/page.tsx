@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 
 import { AccountSectionNav } from "@/components/account/account-section-nav"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { Badge } from "@/components/ui/badge"
@@ -380,10 +381,10 @@ export function NotebookLibraryView({
                 {copy.launchChatDescription}
               </p>
               <Button asChild variant="outline" className="mt-4">
-                <Link href={prefixLocalePath("/chat", locale)}>
+                <CopilotEntryLink>
                   {copy.launchChat}
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </CopilotEntryLink>
               </Button>
             </div>
 

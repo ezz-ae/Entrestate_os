@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { StickyNote, Link2, FileText, Loader2, Plus } from "lucide-react"
 import Link from "next/link"
 
@@ -39,12 +40,11 @@ export default function NotesPage() {
                 Market Files capture narrative and evidence side-by-side so decisions remain auditable.
               </p>
             </div>
-            <Link
-              href="/chat"
-              className="inline-flex items-center gap-2 rounded-xl bg-foreground text-background px-5 py-2.5 text-sm font-medium transition hover:bg-foreground/90 shrink-0"
+            <CopilotEntryLink
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-foreground px-5 py-2.5 text-sm font-medium text-background transition hover:bg-foreground/90"
             >
               <Plus className="h-4 w-4" /> New note
-            </Link>
+            </CopilotEntryLink>
           </header>
 
           {loading ? (

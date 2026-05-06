@@ -72,6 +72,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description: copy.defaultDescription,
       images: [absoluteUrl(SEO.defaultOgImagePath)],
     },
+    manifest: "/manifest.json",
     icons: {
       icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     },

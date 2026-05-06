@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { Button } from "@/components/ui/button"
 import { TrustBar } from "@/components/decision/trust-bar"
 import { getMarketPulse } from "@/lib/decision-infrastructure"
@@ -173,10 +174,10 @@ export default async function DashboardPage() {
               <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{isArabic ? "انطلق من هنا" : "Quick Actions"}</p>
               <div className="mt-4 flex flex-col gap-2">
                 <Button asChild className="w-full justify-start gap-2">
-                  <Link href={prefixLocalePath("/chat", locale)}>
+                  <CopilotEntryLink>
                     <MessageSquare className="h-4 w-4" />
                     {isArabic ? "ابدأ من المساعد" : "New AI chat"}
-                  </Link>
+                  </CopilotEntryLink>
                 </Button>
                 <Button variant="outline" asChild className="w-full justify-start gap-2">
                   <Link href={prefixLocalePath("/properties", locale)}>

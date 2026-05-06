@@ -8,6 +8,7 @@ import { HeroSection } from "@/components/homepage/hero-section"
 import { GoldenPathsSection } from "@/components/homepage/golden-paths-section"
 import { DecisionTunnelStepper } from "@/components/homepage/decision-tunnel-stepper"
 import { MobileHomePage } from "@/components/mobile/mobile-home-page"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { listProperties } from "@/lib/decision-infrastructure"
 import { docsArticles } from "@/lib/docs-articles"
 import { libraryArticles } from "@/lib/library-data"
@@ -573,12 +574,10 @@ export default async function HomePage({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {surfaceCards.map((card) => {
               const Icon = card.icon
-              return (
-                <Link
-                  key={card.title}
-                  href={prefixLocalePath(card.href, locale)}
-                  className="group rounded-2xl border border-border/60 bg-background/50 p-5 transition hover:border-primary/30 hover:bg-background"
-                >
+              const className =
+                "group rounded-2xl border border-border/60 bg-background/50 p-5 transition hover:border-primary/30 hover:bg-background"
+              const content = (
+                <>
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <Icon className="h-5 w-5" />
                   </div>
@@ -588,6 +587,20 @@ export default async function HomePage({
                     {isArabic ? "افتح السطح" : "Open surface"}
                     <ArrowRight className="h-3 w-3" />
                   </span>
+                </>
+              )
+
+              return card.href === "/chat" ? (
+                <CopilotEntryLink key={card.title} className={className}>
+                  {content}
+                </CopilotEntryLink>
+              ) : (
+                <Link
+                  key={card.title}
+                  href={prefixLocalePath(card.href, locale)}
+                  className={className}
+                >
+                  {content}
                 </Link>
               )
             })}

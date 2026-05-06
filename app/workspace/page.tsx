@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import {
   Sheet,
   SheetClose,
@@ -129,6 +130,18 @@ function getWorkspaceTools(locale: AppLocale) {
       outputs: [],
     },
   ]
+}
+
+function renderWorkspaceHref(href: string, locale: AppLocale, className: string, children: ReactNode) {
+  if (href === "/chat") {
+    return <CopilotEntryLink className={className}>{children}</CopilotEntryLink>
+  }
+
+  return (
+    <Link href={prefixLocalePath(href, locale)} className={className}>
+      {children}
+    </Link>
+  )
 }
 
 const CITY_LABELS: Record<string, string> = {
@@ -343,18 +356,20 @@ export default function WorkspacePage() {
                       <div className="space-y-2">
                         {coreTools.map((tool) => (
                           <SheetClose asChild key={tool.href}>
-                            <Link
-                              href={prefixLocalePath(tool.href, locale)}
-                              className="flex items-start gap-3 rounded-xl border border-border/70 bg-card/70 px-3 py-3 transition-colors hover:bg-accent/40"
-                            >
-                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground">
-                                <tool.icon className="h-5 w-5" />
-                              </span>
-                              <span className="min-w-0">
-                                <span className="block text-sm font-medium text-foreground">{tool.label}</span>
-                                <span className="mt-1 block text-xs text-muted-foreground">{tool.description}</span>
-                              </span>
-                            </Link>
+                            {renderWorkspaceHref(
+                              tool.href,
+                              locale,
+                              "flex items-start gap-3 rounded-xl border border-border/70 bg-card/70 px-3 py-3 transition-colors hover:bg-accent/40",
+                              <>
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground">
+                                  <tool.icon className="h-5 w-5" />
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block text-sm font-medium text-foreground">{tool.label}</span>
+                                  <span className="mt-1 block text-xs text-muted-foreground">{tool.description}</span>
+                                </span>
+                              </>,
+                            )}
                           </SheetClose>
                         ))}
                       </div>
@@ -367,18 +382,20 @@ export default function WorkspacePage() {
                       <div className="space-y-2">
                         {supportTools.map((tool) => (
                           <SheetClose asChild key={tool.href}>
-                            <Link
-                              href={prefixLocalePath(tool.href, locale)}
-                              className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-2.5 transition-colors hover:bg-secondary"
-                            >
-                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
-                                <tool.icon className="h-4 w-4" />
-                              </span>
-                              <span className="min-w-0">
-                                <span className="block text-sm font-medium text-foreground">{tool.label}</span>
-                                <span className="block truncate text-xs text-muted-foreground">{tool.description}</span>
-                              </span>
-                            </Link>
+                            {renderWorkspaceHref(
+                              tool.href,
+                              locale,
+                              "flex items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-2.5 transition-colors hover:bg-secondary",
+                              <>
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                                  <tool.icon className="h-4 w-4" />
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block text-sm font-medium text-foreground">{tool.label}</span>
+                                  <span className="block truncate text-xs text-muted-foreground">{tool.description}</span>
+                                </span>
+                              </>,
+                            )}
                           </SheetClose>
                         ))}
                       </div>
@@ -449,21 +466,23 @@ export default function WorkspacePage() {
                   )}
                   {primaryTools.map((tool) => (
                     <div key={tool.label} className="bg-background/40 border border-border rounded-xl overflow-hidden">
-                      <Link
-                        href={prefixLocalePath(tool.href, locale)}
-                        className="group flex items-start gap-4 p-6 hover:bg-accent/20 transition-colors"
-                      >
-                        <div className="p-3 bg-secondary rounded-md">
-                          <tool.icon className="w-5 h-5 text-foreground" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-medium text-foreground">{tool.label}</h3>
-                            <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      {renderWorkspaceHref(
+                        tool.href,
+                        locale,
+                        "group flex items-start gap-4 p-6 hover:bg-accent/20 transition-colors",
+                        <>
+                          <div className="p-3 bg-secondary rounded-md">
+                            <tool.icon className="w-5 h-5 text-foreground" />
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">{tool.description}</p>
-                        </div>
-                      </Link>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-medium text-foreground">{tool.label}</h3>
+                              <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{tool.description}</p>
+                          </div>
+                        </>,
+                      )}
                       {tool.outputs.length > 0 && (
                         <div className="flex items-center gap-2 border-t border-border/50 px-6 py-2">
                           <Eye className="h-3 w-3 text-muted-foreground/50 shrink-0" />
@@ -496,21 +515,23 @@ export default function WorkspacePage() {
                   <div className="divide-y divide-border/60">
                     {supportTools.map((tool) => (
                       <div key={tool.label} className="py-4 first:pt-0 last:pb-0">
-                        <Link
-                          href={prefixLocalePath(tool.href, locale)}
-                          className="group flex items-center gap-4"
-                        >
-                          <div className="p-2.5 bg-secondary rounded-md">
-                            <tool.icon className="w-5 h-5 text-foreground" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-sm font-medium text-foreground">{tool.label}</h3>
-                              <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        {renderWorkspaceHref(
+                          tool.href,
+                          locale,
+                          "group flex items-center gap-4",
+                          <>
+                            <div className="p-2.5 bg-secondary rounded-md">
+                              <tool.icon className="w-5 h-5 text-foreground" />
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">{tool.description}</p>
-                          </div>
-                        </Link>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-medium text-foreground">{tool.label}</h3>
+                                <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">{tool.description}</p>
+                            </div>
+                          </>,
+                        )}
                         {tool.outputs.length > 0 && (
                           <div className="flex items-center gap-2 mt-2 ps-[52px]">
                             <Eye className="h-2.5 w-2.5 text-muted-foreground/40 shrink-0" />
@@ -541,15 +562,26 @@ export default function WorkspacePage() {
                     { icon: FileText, label: isArabic ? "التقارير" : "Reports", href: "/reports/library" },
                     { icon: Sparkles, label: isArabic ? "الدردشة الذكية" : "AI Chat", href: "/chat" },
                   ].map((item) => (
-                    <Link
-                      key={item.href}
-                      href={prefixLocalePath(item.href, locale)}
-                      className="group flex items-center gap-2.5 rounded-xl border border-border/50 bg-background/60 px-3 py-2.5 text-sm transition-all hover:border-primary/30 hover:bg-primary/5 active:scale-[0.97]"
-                    >
-                      <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                      <span className="text-xs font-medium text-foreground truncate">{item.label}</span>
-                      <ArrowUpRight className="h-3 w-3 text-muted-foreground/30 ms-auto opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                    </Link>
+                    item.href === "/chat" ? (
+                      <CopilotEntryLink
+                        key={item.href}
+                        className="group flex items-center gap-2.5 rounded-xl border border-border/50 bg-background/60 px-3 py-2.5 text-sm transition-all hover:border-primary/30 hover:bg-primary/5 active:scale-[0.97]"
+                      >
+                        <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                        <span className="text-xs font-medium text-foreground truncate">{item.label}</span>
+                        <ArrowUpRight className="h-3 w-3 text-muted-foreground/30 ms-auto opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </CopilotEntryLink>
+                    ) : (
+                      <Link
+                        key={item.href}
+                        href={prefixLocalePath(item.href, locale)}
+                        className="group flex items-center gap-2.5 rounded-xl border border-border/50 bg-background/60 px-3 py-2.5 text-sm transition-all hover:border-primary/30 hover:bg-primary/5 active:scale-[0.97]"
+                      >
+                        <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                        <span className="text-xs font-medium text-foreground truncate">{item.label}</span>
+                        <ArrowUpRight className="h-3 w-3 text-muted-foreground/30 ms-auto opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </Link>
+                    )
                   ))}
                 </div>
               </section>

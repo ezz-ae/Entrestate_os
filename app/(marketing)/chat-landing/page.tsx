@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { motion, useScroll, useTransform } from "framer-motion"
+import { motion, useScroll, useTransform, type Variants } from "framer-motion"
 import { useLocale } from "next-intl"
 import { useRef } from "react"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { Footer } from "@/components/footer"
 import { MarqueePrompts } from "@/components/marketing/marquee-prompts"
 import { MarketingLLMInput } from "@/components/marketing/marketing-llm-input"
@@ -142,14 +143,14 @@ const COPY = {
 
 // ── Animation ─────────────────────────────────────────────────────────────────
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
 }
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.75, ease: [0.22, 1, 0.36, 1] as const } },
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -194,10 +195,10 @@ export default function ChatLandingPage() {
               Entrestate
             </Link>
             <nav className="hidden lg:flex items-center gap-8">
-              <Link href="/chat" className="text-sm font-bold text-primary relative group">
+              <CopilotEntryLink className="text-sm font-bold text-primary relative group">
                 {copy.chat}
                 <span className="absolute -bottom-1 left-0 w-full h-px bg-primary" />
-              </Link>
+              </CopilotEntryLink>
               {navLinks.map(({ label, href }) => (
                 <Link key={label} href={href} className="text-sm font-medium text-muted-foreground/70 hover:text-foreground transition-colors relative group">
                   {label}
@@ -249,10 +250,10 @@ export default function ChatLandingPage() {
             {/* CTAs */}
             <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-5 mb-20">
               <Button asChild size="lg" className="h-14 rounded-full px-10 gap-3 text-base bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                <Link href="/chat">
+                <CopilotEntryLink>
                   {copy.start}
                   <ArrowRight className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
-                </Link>
+                </CopilotEntryLink>
               </Button>
               <Link href="/pricing" className="group text-sm font-semibold flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
                 {copy.enterprise}

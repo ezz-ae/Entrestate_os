@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { TrustBar } from "@/components/decision/trust-bar"
 import { getHomepageContentSections, getOutcomeIntentCounts } from "@/lib/frontend-content"
 import { formatAed } from "@/components/decision/formatters"
@@ -182,10 +183,10 @@ export default async function OverviewPage() {
                 {sentiment.label}
               </span>
               <Button variant="intelligent" size="sm" asChild className="h-9 shadow-lg">
-                <Link href={prefixLocalePath("/chat", locale)}>
+                <CopilotEntryLink>
                   <Sparkles className="h-3.5 w-3.5 me-1" />
                   {isArabic ? "افتح المحطة" : "Open Terminal"}
-                </Link>
+                </CopilotEntryLink>
               </Button>
             </div>
           </div>
@@ -281,8 +282,9 @@ export default async function OverviewPage() {
               <div className="grid grid-cols-2 gap-3">
                 {INPUT_MODULES.map((mod) => {
                   const Icon = mod.icon
-                  return (
-                    <Link key={mod.label} href={prefixLocalePath(mod.href, locale)} className={`group flex flex-col justify-between rounded-2xl border ${mod.border} ${mod.bg} p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)] dark:hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]`}>
+                  const className = `group flex flex-col justify-between rounded-2xl border ${mod.border} ${mod.bg} p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)] dark:hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]`
+                  const content = (
+                    <>
                       <div className="flex items-start justify-between">
                         <div className={`flex h-8 w-8 items-center justify-center rounded-xl border ${mod.border} bg-white/60 dark:bg-black/20`}>
                           <Icon className={`h-4 w-4 ${mod.accent}`} />
@@ -294,6 +296,16 @@ export default async function OverviewPage() {
                         <p className="text-sm font-semibold text-foreground">{isArabic ? mod.labelAr : mod.label}</p>
                         <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{isArabic ? mod.descAr : mod.description}</p>
                       </div>
+                    </>
+                  )
+
+                  return mod.href === "/chat" ? (
+                    <CopilotEntryLink key={mod.label} className={className}>
+                      {content}
+                    </CopilotEntryLink>
+                  ) : (
+                    <Link key={mod.label} href={prefixLocalePath(mod.href, locale)} className={className}>
+                      {content}
                     </Link>
                   )
                 })}
@@ -364,13 +376,13 @@ export default async function OverviewPage() {
             </div>
             <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3">
               <Link href={prefixLocalePath("/properties", locale)} className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">{isArabic ? "تصفح كل المشاريع" : "Browse all projects"} <ArrowUpRight className="h-3 w-3" /></Link>
-              <Link href={prefixLocalePath("/chat", locale)} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"><Sparkles className="h-3 w-3" />{isArabic ? "افتح الدردشة الذكية" : "Open AI chat"}</Link>
+              <CopilotEntryLink className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"><Sparkles className="h-3 w-3" />{isArabic ? "افتح الدردشة الذكية" : "Open AI chat"}</CopilotEntryLink>
             </div>
           </article>
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Link href={prefixLocalePath("/chat", locale)} className="group flex items-center justify-between rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 transition-all hover:bg-primary/10 hover:-translate-y-0.5">
+          <CopilotEntryLink className="group flex items-center justify-between rounded-2xl border border-primary/25 bg-primary/5 px-5 py-4 transition-all hover:bg-primary/10 hover:-translate-y-0.5">
             <div>
               <p className="text-sm font-semibold text-foreground">{isArabic ? "دردشة القرار الذكية" : "AI Decision Chat"}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{isArabic ? "قائمة مختصرة · مقارنة · مراجعة V1" : "Shortlist · Compare · Review V1"}</p>
@@ -378,7 +390,7 @@ export default async function OverviewPage() {
             <div className="ms-4 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-md transition group-hover:scale-105">
               <Sparkles className="h-4 w-4" />
             </div>
-          </Link>
+          </CopilotEntryLink>
           <Link href={prefixLocalePath("/workspace", locale)} className="group flex items-center justify-between rounded-2xl border border-cyan-500/25 bg-cyan-500/5 px-5 py-4 transition-all hover:bg-cyan-500/10 hover:-translate-y-0.5">
             <div>
               <p className="text-sm font-semibold text-foreground">{isArabic ? "مساحة العمل" : "Investor Workspace"}</p>

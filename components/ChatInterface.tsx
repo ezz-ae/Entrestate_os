@@ -50,6 +50,7 @@ import type {
   ComprehensiveProfileReportTemplate,
 } from "@/lib/profile/types"
 import { formatAed as formatAedValue } from "@/lib/format/currency"
+import { localizeAnalyticsLabel } from "@/lib/format/analytics-labels"
 import { formatDecimal } from "@/lib/format/number"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
@@ -213,12 +214,31 @@ function stripThinkTags(text: string): string {
   return text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim()
 }
 
+function looksLikeStructuredPayloadText(text: string) {
+  const trimmed = text.trim()
+  if (!trimmed) return false
+
+  if ((trimmed.startsWith("{") || trimmed.startsWith("[")) && /"rows"|"source"|"data_as_of"|"memo"|"project_context"/.test(trimmed)) {
+    return true
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed)
+    return Array.isArray(parsed) || Boolean(parsed && typeof parsed === "object")
+  } catch {
+    return false
+  }
+}
+
 function displayMessageText(message: any): string {
   const text = messageText(message)
   if (message?.role === "assistant") {
     const cleaned = stripThinkTags(text)
     if (cleaned.toLowerCase().includes("tool result is missing for tool call")) {
       return "Data retrieval failed. Please retry your request."
+    }
+    if (looksLikeStructuredPayloadText(cleaned)) {
+      return ""
     }
     return cleaned
   }
@@ -331,6 +351,10 @@ function toDisplayLabel(value: unknown, fallback = "-") {
     .split(/\s+/)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ")
+}
+
+function localizeMetricText(value: unknown, locale: string, fallback = "-") {
+  return localizeAnalyticsLabel(typeof value === "string" ? value : "", locale, fallback)
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -471,19 +495,19 @@ function extractToolOutputs(messages: any[]): Record<string, unknown>[] {
   for (const message of messages) {
     if (Array.isArray(message.toolInvocations)) {
       for (const invocation of message.toolInvocations) {
-        const result = toRecord(invocation?.result)
+        const result = toRecord(invocation?.result ?? invocation?.output)
         if (result) outputs.push(result)
       }
     }
 
     if (!Array.isArray(message.parts)) continue
     for (const part of message.parts) {
-      if (part?.type === "dynamic-tool" && part.output) {
-        const output = toRecord(part.output)
+      if (part?.type === "dynamic-tool" && (part.output || part.result)) {
+        const output = toRecord(part.output ?? part.result)
         if (output) outputs.push(output)
       }
-      if (typeof part?.type === "string" && part.type.startsWith("tool-") && part.output) {
-        const output = toRecord(part.output)
+      if (typeof part?.type === "string" && part.type.startsWith("tool-") && (part.output || part.result)) {
+        const output = toRecord(part.output ?? part.result)
         if (output) outputs.push(output)
       }
     }
@@ -497,25 +521,127 @@ function extractMessageToolOutputs(message: any): Record<string, unknown>[] {
 
   if (Array.isArray(message?.toolInvocations)) {
     for (const invocation of message.toolInvocations) {
-      const result = toRecord(invocation?.result)
+      const result = toRecord(invocation?.result ?? invocation?.output)
       if (result) outputs.push(result)
     }
   }
 
   if (Array.isArray(message?.parts)) {
     for (const part of message.parts) {
-      if (part?.type === "dynamic-tool" && part.output) {
-        const output = toRecord(part.output)
+      if (part?.type === "dynamic-tool" && (part.output || part.result)) {
+        const output = toRecord(part.output ?? part.result)
         if (output) outputs.push(output)
       }
-      if (typeof part?.type === "string" && part.type.startsWith("tool-") && part.output) {
-        const output = toRecord(part.output)
+      if (typeof part?.type === "string" && part.type.startsWith("tool-") && (part.output || part.result)) {
+        const output = toRecord(part.output ?? part.result)
         if (output) outputs.push(output)
       }
     }
   }
 
   return outputs
+}
+
+function extractRowsFromOutput(output: Record<string, unknown>): Record<string, unknown>[] {
+  const directRows = [
+    ...toRows(output.rows),
+    ...toRows(output.items),
+    ...toRows(output.results),
+    ...toRows(output.records),
+    ...toRows(output.list),
+  ]
+
+  const directRecords = [
+    toRecord(output.project),
+    toRecord(output.record),
+    toRecord(output.overview),
+    toRecord(output.market_overview),
+    toRecord(output.project_context),
+  ].filter((entry): entry is Record<string, unknown> => Boolean(entry))
+
+  const memo = toRecord(output.memo)
+  const memoSections = toRecord(memo?.sections)
+  const sectionRows = memoSections
+    ? Object.values(memoSections).flatMap((section) => {
+        const sectionRecord = toRecord(section)
+        if (!sectionRecord) return []
+        return [
+          ...toRows(sectionRecord.rows),
+          ...toRows(sectionRecord.items),
+          ...toRows(sectionRecord.results),
+          ...(toRecord(sectionRecord.project) ? [sectionRecord.project as Record<string, unknown>] : []),
+          ...(toRecord(sectionRecord.project_context) ? [sectionRecord.project_context as Record<string, unknown>] : []),
+        ]
+      })
+    : []
+
+  return [...directRows, ...directRecords, ...sectionRows].filter(
+    (entry) => Object.keys(entry).length > 0,
+  )
+}
+
+function extractStructuredRows(outputs: Record<string, unknown>[]) {
+  return outputs.flatMap((output) => extractRowsFromOutput(output))
+}
+
+function isAnalyticRecord(row: Record<string, unknown>) {
+  return [
+    row.name,
+    row.project_name,
+    row.project,
+    row.area,
+    row.final_area,
+    row.developer,
+    row.projects,
+    row.avg_price,
+    row.avg_yield,
+    row.price_from_aed,
+    row.l1_canonical_price,
+    row.investor_score_v1,
+    row.avg_score,
+    row.engine_god_metric,
+    row.stress_score,
+    row.stress_grade_v1,
+    row.decision_label_v1,
+    row.timing_label,
+  ].some((value) => value !== null && value !== undefined && value !== "")
+}
+
+function extractNarrativeStrings(outputs: Record<string, unknown>[]) {
+  const snippets: string[] = []
+
+  const pushString = (value: unknown) => {
+    if (typeof value !== "string") return
+    const trimmed = value.trim()
+    if (!trimmed || looksLikeStructuredPayloadText(trimmed)) return
+    snippets.push(trimmed)
+  }
+
+  for (const output of outputs) {
+    pushString(output.content)
+    pushString(output.overview)
+    pushString(output.narrative)
+
+    const memo = toRecord(output.memo)
+    if (memo) {
+      const memoNarrative = toRecord(memo.narrative)
+      if (memoNarrative) {
+        Object.values(memoNarrative).forEach(pushString)
+      }
+
+      const memoSections = toRecord(memo.sections)
+      if (memoSections) {
+        Object.values(memoSections).forEach((section) => {
+          const sectionRecord = toRecord(section)
+          if (!sectionRecord) return
+          pushString(sectionRecord.narrative)
+          pushString(sectionRecord.overview)
+        })
+      }
+    }
+  }
+
+  return snippets
 }
 
 function buildEvidenceDrawerData(message: any) {
@@ -591,7 +717,7 @@ function deriveToolTrace(message: any, locale: string): string | null {
   const outputs = extractMessageToolOutputs(message)
   if (outputs.length === 0) return null
 
-  const rows = outputs.flatMap((output) => toRows(output.rows))
+  const rows = extractStructuredRows(outputs).filter(isAnalyticRecord)
   let resultCount: number | null = rows.length > 0 ? rows.length : null
   if (resultCount === null) {
     for (const output of outputs) {
@@ -644,9 +770,7 @@ function deriveToolTrace(message: any, locale: string): string | null {
 }
 
 function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: string, t: (key: string) => string): WorkspaceCard[] {
-  const rows = toolOutputs
-    .flatMap((output) => toRows(output.rows))
-    .filter((row) => Object.keys(row).length > 0)
+  const rows = extractStructuredRows(toolOutputs).filter(isAnalyticRecord)
 
   if (rows.length === 0) {
     return [
@@ -681,7 +805,8 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
     if (!timing) continue
     timingCounts.set(timing, (timingCounts.get(timing) ?? 0) + 1)
   }
-  const topTiming = [...timingCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? "-"
+  const topTimingRaw = [...timingCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? "-"
+  const topTiming = localizeMetricText(topTimingRaw, locale)
 
   const decisionCounts = new Map<string, number>()
   for (const row of rows) {
@@ -700,7 +825,7 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
   const totalBuySignals = sumValues(aggregateRows.map((row) => toFiniteNumber(row.buy_signals)))
   const totalSafeProjects = sumValues(aggregateRows.map((row) => toFiniteNumber(row.safe_projects)))
 
-  const topConfidence = [...confidenceCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? (
+  const topConfidenceRaw = [...confidenceCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? (
     totalProjects && totalSafeProjects
       ? totalSafeProjects / totalProjects >= 0.65
         ? locale === "ar" ? "تغطية قوية" : "Strong coverage"
@@ -709,13 +834,16 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
           : locale === "ar" ? "تغطية محدودة" : "Thin coverage"
       : "-"
   )
+  const topConfidence = topConfidenceRaw.startsWith("تغطية") || topConfidenceRaw.includes("coverage")
+    ? topConfidenceRaw
+    : localizeMetricText(topConfidenceRaw, locale)
 
   const scoreValues = rows
     .map((row) => toFiniteNumber(row.investor_score_v1 ?? row.avg_score ?? row.engine_god_metric))
     .filter((value): value is number => value !== null)
   const avgScore = scoreValues.length > 0 ? scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length : null
 
-  const decisionValue = [...decisionCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? (
+  const decisionValueRaw = [...decisionCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? (
     totalProjects && totalBuySignals
       ? totalBuySignals / totalProjects >= 0.5
         ? locale === "ar" ? "زخم BUY" : "BUY-heavy"
@@ -724,6 +852,9 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
           : locale === "ar" ? "قيد المراقبة" : "Watchlist"
       : topTiming
   )
+  const decisionValue = decisionValueRaw === topTiming || decisionValueRaw.includes("BUY") || decisionValueRaw === "Selective" || decisionValueRaw === "Watchlist" || decisionValueRaw.startsWith("زخم")
+    ? (decisionValueRaw === topTiming ? topTiming : decisionValueRaw)
+    : localizeMetricText(decisionValueRaw, locale)
 
   const matchedProjects = totalProjects && totalProjects > rows.length ? totalProjects : rows.length
   const matchedProjectsSubtitle = totalProjects && aggregateRows.length > 0
@@ -747,8 +878,8 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
 }
 
 function deriveComparisonRows(toolOutputs: Record<string, unknown>[], locale: string): ComparisonRow[] {
-  const rows = toolOutputs
-    .flatMap((output) => toRows(output.rows))
+  const rows = extractStructuredRows(toolOutputs)
+    .filter(isAnalyticRecord)
     .filter((row) => {
       const hasSubject =
         typeof row.name === "string" ||
@@ -801,16 +932,16 @@ function deriveComparisonRows(toolOutputs: Record<string, unknown>[], locale: st
                 : `${formatWholeNumber(projectsCount, locale)} projects`
               : "-"
           )
-        : toText(row.price_confidence ?? row.l1_confidence),
+        : localizeMetricText(row.price_confidence ?? row.l1_confidence, locale),
       timingSignal: isAreaAggregate
         ? (
             buySignals !== null
               ? locale === "ar"
-                ? `${formatWholeNumber(buySignals, locale)} BUY`
+                ? `${formatWholeNumber(buySignals, locale)} شراء`
                 : `${formatWholeNumber(buySignals, locale)} BUY signals`
               : "-"
           )
-        : toText(row.timing_label ?? row.l3_timing_signal),
+        : localizeMetricText(row.timing_label ?? row.l3_timing_signal, locale),
       stressGrade: isAreaAggregate
         ? (
             safeProjects !== null
@@ -819,7 +950,7 @@ function deriveComparisonRows(toolOutputs: Record<string, unknown>[], locale: st
                 : `${formatWholeNumber(safeProjects, locale)} safe projects`
               : "-"
           )
-        : toText(row.stress_grade_v1 ?? row.l2_stress_test_grade),
+        : localizeMetricText(row.stress_grade_v1 ?? row.l2_stress_test_grade, locale),
       stressScore: toFiniteNumber(row.stress_score ?? row.engine_stress_test),
       price: toFiniteNumber(row.price_from_aed ?? row.l1_canonical_price ?? row.avg_price),
       yield: toFiniteNumber(row.rental_yield ?? row.yield_pct ?? row.avg_yield ?? row.l1_canonical_yield),
@@ -928,6 +1059,46 @@ function buildComparisonFallbackText(rows: ComparisonRow[], locale: string) {
   ].join("\n")
 }
 
+function buildProjectStressFallbackText(outputs: Record<string, unknown>[], locale: string) {
+  const records = extractStructuredRows(outputs).filter(isAnalyticRecord)
+  const candidate = records.find((row) =>
+    [
+      row.stress_score,
+      row.stress_grade_v1,
+      row.developer_reliability_score,
+      row.supply_resilience_score,
+      row.liquidity_resilience_score,
+      row.pricing_discipline_score,
+      row.handover_reliability_score,
+      row.area_stability_score,
+      row.payment_plan_score,
+    ].some((value) => value !== null && value !== undefined && value !== ""),
+  )
+
+  if (!candidate) return ""
+
+  const subject = toDisplayLabel(
+    candidate.name ?? candidate.project_name ?? candidate.project ?? candidate.asset_id,
+    locale === "ar" ? "المشروع المحدد" : "Selected project",
+  )
+
+  return [
+    locale === "ar" ? "## ملف الضغط الحقيقي" : "## Live stress profile",
+    locale === "ar"
+      ? `${subject} وفق أحدث السجل المصنف في طبقة القرار.`
+      : `${subject} from the latest scored record in the decision layer.`,
+    `- ${locale === "ar" ? "درجة الضغط" : "Stress grade"}: ${localizeMetricText(candidate.stress_grade_v1 ?? candidate.l2_stress_test_grade, locale)}`,
+    `- ${locale === "ar" ? "نقاط الضغط" : "Stress score"}: ${formatMetric(toFiniteNumber(candidate.stress_score), locale, 0)}`,
+    `- ${locale === "ar" ? "موثوقية المطور" : "Developer reliability"}: ${formatMetric(toFiniteNumber(candidate.developer_reliability_score ?? candidate.l2_developer_reliability), locale, 0)}`,
+    `- ${locale === "ar" ? "مرونة المعروض" : "Supply resilience"}: ${formatMetric(toFiniteNumber(candidate.supply_resilience_score), locale, 0)}`,
+    `- ${locale === "ar" ? "مرونة السيولة" : "Liquidity resilience"}: ${formatMetric(toFiniteNumber(candidate.liquidity_resilience_score), locale, 0)}`,
+    `- ${locale === "ar" ? "انضباط التسعير" : "Pricing discipline"}: ${formatMetric(toFiniteNumber(candidate.pricing_discipline_score), locale, 0)}`,
+    `- ${locale === "ar" ? "موثوقية التسليم" : "Handover reliability"}: ${formatMetric(toFiniteNumber(candidate.handover_reliability_score), locale, 0)}`,
+    `- ${locale === "ar" ? "ثبات المنطقة" : "Area stability"}: ${formatMetric(toFiniteNumber(candidate.area_stability_score), locale, 0)}`,
+    `- ${locale === "ar" ? "مرونة خطة الدفع" : "Payment plan"}: ${formatMetric(toFiniteNumber(candidate.payment_plan_score), locale, 0)}`,
+  ].join("\n")
+}
+
 function buildMemoFallbackText(outputs: Record<string, unknown>[], locale: string) {
   for (const output of outputs) {
     const memo = toRecord(output.memo)
@@ -954,7 +1125,7 @@ function buildMemoFallbackText(outputs: Record<string, unknown>[], locale: strin
 }
 
 function buildGenericRowsFallbackText(outputs: Record<string, unknown>[], locale: string) {
-  const rows = outputs.flatMap((output) => toRows(output.rows))
+  const rows = extractStructuredRows(outputs).filter(isAnalyticRecord)
   const first = rows[0]
   if (!first) return ""
 
@@ -966,9 +1137,9 @@ function buildGenericRowsFallbackText(outputs: Record<string, unknown>[], locale
   }
 
   const details = [
-    `${locale === "ar" ? "السعر" : "Price"}: ${formatAed(toFiniteNumber(first.price_from_aed ?? first.avg_price), locale)}`,
-    `${locale === "ar" ? "العائد" : "Yield"}: ${formatPercent(toFiniteNumber(first.rental_yield ?? first.yield_pct ?? first.avg_yield), locale)}`,
-    `${locale === "ar" ? "المنطقة" : "Area"}: ${toDisplayLabel(first.area, "-")}`,
+    `${locale === "ar" ? "السعر" : "Price"}: ${formatAed(toFiniteNumber(first.price_from_aed ?? first.l1_canonical_price ?? first.avg_price), locale)}`,
+    `${locale === "ar" ? "العائد" : "Yield"}: ${formatPercent(toFiniteNumber(first.rental_yield ?? first.l1_canonical_yield ?? first.yield_pct ?? first.avg_yield), locale)}`,
+    `${locale === "ar" ? "المنطقة" : "Area"}: ${toDisplayLabel(first.area ?? first.final_area, "-")}`,
   ].filter((entry) => !entry.endsWith(": -"))
 
   return [
@@ -980,15 +1151,25 @@ function buildGenericRowsFallbackText(outputs: Record<string, unknown>[], locale
   ].join("\n")
 }
 
+function buildNarrativeFallbackText(outputs: Record<string, unknown>[]) {
+  return extractNarrativeStrings(outputs)[0] ?? ""
+}
+
 function buildAssistantFallbackText(message: any, locale: string) {
   const outputs = extractMessageToolOutputs(message)
   if (outputs.length === 0) return ""
+
+  const stressFallback = buildProjectStressFallbackText(outputs, locale)
+  if (stressFallback) return stressFallback
 
   const comparisonFallback = buildComparisonFallbackText(deriveComparisonRows(outputs, locale), locale)
   if (comparisonFallback) return comparisonFallback
 
   const memoFallback = buildMemoFallbackText(outputs, locale)
   if (memoFallback) return memoFallback
+
+  const narrativeFallback = buildNarrativeFallbackText(outputs)
+  if (narrativeFallback) return narrativeFallback
 
   return buildGenericRowsFallbackText(outputs, locale)
 }
@@ -1003,7 +1184,11 @@ function deriveGoldenPathPreviewDisplay(preview: GoldenPathPreview | null, local
   if (!preview?.metadata) return null
 
   const rows = toRows(preview.rows)
-  const intent = preview.metadata.spec?.intent ?? (locale === "ar" ? "معاينة المسار الذهبي" : "Golden Path Preview")
+  const intent = localizeMetricText(
+    preview.metadata.spec?.intent ?? (locale === "ar" ? "معاينة المسار الذهبي" : "Golden Path Preview"),
+    locale,
+    locale === "ar" ? "معاينة المسار الذهبي" : "Golden Path Preview",
+  )
   const avgPrice = average(rows.map((row) => toFiniteNumber(row.price_from_aed ?? row.avg_price)))
   const avgYield = average(rows.map((row) => toFiniteNumber(row.yield_pct ?? row.rental_yield ?? row.avg_yield)))
   const avgGfa = average(rows.map((row) => toFiniteNumber(row.gfa_sqm)))
@@ -1041,15 +1226,19 @@ function deriveGoldenPathPreviewDisplay(preview: GoldenPathPreview | null, local
 
   const cards = rows.slice(0, 4).map((row, index) => {
     const title = toDisplayLabel(row.project ?? row.name ?? row.asset_id ?? row.area, `${intent} ${index + 1}`)
-    const subtitle = [toDisplayLabel(row.area, ""), toDisplayLabel(row.developer, ""), toDisplayLabel(row.status_band, "")]
+    const subtitle = [
+      toDisplayLabel(row.area, ""),
+      toDisplayLabel(row.developer, ""),
+      localizeMetricText(row.status_band, locale, ""),
+    ]
       .filter((part) => part.length > 0)
       .join(" • ")
 
     const metrics = [
       { label: locale === "ar" ? "السعر" : "Entry", value: formatAed(toFiniteNumber(row.price_from_aed ?? row.avg_price), locale) },
       { label: locale === "ar" ? "العائد" : "Yield", value: formatPercent(toFiniteNumber(row.yield_pct ?? row.rental_yield ?? row.avg_yield), locale) },
-      { label: locale === "ar" ? "المخاطر" : "Risk", value: toDisplayLabel(row.risk_band, "-") },
-      { label: locale === "ar" ? "السيولة" : "Liquidity", value: toDisplayLabel(row.liquidity_band, "-") },
+      { label: locale === "ar" ? "المخاطر" : "Risk", value: localizeMetricText(row.risk_band, locale) },
+      { label: locale === "ar" ? "السيولة" : "Liquidity", value: localizeMetricText(row.liquidity_band, locale) },
       { label: locale === "ar" ? "التسليم" : "Handover", value: formatDateLabel(row.handover_date, locale) },
       { label: locale === "ar" ? "المساحة" : "GFA", value: toFiniteNumber(row.gfa_sqm) !== null ? `${formatWholeNumber(toFiniteNumber(row.gfa_sqm), locale)} sqm` : "-" },
     ]
@@ -1059,7 +1248,7 @@ function deriveGoldenPathPreviewDisplay(preview: GoldenPathPreview | null, local
     return {
       title,
       subtitle,
-      badge: toDisplayLabel(row.risk_band ?? row.liquidity_band, ""),
+      badge: localizeMetricText(row.risk_band ?? row.liquidity_band, locale, ""),
       metrics,
     }
   })
@@ -1647,27 +1836,27 @@ export function ChatInterface({
 
     if (selectedRow.kind === "area") {
       return [
-        { label: "Projects screened", value: formatWholeNumber(selectedRow.projectsCount, locale) },
-        { label: "BUY signals", value: formatWholeNumber(selectedRow.buySignals, locale) },
-        { label: "Safe projects", value: formatWholeNumber(selectedRow.safeProjects, locale) },
-        { label: "Average entry", value: formatAed(selectedRow.price, locale) },
-        { label: "Average yield", value: formatPercent(selectedRow.yield, locale) },
-        { label: "Avg investor score", value: formatMetric(selectedRow.score, locale) },
+        { label: locale === "ar" ? "المشاريع المفحوصة" : "Projects screened", value: formatWholeNumber(selectedRow.projectsCount, locale) },
+        { label: locale === "ar" ? "إشارات الشراء" : "BUY signals", value: formatWholeNumber(selectedRow.buySignals, locale) },
+        { label: locale === "ar" ? "المشاريع الآمنة" : "Safe projects", value: formatWholeNumber(selectedRow.safeProjects, locale) },
+        { label: locale === "ar" ? "متوسط الدخول" : "Average entry", value: formatAed(selectedRow.price, locale) },
+        { label: locale === "ar" ? "متوسط العائد" : "Average yield", value: formatPercent(selectedRow.yield, locale) },
+        { label: locale === "ar" ? "متوسط نقاط المستثمر" : "Avg investor score", value: formatMetric(selectedRow.score, locale) },
       ]
     }
 
     return [
-      { label: "Stress score", value: formatMetric(selectedRow.stressScore, locale) },
-      { label: "Stress grade", value: selectedRow.stressGrade || "-" },
-      { label: "Timing label", value: selectedRow.timingSignal || "-" },
-      { label: "Investor score", value: formatMetric(selectedRow.score, locale) },
-      { label: "Developer reliability", value: formatMetric(selectedRow.developerReliabilityScore, locale) },
-      { label: "Supply resilience", value: formatMetric(selectedRow.supplyResilienceScore, locale) },
-      { label: "Liquidity resilience", value: formatMetric(selectedRow.liquidityResilienceScore, locale) },
-      { label: "Pricing discipline", value: formatMetric(selectedRow.pricingDisciplineScore, locale) },
-      { label: "Handover reliability", value: formatMetric(selectedRow.handoverReliabilityScore, locale) },
-      { label: "Area stability", value: formatMetric(selectedRow.areaStabilityScore, locale) },
-      { label: "Payment plan", value: formatMetric(selectedRow.paymentPlanScore, locale) },
+      { label: locale === "ar" ? "نقاط الضغط" : "Stress score", value: formatMetric(selectedRow.stressScore, locale) },
+      { label: locale === "ar" ? "درجة الضغط" : "Stress grade", value: selectedRow.stressGrade || "-" },
+      { label: locale === "ar" ? "تصنيف التوقيت" : "Timing label", value: selectedRow.timingSignal || "-" },
+      { label: locale === "ar" ? "نقاط المستثمر" : "Investor score", value: formatMetric(selectedRow.score, locale) },
+      { label: locale === "ar" ? "موثوقية المطور" : "Developer reliability", value: formatMetric(selectedRow.developerReliabilityScore, locale) },
+      { label: locale === "ar" ? "مرونة المعروض" : "Supply resilience", value: formatMetric(selectedRow.supplyResilienceScore, locale) },
+      { label: locale === "ar" ? "مرونة السيولة" : "Liquidity resilience", value: formatMetric(selectedRow.liquidityResilienceScore, locale) },
+      { label: locale === "ar" ? "انضباط التسعير" : "Pricing discipline", value: formatMetric(selectedRow.pricingDisciplineScore, locale) },
+      { label: locale === "ar" ? "موثوقية التسليم" : "Handover reliability", value: formatMetric(selectedRow.handoverReliabilityScore, locale) },
+      { label: locale === "ar" ? "ثبات المنطقة" : "Area stability", value: formatMetric(selectedRow.areaStabilityScore, locale) },
+      { label: locale === "ar" ? "خطة الدفع" : "Payment plan", value: formatMetric(selectedRow.paymentPlanScore, locale) },
     ]
   }, [locale, selectedRow])
 
@@ -2286,7 +2475,7 @@ export function ChatInterface({
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/40 px-3 py-2.5">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            <p className="text-sm font-semibold text-foreground">AI Chat</p>
+            <p className="text-sm font-semibold text-foreground">{locale === "ar" ? "محادثة الذكاء" : "AI Chat"}</p>
             {dataFreshness ? (
               <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] text-muted-foreground">
                 {heroCopy.dataLabel}: {new Date(dataFreshness).toLocaleDateString()}
@@ -2493,7 +2682,7 @@ export function ChatInterface({
                     ) : (
                       <Send className="h-4 w-4" />
                     )}
-                    <span className="font-bold">{status === "streaming" ? "Analysing…" : "Send"}</span>
+                    <span className="font-bold">{status === "streaming" ? (locale === "ar" ? "جارٍ التحليل..." : "Analysing…") : (locale === "ar" ? "إرسال" : "Send")}</span>
                   </Button>
                 </div>
               </div>
@@ -2631,7 +2820,7 @@ export function ChatInterface({
                     </div>
                   </div>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    {formatAed(row.price, locale)} • Yield {formatMetric(row.yield, locale)}% • Score {formatMetric(row.score, locale)}
+                    {formatAed(row.price, locale)} • {locale === "ar" ? "العائد" : "Yield"} {formatMetric(row.yield, locale)}% • {locale === "ar" ? "النتيجة" : "Score"} {formatMetric(row.score, locale)}
                   </p>
                 </button>
               ))}

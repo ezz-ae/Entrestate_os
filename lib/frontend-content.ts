@@ -166,6 +166,44 @@ function isEmptyPayload(value: unknown): boolean {
   return false
 }
 
+function firstNumericValue(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === "number" && Number.isFinite(value)) return value
+    if (typeof value === "string" && value.trim().length > 0) {
+      const parsed = Number(value.replace(/,/g, ""))
+      if (Number.isFinite(parsed)) return parsed
+    }
+  }
+  return null
+}
+
+function normalizeDeveloperReliabilityPayload(value: unknown) {
+  if (!Array.isArray(value)) return value
+
+  return value.map((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return entry
+    const row = entry as Record<string, unknown>
+    return {
+      ...row,
+      developer: row.developer ?? row.name ?? row.developer_name ?? null,
+      projects: firstNumericValue(row, ["projects", "count", "project_count", "total_projects"]),
+      reliability:
+        firstNumericValue(row, [
+          "reliability",
+          "developer_reliability_score",
+          "developer_reliability",
+          "reliability_score",
+          "delivery_reliability_score",
+          "avg_reliability",
+          "score",
+          "avg_score",
+        ]),
+      safe_projects: firstNumericValue(row, ["safe_projects", "safe_count", "qualified_projects", "qualified_count"]),
+    }
+  })
+}
+
 async function buildDldMarketFallbackRows(limit = 12) {
   for (const tableName of DLD_FALLBACK_TABLES) {
     try {
@@ -666,6 +704,13 @@ export async function getTopDataRows() {
       return {
         ...row,
         data_json: dldFallbackRows,
+      }
+    }
+
+    if (row.id === "developer-reliability") {
+      return {
+        ...row,
+        data_json: normalizeDeveloperReliabilityPayload(row.data_json),
       }
     }
 

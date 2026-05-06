@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useLocale } from "next-intl"
 import { Zap, BarChart3, ShieldCheck, FileText, ArrowRight, ChevronRight } from "lucide-react"
 import Link from "next/link"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type StepConfig = {
@@ -368,13 +369,12 @@ export function DecisionTunnelStepper() {
                 <ArrowRight className="h-3 w-3" />
               </button>
             ) : (
-              <Link
-                href={prefixLocalePath("/chat", locale)}
+              <CopilotEntryLink
                 className={`flex items-center gap-1.5 rounded-lg border ${step.borderClass} px-4 py-1.5 text-xs font-medium ${step.accentClass} transition-colors hover:bg-background/50`}
               >
                 {isArabic ? "جرّب التنفيذ" : "Run a live workflow"}
                 <ArrowRight className="h-3 w-3" />
-              </Link>
+              </CopilotEntryLink>
             )}
           </div>
         </div>

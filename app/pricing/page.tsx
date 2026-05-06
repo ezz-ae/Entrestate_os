@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowRight, Building2, Check, ShieldCheck, Wallet } from "lucide-react"
 import { JsonLd } from "@/components/JsonLd"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
@@ -108,10 +109,10 @@ export default async function PricingPage() {
                 ))}
               </ul>
               <Button asChild className="mt-5 w-full gap-2">
-                <Link href={prefixLocalePath(pricingPlans.free.ctaHref, locale)}>
+                <CopilotEntryLink>
                   {getLocalizedText(pricingPlans.free.ctaLabel, locale)}
                   <ArrowRight className={`h-4 w-4 ${isArabic ? "rotate-180" : ""}`} />
-                </Link>
+                </CopilotEntryLink>
               </Button>
             </div>
           </div>

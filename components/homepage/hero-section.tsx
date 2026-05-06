@@ -6,6 +6,7 @@ import { ArrowRight, Database, MapPin, Search, ShieldCheck } from "lucide-react"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import { formatAed } from "@/lib/format/currency"
 import { formatInteger } from "@/lib/format/number"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { LiveSignalCard } from "@/components/platform/live-signal-card"
 
 type Props = {
@@ -127,17 +128,18 @@ export function HeroSection({
   ].filter(Boolean) as Array<{ label: string; value: number | string; sublabel: string }>
   const primaryActions = [
     {
-      href: prefixLocalePath("/chat", locale),
+      href: "/chat",
       label: copy.primaryActions.chat,
       icon: Database,
+      copilot: true,
     },
     {
-      href: prefixLocalePath("/search", locale),
+      href: "/search",
       label: copy.primaryActions.search,
       icon: Search,
     },
     {
-      href: prefixLocalePath("/map", locale),
+      href: "/map",
       label: copy.primaryActions.map,
       icon: MapPin,
     },
@@ -174,17 +176,29 @@ export function HeroSection({
           <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {primaryActions.map((action) => {
               const Icon = action.icon
-              return (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/60 px-5 py-4 text-sm font-semibold text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
-                >
+              const className =
+                "flex items-center justify-between rounded-2xl border border-border/70 bg-card/60 px-5 py-4 text-sm font-semibold text-foreground shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
+              const content = (
+                <>
                   <span className="flex items-center gap-2">
                     <Icon className="h-4 w-4 text-primary" />
                     {action.label}
                   </span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </>
+              )
+
+              return action.copilot ? (
+                <CopilotEntryLink key={action.label} className={className}>
+                  {content}
+                </CopilotEntryLink>
+              ) : (
+                <Link
+                  key={action.label}
+                  href={prefixLocalePath(action.href, locale)}
+                  className={className}
+                >
+                  {content}
                 </Link>
               )
             })}

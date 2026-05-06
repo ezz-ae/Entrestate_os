@@ -15,11 +15,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title:
       locale === "ar"
-        ? "إشارات سوق دبي المباشرة — بث BUY/HOLD/AVOID | Entrestate"
+        ? "بيانات السوق | Entrestate"
         : "Live Dubai Market Signals — BUY/HOLD/AVOID Feed | Entrestate",
     description:
       locale === "ar"
-        ? "بيانات سوق دبي الحية: المشاريع المصنفة، إشارات التوقيت، درجات الضغط، ومستويات الأدلة من مخزون يتم تحديثه طوال اليوم."
+        ? "بيانات السوق الحية: المشاريع المصنفة، إشارات التوقيت، درجات الضغط، ومستويات الأدلة من مخزون يتم تحديثه طوال اليوم."
         : "Live Dubai market data across scored projects, timing signals, stress grades, and evidence levels, refreshed throughout the day.",
   }
 }
@@ -131,11 +131,11 @@ export default async function TopDataPage() {
         <header className="mb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-emerald-400">
             {isArabic
-              ? "محرك إشارات السوق"
+              ? "بيانات السوق"
               : "Market Signal Engine"}
           </div>
           <h1 className="mt-3 text-3xl font-semibold text-foreground md:text-5xl">
-            {isArabic ? "بيانات السوق المباشرة، الآن" : "Live market data, right now"}
+            {isArabic ? "بيانات السوق" : "Live market data, right now"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isArabic

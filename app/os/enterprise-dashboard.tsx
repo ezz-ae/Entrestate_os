@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useLocale } from "next-intl"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type EnterpriseDashboardProps = {
@@ -147,13 +148,12 @@ export function EnterpriseDashboard({ summary, intelligence }: EnterpriseDashboa
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href={prefixLocalePath("/chat", locale)}
+            <CopilotEntryLink
               className="flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition-all hover:bg-slate-200"
             >
               {isArabic ? "تفعيل الاستراتيجية" : "Activate Strategy"}
               <Sparkles className="h-4 w-4" />
-            </Link>
+            </CopilotEntryLink>
           </div>
         </header>
 

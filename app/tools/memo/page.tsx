@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
@@ -25,7 +26,7 @@ export default async function MemoToolPage() {
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Button asChild>
-              <Link href={prefixLocalePath("/chat", locale)}>{isArabic ? "ابدأ من المساعد" : "Open Decision Tunnel"}</Link>
+              <CopilotEntryLink>{isArabic ? "ابدأ من المساعد" : "Open Decision Tunnel"}</CopilotEntryLink>
             </Button>
             <Button variant="outline" asChild>
               <Link href={prefixLocalePath("/properties", locale)}>{isArabic ? "اختر مشروعًا أولًا" : "Select project first"}</Link>

@@ -1,10 +1,13 @@
 "use client"
 
 import { useEffect, useId, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useLocale } from "next-intl"
 import { ArrowRight, TerminalSquare } from "lucide-react"
-import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { type AppLocale } from "@/i18n/locale"
+import { authClient } from "@/lib/auth/client"
+import { buildCopilotEntryHref } from "@/lib/copilot/navigation"
+import { useRuntimeShell } from "@/hooks/use-runtime-shell"
 import { cn } from "@/lib/utils"
 
 type TerminalPromptTeaserProps = {
@@ -40,7 +43,11 @@ export function TerminalPromptTeaser({
   examples,
 }: TerminalPromptTeaserProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const locale = useLocale() as AppLocale
+  const runtimeShell = useRuntimeShell()
+  const { data: session } = authClient.useSession()
   const isArabic = locale === "ar"
   const copy = {
     title: title ?? (isArabic ? "ابدأ بالسؤال قبل أن تبدأ بالجولة." : "Start with the question before the workflow."),
@@ -79,9 +86,16 @@ export function TerminalPromptTeaser({
 
   function openTerminal(nextQuery: string) {
     const normalized = nextQuery.trim()
-    const href = normalized.length > 0
-      ? prefixLocalePath(`/chat?q=${encodeURIComponent(normalized)}`, locale)
-      : prefixLocalePath("/chat", locale)
+    const href = buildCopilotEntryHref({
+      authenticated: Boolean(session?.user),
+      locale,
+      pathname,
+      search: searchParams?.toString() ?? "",
+      prompt: normalized.length > 0 ? normalized : null,
+      preferShell:
+        runtimeShell === "mobile"
+        || (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches),
+    })
     router.push(href)
   }
 

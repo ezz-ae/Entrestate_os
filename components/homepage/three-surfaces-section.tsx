@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { MessageSquareText, Table2, Map } from "lucide-react"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 
 type SurfaceItem = {
   title: string
@@ -39,11 +40,22 @@ export function ThreeSurfacesSection({ surfaces = DEFAULT_SURFACES }: { surfaces
       <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
         {surfaces.slice(0, 3).map((surface) => {
           const Icon = iconForTitle(surface.title)
-          return (
-            <Link key={surface.title} href={surface.href} className="rounded-2xl border border-border/70 bg-card/70 p-5">
+          const className = "rounded-2xl border border-border/70 bg-card/70 p-5"
+          const content = (
+            <>
               <Icon className="h-5 w-5 text-accent" />
               <p className="mt-3 text-sm font-semibold text-foreground">{surface.title}</p>
               <p className="mt-2 text-sm text-muted-foreground">{surface.description}</p>
+            </>
+          )
+
+          return surface.href === "/chat" ? (
+            <CopilotEntryLink key={surface.title} className={className}>
+              {content}
+            </CopilotEntryLink>
+          ) : (
+            <Link key={surface.title} href={surface.href} className={className}>
+              {content}
             </Link>
           )
         })}

@@ -411,6 +411,10 @@ export function slugifyName(value: string) {
     .replace(/^-+|-+$/g, "")
 }
 
+function normalizeAreaComparable(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "")
+}
+
 function normalizeDeveloperComparable(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "")
 }
@@ -454,6 +458,14 @@ function buildDeveloperMatchClause(terms: string[]) {
     .map((term) => Prisma.sql`LOWER(REGEXP_REPLACE(COALESCE(developer, ''), '[^a-z0-9]+', '', 'g')) LIKE '%' || ${term} || '%'`)
 
   return Prisma.sql`(${Prisma.join([...rawMatches, ...compactMatches], " OR ")})`
+}
+
+function buildNormalizedSlugSql(expr: Prisma.Sql) {
+  return Prisma.sql`TRIM(BOTH '-' FROM REGEXP_REPLACE(LOWER(COALESCE(${expr}, '')), '[^a-z0-9]+', '-', 'g'))`
+}
+
+function buildComparableSql(expr: Prisma.Sql) {
+  return Prisma.sql`LOWER(REGEXP_REPLACE(COALESCE(${expr}, ''), '[^a-z0-9]+', '', 'g'))`
 }
 
 function getProjectSlug(record: DecisionRecord) {
@@ -1700,7 +1712,14 @@ export async function getAreaBySlug(slug: string): Promise<{
   projects: DecisionProject[]
   developers: DecisionRecord[]
 } | null> {
-  const areaName = slug.replace(/-/g, " ")
+  const normalizedSlug = slugifyName(slug)
+  const areaName = normalizedSlug.replace(/-/g, " ")
+  const areaComparable = normalizeAreaComparable(normalizedSlug)
+  const detailAreaExpr = Prisma.sql`COALESCE(final_area, area)`
+  const detailAreaSlugExpr = buildNormalizedSlugSql(detailAreaExpr)
+  const detailAreaComparableExpr = buildComparableSql(detailAreaExpr)
+  const profileAreaSlugExpr = buildNormalizedSlugSql(Prisma.sql`name`)
+  const profileAreaComparableExpr = buildComparableSql(Prisma.sql`name`)
   const areaQualityClauses = buildQualityClauses({
     requirePrice: true,
     requireStress: true,
@@ -1709,13 +1728,67 @@ export async function getAreaBySlug(slug: string): Promise<{
     onlyUae: true,
     requireBedroomSanity: true,
   })
-  const areaWhere = Prisma.sql`LOWER(COALESCE(final_area, area)) LIKE LOWER('%' || ${areaName} || '%') AND ${Prisma.join(areaQualityClauses, " AND ")}`
+
+  const [profileCandidates, detailCandidates] = await Promise.all([
+    runOptionalQuery(Prisma.sql`
+      SELECT
+        name AS area_name,
+        COALESCE(payload->>'area_ar', payload->>'name_ar') AS area_ar,
+        image AS image_url,
+        area_type,
+        payload->>'city' AS city
+      FROM gc_area_profiles
+      WHERE ${profileAreaSlugExpr} = ${normalizedSlug}
+         OR ${profileAreaComparableExpr} = ${areaComparable}
+         OR LOWER(name) LIKE LOWER('%' || ${areaName} || '%')
+      ORDER BY
+        CASE
+          WHEN ${profileAreaSlugExpr} = ${normalizedSlug} THEN 0
+          WHEN ${profileAreaComparableExpr} = ${areaComparable} THEN 1
+          WHEN LOWER(name) = LOWER(${areaName}) THEN 2
+          WHEN LOWER(name) LIKE LOWER(${`${areaName}%`}) THEN 3
+          ELSE 4
+        END,
+        LENGTH(name) ASC
+      LIMIT 3
+    `),
+    runOptionalQuery(Prisma.sql`
+      SELECT
+        ${detailAreaExpr} AS area_name,
+        COUNT(*)::int AS projects
+      FROM ${DETAIL_TABLE_SQL}
+      WHERE (${detailAreaSlugExpr} = ${normalizedSlug}
+        OR ${detailAreaComparableExpr} = ${areaComparable}
+        OR LOWER(${detailAreaExpr}) LIKE LOWER('%' || ${areaName} || '%'))
+        AND ${Prisma.join(areaQualityClauses, " AND ")}
+      GROUP BY 1
+      ORDER BY
+        CASE
+          WHEN ${detailAreaSlugExpr} = ${normalizedSlug} THEN 0
+          WHEN ${detailAreaComparableExpr} = ${areaComparable} THEN 1
+          WHEN LOWER(${detailAreaExpr}) = LOWER(${areaName}) THEN 2
+          WHEN LOWER(${detailAreaExpr}) LIKE LOWER(${`${areaName}%`}) THEN 3
+          ELSE 4
+        END,
+        projects DESC
+      LIMIT 5
+    `),
+  ])
+
+  const canonicalAreaName =
+    typeof profileCandidates[0]?.area_name === "string" && profileCandidates[0].area_name.trim().length > 0
+      ? profileCandidates[0].area_name.trim()
+      : typeof detailCandidates[0]?.area_name === "string" && detailCandidates[0].area_name.trim().length > 0
+        ? detailCandidates[0].area_name.trim()
+        : areaName
+  const canonicalAreaComparable = normalizeAreaComparable(canonicalAreaName) || areaComparable
+  const areaWhere = Prisma.sql`${detailAreaComparableExpr} = ${canonicalAreaComparable} AND ${Prisma.join(areaQualityClauses, " AND ")}`
   const developerAreaWhere = Prisma.sql`${areaWhere} AND TRIM(COALESCE(developer, '')) <> ''`
 
   const [statsRows, projectsRows, developerRows, profileRows] = await Promise.all([
     runQuery(Prisma.sql`
       SELECT
-        COALESCE(final_area, area) AS area,
+        ${detailAreaExpr} AS area,
         COUNT(*)::int AS projects,
         ROUND(AVG(l1_canonical_price) FILTER (WHERE l1_canonical_price > 0)) AS avg_price,
         ROUND(AVG(l1_canonical_yield::numeric), 1) AS avg_yield,
@@ -1764,7 +1837,16 @@ export async function getAreaBySlug(slug: string): Promise<{
         area_type,
         payload->>'city' AS city
       FROM gc_area_profiles
-      WHERE LOWER(name) LIKE LOWER('%' || ${areaName} || '%')
+      WHERE ${profileAreaComparableExpr} = ${canonicalAreaComparable}
+         OR ${profileAreaSlugExpr} = ${normalizedSlug}
+         OR LOWER(name) LIKE LOWER('%' || ${canonicalAreaName} || '%')
+      ORDER BY
+        CASE
+          WHEN ${profileAreaComparableExpr} = ${canonicalAreaComparable} THEN 0
+          WHEN ${profileAreaSlugExpr} = ${normalizedSlug} THEN 1
+          WHEN LOWER(name) = LOWER(${canonicalAreaName}) THEN 2
+          ELSE 3
+        END
       LIMIT 1
     `),
   ])

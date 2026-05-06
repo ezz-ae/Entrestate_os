@@ -5,6 +5,7 @@ import { useLocale } from "next-intl"
 import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import type { CoverageSummary } from "@/lib/data-coverage"
 import { MapPin, Layers, Activity, TrendingUp, Shield, Loader2, MessageSquare, BookOpen } from "lucide-react"
 import { pickLocalizedText } from "@/lib/format/entities"
@@ -97,14 +98,14 @@ export default function MapPage() {
     id: option.id,
     label: isArabic ? option.ar : option.en,
   }))
-  const coverageLabels = {
+  const coverageLabels: Record<string, string> = {
     city: isArabic ? "المدينة" : "City",
     area_ar: isArabic ? "الاسم العربي" : "Arabic label",
     avg_price: isArabic ? "متوسط السعر" : "Average price",
     avg_yield: isArabic ? "متوسط العائد" : "Average yield",
     efficiency: isArabic ? "الكفاءة" : "Efficiency",
     top_projects: isArabic ? "المشاريع البارزة" : "Top projects",
-  } satisfies Record<string, string>
+  }
   const isFallbackSource = meta ? meta.sourceView !== meta.primaryView : false
 
   const flowCards = [
@@ -311,17 +312,29 @@ export default function MapPage() {
               <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
                 {flowCards.map((card) => {
                   const Icon = card.icon
-                  return (
-                    <Link
-                      key={card.title}
-                      href={prefixLocalePath(card.href, locale)}
-                      className="group rounded-2xl border border-border/60 bg-background/50 p-4 transition hover:border-primary/30 hover:bg-background"
-                    >
+                  const className =
+                    "group rounded-2xl border border-border/60 bg-background/50 p-4 transition hover:border-primary/30 hover:bg-background"
+                  const content = (
+                    <>
                       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
                         <Icon className="h-4 w-4" />
                       </div>
                       <h3 className="mt-3 text-sm font-semibold text-foreground">{card.title}</h3>
                       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{card.body}</p>
+                    </>
+                  )
+
+                  return card.href === "/chat" ? (
+                    <CopilotEntryLink key={card.title} className={className}>
+                      {content}
+                    </CopilotEntryLink>
+                  ) : (
+                    <Link
+                      key={card.title}
+                      href={prefixLocalePath(card.href, locale)}
+                      className={className}
+                    >
+                      {content}
                     </Link>
                   )
                 })}

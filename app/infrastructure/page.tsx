@@ -42,13 +42,17 @@ export default async function InfrastructurePage() {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
   const t = (en: string, ar: string) => (isArabic ? ar : en)
+  const linkIntakePrompt = isArabic
+    ? "حوّل هذا الرابط إلى سجل قائمة محكوم واشرح ما الذي استخرجته وما الذي ما زال ناقصاً."
+    : "Turn this listing link into a governed listing record and explain what you extracted versus what is still missing."
+  const linkIntakeHref = `${prefixLocalePath("/chat", locale)}?prompt=${encodeURIComponent(linkIntakePrompt)}`
 
   const systemIncludes = [
     {
       title: t("Verified property spine", "العمود العقاري الموثق"),
       body: t(
-        "A verified property layer for inventory, pricing, media, and source lineage.",
-        "طبقة عقارية موثقة للمخزون والسعر والوسائط وتتبع المصدر.",
+        "A verified property layer for inventory, pricing, media, listing folders, and source lineage.",
+        "طبقة عقارية موثقة للمخزون والسعر والوسائط ومجلدات القوائم وتتبع المصدر.",
       ),
     },
     {
@@ -61,15 +65,15 @@ export default async function InfrastructurePage() {
     {
       title: t("Governed deal rooms", "غرف الصفقات المحكومة"),
       body: t(
-        "Every transaction moves inside one governed workspace.",
-        "كل معاملة تتحرك داخل مساحة عمل واحدة ومحكومة.",
+        "Every reservation, approval, SPA, and document trail moves inside one governed workspace.",
+        "كل حجز وموافقة وSPA ومسار مستندات يتحرك داخل مساحة عمل واحدة ومحكومة.",
       ),
     },
     {
       title: t("API-first, headless", "تكامل API أولاً وHeadless"),
       body: t(
-        "Your interface stays in place while Entrestate runs underneath it.",
-        "تبقى واجهتك كما هي بينما تعمل Entrestate تحتها.",
+        "Your interface stays in place while Entrestate runs underneath it across sales, rent, and research workflows.",
+        "تبقى واجهتك كما هي بينما تعمل Entrestate تحتها عبر المبيعات والإيجار والبحث.",
       ),
     },
   ]
@@ -95,10 +99,10 @@ export default async function InfrastructurePage() {
     },
     {
       icon: MapPinned,
-      title: t("Mapped city engine", "محرك المدينة المرسومة"),
+      title: t("Rent operating layer", "طبقة تشغيل الإيجار"),
       body: t(
-        "The city model finds better matches, alternatives, and substitutions.",
-        "نموذج المدينة يجد المطابقات والبدائل والاستبدالات الأفضل.",
+        "Lease-ready inventory, rent benchmarks, and unit turnover logic run on the same verified spine.",
+        "المخزون الجاهز للإيجار ومقارنات الإيجار ومنطق دوران الوحدات تعمل على نفس العمود الموثق.",
       ),
       accent: "from-emerald-400/20 to-green-400/5",
     },
@@ -106,26 +110,26 @@ export default async function InfrastructurePage() {
       icon: Workflow,
       title: t("Governed deal rooms", "غرف الصفقات المحكومة"),
       body: t(
-        "Documents, consent, workflow, and contracts stay in one stateful room.",
-        "الوثائق والموافقات وسير العمل والعقود تبقى داخل غرفة واحدة ذات حالة.",
+        "Documents, consent, approvals, reservations, and contracts stay in one stateful room.",
+        "الوثائق والموافقات والاعتمادات والحجوزات والعقود تبقى داخل غرفة واحدة ذات حالة.",
       ),
       accent: "from-fuchsia-400/20 to-pink-400/5",
     },
     {
       icon: GitBranch,
-      title: t("Liquidity engine", "محرك السيولة"),
+      title: t("Listing folder spine", "عمود مجلدات القوائم"),
       body: t(
-        "Timed holds and queues keep deals moving without freezing inventory.",
-        "الحجوزات المؤقتة والطوابير تحافظ على حركة الصفقات دون تجميد المخزون.",
+        "Every project, unit, brochure, floor plan, and media asset stays grouped in one governed listing folder.",
+        "يبقى كل مشروع ووحدة وبروشور ومخطط ووسائط مجمعة داخل مجلد قائمة واحد ومحكوم.",
       ),
       accent: "from-blue-400/20 to-indigo-400/5",
     },
     {
       icon: Cable,
-      title: t("Intelligence bridge", "جسر الاستخبارات"),
+      title: t("Drop-link intake", "إدخال عبر الرابط"),
       body: t(
-        "AI routes intent. Verified tools execute the actual action.",
-        "الذكاء يوجه النية. الأدوات المتحققة تنفذ الفعل الحقيقي.",
+        "Drop a listing link, rent page, or brochure URL and convert it into a governed record instead of a chat-only suggestion.",
+        "أسقط رابط قائمة أو صفحة إيجار أو رابط بروشور وحوله إلى سجل محكوم بدلاً من اقتراح داخل الدردشة فقط.",
       ),
       accent: "from-lime-400/20 to-emerald-400/5",
     },
@@ -135,8 +139,8 @@ export default async function InfrastructurePage() {
     {
       title: t("Raw URL ingest", "إدخال عبر الرابط"),
       body: t(
-        "Drop in a listing URL.",
-        "أدخل رابط القائمة.",
+        "Drop in a listing URL, rent page, brochure link, or a project landing page.",
+        "أدخل رابط قائمة أو صفحة إيجار أو رابط بروشور أو صفحة مشروع.",
       ),
     },
     {
@@ -158,6 +162,30 @@ export default async function InfrastructurePage() {
       body: t(
         "Publishing lands as a verified state change.",
         "يصبح النشر تغيير حالة موثّقاً.",
+      ),
+    },
+  ]
+
+  const operatingSurfaces = [
+    {
+      title: t("Rent infrastructure", "بنية الإيجار"),
+      body: t(
+        "Teams can run rent-ready inventory, benchmark asking rent, track turnover, and keep lease workflow on the same audited layer as sales inventory.",
+        "يمكن للفرق تشغيل المخزون الجاهز للإيجار ومقارنة الإيجارات ومتابعة دوران الوحدات والحفاظ على سير عمل الإيجار على نفس الطبقة المدققة لمخزون المبيعات.",
+      ),
+    },
+    {
+      title: t("Listing folders", "مجلدات القوائم"),
+      body: t(
+        "Instead of scattered rows, every listing gets a governed folder with media, unit facts, pricing history, source lineage, and ready-to-share outputs.",
+        "بدلاً من الصفوف المبعثرة، تحصل كل قائمة على مجلد محكوم يضم الوسائط وحقائق الوحدة وتاريخ التسعير وتتبع المصدر والمخرجات الجاهزة للمشاركة.",
+      ),
+    },
+    {
+      title: t("Drop-a-link trial", "تجربة إسقاط الرابط"),
+      body: t(
+        "A lightweight pilot mode lets your team drop one URL and watch Entrestate build the scored record, the folder, and the execution-ready state in front of them.",
+        "يتيح وضع تجريبي خفيف لفريقك إسقاط رابط واحد ومشاهدة Entrestate تبني السجل المصنف والمجلد وحالة التنفيذ الجاهزة أمامهم.",
       ),
     },
   ]
@@ -230,6 +258,12 @@ export default async function InfrastructurePage() {
                     className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-emerald-300/40 hover:bg-white/10"
                   >
                     {t("Talk to enterprise sales", "تحدث مع فريق المؤسسات")}
+                  </Link>
+                  <Link
+                    href={linkIntakeHref}
+                    className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-6 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/40 hover:bg-cyan-300/15"
+                  >
+                    {t("Try a link intake", "جرّب إسقاط رابط")}
                   </Link>
                 </div>
 
@@ -421,6 +455,34 @@ export default async function InfrastructurePage() {
                   </div>
                 )
               })}
+            </div>
+          </section>
+
+          <section className="mt-20">
+            <div className="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                  {t("Operational surfaces", "الأسطح التشغيلية")}
+                </p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl">
+                  {t("What enterprise teams actually run on top of it", "ما الذي تشغله فرق المؤسسات فعلياً فوقه")}
+                </h2>
+              </div>
+              <p className="max-w-xl text-sm leading-7 text-slate-400">
+                {t(
+                  "This is not just an analytics page. It is the operating layer behind rent, listings, and deal execution.",
+                  "هذه ليست مجرد صفحة تحليلات. إنها طبقة التشغيل خلف الإيجار والقوائم وتنفيذ الصفقات.",
+                )}
+              </p>
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-3">
+              {operatingSurfaces.map((item) => (
+                <div key={item.title} className="rounded-[26px] border border-white/10 bg-slate-950/30 p-6">
+                  <h3 className="text-lg font-semibold text-white">{item.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-300">{item.body}</p>
+                </div>
+              ))}
             </div>
           </section>
 
