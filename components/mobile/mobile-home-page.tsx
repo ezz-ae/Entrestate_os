@@ -124,15 +124,15 @@ export function MobileHomePage({
       <section className="rounded-[2rem] border border-border/60 bg-[linear-gradient(160deg,rgba(47,90,166,0.16),rgba(17,22,29,0.04))] px-5 py-6 shadow-[0_24px_90px_-56px_rgba(47,90,166,0.55)]">
         <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary/80">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          {isArabic ? "موبايل تشغيل" : "Mobile operating shell"}
+          {isArabic ? "سطح القرار" : "Decision surface"}
         </p>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
-          {isArabic ? "نسخة هاتف حقيقية لاتخاذ القرار العقاري." : "A real phone-first shell for real estate decisions."}
+          {isArabic ? "اتخذ القرار العقاري من شاشة واضحة وسريعة." : "Make the real estate call from one clear surface."}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           {isArabic
-            ? "ابدأ من المحطة، افحص السوق، وادخل إلى مساحة العمل من دون المرور بواجهة سطح مكتب مصغّرة."
-            : "Start from the terminal, screen the market, and move into the workspace without dragging desktop chrome onto a phone."}
+            ? "ابدأ من المحطة، افحص السوق، ثم ادخل إلى مساحة العمل من دون ضوضاء أو تشتت."
+            : "Start from the terminal, screen the market, and move into the workspace without noise or friction."}
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11px] text-muted-foreground">
@@ -187,7 +187,7 @@ export function MobileHomePage({
               {isArabic ? "ابدأ من سؤال جاهز" : "Start from a ready prompt"}
             </p>
             <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-              {isArabic ? "اختصارات ذكية للهاتف" : "Phone-native decision shortcuts"}
+              {isArabic ? "اختصارات القرار السريعة" : "Fast decision shortcuts"}
             </p>
           </div>
           <Database className="h-5 w-5 text-primary/70" />

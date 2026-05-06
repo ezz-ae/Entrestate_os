@@ -13,15 +13,15 @@ export function normalizeNextPath(nextPath: string | null | undefined, fallback 
   return `${normalizedPath}${queryPart ? `?${queryPart}` : ""}${hashPart ? `#${hashPart}` : ""}`
 }
 
-export function buildLoginHref(locale: AppLocale, nextPath = "/account") {
-  const safeNextPath = normalizeNextPath(nextPath, "/account")
+export function buildLoginHref(locale: AppLocale, nextPath = "/me") {
+  const safeNextPath = normalizeNextPath(nextPath, "/me")
   return prefixLocalePath(`/login?next=${encodeURIComponent(safeNextPath)}`, locale)
 }
 
 export function resolvePostLoginHref(
   locale: AppLocale,
   nextPath: string | null | undefined,
-  fallback = "/account",
+  fallback = "/me",
 ) {
   return prefixLocalePath(normalizeNextPath(nextPath, fallback), locale)
 }

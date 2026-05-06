@@ -27,9 +27,10 @@ export default async function MeHomePage() {
   const locale = await getRequestLocale()
   const bundle = await getPersonalHomeBundle()
   if (!bundle) return null
+  const terminalHref = prefixLocalePath("/me?openChat=true", locale)
 
   const publicSurfaces = [
-    { title: "Decision terminal", body: "Ask directly and get an evidence-backed verdict.", href: "/chat", icon: Sparkles },
+    { title: "Decision terminal", body: "Ask directly and get an evidence-backed verdict.", href: "/me?openChat=true", icon: Sparkles },
     { title: "Search & screening", body: "Screen projects, areas, and developers from one surface.", href: "/search", icon: Search },
     { title: "Projects", body: "Full scored inventory across the public market surface.", href: "/properties", icon: Building2 },
     { title: "Areas", body: "Area-level yield, pricing, and supply readouts.", href: "/areas", icon: MapPin },
@@ -83,7 +84,7 @@ export default async function MeHomePage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <Button asChild size="sm">
-                <Link href={prefixLocalePath("/chat", locale)}>Open terminal</Link>
+                <Link href={terminalHref}>Open terminal</Link>
               </Button>
               <Button asChild size="sm" variant="secondary">
                 <Link href={prefixLocalePath("/search", locale)}>Search the market</Link>

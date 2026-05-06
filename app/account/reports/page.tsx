@@ -78,6 +78,7 @@ export default async function ReportsPage() {
   const user = await getSyncedUser()
 
   if (!user) redirect(buildLoginHref(locale, "/account/reports"))
+  const terminalHref = prefixLocalePath("/me?openChat=true", locale)
 
   const reports = await prisma.assistantReport.findMany({
     where: { userId: user.id },
@@ -116,7 +117,7 @@ export default async function ReportsPage() {
             </div>
 
             <Button asChild>
-              <Link href={prefixLocalePath("/chat", locale)}>
+              <Link href={terminalHref}>
                 <MessageSquare className="h-4 w-4" />
                 {isArabic ? "افتح محطة القرار" : "Open decision terminal"}
               </Link>
@@ -161,7 +162,7 @@ export default async function ReportsPage() {
                 : "Start a decision session or generate a notebook memo and it will appear here automatically in your account library."}
             </p>
             <Button asChild className="mt-6">
-              <Link href={prefixLocalePath("/chat", locale)}>
+              <Link href={terminalHref}>
                 <Sparkles className="h-4 w-4" />
                 {isArabic ? "ابدأ أول تقرير" : "Generate your first report"}
               </Link>

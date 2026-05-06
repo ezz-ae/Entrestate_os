@@ -74,7 +74,7 @@ export function AccountMenu() {
   if (!session?.user) {
     return (
       <Link
-        href={buildLoginHref(locale, "/account")}
+        href={buildLoginHref(locale, "/me")}
         className="flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-1.5 text-sm text-foreground hover:bg-secondary/80 transition-colors"
       >
         {copy.signIn}

@@ -190,6 +190,7 @@ export default async function AccountPage({
   const preferredMarkets = profile?.preferredMarkets ?? []
   const riskBias = Math.round((profile?.riskBias ?? 0.65) * 100)
   const yieldVsSafety = profile?.yieldVsSafety ?? 0.5
+  const terminalHref = prefixLocalePath("/me?openChat=true", locale)
 
   const guidedCards = [
     {
@@ -221,7 +222,7 @@ export default async function AccountPage({
       description: isArabic
         ? "استخدم المحطة للاستعلامات الحية بعد ضبط الملف والموضوع، لا قبل ذلك."
         : "Use the terminal for live questions after the profile and research subject are clear, not before.",
-      href: "/chat",
+      href: "/me?openChat=true",
       cta: copy.openTerminal,
       icon: MessageSquareText,
       meta: isArabic ? "استعلامات حيّة مع أدلة" : "Live evidence-backed queries",
@@ -307,7 +308,7 @@ export default async function AccountPage({
                 </Link>
               </Button>
               <Button asChild>
-                <Link href={prefixLocalePath("/chat", locale)}>
+                <Link href={terminalHref}>
                   <MessageSquareText className="h-4 w-4" />
                   {copy.openTerminal}
                 </Link>

@@ -7,6 +7,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useNewReport, markReportSeen } from "@/hooks/use-new-report"
 import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
 import { useRuntimeShell } from "@/hooks/use-runtime-shell"
+import { authClient } from "@/lib/auth/client"
 import { LATEST_LIBRARY_REPORT } from "@/lib/latest-library-report"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import {
@@ -139,11 +140,15 @@ export function Footer() {
   const isArabic = locale === "ar"
   const t = (en: string, ar: string) => (isArabic ? ar : en)
   const toHref = (href: string) => (href.endsWith(".xml") ? href : prefixLocalePath(href, locale))
+  const { data: session } = authClient.useSession()
+  const decisionTerminalHref = session?.user
+    ? prefixLocalePath("/me?openChat=true", locale)
+    : prefixLocalePath("/chat", locale)
   const localizedColumns = columns.map((col) => ({
     heading: isArabic ? col.headingAr : col.heading,
     links: col.links.map((link) => ({
       label: isArabic ? link.labelAr : link.label,
-      href: link.href,
+      href: link.href === "/chat" ? decisionTerminalHref : toHref(link.href),
     })),
   }))
   const localizedTrustBadges = trustBadges.map((badge) => ({
@@ -179,8 +184,8 @@ export function Footer() {
           </Link>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
             {t(
-              "Phone-first access to scored inventory, market evidence, and the decision terminal.",
-              "وصول هاتفي أولاً إلى المخزون المصنّف، وأدلة السوق، ومحطة القرار.",
+              "Direct access to scored inventory, market evidence, and the decision terminal.",
+              "وصول مباشر إلى المخزون المصنّف، وأدلة السوق، ومحطة القرار.",
             )}
           </p>
           <div className="mt-5 grid grid-cols-3 gap-3">
@@ -544,7 +549,7 @@ export function Footer() {
                 {col.links.map((link) => (
                   <li key={link.label}>
                     <Link
-                      href={toHref(link.href)}
+                      href={link.href}
                       className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {link.label}

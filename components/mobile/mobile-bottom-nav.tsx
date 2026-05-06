@@ -37,7 +37,7 @@ export function MobileBottomNav({ isAuthenticated, isSidebarOpen, onOpenChat }: 
     { key: "chat", href: chatHref, label: t("chat"), icon: MessageSquare },
     {
       key: "account",
-      href: isAuthenticated ? prefixLocalePath("/account", locale) : buildLoginHref(locale, "/account"),
+      href: isAuthenticated ? prefixLocalePath("/account", locale) : buildLoginHref(locale, "/me"),
       label: accountLabel,
       icon: User2,
     },

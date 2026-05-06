@@ -3,7 +3,7 @@
 import type React from "react"
 import { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
 import { Menu, X } from "lucide-react"
 import { AccountMenu } from "@/components/account-menu"
@@ -21,8 +21,8 @@ import { buildCopilotShellHref } from "@/lib/copilot/navigation"
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [hasOpenChatIntent, setHasOpenChatIntent] = useState(false)
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const locale = useLocale() as AppLocale
   const t = useTranslations("nav")
   const runtimeShell = useRuntimeShell()
@@ -42,11 +42,13 @@ export function Navbar() {
   const { toggleSidebar, openSidebar, isSidebarOpen } = useCopilot()
   const { data: session } = authClient.useSession()
   const isAuthenticated = Boolean(session?.user)
+  const search = searchParams?.toString() ?? ""
+  const hasOpenChatIntent = searchParams?.get("openChat") === "true"
   const shouldRenderSidebar = !isChatPage && (isAuthenticated || isSidebarOpen || hasOpenChatIntent)
   // Logged-in users see /me as their home — a personalised whole-site experience,
   // not a dashboard. Public users keep the marketing home at /.
   const logoHref = isAuthenticated ? "/me" : "/"
-  const accountEntryHref = isAuthenticated ? prefixLocalePath("/account", locale) : buildLoginHref(locale, "/account")
+  const accountEntryHref = isAuthenticated ? prefixLocalePath("/account", locale) : buildLoginHref(locale, "/me")
   const accountEntryLabel = isAuthenticated ? t("account") : locale === "ar" ? "تسجيل الدخول" : "Sign in"
 
   useEffect(() => {
@@ -60,12 +62,34 @@ export function Navbar() {
     }
   }, [isMobileMenuOpen])
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    setHasOpenChatIntent(params.get("openChat") === "true")
-  }, [pathname])
+  const openChatShell = () => {
+    if (!isChatPage) {
+      router.replace(
+        buildCopilotShellHref({
+          authenticated: isAuthenticated,
+          locale,
+          pathname,
+          search,
+        }),
+        { scroll: false },
+      )
+    }
+    if (!isSidebarOpen) {
+      openSidebar()
+    }
+    setIsMobileMenuOpen(false)
+  }
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href === "/chat") {
+      const isMobileViewport = window.matchMedia("(max-width: 1023px)").matches
+      if (isAuthenticated || isDedicatedMobileShell || isMobileViewport) {
+        e.preventDefault()
+        openChatShell()
+        return
+      }
+    }
+
     if (href.startsWith("/#")) {
       const hash = href.substring(1)
       if (normalizedPathname === "/") {
@@ -80,24 +104,6 @@ export function Navbar() {
           if (el) el.scrollIntoView({ behavior: "smooth" })
         }, 100)
       }
-    }
-    setIsMobileMenuOpen(false)
-  }
-
-  const openChatShell = () => {
-    if (!isChatPage) {
-      router.replace(
-        buildCopilotShellHref({
-          authenticated: isAuthenticated,
-          locale,
-          pathname,
-          search: window.location.search,
-        }),
-        { scroll: false },
-      )
-    }
-    if (!isSidebarOpen) {
-      openSidebar()
     }
     setIsMobileMenuOpen(false)
   }
@@ -119,7 +125,7 @@ export function Navbar() {
           authenticated: false,
           locale,
           pathname,
-          search: window.location.search,
+          search,
         }),
         { scroll: false },
       )
@@ -144,19 +150,16 @@ export function Navbar() {
                 <div className="w-3 h-3 rounded-sm bg-foreground/60" />
                 <div className="w-3 h-3 rounded-sm bg-accent" />
               </div>
-              <div className="flex flex-col leading-none">
-                <span className="text-base sm:text-lg font-medium tracking-tight text-foreground">entrestate</span>
-                {isDedicatedMobileShell ? (
-                  <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/60">
-                    {locale === "ar" ? "نسخة الهاتف" : "Mobile"}
-                  </span>
-                ) : null}
-              </div>
+              <span className="text-base sm:text-lg font-medium tracking-tight text-foreground">entrestate</span>
             </Link>
 
             <div className={`hidden items-center gap-5 xl:gap-8 ${isDedicatedMobileShell ? "" : "lg:flex"}`}>
               {navLinks.map((link) => {
-                const isActive = link.href === "/" ? normalizedPathname === "/" : normalizedPathname.startsWith(link.href)
+                const isActive = link.href === "/chat"
+                  ? isChatPage || isSidebarOpen || hasOpenChatIntent
+                  : link.href === "/"
+                    ? normalizedPathname === "/"
+                    : normalizedPathname.startsWith(link.href)
                 return (
                   <Link
                     key={link.label}
@@ -236,7 +239,11 @@ export function Navbar() {
           {/* Nav links — left-aligned, staggered */}
           <nav className="flex-1 flex flex-col justify-center px-8 gap-0.5">
             {navLinks.map((link, i) => {
-              const isActive = link.href === "/" ? normalizedPathname === "/" : normalizedPathname.startsWith(link.href)
+              const isActive = link.href === "/chat"
+                ? isChatPage || isSidebarOpen || hasOpenChatIntent
+                : link.href === "/"
+                  ? normalizedPathname === "/"
+                  : normalizedPathname.startsWith(link.href)
               return (
                 <Link
                   key={link.label}
