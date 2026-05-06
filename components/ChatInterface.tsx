@@ -357,6 +357,70 @@ function localizeMetricText(value: unknown, locale: string, fallback = "-") {
   return localizeAnalyticsLabel(typeof value === "string" ? value : "", locale, fallback)
 }
 
+function chatUiCopy(locale: AppLocale) {
+  if (locale === "ar") {
+    return {
+      buySignals: "إشارات الشراء",
+      safeProjects: "المشاريع الآمنة",
+      projectsScreened: "المشاريع المفحوصة",
+      averageEntry: "متوسط الدخول",
+      averageYield: "متوسط العائد",
+      avgInvestorScore: "متوسط نقاط المستثمر",
+      stressScore: "نقاط الضغط",
+      stressGrade: "درجة الضغط",
+      timingLabel: "تصنيف التوقيت",
+      investorScore: "نقاط المستثمر",
+      developerReliability: "موثوقية المطور",
+      supplyResilience: "مرونة المعروض",
+      liquidityResilience: "مرونة السيولة",
+      pricingDiscipline: "انضباط التسعير",
+      handoverReliability: "موثوقية التسليم",
+      areaStability: "ثبات المنطقة",
+      paymentPlan: "خطة الدفع",
+      yield: "العائد",
+      score: "النتيجة",
+      screeningSuggestion: "فرز مشاريع إعمار مقابل داماك: من الأقل خطراً في التسليم؟",
+      methodologySuggestion: "ماذا تعني إشارة الشراء وكيف تُحسب داخل المنصة؟",
+      memoSuggestion: (label: string) => `أنشئ مذكرة استثمار كاملة لـ ${label} تشمل السعر والمخاطر وسجل المطور والحكم النهائي.`,
+      compareSuggestion: (label: string, area: string) => `كيف يقارن ${label} مع البدائل الأعلى في ${area} من حيث العائد ودرجة المخاطر؟`,
+      stressSuggestion: (label: string) => `اعرض ملف الضغط الحقيقي لـ ${label} شاملاً درجات المرونة الفرعية.`,
+      outlookSuggestion: (label: string) => `ما أهم المخاطر الاستثمارية في ${label} وما الذي قد يغيّر النظرة الحالية؟`,
+      riskBriefPrompt: (label: string) => `اعرض موجز مخاطر المنطقة لـ ${label}. أعد projects وavg_price وavg_yield وavg_score وbuy_signals وsafe_projects، ثم أخبرني هل هذا السوق أقوى من البدائل المجاورة ولماذا.`,
+      projectStressPrompt: (label: string) => `اعرض ملف الضغط V1 الحقيقي لـ ${label}. أعد stress_score وstress_grade_v1 وtiming_label وinvestor_score_v1 وdecision_label_v1 وdeveloper_reliability_score وsupply_resilience_score وliquidity_resilience_score وpricing_discipline_score وhandover_reliability_score وarea_stability_score وpayment_plan_score.`,
+    }
+  }
+
+  return {
+    buySignals: "BUY signals",
+    safeProjects: "Safe projects",
+    projectsScreened: "Projects screened",
+    averageEntry: "Average entry",
+    averageYield: "Average yield",
+    avgInvestorScore: "Avg investor score",
+    stressScore: "Stress score",
+    stressGrade: "Stress grade",
+    timingLabel: "Timing label",
+    investorScore: "Investor score",
+    developerReliability: "Developer reliability",
+    supplyResilience: "Supply resilience",
+    liquidityResilience: "Liquidity resilience",
+    pricingDiscipline: "Pricing discipline",
+    handoverReliability: "Handover reliability",
+    areaStability: "Area stability",
+    paymentPlan: "Payment plan",
+    yield: "Yield",
+    score: "Score",
+    screeningSuggestion: "Compare Emaar vs Damac reliability - which developer carries lower delivery risk?",
+    methodologySuggestion: "What does a BUY signal mean and how is it calculated in this platform?",
+    memoSuggestion: (label: string) => `Generate a full investor memo for ${label} - pricing, risk, developer track record, and verdict.`,
+    compareSuggestion: (label: string, area: string) => `How does ${label} compare to top alternatives in ${area} on yield and risk grade?`,
+    stressSuggestion: (label: string) => `Show the real V1 stress profile for ${label}, including all resilience sub-scores.`,
+    outlookSuggestion: (label: string) => `What are the key investment risks for ${label} and what would change the outlook?`,
+    riskBriefPrompt: (label: string) => `Run an area risk brief for ${label}. Return projects, avg_price, avg_yield, avg_score, buy_signals, safe_projects, and tell me whether this market screens stronger than nearby alternatives.`,
+    projectStressPrompt: (label: string) => `Show the real V1 stress profile for ${label}. Return stress_score, stress_grade_v1, timing_label, investor_score_v1, decision_label_v1, developer_reliability_score, supply_resilience_score, liquidity_resilience_score, pricing_discipline_score, handover_reliability_score, area_stability_score, and payment_plan_score.`,
+  }
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
 }
@@ -846,7 +910,7 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
   const decisionValueRaw = [...decisionCounts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? (
     totalProjects && totalBuySignals
       ? totalBuySignals / totalProjects >= 0.5
-        ? locale === "ar" ? "زخم BUY" : "BUY-heavy"
+        ? locale === "ar" ? "زخم شراء" : "BUY-heavy"
         : totalBuySignals / totalProjects >= 0.25
           ? locale === "ar" ? "انتقائي" : "Selective"
           : locale === "ar" ? "قيد المراقبة" : "Watchlist"
@@ -865,7 +929,7 @@ function deriveWorkspaceCards(toolOutputs: Record<string, unknown>[], locale: st
 
   const decisionSubtitle = totalBuySignals
     ? locale === "ar"
-      ? `${formatWholeNumber(totalBuySignals, locale)} إشارات BUY`
+      ? `${formatWholeNumber(totalBuySignals, locale)} إشارات شراء`
       : `${formatWholeNumber(totalBuySignals, locale)} BUY signals`
     : `${t("timingLabelLead")}: ${topTiming}`
 
@@ -937,7 +1001,7 @@ function deriveComparisonRows(toolOutputs: Record<string, unknown>[], locale: st
         ? (
             buySignals !== null
               ? locale === "ar"
-                ? `${formatWholeNumber(buySignals, locale)} شراء`
+                ? `${formatWholeNumber(buySignals, locale)} إشارة شراء`
                 : `${formatWholeNumber(buySignals, locale)} BUY signals`
               : "-"
           )
@@ -983,12 +1047,12 @@ function buildComparisonSubtitle(row: ComparisonRow, locale: string) {
         : null,
       row.buySignals !== null
         ? locale === "ar"
-          ? `${formatWholeNumber(row.buySignals, locale)} BUY`
+          ? `${formatWholeNumber(row.buySignals, locale)} إشارة شراء`
           : `${formatWholeNumber(row.buySignals, locale)} BUY signals`
         : null,
       row.safeProjects !== null
         ? locale === "ar"
-          ? `${formatWholeNumber(row.safeProjects, locale)} آمن`
+          ? `${formatWholeNumber(row.safeProjects, locale)} مشروع آمن`
           : `${formatWholeNumber(row.safeProjects, locale)} safe projects`
         : null,
     ].filter((part): part is string => Boolean(part))
@@ -1518,6 +1582,7 @@ export function ChatInterface({
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
   const t = useTranslations("chat")
+  const uiCopy = useMemo(() => chatUiCopy(locale), [locale])
   const { data: session } = authClient.useSession()
   const canUpload = Boolean(session?.user)
   const [mounted, setMounted] = useState(false)
@@ -1836,29 +1901,29 @@ export function ChatInterface({
 
     if (selectedRow.kind === "area") {
       return [
-        { label: locale === "ar" ? "المشاريع المفحوصة" : "Projects screened", value: formatWholeNumber(selectedRow.projectsCount, locale) },
-        { label: locale === "ar" ? "إشارات الشراء" : "BUY signals", value: formatWholeNumber(selectedRow.buySignals, locale) },
-        { label: locale === "ar" ? "المشاريع الآمنة" : "Safe projects", value: formatWholeNumber(selectedRow.safeProjects, locale) },
-        { label: locale === "ar" ? "متوسط الدخول" : "Average entry", value: formatAed(selectedRow.price, locale) },
-        { label: locale === "ar" ? "متوسط العائد" : "Average yield", value: formatPercent(selectedRow.yield, locale) },
-        { label: locale === "ar" ? "متوسط نقاط المستثمر" : "Avg investor score", value: formatMetric(selectedRow.score, locale) },
+        { label: uiCopy.projectsScreened, value: formatWholeNumber(selectedRow.projectsCount, locale) },
+        { label: uiCopy.buySignals, value: formatWholeNumber(selectedRow.buySignals, locale) },
+        { label: uiCopy.safeProjects, value: formatWholeNumber(selectedRow.safeProjects, locale) },
+        { label: uiCopy.averageEntry, value: formatAed(selectedRow.price, locale) },
+        { label: uiCopy.averageYield, value: formatPercent(selectedRow.yield, locale) },
+        { label: uiCopy.avgInvestorScore, value: formatMetric(selectedRow.score, locale) },
       ]
     }
 
     return [
-      { label: locale === "ar" ? "نقاط الضغط" : "Stress score", value: formatMetric(selectedRow.stressScore, locale) },
-      { label: locale === "ar" ? "درجة الضغط" : "Stress grade", value: selectedRow.stressGrade || "-" },
-      { label: locale === "ar" ? "تصنيف التوقيت" : "Timing label", value: selectedRow.timingSignal || "-" },
-      { label: locale === "ar" ? "نقاط المستثمر" : "Investor score", value: formatMetric(selectedRow.score, locale) },
-      { label: locale === "ar" ? "موثوقية المطور" : "Developer reliability", value: formatMetric(selectedRow.developerReliabilityScore, locale) },
-      { label: locale === "ar" ? "مرونة المعروض" : "Supply resilience", value: formatMetric(selectedRow.supplyResilienceScore, locale) },
-      { label: locale === "ar" ? "مرونة السيولة" : "Liquidity resilience", value: formatMetric(selectedRow.liquidityResilienceScore, locale) },
-      { label: locale === "ar" ? "انضباط التسعير" : "Pricing discipline", value: formatMetric(selectedRow.pricingDisciplineScore, locale) },
-      { label: locale === "ar" ? "موثوقية التسليم" : "Handover reliability", value: formatMetric(selectedRow.handoverReliabilityScore, locale) },
-      { label: locale === "ar" ? "ثبات المنطقة" : "Area stability", value: formatMetric(selectedRow.areaStabilityScore, locale) },
-      { label: locale === "ar" ? "خطة الدفع" : "Payment plan", value: formatMetric(selectedRow.paymentPlanScore, locale) },
+      { label: uiCopy.stressScore, value: formatMetric(selectedRow.stressScore, locale) },
+      { label: uiCopy.stressGrade, value: selectedRow.stressGrade || "-" },
+      { label: uiCopy.timingLabel, value: selectedRow.timingSignal || "-" },
+      { label: uiCopy.investorScore, value: formatMetric(selectedRow.score, locale) },
+      { label: uiCopy.developerReliability, value: formatMetric(selectedRow.developerReliabilityScore, locale) },
+      { label: uiCopy.supplyResilience, value: formatMetric(selectedRow.supplyResilienceScore, locale) },
+      { label: uiCopy.liquidityResilience, value: formatMetric(selectedRow.liquidityResilienceScore, locale) },
+      { label: uiCopy.pricingDiscipline, value: formatMetric(selectedRow.pricingDisciplineScore, locale) },
+      { label: uiCopy.handoverReliability, value: formatMetric(selectedRow.handoverReliabilityScore, locale) },
+      { label: uiCopy.areaStability, value: formatMetric(selectedRow.areaStabilityScore, locale) },
+      { label: uiCopy.paymentPlan, value: formatMetric(selectedRow.paymentPlanScore, locale) },
     ]
-  }, [locale, selectedRow])
+  }, [locale, selectedRow, uiCopy])
 
   const chartCaps = useMemo(() => {
     const maxPrice = Math.max(...comparisonRows.map((row) => row.price ?? 0), 0)
@@ -1883,18 +1948,18 @@ export function ChatInterface({
       return [
         t("slashExamples.screen"),
         t("slashExamples.yield"),
-        "Compare Emaar vs Damac reliability - which developer carries lower delivery risk?",
-        "What does a BUY signal mean and how is it calculated in this platform?",
+        uiCopy.screeningSuggestion,
+        uiCopy.methodologySuggestion,
       ]
     }
 
     return [
-      `Generate a full investor memo for ${selectedRow.label} - pricing, risk, developer track record, and verdict.`,
-      `How does ${selectedRow.label} compare to top alternatives in ${selectedRow.area} on yield and risk grade?`,
-      `Show the real V1 stress profile for ${selectedRow.label}, including all resilience sub-scores.`,
-      `What are the key investment risks for ${selectedRow.label} and what would change the outlook?`,
+      uiCopy.memoSuggestion(selectedRow.label),
+      uiCopy.compareSuggestion(selectedRow.label, selectedRow.area),
+      uiCopy.stressSuggestion(selectedRow.label),
+      uiCopy.outlookSuggestion(selectedRow.label),
     ]
-  }, [selectedRow])
+  }, [selectedRow, uiCopy])
 
   const slashQuery = useMemo(() => {
     const trimmed = input.trimStart()
@@ -2036,8 +2101,8 @@ export function ChatInterface({
     if (!selectedRow) return
 
     const prompt = selectedRow.kind === "area"
-      ? `Run an area risk brief for ${selectedRow.label}. Return projects, avg_price, avg_yield, avg_score, buy_signals, safe_projects, and tell me whether this market screens stronger than nearby alternatives.`
-      : `Show the real V1 stress profile for ${selectedRow.label}. Return stress_score, stress_grade_v1, timing_label, investor_score_v1, decision_label_v1, developer_reliability_score, supply_resilience_score, liquidity_resilience_score, pricing_discipline_score, handover_reliability_score, area_stability_score, and payment_plan_score.`
+      ? uiCopy.riskBriefPrompt(selectedRow.label)
+      : uiCopy.projectStressPrompt(selectedRow.label)
 
     await sendPrompt(prompt)
   }

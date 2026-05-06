@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     ? `${areaName} — ملف المنطقة والأدلة | Entrestate`
     : `${areaName} — Area intelligence and evidence | Entrestate`
   const description = locale === "ar"
-    ? `${areaName} مع متوسط السعر، ومتوسط العائد، وضغط المعروض، وفرص BUY، وروابط مباشرة إلى المشاريع النشطة والمطورين المرتبطين.`
+    ? `${areaName} مع متوسط السعر، ومتوسط العائد، وضغط المعروض، وفرص الشراء، وروابط مباشرة إلى المشاريع النشطة والمطورين المرتبطين.`
     : `${areaName} with average price, yield, supply pressure, BUY signals, and direct links to active projects and linked developers.`
   const alternates = getLocaleAlternates(`/areas/${slug}`, locale)
 

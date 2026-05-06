@@ -135,6 +135,58 @@ function getReaderCopy(locale: AppLocale) {
       }
 }
 
+function getReaderToolbarLabels(locale: AppLocale) {
+  if (locale === "ar") {
+    return {
+      theme: {
+        light: "فاتح",
+        sepia: "سيبيا",
+        dark: "داكن",
+      },
+      width: {
+        narrow: "ضيق",
+        standard: "قياسي",
+        wide: "واسع",
+      },
+      scroll: {
+        off: "وضع القراءة",
+        teleprompter: "تلقين",
+        focus: "تركيز",
+        presentation: "عرض",
+      },
+      view: {
+        portal: "المنصة",
+        media: "الإعلام",
+        executive: "التنفيذي",
+      },
+    }
+  }
+
+  return {
+    theme: {
+      light: "Light",
+      sepia: "Sepia",
+      dark: "Dark",
+    },
+    width: {
+      narrow: "Narrow",
+      standard: "Standard",
+      wide: "Wide",
+    },
+    scroll: {
+      off: "Read mode",
+      teleprompter: "Teleprompter",
+      focus: "Focus",
+      presentation: "Presentation",
+    },
+    view: {
+      portal: "Portal",
+      media: "Media",
+      executive: "Executive",
+    },
+  }
+}
+
 // ─── Content Parser ───────────────────────────────────────────────────────────
 
 function parseContent(
@@ -307,6 +359,7 @@ function EvidencePanel({
 }) {
   const locale = useLocale() as AppLocale
   const copy = getReaderCopy(locale)
+  const labels = getReaderToolbarLabels(locale)
   const activeRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -877,6 +930,7 @@ function ReadingToolbar({
 }) {
   const locale = useLocale() as AppLocale
   const copy = getReaderCopy(locale)
+  const labels = getReaderToolbarLabels(locale)
   const [showFontMenu, setShowFontMenu] = useState(false)
   const [showScrollMenu, setShowScrollMenu] = useState(false)
   const [showViewMenu, setShowViewMenu] = useState(false)
@@ -911,7 +965,7 @@ function ReadingToolbar({
       {/* Theme */}
       <button className={btnBase} style={btnStyle} onClick={cycleTheme} title={locale === "ar" ? "بدّل النمط" : "Toggle theme"}>
         {themeIcon}
-        <span className="hidden sm:inline capitalize">{theme}</span>
+        <span className="hidden sm:inline">{labels.theme[theme]}</span>
       </button>
 
       {/* Font size */}
@@ -943,7 +997,7 @@ function ReadingToolbar({
       {/* Column width */}
       <button className={btnBase} style={btnStyle} onClick={cycleWidth} title={locale === "ar" ? "بدّل عرض العمود" : "Cycle column width"}>
         {widthIcon}
-        <span className="hidden sm:inline capitalize">{columnWidth}</span>
+        <span className="hidden sm:inline">{labels.width[columnWidth]}</span>
       </button>
 
       {/* Scroll mode */}
@@ -954,7 +1008,7 @@ function ReadingToolbar({
           onClick={() => { setShowScrollMenu(!showScrollMenu); setShowFontMenu(false); setShowViewMenu(false) }}
         >
           <Play className="h-4 w-4" />
-          <span className="hidden sm:inline">{scrollMode === "off" ? (locale === "ar" ? "وضع القراءة" : "Read mode") : scrollMode}</span>
+          <span className="hidden sm:inline">{labels.scroll[scrollMode]}</span>
           <ChevronDown className="h-3 w-3" />
         </button>
         {showScrollMenu && (
@@ -966,10 +1020,10 @@ function ReadingToolbar({
               <button
                 key={m}
                 onClick={() => { setScrollMode(m); setShowScrollMenu(false) }}
-                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm capitalize"
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm"
                 style={{ background: scrollMode === m ? "var(--reader-gold-light)" : "transparent", color: "var(--reader-text)" }}
               >
-                {m === "off" ? (locale === "ar" ? "إيقاف" : "Off") : m}
+                {labels.scroll[m]}
                 {scrollMode === m && <Check className="h-3 w-3" style={{ color: "var(--reader-gold)" }} />}
               </button>
             ))}
@@ -1022,7 +1076,7 @@ function ReadingToolbar({
           onClick={() => { setShowViewMenu(!showViewMenu); setShowFontMenu(false); setShowScrollMenu(false) }}
         >
           {viewIcons[viewMode]}
-          <span className="hidden sm:inline capitalize">{viewMode}</span>
+          <span className="hidden sm:inline">{labels.view[viewMode]}</span>
           <ChevronDown className="h-3 w-3" />
         </button>
         {showViewMenu && (

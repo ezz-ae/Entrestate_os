@@ -527,7 +527,7 @@ function AffordabilityView({ data, locale }: { data: unknown; locale?: string })
   const rows = dataToRecords(data)
 
   if (rows.length === 0) {
-    return <p className="text-sm text-muted-foreground">No affordability distribution available.</p>
+    return <p className="text-sm text-muted-foreground">{isArabicLocale(locale) ? "لا توجد فئات قدرة شرائية متاحة." : "No affordability distribution available."}</p>
   }
 
   return (
@@ -557,7 +557,7 @@ function OutcomeIntentsView({ data, locale }: { data: unknown; locale?: string }
   const rows = dataToRecords(data)
 
   if (rows.length === 0) {
-    return <p className="text-sm text-muted-foreground">No intent distribution available.</p>
+    return <p className="text-sm text-muted-foreground">{isArabicLocale(locale) ? "لا يوجد توزيع متاح لنوايا الاستخدام." : "No intent distribution available."}</p>
   }
 
   return (
