@@ -252,7 +252,20 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const locale = useLocale() as AppLocale
   const isArabic = locale === "ar"
   const t = useTranslations("sidebar")
-  const { messages, sendMessage, clearError, status, error, stop, isSidebarOpen, closeSidebar, toggleSidebar, id: currentId, openSidebar } = useCopilot()
+  const {
+    messages,
+    sendMessage,
+    clearError,
+    status,
+    error,
+    stop,
+    isSidebarOpen,
+    closeSidebar,
+    toggleSidebar,
+    id: currentId,
+    openSidebar,
+    hydrateSession,
+  } = useCopilot()
   const [input, setInput] = useState("")
   const [isDesktopViewport, setIsDesktopViewport] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -266,6 +279,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const initialPromptRef = useRef<string | null>(null)
   const prevMessageCountRef = useRef(0)
+  const loadedSessionIdRef = useRef<string | null>(null)
   const inputContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const pathname = usePathname()
@@ -275,12 +289,51 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const querySessionId = searchParams?.get("id")
   const promptParam = searchParams?.get("prompt") ?? searchParams?.get("q")
   const { data: session } = authClient.useSession()
-  const starterCards = [
-    { label: t("starterCards.compare"), prompt: "Can you help me compare the top performing areas in Dubai by yield and price growth? I'd like to know where the best opportunities are right now." },
-    { label: t("starterCards.deals"), prompt: "I'm looking for the best off-plan deals available now. Can you find projects from reliable developers with good yields and flexible payment plans?" },
-    { label: t("starterCards.market"), prompt: "Tell me what's happening in the Dubai real estate market right now — what are the key trends and where is the smart money going?" },
-    { label: t("starterCards.plan"), prompt: "Can you help me build an investment roadmap for Dubai? I want to understand the best entry strategies and expected returns." },
-  ]
+  const starterCards = isArabic
+    ? [
+        {
+          label: t("starterCards.compare"),
+          prompt: "قارن لي أفضل مناطق دبي الآن من حيث العائد ونمو الأسعار، واذكر أين تظهر الفرص الأقوى ولماذا.",
+          preview: "مقارنة عائد ونمو بين أهم المناطق في دبي الآن.",
+        },
+        {
+          label: t("starterCards.deals"),
+          prompt: "ابحث لي عن أفضل صفقات الأوف بلان المتاحة الآن من مطورين موثوقين بعائد جيد وخطط سداد مرنة.",
+          preview: "ابحث عن صفقات أوف بلان قوية من مطورين موثوقين.",
+        },
+        {
+          label: t("starterCards.market"),
+          prompt: "ماذا يحدث الآن في سوق العقارات في دبي؟ أعطني الاتجاهات الرئيسية وأين تتحرك السيولة الذكية.",
+          preview: "اتجاهات السوق الحالية والسيولة الذكية في دبي.",
+        },
+        {
+          label: t("starterCards.plan"),
+          prompt: "ساعدني في بناء خطة استثمار عقاري في دبي مع أفضل نقاط الدخول والعوائد المتوقعة.",
+          preview: "خطة دخول واستثمار في دبي مع عوائد متوقعة.",
+        },
+      ]
+    : [
+        {
+          label: t("starterCards.compare"),
+          prompt: "Can you help me compare the top performing areas in Dubai by yield and price growth? I'd like to know where the best opportunities are right now.",
+          preview: "Compare the strongest Dubai areas by yield and growth.",
+        },
+        {
+          label: t("starterCards.deals"),
+          prompt: "I'm looking for the best off-plan deals available now. Can you find projects from reliable developers with good yields and flexible payment plans?",
+          preview: "Find strong off-plan deals with yield and flexible payment plans.",
+        },
+        {
+          label: t("starterCards.market"),
+          prompt: "Tell me what's happening in the Dubai real estate market right now — what are the key trends and where is the smart money going?",
+          preview: "Read the latest Dubai market trends and where money is moving.",
+        },
+        {
+          label: t("starterCards.plan"),
+          prompt: "Can you help me build an investment roadmap for Dubai? I want to understand the best entry strategies and expected returns.",
+          preview: "Build a Dubai investment roadmap with entry points and returns.",
+        },
+      ]
 
   const user = session?.user
   const displayName = user?.name || user?.email || "Entrestate Member"
@@ -368,6 +421,52 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
       openSidebar()
     }
   }, [hasOpenChatQuery, querySessionId, currentId, openPanel, isSidebarOpen, openSidebar])
+
+  useEffect(() => {
+    if (!authenticated || !querySessionId || querySessionId === currentId) {
+      return
+    }
+
+    if (loadedSessionIdRef.current === querySessionId) {
+      return
+    }
+
+    let cancelled = false
+    loadedSessionIdRef.current = querySessionId
+
+    const loadSessionFromApi = async () => {
+      try {
+        const response = await fetch(`/api/copilot/sessions/${querySessionId}`, { cache: "no-store" })
+        if (!response.ok) {
+          throw new Error("Unable to load this chat session.")
+        }
+
+        const payload = await response.json()
+        const session = payload?.session
+        const sessionMessages = Array.isArray(session?.messages) ? session.messages : []
+
+        if (cancelled) {
+          return
+        }
+
+        hydrateSession(typeof session?.id === "string" ? session.id : querySessionId, sessionMessages)
+        setLocalError(null)
+      } catch (err) {
+        if (cancelled) {
+          return
+        }
+
+        loadedSessionIdRef.current = null
+        setLocalError(err instanceof Error ? err.message : "Unable to load this chat session.")
+      }
+    }
+
+    void loadSessionFromApi()
+
+    return () => {
+      cancelled = true
+    }
+  }, [authenticated, currentId, hydrateSession, querySessionId])
 
   // Load history from API
   useEffect(() => {
@@ -583,6 +682,18 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
     }
   }, [isDesktopViewport])
 
+  useEffect(() => {
+    if (isDesktopViewport) {
+      document.body.style.overflow = ""
+      return
+    }
+
+    document.body.style.overflow = isSidebarOpen ? "hidden" : ""
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [isDesktopViewport, isSidebarOpen])
+
   // Mobile bottom nav panels
   const mobilePanels = [
     { id: "chat",      icon: MessageSquare, label: t("chat") },
@@ -592,7 +703,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
 
   const sidebarContent = (
     <div
-      className={`flex h-full bg-background transition-all duration-300 ease-in-out md:border-r md:border-border ${sidebarWidthClass}`}
+      className={`flex h-[100dvh] max-h-[100dvh] min-h-0 bg-background transition-all duration-300 ease-in-out md:h-full md:max-h-none md:border-r md:border-border ${sidebarWidthClass}`}
       onMouseLeave={() => {
         if (!isDesktopViewport) return
         if (!pinnedPanel && !isSidebarOpen) setOpenPanel(null)
@@ -670,11 +781,11 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
 
       {/* ── Panel Content ── */}
       {effectiveOpenPanel && (
-        <div className="flex flex-1 flex-col h-full bg-background min-w-0 overflow-hidden">
+        <div className="flex min-h-0 h-full flex-1 flex-col overflow-hidden bg-background min-w-0">
 
           {/* Chat Panel */}
           {effectiveOpenPanel === "chat" ? (
-            <div className="flex flex-col h-full">
+            <div className="flex min-h-0 h-full flex-1 flex-col">
 
               {/* Chat header — compact on mobile */}
               <div className="flex items-center justify-between border-b border-border px-4 py-2.5 md:py-3 shrink-0">
@@ -697,9 +808,13 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
               </div>
 
               {/* Messages area */}
-              <div className="flex-1 overflow-y-auto overscroll-contain px-3 md:px-4 py-3 md:py-4">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 md:px-4 py-3 md:py-4">
                 {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-in fade-in-5 duration-500">
+                  <div
+                    className={`flex h-full flex-col items-center text-center px-4 animate-in fade-in-5 duration-500 ${
+                      isDesktopViewport ? "justify-center" : "justify-start pt-10"
+                    }`}
+                  >
                     <div className="relative mb-4">
                       <div className="bg-primary/10 p-3.5 rounded-full">
                         <Sparkles className="h-6 w-6 text-primary" />
@@ -707,15 +822,15 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                     </div>
                     <p className="text-base font-semibold text-foreground tracking-tight">{t("decisionIntelligence")}</p>
                     <p className="text-xs text-muted-foreground mt-1 max-w-[220px]">{t("decisionSubtitle")}</p>
-                    <div className="mt-4 grid grid-cols-2 gap-2 w-full max-w-xs">
-                      {starterCards.map(({ label, prompt }) => (
+                    <div className="mt-4 grid w-full max-w-sm grid-cols-1 gap-2 sm:grid-cols-2">
+                      {starterCards.map(({ label, prompt, preview }) => (
                         <button
                           key={label}
                           onClick={() => { void sendPrompt(prompt) }}
                           className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-left text-xs text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:border-border active:scale-[0.97] transition-all duration-150"
                         >
                           <span className="block font-semibold text-foreground/80 mb-0.5 text-[11px]">{label}</span>
-                          <span className="text-[10px] text-muted-foreground/55 line-clamp-2">{prompt.substring(0, 50)}…</span>
+                          <span className="text-[10px] leading-relaxed text-muted-foreground/70 line-clamp-2">{preview}</span>
                         </button>
                       ))}
                     </div>
@@ -742,7 +857,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
               {/* Input area — simplified for mobile stability */}
               <div
                 ref={inputContainerRef}
-                className="shrink-0 border-t border-border/40 bg-background"
+                className="mt-auto shrink-0 border-t border-border/40 bg-background"
                 style={keyboardHeight > 0 ? { paddingBottom: 4 } : { paddingBottom: `max(0.5rem, env(safe-area-inset-bottom))` }}
               >
                 {/* Quick replies — horizontal scroll, no wrap */}
@@ -993,7 +1108,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[55] bg-background/80 backdrop-blur-sm md:hidden animate-in fade-in duration-300" onClick={handleCloseSidebar} />
       )}
-      <div className={`fixed inset-y-0 left-0 rtl:left-auto rtl:right-0 z-[60] h-full transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full pointer-events-none'}`}>
+      <div className={`fixed inset-y-0 left-0 rtl:left-auto rtl:right-0 z-[60] h-[100dvh] max-h-[100dvh] transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full pointer-events-none'}`}>
         {sidebarContent}
       </div>
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />

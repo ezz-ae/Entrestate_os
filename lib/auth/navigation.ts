@@ -23,5 +23,27 @@ export function resolvePostLoginHref(
   nextPath: string | null | undefined,
   fallback = "/me",
 ) {
-  return prefixLocalePath(normalizeNextPath(nextPath, fallback), locale)
+  const normalizedPath = normalizeNextPath(nextPath, fallback)
+  const [pathWithQuery, hashPart] = normalizedPath.split("#")
+  const [pathname, queryPart] = pathWithQuery.split("?")
+  const sourceParams = new URLSearchParams(queryPart ?? "")
+
+  if (pathname === "/chat" || sourceParams.get("openChat") === "true") {
+    const shellParams = new URLSearchParams()
+    shellParams.set("openChat", "true")
+
+    const sessionId = sourceParams.get("id")
+    if (sessionId) {
+      shellParams.set("id", sessionId)
+    }
+
+    const prompt = sourceParams.get("prompt") ?? sourceParams.get("q")
+    if (prompt) {
+      shellParams.set("prompt", prompt)
+    }
+
+    return prefixLocalePath(`/me?${shellParams.toString()}${hashPart ? `#${hashPart}` : ""}`, locale)
+  }
+
+  return prefixLocalePath(normalizedPath, locale)
 }

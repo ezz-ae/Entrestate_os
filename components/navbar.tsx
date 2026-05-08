@@ -45,10 +45,18 @@ export function Navbar() {
   const search = searchParams?.toString() ?? ""
   const hasOpenChatIntent = searchParams?.get("openChat") === "true"
   const shouldRenderSidebar = !isChatPage && (isAuthenticated || isSidebarOpen || hasOpenChatIntent)
+  const loginNextPath = isChatPage || hasOpenChatIntent
+    ? buildCopilotShellHref({
+        authenticated: true,
+        locale,
+        pathname,
+        search,
+      })
+    : "/me"
   // Logged-in users see /me as their home — a personalised whole-site experience,
   // not a dashboard. Public users keep the marketing home at /.
   const logoHref = isAuthenticated ? "/me" : "/"
-  const accountEntryHref = isAuthenticated ? prefixLocalePath("/account", locale) : buildLoginHref(locale, "/me")
+  const accountEntryHref = isAuthenticated ? prefixLocalePath("/account", locale) : buildLoginHref(locale, loginNextPath)
   const accountEntryLabel = isAuthenticated ? t("account") : locale === "ar" ? "تسجيل الدخول" : "Sign in"
 
   useEffect(() => {
@@ -297,7 +305,7 @@ export function Navbar() {
           <LlmSidebar authenticated={isAuthenticated} />
         </Suspense>
       ) : null}
-      {isDedicatedMobileShell ? (
+      {isDedicatedMobileShell && !isSidebarOpen && !hasOpenChatIntent ? (
         <MobileBottomNav
           isAuthenticated={isAuthenticated}
           isSidebarOpen={isSidebarOpen}

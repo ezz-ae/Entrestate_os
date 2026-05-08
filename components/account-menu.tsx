@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useLocale } from "next-intl"
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ import { BookOpen, User, CreditCard, FileText, KeyRound, LogOut } from "lucide-r
 import { authClient } from "@/lib/auth/client"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import { buildLoginHref } from "@/lib/auth/navigation"
+import { buildCopilotShellHref } from "@/lib/copilot/navigation"
 
 const FALLBACK_USER = {
   name: "Entrestate Member",
@@ -54,9 +55,25 @@ const COPY = {
 export function AccountMenu() {
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const locale = useLocale() as AppLocale
   const { data: session, isPending } = authClient.useSession()
   const copy = COPY[locale] ?? COPY.en
+  const search = searchParams?.toString() ?? ""
+  const hasOpenChatIntent = searchParams?.get("openChat") === "true"
+  const isChatContext = pathname?.startsWith(`/${locale}/chat`) || pathname === "/chat" || hasOpenChatIntent
+  const loginHref = buildLoginHref(
+    locale,
+    isChatContext
+      ? buildCopilotShellHref({
+          authenticated: true,
+          locale,
+          pathname,
+          search,
+        })
+      : "/me",
+  )
 
   useEffect(() => {
     setMounted(true)
@@ -74,7 +91,7 @@ export function AccountMenu() {
   if (!session?.user) {
     return (
       <Link
-        href={buildLoginHref(locale, "/me")}
+        href={loginHref}
         className="flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-1.5 text-sm text-foreground hover:bg-secondary/80 transition-colors"
       >
         {copy.signIn}

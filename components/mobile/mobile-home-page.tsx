@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { ArrowRight, Building2, Database, FileText, MapPin, Search, ShieldCheck, Sparkles, Users2 } from "lucide-react"
 import { LiveSignalCard } from "@/components/platform/live-signal-card"
-import { MOBILE_CHAT_SHORTCUTS } from "@/lib/copilot/mobile-prompts"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type TopProject = {
@@ -78,18 +77,41 @@ export function MobileHomePage({
   ]
 
   const promptShortcuts = [
-    {
-      title: isArabic ? "BUY تحت 2M" : "BUY under AED 2M",
-      prompt: MOBILE_CHAT_SHORTCUTS.screenBuyProjects,
-    },
-    {
-      title: isArabic ? "مارينا ضد JBR" : "Marina vs JBR",
-      prompt: MOBILE_CHAT_SHORTCUTS.compareMarinaVsJbr,
-    },
-    {
-      title: isArabic ? "مذكرة مارينا فيستا" : "Marina Vista memo",
-      prompt: MOBILE_CHAT_SHORTCUTS.marinaVistaMemo,
-    },
+    ...(isArabic
+      ? [
+          {
+            title: "BUY تحت 2M",
+            prompt: "افرز مشاريع غرفتين تحت 2 مليون درهم مع إشارة BUY ومخاطر من الدرجة A أو B.",
+            preview: "افرز مشاريع 2BR تحت 2M مع BUY ومخاطر A/B.",
+          },
+          {
+            title: "مارينا ضد JBR",
+            prompt: "قارن دبي مارينا مقابل JBR من حيث العائد والسعر ودرجة الضغط وإشارة التوقيت.",
+            preview: "قارن مارينا وJBR في العائد والسعر والتوقيت.",
+          },
+          {
+            title: "مذكرة مارينا فيستا",
+            prompt: "أنشئ مذكرة استثمار لمارينا فيستا تغطي السعر والمنطقة والمطور والضغط والحكم النهائي.",
+            preview: "مذكرة استثمار جاهزة لمارينا فيستا.",
+          },
+        ]
+      : [
+          {
+            title: "BUY under AED 2M",
+            prompt: "Screen 2BR projects under AED 2M with BUY signal and Grade A/B risk.",
+            preview: "Screen 2BR projects under AED 2M with BUY and Grade A/B risk.",
+          },
+          {
+            title: "Marina vs JBR",
+            prompt: "Compare Dubai Marina vs JBR on yield, price, stress grade, and timing label.",
+            preview: "Compare Dubai Marina and JBR on yield, price, and timing.",
+          },
+          {
+            title: "Marina Vista memo",
+            prompt: "Generate an investor memo for Marina Vista covering price, area, developer, stress, and verdict.",
+            preview: "Generate a ready investor memo for Marina Vista.",
+          },
+        ]),
   ]
 
   const trustCounters = [
@@ -201,7 +223,7 @@ export function MobileHomePage({
             >
               <div className="min-w-0">
                 <p className="font-semibold text-foreground">{shortcut.title}</p>
-                <p className="mt-1 truncate text-xs text-muted-foreground">{shortcut.prompt}</p>
+                <p className="mt-1 truncate text-xs text-muted-foreground">{shortcut.preview}</p>
               </div>
               <ArrowRight className={`h-4 w-4 shrink-0 text-primary/70 ${isArabic ? "rotate-180" : ""}`} />
             </Link>

@@ -954,14 +954,14 @@ function ReadingToolbar({
 
   return (
     <div
-      className="reader-no-print sticky top-0 z-[110] overflow-visible"
+      className="reader-no-print sticky top-0 z-[120] overflow-visible"
       style={{
         background: "var(--reader-bg)",
         borderBottom: "1px solid var(--reader-border)",
         backdropFilter: "blur(12px)",
       }}
     >
-      <div className="flex items-center gap-2 overflow-x-auto px-5 py-2.5 scrollbar-none">
+      <div className="flex flex-wrap items-center gap-2 overflow-visible px-5 py-2.5">
       {/* Theme */}
       <button className={btnBase} style={btnStyle} onClick={cycleTheme} title={locale === "ar" ? "بدّل النمط" : "Toggle theme"}>
         {themeIcon}
@@ -977,7 +977,7 @@ function ReadingToolbar({
         </button>
         {showFontMenu && (
           <div
-            className="absolute left-0 top-full mt-1 w-36 rounded-xl p-2 shadow-xl z-[120]"
+            className="absolute left-0 top-full mt-1 w-36 rounded-xl p-2 shadow-xl z-[140]"
             style={{ background: "var(--reader-bg)", border: "1px solid var(--reader-border)" }}
           >
             {[14, 16, 18, 20, 24].map((s) => (
@@ -1013,7 +1013,7 @@ function ReadingToolbar({
         </button>
         {showScrollMenu && (
           <div
-            className="absolute left-0 top-full mt-1 w-44 rounded-xl p-2 shadow-xl z-[120]"
+            className="absolute left-0 top-full mt-1 w-44 rounded-xl p-2 shadow-xl z-[140]"
             style={{ background: "var(--reader-bg)", border: "1px solid var(--reader-border)" }}
           >
             {(["off", "teleprompter", "focus", "presentation"] as ScrollMode[]).map((m) => (
@@ -1081,7 +1081,7 @@ function ReadingToolbar({
         </button>
         {showViewMenu && (
           <div
-            className="absolute right-0 top-full mt-1 w-44 rounded-xl p-2 shadow-xl z-[120]"
+            className="absolute right-0 top-full mt-1 w-44 rounded-xl p-2 shadow-xl z-[140]"
             style={{ background: "var(--reader-bg)", border: "1px solid var(--reader-border)" }}
           >
             {(["portal", "media", "executive"] as ViewMode[]).map((v) => (

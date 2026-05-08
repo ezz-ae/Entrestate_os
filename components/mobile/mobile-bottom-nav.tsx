@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
 import { Home, LayoutGrid, MessageSquare, Search, User2 } from "lucide-react"
 import { prefixLocalePath, stripLocalePrefix, type AppLocale } from "@/i18n/locale"
@@ -18,7 +18,6 @@ export function MobileBottomNav({ isAuthenticated, isSidebarOpen, onOpenChat }: 
   const locale = useLocale() as AppLocale
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const router = useRouter()
   const t = useTranslations("nav")
   const normalizedPathname = stripLocalePrefix(pathname)
   const hasOpenChatIntent = searchParams?.get("openChat") === "true"
@@ -29,6 +28,17 @@ export function MobileBottomNav({ isAuthenticated, isSidebarOpen, onOpenChat }: 
     pathname,
     search: searchParams?.toString() ?? "",
   })
+  const loginHref = buildLoginHref(
+    locale,
+    normalizedPathname.startsWith("/chat") || hasOpenChatIntent
+      ? buildCopilotShellHref({
+          authenticated: true,
+          locale,
+          pathname,
+          search: searchParams?.toString() ?? "",
+        })
+      : "/me",
+  )
 
   const items = [
     { key: "home", href: isAuthenticated ? prefixLocalePath("/me", locale) : prefixLocalePath("/", locale), label: isAuthenticated ? (locale === "ar" ? "الواجهة" : "Home") : t("overview"), icon: Home },
@@ -37,7 +47,7 @@ export function MobileBottomNav({ isAuthenticated, isSidebarOpen, onOpenChat }: 
     { key: "chat", href: chatHref, label: t("chat"), icon: MessageSquare },
     {
       key: "account",
-      href: isAuthenticated ? prefixLocalePath("/account", locale) : buildLoginHref(locale, "/me"),
+      href: isAuthenticated ? prefixLocalePath("/account", locale) : loginHref,
       label: accountLabel,
       icon: User2,
     },
@@ -61,10 +71,7 @@ export function MobileBottomNav({ isAuthenticated, isSidebarOpen, onOpenChat }: 
               <button
                 key={key}
                 type="button"
-                onClick={() => {
-                  router.replace(chatHref, { scroll: false })
-                  onOpenChat()
-                }}
+                onClick={onOpenChat}
                 className={`flex min-h-[4.25rem] flex-col items-center justify-center gap-1 rounded-2xl px-2 text-[10px] font-semibold transition-colors ${
                   isActive ? "bg-primary/12 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}

@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, ReactNode, useState, useCallback, useMemo } from "react"
+import { createContext, useContext, ReactNode, useState, useCallback, useMemo, useEffect } from "react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import type { UIMessage } from "ai"
@@ -14,6 +14,7 @@ type CopilotContextValue = ChatHelpers & {
   toggleSidebar: () => void
   openSidebar: () => void
   closeSidebar: () => void
+  hydrateSession: (sessionId?: string | null, sessionMessages?: UIMessage[]) => void
 }
 
 const CopilotContext = createContext<CopilotContextValue | null>(null)
@@ -28,26 +29,33 @@ export function CopilotProvider({
   initialMessages?: UIMessage[]
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [activeSessionId, setActiveSessionId] = useState<string | undefined>(initialId)
+  const [activeSessionMessages, setActiveSessionMessages] = useState<UIMessage[]>(initialMessages)
   const locale = normalizeLocale(useLocale())
+
+  useEffect(() => {
+    setActiveSessionId(initialId)
+    setActiveSessionMessages(initialMessages)
+  }, [initialId, initialMessages])
 
   // Memoize transport so it's not recreated on every render.
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: "/api/copilot",
-        body: initialId != null ? { id: initialId } : {},
+        body: activeSessionId != null ? { id: activeSessionId } : {},
         headers: {
           "x-entrestate-locale": locale,
         },
       }),
-    [initialId, locale],
+    [activeSessionId, locale],
   )
 
   // Only include `id` when it's defined — passing `id: undefined` triggers
   // shouldRecreateChat in @ai-sdk/react on every render, resetting the chat.
   const chatHelpers = useChat({
-    ...(initialId != null ? { id: initialId } : {}),
-    messages: initialMessages,
+    ...(activeSessionId != null ? { id: activeSessionId } : {}),
+    messages: activeSessionMessages,
     transport,
     onError: (error) => {
       console.error("Copilot error:", error)
@@ -57,6 +65,10 @@ export function CopilotProvider({
   const toggleSidebar = useCallback(() => setIsSidebarOpen((prev) => !prev), [])
   const openSidebar = useCallback(() => setIsSidebarOpen(true), [])
   const closeSidebar = useCallback(() => setIsSidebarOpen(false), [])
+  const hydrateSession = useCallback((sessionId?: string | null, sessionMessages: UIMessage[] = []) => {
+    setActiveSessionId(sessionId ?? undefined)
+    setActiveSessionMessages(sessionMessages)
+  }, [])
 
   return (
     <CopilotContext.Provider
@@ -66,6 +78,7 @@ export function CopilotProvider({
         toggleSidebar,
         openSidebar,
         closeSidebar,
+        hydrateSession,
       }}
     >
       {children}
