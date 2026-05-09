@@ -42,8 +42,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title:
       locale === "ar"
-        ? `مشاريع دبي المقيّمة — ${formatter.format(metrics.totalProjects)} مشروعاً موثقاً | Entrestate`
-        : `${formatter.format(metrics.totalProjects)} Scored Dubai Projects — DLD Verified | Entrestate`,
+        ? `مشاريع دبي المقيّمة — ${formatter.format(metrics.totalProjects)} مشروعاً مع أدلة قابلة للفحص | Entrestate`
+        : `${formatter.format(metrics.totalProjects)} Scored Dubai Projects — Evidence-backed verdicts | Entrestate`,
     description:
       locale === "ar"
         ? "مشاريع مقيّمة عبر التوقيت والضغط والعائد والأدلة، مع أحكام قابلة للفحص وروابط إلى مصادرها."

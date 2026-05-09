@@ -99,8 +99,8 @@ function getStructuredData(locale: "en" | "ar") {
 
 function getTrustMarkers(locale: "en" | "ar") {
   return locale === "ar"
-    ? ["Canonical DLD", "Verified Records", "Auditable Lineage", "Governed Access"]
-    : ["Canonical DLD", "Verified Records", "Auditable Lineage", "Governed Access"]
+    ? ["مصدر DLD", "سجلات متقاطعة المراجع", "تتبّع كامل", "وصول محكوم"]
+    : ["DLD Sourced", "Cross-referenced Records", "Auditable Lineage", "Governed Access"]
 }
 
 function getAutomationCards(locale: "en" | "ar") {
