@@ -116,15 +116,15 @@ export function MobileHomePage({
 
   const trustCounters = [
     {
-      label: isArabic ? "المعاملات المرجعية" : "Canonical DLD",
+      label: isArabic ? "سجل DLD" : "DLD registry",
       value: formatInteger(dldTransactions, locale),
-      body: isArabic ? "تغذية سوقية مباشرة" : "Live market feed",
+      body: isArabic ? "معاملات مرجعية رسمية" : "Canonical official record",
       icon: ShieldCheck,
     },
     {
       label: isArabic ? "المشاريع المصنفة" : "Scored projects",
       value: formatInteger(totalProjects, locale),
-      body: isArabic ? "إشارات BUY وطبقة ثقة" : "BUY signals and confidence tiers",
+      body: isArabic ? "إشارات قرار وطبقة ثقة" : "Decision signals and confidence tiers",
       icon: Building2,
     },
     {
@@ -136,13 +136,15 @@ export function MobileHomePage({
     {
       label: isArabic ? "المطورون" : "Developers",
       value: formatInteger(ratedDevelopers, locale),
-      body: isArabic ? `${formatInteger(buySignals, locale)} BUY مباشر` : `${formatInteger(buySignals, locale)} BUY live`,
+      body: isArabic
+        ? `${formatInteger(buySignals, locale)} إشارة توقيت BUY/STRONG_BUY`
+        : `${formatInteger(buySignals, locale)} BUY/STRONG_BUY timing`,
       icon: Users2,
     },
   ]
 
   return (
-    <div className="mx-auto max-w-xl px-4 pb-10 pt-24 sm:px-6">
+    <div className="mx-auto max-w-xl px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] pt-24 sm:px-6">
       <section className="rounded-[2rem] border border-border/60 bg-[linear-gradient(160deg,rgba(47,90,166,0.16),rgba(17,22,29,0.04))] px-5 py-6 shadow-[0_24px_90px_-56px_rgba(47,90,166,0.55)]">
         <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary/80">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -158,10 +160,12 @@ export function MobileHomePage({
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11px] text-muted-foreground">
-            {isArabic ? `${formatInteger(buySignals, locale)} BUY مباشر` : `${formatInteger(buySignals, locale)} BUY live`}
+            {isArabic
+              ? `${formatInteger(buySignals, locale)} إشارة BUY/STRONG_BUY`
+              : `${formatInteger(buySignals, locale)} BUY/STRONG_BUY timing`}
           </span>
           <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11px] text-muted-foreground">
-            {isArabic ? `آخر مزامنة ${syncLabel}` : `Synced ${syncLabel}`}
+            {isArabic ? `آخر دورة ${syncLabel}` : `Last cycle ${syncLabel}`}
           </span>
         </div>
       </section>
@@ -245,6 +249,40 @@ export function MobileHomePage({
             </div>
           )
         })}
+      </section>
+
+      <section className="mt-5 rounded-[1.5rem] border border-border/60 bg-card/40 p-4">
+        <p className="text-[11px] leading-relaxed text-muted-foreground/75">
+          {isArabic
+            ? "Entrestate طبقة استخبارات سوقية، وليست منصة قوائم أو وسيطاً أو مستشاراً مالياً. الأحكام مدعومة بالأدلة وليست توصيات."
+            : "Entrestate is a market-intelligence layer, not a marketplace, broker, or financial advisor. Verdicts are evidence-backed reads, not advice."}
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+          <Link
+            href={prefixLocalePath("/methodology", locale)}
+            className="rounded-full border border-border/60 bg-background/70 px-3 py-1 font-medium text-foreground transition hover:border-primary/40 hover:text-primary"
+          >
+            {isArabic ? "المنهجية" : "Methodology"}
+          </Link>
+          <Link
+            href={prefixLocalePath("/data-usage", locale)}
+            className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-muted-foreground transition hover:text-foreground"
+          >
+            {isArabic ? "استخدام البيانات" : "Data Usage"}
+          </Link>
+          <Link
+            href={prefixLocalePath("/privacy", locale)}
+            className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-muted-foreground transition hover:text-foreground"
+          >
+            {isArabic ? "الخصوصية" : "Privacy"}
+          </Link>
+          <Link
+            href={prefixLocalePath("/terms", locale)}
+            className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-muted-foreground transition hover:text-foreground"
+          >
+            {isArabic ? "الشروط" : "Terms"}
+          </Link>
+        </div>
       </section>
     </div>
   )

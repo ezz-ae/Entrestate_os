@@ -44,11 +44,11 @@ const COPY = {
     trustTitle: "Every verdict links back to source.",
     trustBody:
       "Confidence, timing, yield, and drivers stay visible so the output can be reviewed before it is used.",
-    trustPills: ["Canonical DLD", "Verified Records", "Auditable Lineage", "Governed Access"],
+    trustPills: ["DLD Sourced", "Cross-referenced Records", "Auditable Lineage", "Governed Access"],
     stats: {
       projects: "Projects scored",
       avgPrice: "Avg. entry price",
-      buySignals: "BUY signals live",
+      buySignals: "BUY/STRONG_BUY timing",
       dld: "DLD transactions",
       areas: "Area profiles",
       developers: "Tracked developers",
@@ -67,11 +67,11 @@ const COPY = {
     trustTitle: "كل حكم مرتبط بمصدره.",
     trustBody:
       "الثقة والتوقيت والعائد ومحركات النتيجة تبقى ظاهرة حتى يمكن مراجعة المخرج قبل استخدامه.",
-    trustPills: ["DLD Canonical", "سجلات موثقة", "تتبّع كامل", "وصول محكوم"],
+    trustPills: ["مصدر DLD", "سجلات متقاطعة المراجع", "تتبّع كامل", "وصول محكوم"],
     stats: {
       projects: "مشروع مقيّم",
       avgPrice: "متوسط سعر الدخول",
-      buySignals: "إشارات BUY مباشرة",
+      buySignals: "إشارات توقيت BUY/STRONG_BUY",
       dld: "معاملة DLD",
       areas: "ملف منطقة",
       developers: "مطور متابع",
@@ -108,7 +108,7 @@ export function HeroSection({
     {
       label: copy.stats.buySignals,
       value: buySignals,
-      sublabel: locale === "ar" ? "يُحدَّث كل ساعة" : "Refreshed hourly",
+      sublabel: locale === "ar" ? "يُحدَّث مع كل دورة ETL" : "Refreshed each ETL pass",
     },
     {
       label: copy.stats.dld,
