@@ -377,6 +377,7 @@ export default async function HomePage({
   }
   const runtimeShell = await getRequestRuntimeShell()
   const isArabic = locale === "ar"
+  const formatter = new Intl.NumberFormat(isArabic ? "ar-AE" : "en-US")
   const structuredDataObj = getStructuredData(locale)
   const trustMarkers = getTrustMarkers(locale)
   const automationCards = getAutomationCards(locale)
@@ -514,8 +515,8 @@ export default async function HomePage({
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {isArabic
-                  ? `${totalProjects} أصل مقيّم · ${buySignals} إشارة BUY مباشرة · آخر تحديث ${syncLabel}`
-                  : `${totalProjects} scored assets · ${buySignals} live BUY signals · last refresh ${syncLabel}`}
+                  ? `${formatter.format(totalProjects)} أصل مقيّم · ${formatter.format(buySignals)} إشارة توقيت BUY/STRONG_BUY · آخر دورة ${syncLabel}`
+                  : `${formatter.format(totalProjects)} scored assets · ${formatter.format(buySignals)} BUY/STRONG_BUY timing signals · last cycle ${syncLabel}`}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {trustMarkers.map((marker) => (

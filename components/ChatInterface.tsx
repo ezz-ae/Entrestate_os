@@ -2763,11 +2763,19 @@ export function ChatInterface({
 
         {!limitMessage && isLimitError ? (
           <p className="mt-3 text-sm text-amber-600">
-            Free usage is cooling down. Please try again soon.
+            {isArabic
+              ? "الاستخدام المجاني في فترة تهدئة. حاول مجدداً بعد قليل."
+              : "Free usage is cooling down. Please try again soon."}
           </p>
         ) : null}
 
-        {error && !isLimitError ? <p className="mt-3 text-sm text-red-500">{error.message}</p> : null}
+        {error && !isLimitError ? (
+          <p className="mt-3 text-sm text-red-500">
+            {isArabic
+              ? "تعذّر إنهاء هذا الطلب. تحقّق من الاتصال أو حاول صياغة استعلام أكثر تحديداً."
+              : "We couldn't finish that request. Check your connection or try a more specific query."}
+          </p>
+        ) : null}
       </section>
 
       <aside className={`overflow-hidden rounded-2xl border border-border bg-card/90 backdrop-blur-xl p-4 md:p-6 lg:sticky lg:top-28 lg:max-h-[calc(100vh-160px)] lg:overflow-y-auto lg:block transition-all duration-500 ${
