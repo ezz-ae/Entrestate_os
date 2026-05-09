@@ -356,7 +356,10 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
               reliability={typeof developer.reliability === "number" ? developer.reliability : null}
               tier={typeof developer.tier === "string" ? developer.tier : null}
               avg_price={typeof developer.avg_price === "number" ? developer.avg_price : null}
-              avg_yield={typeof developer.avg_yield === "number" ? developer.avg_yield : null}
+              safe_projects={(() => {
+                const value = (developer as unknown as { safe_projects?: unknown }).safe_projects
+                return typeof value === "number" && Number.isFinite(value) ? value : null
+              })()}
               logo_url={typeof developer.logo_url === "string" ? developer.logo_url : null}
               top_areas={
                 Array.isArray(developer.top_areas)

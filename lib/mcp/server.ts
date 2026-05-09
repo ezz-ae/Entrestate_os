@@ -1,14 +1,21 @@
 import "server-only"
 import { withStatementTimeout } from "@/lib/db-guardrails"
+import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
 
 const STATEMENT_TIMEOUT_MS = 15000
 const MAX_ROWS = 100
 
 type DbRow = Record<string, unknown>
 
+// row_count below is last-known sample size for MCP client display only.
+// Authoritative live counts: query the table or call /api/platform-metrics.
+const SCORED_PROJECTS = PLATFORM_METRICS_FALLBACK.totalProjects
+const DLD_TRANSACTIONS = PLATFORM_METRICS_FALLBACK.dldTransactions
+const DLD_FEED = DLD_TRANSACTIONS // co-tracked
+
 export const MCP_RESOURCES = {
   inventory_clean: {
-    description: "2,813 verified UAE projects with full V1 decision scores",
+    description: "Scored UAE projects with full V1 decision scores",
     key_columns: [
       "id",
       "name",
@@ -32,11 +39,11 @@ export const MCP_RESOURCES = {
       "price_confidence",
       "price_source",
     ],
-    row_count: 2813,
+    row_count: SCORED_PROJECTS,
     updated: "live",
   },
   inventory_full: {
-    description: "2,813 scored projects with 180+ columns including evidence layers",
+    description: "Scored projects with full evidence-layer columns (180+ fields)",
     key_columns: [
       "name",
       "area",
@@ -54,11 +61,11 @@ export const MCP_RESOURCES = {
       "demand_velocity",
       "supply_pressure",
     ],
-    row_count: 2813,
+    row_count: SCORED_PROJECTS,
     updated: "live",
   },
   dld_transactions_arvo: {
-    description: "36,841 real DLD transactions from Dubai Land Department (2026 YTD)",
+    description: "DLD transaction registry from Dubai Land Department (current YTD)",
     key_columns: [
       "transaction_id",
       "area",
@@ -77,11 +84,11 @@ export const MCP_RESOURCES = {
       "nearest_metro",
       "nearest_landmark",
     ],
-    row_count: 36841,
+    row_count: DLD_TRANSACTIONS,
     updated: "daily via arvo.co API",
   },
   dld_transaction_feed: {
-    description: "36,634 notification-style DLD entries with badges and classification",
+    description: "Notification-style DLD entries with badges and classification",
     key_columns: [
       "transaction_id",
       "feed_type",
@@ -97,11 +104,11 @@ export const MCP_RESOURCES = {
       "icon",
       "metadata",
     ],
-    row_count: 36634,
+    row_count: DLD_FEED,
     updated: "daily",
   },
   dld_area_benchmarks_live: {
-    description: "183 area benchmarks with price stats, velocity, and supply mix",
+    description: "UAE area benchmarks with price stats, velocity, and supply mix",
     key_columns: [
       "area",
       "total_transactions",
@@ -126,31 +133,31 @@ export const MCP_RESOURCES = {
     updated: "daily",
   },
   developer_registry: {
-    description: "75 UAE developers with tiers, logos, and project counts",
+    description: "UAE developers with tiers, logos, and project counts",
     key_columns: ["name", "slug", "tier", "logo_url", "project_count", "avg_price", "min_price", "max_price", "hq", "established"],
     row_count: 75,
     updated: "live",
   },
   entrestate_projects_api: {
-    description: "2,813 quality-scored projects for API consumption",
+    description: "Quality-scored projects for API consumption",
     key_columns: "same as inventory_clean",
-    row_count: 2813,
+    row_count: SCORED_PROJECTS,
     updated: "live view",
   },
   entrestate_developers_api: {
-    description: "75 developers with active quality projects",
+    description: "Developers with active quality projects",
     key_columns: ["name", "slug", "tier", "logo_url", "project_count", "avg_price", "areas"],
     row_count: 75,
     updated: "live view",
   },
   entrestate_areas_api: {
-    description: "167 areas with full analytics",
+    description: "UAE areas with full analytics",
     key_columns: ["name", "slug", "city", "project_count", "avg_price", "avg_yield", "area_score"],
     row_count: 167,
     updated: "live view",
   },
   source_of_truth_registry: {
-    description: "31 tracked metrics with owners and update frequencies",
+    description: "Tracked source metrics with owners and update frequencies",
     key_columns: ["metric_name", "category", "source", "owner", "update_frequency", "current_value"],
     row_count: 31,
     updated: "live",

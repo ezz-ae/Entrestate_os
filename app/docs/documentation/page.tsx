@@ -142,9 +142,9 @@ export default async function DocumentationDocsPage() {
           <h2 className="text-xl font-semibold text-foreground">The 10-Phase Sequential Data Pipeline</h2>
         </div>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-          The foundational Data Layer that transforms chaotic market signals into a structured inventory of{" "}
-          <strong className="text-foreground">2,813 active projects</strong>. Each phase refines data from
-          &quot;Raw Sensors&quot; toward &quot;Actionable Belief.&quot;
+          The foundational Data Layer that transforms chaotic market signals into a structured inventory of
+          scored UAE projects. Each phase refines data from &quot;Raw Sensors&quot; toward
+          &quot;Actionable Belief.&quot;
         </p>
         <div className="mt-5 overflow-x-auto">
           <table className="w-full text-left text-sm">

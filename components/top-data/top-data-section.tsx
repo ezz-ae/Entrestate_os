@@ -33,7 +33,7 @@ const DEFAULT_HIERARCHY = [
   "L5 Raw",
 ]
 
-const DEFAULT_ENGINES = ["God Metric", "Affordability", "Stress Test", "Goal Alignment"]
+const DEFAULT_ENGINES = ["Investment Score", "Affordability", "Stress Test", "Goal Alignment"]
 
 function asArray(value: unknown) {
   const normalized = normalizeJsonPayload(value)
@@ -629,7 +629,7 @@ function TopProjectsTableView({ data, locale }: { data: unknown; locale?: string
             <th className="px-3 py-2">{isArabicLocale(locale) ? "العائد" : "Yield"}</th>
             <th className="px-3 py-2">{isArabicLocale(locale) ? "الضغط" : "Stress"}</th>
             <th className="px-3 py-2">{isArabicLocale(locale) ? "التوقيت" : "Timing"}</th>
-            <th className="px-3 py-2">{isArabicLocale(locale) ? "النتيجة" : "God Metric"}</th>
+            <th className="px-3 py-2">{isArabicLocale(locale) ? "درجة الاستثمار" : "Investment Score"}</th>
           </tr>
         </thead>
         <tbody>

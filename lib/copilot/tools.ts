@@ -208,11 +208,11 @@ HARD RULES:
 7. NEVER say "DLD Average: Unavailable" — fuzzy match areas.
 8. Every project: stress_grade_v1 + timing_label + investor_score_v1.
 
-TABLES (query, never describe):
-- inventory_clean: 2,813 projects
-- dld_transactions_arvo: 36,841 transactions
-- dld_area_benchmarks_live: 183 areas
-- developer_registry: 481 developers
+TABLES (query, never describe — counts shift; never assert a fixed number to the user):
+- inventory_clean: scored UAE projects (multi-thousand)
+- dld_transactions_arvo: DLD transaction registry
+- dld_area_benchmarks_live: area benchmarks
+- developer_registry: tracked developers
 
 V1 COLUMNS: timing_label, stress_grade_v1, investor_score_v1, decision_label_v1, evidence_label_v1, yield_label
 
@@ -264,19 +264,19 @@ export const copilotSystemPromptArabic = `أنت مستشار القرار ال�
 7. إذا كان الإدخال عاماً أو تحية أو غامضاً، أعد دليل الأوامر فقط.
 8. أبقِ إشارات القرار الأساسية كما هي عند الحاجة للثقة: STRONG_BUY / BUY / HOLD / WAIT / AVOID.
 
-الجداول (استخدمها ولا تشرحها):
-- inventory_clean: 2813 projects — timing_label, stress_grade_v1, investor_score_v1, decision_label_v1, evidence_label_v1, yield_label, price_from_aed, rental_yield, developer, developer_ar, area, area_ar
-- dld_transactions_arvo: 36,841 transactions
-- dld_area_benchmarks_live: 183 areas
-- developer_registry: 481 developers
-- entrestate_developers_api: 75 developers
+الجداول (استخدمها ولا تشرحها — لا تقتبس أرقاماً ثابتة للمستخدم؛ الأعداد تتغير):
+- inventory_clean: مشاريع مفحوصة — timing_label, stress_grade_v1, investor_score_v1, decision_label_v1, evidence_label_v1, yield_label, price_from_aed, rental_yield, developer, developer_ar, area, area_ar
+- dld_transactions_arvo: سجل معاملات DLD
+- dld_area_benchmarks_live: معايير المناطق
+- developer_registry: المطورون المُتتبَّعون
+- entrestate_developers_api: المطورون المُقيَّمون
 
 حواجز القرار:
 - stress < 50 → AVOID
 - evidence < 45 → HOLD
 - dev_reliability < 30 → cap 60
 
-Cached: DLD YTD AED 141.34B, 36,841 txns. Top velocity: JVC 37.6/day.
+عند الإشارة إلى أحجام الجداول للمستخدم، استخدم وصفاً عاماً (مثلاً "آلاف المشاريع المفحوصة") بدل أرقام ثابتة قد تتقادم.
 
 النبرة:
 - عربي واضح ومهني
@@ -344,7 +344,7 @@ export function getCopilotSystemPrompt(locale?: string | null, overrides?: Copil
 
 export const copilotToolDescriptions = {
   deal_screener:
-    "Search and filter investment opportunities from 2,813 verified projects. Supports budget, area, bedrooms, golden visa, timing label, and stress grade filters.",
+    "Search and filter investment opportunities across the scored UAE inventory. Supports budget, area, bedrooms, golden visa, timing label, and stress grade filters.",
   price_reality_check:
     "Compare a project's listed price against DLD registered transactions and area benchmarks. Shows if priced above/below market.",
   area_risk_brief:

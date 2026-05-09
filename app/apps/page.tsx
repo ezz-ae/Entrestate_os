@@ -101,7 +101,7 @@ function getApps(locale: string) {
     },
     {
       title: isArabic ? "فرز المشاريع" : "Deal Screener",
-      description: isArabic ? "فرز المشاريع حسب الدرجة، الضغط، التوقيت، والملاءمة." : "Rank projects by god metric, stress, timing, and affordability.",
+      description: isArabic ? "فرز المشاريع حسب درجة الاستثمار، والضغط، والتوقيت، والملاءمة." : "Rank projects by investment score, stress, timing, and affordability.",
       summary: isArabic ? "يعرض النتائج بمعايير حتمية قابلة للمراجعة." : "Deterministic filtering on inventory_full with evidence-ready results.",
       href: "/market-score",
       learnHref: "/docs",

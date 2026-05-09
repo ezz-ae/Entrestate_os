@@ -39,7 +39,7 @@ const EVIDENCE_DATA: EvidenceResponse[] = [
       {
         name: "DLD transactions",
         type: "official",
-        detail: "36,841 DLD entries merged via `api.dld_transactions_v1`",
+        detail: "DLD registry merged via `api.dld_transactions_v1`",
       },
       { name: "PropertyFinder", type: "portal", detail: "Bayut + PF inventory matching" },
       { name: "Bayut listings", type: "portal", detail: "Listing drift + velocity feed" },

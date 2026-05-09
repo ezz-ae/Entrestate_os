@@ -59,8 +59,8 @@ export function TerminalPromptTeaser({
     caption:
       caption
       ?? (isArabic
-        ? "مدعوم بـ 36,841 معاملة DLD و 2,812 مشروعاً مقيّماً."
-        : "Powered by 36,841 DLD transactions and 2,812 scored projects."),
+        ? "مدعوم بسجل معاملات DLD والمخزون المُقيَّم الحي."
+        : "Backed by the DLD transaction registry and live scored inventory."),
     inputLabel: isArabic ? "اسأل المحطة" : "Ask the terminal",
     inputPlaceholder: isArabic ? "اكتب سؤالاً أو اختر مثالاً أدناه" : "Type a question or pick an example below",
     buttonLabel: buttonLabel ?? (isArabic ? "افتح المحطة" : "Open Terminal"),

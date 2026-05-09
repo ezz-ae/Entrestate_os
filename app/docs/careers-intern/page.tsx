@@ -194,7 +194,7 @@ export default async function CareersInternDocsPage() {
           </div>
           <div className="rounded-xl border border-border/60 bg-background/40 p-4">
             <h3 className="text-sm font-semibold text-foreground">Data Pipeline</h3>
-            <p className="mt-1 text-xs text-muted-foreground">The 10-Phase Pipeline processing 2,813+ projects through entity extraction, price verification, stress testing, and evidence compilation.</p>
+            <p className="mt-1 text-xs text-muted-foreground">The 10-Phase Pipeline processing the active UAE inventory through entity extraction, price verification, stress testing, and evidence compilation.</p>
           </div>
           <div className="rounded-xl border border-border/60 bg-background/40 p-4">
             <h3 className="text-sm font-semibold text-foreground">Evidence Stack</h3>

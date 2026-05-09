@@ -4,11 +4,12 @@ import { ArrowRight, Building2, TrendingUp, Shield, BarChart3, AlertTriangle, Za
 import { getRequestLocale } from "@/i18n/request"
 import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
 import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
+// Use directional bands rather than fixed numbers; canonical counts live in /api/platform-metrics.
 const marketMetrics = [
-  { value: "2,813", label: "Active Projects", detail: "Tracked across UAE" },
-  { value: "71%", label: "Speculative", detail: "Of total inventory" },
-  { value: "99", label: "Conservative Plays", detail: "Nationwide" },
-  { value: "38%", label: "BUY Signals", detail: "Of tracked projects" },
+  { value: "Multi-thousand", label: "Active Projects", detail: "Tracked across UAE — current count exposed via /api/platform-metrics" },
+  { value: "~70%", label: "Speculative", detail: "Of scored inventory (recent snapshot)" },
+  { value: "~100", label: "Conservative Plays", detail: "Projects meeting low-risk + capital-preservation overlap" },
+  { value: "Thousands", label: "Timing BUY Signals", detail: "Of currently scored projects — refreshed on each ETL pass" },
 ]
 
 const roiComparison = [
@@ -77,11 +78,11 @@ export default async function IndustryDocsPage() {
         <div className="mt-4 space-y-4 text-sm text-muted-foreground leading-relaxed">
           <p>
             The UAE market is currently characterized by a{" "}
-            <strong className="text-foreground">severe scarcity of safety</strong>. Of{" "}
-            <strong className="text-foreground">2,813 active projects</strong> tracked across the UAE,{" "}
-            <strong className="text-foreground">71% are classified as Speculative</strong>. Only{" "}
-            <strong className="text-foreground">99 projects nationwide</strong> meet the criteria for a
-            &quot;Conservative&quot; play — where low-risk profiles overlap with high capital preservation.
+            <strong className="text-foreground">severe scarcity of safety</strong>. Across the active scored
+            inventory tracked by Entrestate, the majority of projects fall into a{" "}
+            <strong className="text-foreground">Speculative</strong> band, while only a small subset meet the
+            criteria for a &quot;Conservative&quot; play — where low-risk profiles overlap with high capital
+            preservation. Live counts are surfaced through the <code className="font-mono text-xs">/api/platform-metrics</code> endpoint.
           </p>
           <p>
             In this environment, identifying &quot;Safe Yield&quot; is mathematically difficult. It requires an overlap

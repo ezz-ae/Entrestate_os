@@ -62,7 +62,7 @@ export function LiveSignalCard({
 
       <div className="mt-5 grid grid-cols-3 gap-3">
         <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
-          <p className="text-[11px] text-muted-foreground">{isArabic ? "النتيجة" : "God Metric"}</p>
+          <p className="text-[11px] text-muted-foreground">{isArabic ? "درجة الاستثمار" : "Investment Score"}</p>
           <p className="mt-1 text-lg font-semibold text-foreground">{formatScore(score, locale)}</p>
         </div>
         <div className="rounded-2xl border border-border/60 bg-background/70 p-3">

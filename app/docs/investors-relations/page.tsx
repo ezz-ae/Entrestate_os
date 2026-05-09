@@ -17,11 +17,12 @@ import { getRequestLocale } from "@/i18n/request"
 import { ArabicDocPage } from "@/components/docs/arabic-doc-page"
 import { getArabicDocsPage } from "@/lib/docs-arabic-pages"
 
+// Bands rather than fixed counts. Live numbers exposed via /api/platform-metrics.
 const marketNumbers = [
-  { value: "2,813", label: "Active Projects", detail: "Tracked across UAE on live refreshes" },
-  { value: "481", label: "Canonical Developers", detail: "Normalized & verified identities" },
-  { value: "136", label: "BUY Signals", detail: "Evidence-backed opportunities" },
-  { value: "34.3%", label: "L1 Coverage", detail: "Static Truth recovery in progress" },
+  { value: "Multi-thousand", label: "Active Projects", detail: "Scored UAE inventory tracked across live refreshes" },
+  { value: "Hundreds", label: "Canonical Developers", detail: "Normalized & verified identities" },
+  { value: "Hundreds", label: "Decision-Label BUY Signals", detail: "Evidence-backed opportunities passing all gates" },
+  { value: "L1–L5", label: "Evidence Coverage", detail: "Each project tagged with provenance level; recovery to L1 is ongoing" },
 ]
 
 const competitiveEdges = [
@@ -98,8 +99,8 @@ const diligenceItems = [
   {
     category: "Data & Integrity",
     items: [
-      "2,813 project inventory with L1-L5 provenance tags",
-      "481 canonical developer registry",
+      "Scored project inventory with L1–L5 provenance tags (live count via /api/platform-metrics)",
+      "Canonical developer registry with normalized identities",
       "Exclusion policy: distressed sales, internal transfers, duplicates",
       "Static Truth Recovery roadmap and completion metrics",
       "DLD, RERA, Property Finder integration contracts",
@@ -325,8 +326,8 @@ export default async function InvestorsRelationsDocsPage() {
           <div className="rounded-xl border border-border/60 bg-background/40 p-4">
             <h3 className="text-sm font-semibold text-foreground">Data Infrastructure</h3>
             <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
-              <li>2,813 active projects in canonical inventory</li>
-              <li>481 developer identities normalized and verified</li>
+              <li>Active scored projects in canonical inventory (live count: /api/platform-metrics)</li>
+              <li>Developer identities normalized and verified across the registry</li>
               <li>10-phase pipeline operational end-to-end</li>
               <li>5-layer evidence tagging on all data points</li>
             </ul>

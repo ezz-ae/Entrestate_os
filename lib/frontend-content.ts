@@ -1,6 +1,7 @@
 import "server-only"
 import { Prisma, dbQuery } from "@/lib/db"
 import { getInventoryTableName, getInventoryTableSql } from "@/lib/inventory-table"
+import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
 
 export type HomepageSectionRow = {
   id: string
@@ -676,7 +677,7 @@ export async function getHomepageContentSections() {
 
 export async function getTopDataRows() {
   const inventoryContext = await getInventoryContext()
-  const inventoryTotal = inventoryContext.total > 0 ? inventoryContext.total : 2813
+  const inventoryTotal = inventoryContext.total > 0 ? inventoryContext.total : PLATFORM_METRICS_FALLBACK.totalProjects
   let rows: TopDataRow[] = []
 
   try {

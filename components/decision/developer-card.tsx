@@ -4,7 +4,7 @@ import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useLocale } from "next-intl"
-import { formatAed, formatYield } from "@/components/decision/formatters"
+import { formatAed } from "@/components/decision/formatters"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { formatInteger } from "@/lib/format/number"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
@@ -17,7 +17,9 @@ type DeveloperCardProps = {
   reliability?: number | null
   tier?: string | null
   avg_price?: number | null
+  /** @deprecated Not displayed — yield at developer scope is not meaningful and was previously mis-sourced. Keep prop optional for back-compat. */
   avg_yield?: number | null
+  safe_projects?: number | null
   logo_url?: string | null
   top_areas?: string[] | null
   top_projects?: string[] | null
@@ -94,7 +96,7 @@ export function DeveloperCard(developer: DeveloperCardProps) {
         deliveryReliability: "موثوقية التسليم",
         tier: "الفئة",
         avgTicket: "متوسط حجم التذكرة",
-        avgYield: "متوسط العائد",
+        safeCoverage: "تغطية المشاريع الآمنة",
         activeAreas: "المناطق النشطة",
         keyProjects: "أهم المشاريع",
         apiResponse: "استجابة API",
@@ -106,7 +108,7 @@ export function DeveloperCard(developer: DeveloperCardProps) {
         deliveryReliability: "Delivery Reliability",
         tier: "Tier",
         avgTicket: "Avg Ticket Size",
-        avgYield: "Avg Yield",
+        safeCoverage: "Safe Project Coverage",
         activeAreas: "Active Areas",
         keyProjects: "Key Projects",
         apiResponse: "API Response",
@@ -195,15 +197,27 @@ export function DeveloperCard(developer: DeveloperCardProps) {
           ) : null}
         </div>
 
-        {/* Avg ticket + yield */}
+        {/* Avg ticket + safe coverage */}
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.avgTicket}</p>
             <p className="mt-0.5 text-lg font-bold tabular-nums text-foreground">{formatAed(developer.avg_price, locale)}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.avgYield}</p>
-            <p className="mt-0.5 text-lg font-bold tabular-nums text-emerald-500">{formatYield(developer.avg_yield, locale)}</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.safeCoverage}</p>
+            {(() => {
+              const safe = typeof developer.safe_projects === "number" ? developer.safe_projects : null
+              const total = typeof developer.projects === "number" ? developer.projects : null
+              if (safe === null || total === null || total <= 0) {
+                return <p className="mt-0.5 text-lg font-bold tabular-nums text-muted-foreground">—</p>
+              }
+              const pct = Math.round((safe / total) * 100)
+              return (
+                <p className="mt-0.5 text-lg font-bold tabular-nums text-emerald-500">
+                  {formatInteger(safe, locale)}<span className="text-sm text-muted-foreground"> / {formatInteger(total, locale)}</span> <span className="text-xs font-medium text-emerald-600/80 dark:text-emerald-400/80">{pct}%</span>
+                </p>
+              )
+            })()}
           </div>
         </div>
 
