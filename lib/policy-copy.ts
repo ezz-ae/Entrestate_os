@@ -420,3 +420,155 @@ export function getCookiePolicy(locale: AppLocale): PolicyDocument {
 export function getDataUsage(locale: AppLocale): PolicyDocument {
   return dataUsage(locale)
 }
+
+function methodology(locale: AppLocale): PolicyDocument {
+  if (locale === "ar") {
+    return {
+      eyebrow: "المنهجية",
+      title: "كيف نُنتج الحكم",
+      subtitle: "آخر مراجعة: مايو 2026",
+      intro:
+        "هذه الصفحة تشرح كيف يصل المشروع داخل Entrestate من بيانات خام إلى حكم قابل للمراجعة. لا توجد طبقة سحرية: مدخلات محددة، قواعد اشتقاق صريحة، وعتبات قرار يمكن الاحتجاج عليها.",
+      sections: [
+        {
+          title: "خمس طبقات للأدلة (L1–L5)",
+          paragraphs: [
+            "كل قيمة منشورة على المنصة تحمل طبقة أدلة تشير إلى مصدرها وقابليتها للتدقيق:",
+          ],
+          bullets: [
+            "L1 موثَّق — وُجد سجل مصدر يمكن استعراضه (مثال: قيد DLD أو إفصاح مطوّر).",
+            "L2 مشتق — مُحسَب من مدخلات موثَّقة أو منظمة (مثال: متوسط سعر منطقة من معاملات DLD).",
+            "L3 مقدَّر — ناتج عن نموذج أو احتساب احتياطي عند نقص بيانات حقل بعينه.",
+            "L4 مستنتَج — مُستنبَط من إشارات غير مباشرة (سرعة المعاملات، ضغط المعروض).",
+            "L5 نموذج/عينة — موجود لأغراض العرض المنتجي فقط ولا يُحتجّ به للقرار.",
+          ],
+        },
+        {
+          title: "إشارات القرار",
+          paragraphs: [
+            "نُولّد ثلاث إشارات منفصلة لكل أصل، ولا نخلطها داخل رقم واحد دون شفافية:",
+          ],
+          bullets: [
+            "Timing Signal: STRONG_BUY / BUY / HOLD / WAIT / AVOID — إشارة لحظة الدخول حسب السوق والعرض الحالي.",
+            "Decision Label: نفس الفئات بمعايير أصرم — يجب أن تتجاوز كل بوابات الأدلة والضغط والموثوقية لتُمنح BUY.",
+            "Stress Grade: A–F — مدى تحمل المشروع لسيناريوهات ضغط منهجية (سعر، فائدة، إشغال، تأخر تسليم).",
+          ],
+        },
+        {
+          title: "عتبات Decision Label الصريحة",
+          paragraphs: [
+            "نُصدر Decision Label وفق عتبات منشورة حتى يستطيع المراجع الجاد إعادة احتساب الحكم:",
+          ],
+          bullets: [
+            "STRONG_BUY إذا score ≥ 85",
+            "BUY إذا score ≥ 75",
+            "HOLD إذا score ≥ 60",
+            "WAIT إذا score ≥ 45",
+            "AVOID إذا score < 45",
+          ],
+        },
+        {
+          title: "حواجز صلبة (لا يتجاوزها أي مشروع)",
+          paragraphs: [
+            "حتى لو انخفضت العتبة الرقمية، نطبّق حواجز سلامة قبل النشر النهائي:",
+          ],
+          bullets: [
+            "stress < 50 → AVOID قسراً (لا يهم بقية المؤشرات).",
+            "evidence < 45 → سقف HOLD (لا BUY ولا STRONG_BUY).",
+            "developer reliability < 30 → سقف 60 على score (يحدّ من الانفلات الإيجابي).",
+          ],
+        },
+        {
+          title: "ما الذي ندخّله ولا ندخّله",
+          paragraphs: [
+            "نستهلك سجلات DLD، إفصاحات المطورين، تغذيات القوائم العامة (PropertyFinder/Bayut)، ومعايير المناطق، ثم نطبّق طبقة تطبيع وربط لإنتاج كيان مشروع/منطقة/مطوّر مرجعي. لا ندّعي تغطية كاملة لكل سوق ولا لكل وحدة. التغطية الراهنة معروضة عبر /api/platform-metrics.",
+          ],
+        },
+        {
+          title: "ما تعنيه ولا تعنيه إشاراتنا",
+          paragraphs: [
+            "BUY عند Entrestate تعني: \"الأدلة الحالية تُرجّح الدخول الآن وفق هذا الملف الاستثماري\"، وليست توصية مالية ولا بديلاً عن الفحص القانوني أو الاستشاري الخاص. كل صفحة مشروع تعرض الأدلة، الافتراضات، وما هو ناقص قبل الحكم.",
+          ],
+        },
+      ],
+      footerNote: "للاطلاع على كيفية تدفق البيانات قبل الحكم، راجع",
+      footerLink: { href: "/data-usage", label: "كيف نتعامل مع بيانات السوق" },
+    }
+  }
+
+  return {
+    eyebrow: "Methodology",
+    title: "How a verdict is produced",
+    subtitle: "Last reviewed: May 2026",
+    intro:
+      "This page explains how a project moves through Entrestate from raw inputs to an inspectable verdict. There is no magic layer — defined inputs, explicit derivation rules, and decision thresholds that a serious reviewer can argue with.",
+    sections: [
+      {
+        title: "Five evidence levels (L1–L5)",
+        paragraphs: [
+          "Every value published on the platform carries an evidence level that names its source and inspectability:",
+        ],
+        bullets: [
+          "L1 Verified — a source row exists and can be inspected (e.g. a DLD transaction or a developer disclosure).",
+          "L2 Derived — calculated from verified or structured inputs (e.g. an area median from DLD transactions).",
+          "L3 Estimated — produced by a model or fallback when a specific field is missing.",
+          "L4 Inferred — reasoned from indirect signals (transaction velocity, supply pressure).",
+          "L5 Demo / Sample — present for product demonstration only; not used for decisioning.",
+        ],
+      },
+      {
+        title: "Three decision signals (kept separate, never collapsed)",
+        paragraphs: [
+          "Each project carries three distinct signals; we do not roll them into one opaque number:",
+        ],
+        bullets: [
+          "Timing Signal: STRONG_BUY / BUY / HOLD / WAIT / AVOID — the read on the current entry window given supply and recent comps.",
+          "Decision Label: the same categories under stricter gates — must clear evidence, stress, and reliability gates before BUY is awarded.",
+          "Stress Grade: A–F — how the project tolerates systematic stress scenarios (price, rate, occupancy, delivery slippage).",
+        ],
+      },
+      {
+        title: "Decision Label thresholds (published and reproducible)",
+        paragraphs: [
+          "Decision labels are issued against published thresholds so a serious reviewer can re-derive them:",
+        ],
+        bullets: [
+          "STRONG_BUY when score ≥ 85",
+          "BUY when score ≥ 75",
+          "HOLD when score ≥ 60",
+          "WAIT when score ≥ 45",
+          "AVOID when score < 45",
+        ],
+      },
+      {
+        title: "Hard guards (no project gets past these)",
+        paragraphs: [
+          "Even if a numeric threshold is met, we apply hard guards before publishing:",
+        ],
+        bullets: [
+          "stress < 50 → forced AVOID (regardless of other indicators).",
+          "evidence < 45 → capped at HOLD (no BUY, no STRONG_BUY).",
+          "developer reliability < 30 → score capped at 60 (limits upside drift).",
+        ],
+      },
+      {
+        title: "What we ingest, and what we don't",
+        paragraphs: [
+          "We consume DLD records, developer disclosures, public listing feeds (PropertyFinder, Bayut), and area benchmarks, then apply a normalization and matching layer to produce canonical project / area / developer entities. We do not claim full coverage of every market or every unit. The current scored count is exposed at /api/platform-metrics.",
+        ],
+      },
+      {
+        title: "What a verdict means — and doesn't",
+        paragraphs: [
+          "A BUY at Entrestate means: \"current evidence supports entry now under this investor profile.\" It is not a financial recommendation and does not replace legal review or a personal advisor. Every project page surfaces the evidence, the assumptions, and what is missing alongside the verdict.",
+        ],
+      },
+    ],
+    footerNote: "For the data flow that runs before any verdict, see",
+    footerLink: { href: "/data-usage", label: "How market data is handled" },
+  }
+}
+
+export function getMethodology(locale: AppLocale): PolicyDocument {
+  return methodology(locale)
+}
