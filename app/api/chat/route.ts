@@ -850,6 +850,20 @@ export async function POST(request: Request) {
 
     const model = resolveCopilotModel()
 
+    /**
+     * A THROWN QUERY IS NOT AN EMPTY MARKET.
+     *
+     * These wrappers used to return `no_results: true` on any exception — the
+     * same envelope a genuinely empty result set produces. Four table names in
+     * lib/copilot/executor.ts were unqualified while search_path was `public`,
+     * so every developer and DLD tool threw, and the terminal reported an empty
+     * market in a confident voice over a database holding 2,813 projects and
+     * 36,841 transactions. A failure indistinguishable from an answer is worse
+     * than an error.
+     *
+     * `failed` is what the Evidence Drawer renders; `message` is what stops the
+     * model filling the silence from memory.
+     */
     const safeTool = <TInput,>(
       source: string,
       execute: (input: TInput) => Promise<Record<string, unknown>>,
@@ -861,8 +875,10 @@ export async function POST(request: Request) {
         return withGuardrails({
           source,
           data_as_of: new Date().toISOString(),
-          no_results: true,
+          failed: true,
           error: "tool_failed",
+          message:
+            "This tool did not run — its data source could not be read. Say the source is unavailable; do not answer from memory or from another tool's rows.",
         })
       }
     }
@@ -878,8 +894,10 @@ export async function POST(request: Request) {
         return {
           source,
           data_as_of: new Date().toISOString(),
-          no_results: true,
+          failed: true,
           error: "tool_failed",
+          message:
+            "This tool did not run — its data source could not be read. Say the source is unavailable; do not answer from memory or from another tool's rows.",
         }
       }
     }

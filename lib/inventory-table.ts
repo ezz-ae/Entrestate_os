@@ -29,7 +29,13 @@ export function getInventoryTableSql() {
   return Prisma.raw(getInventoryTableName())
 }
 
-function getConfiguredTableName(envKey: string, fallback: string) {
+/**
+ * Exported so lib/copilot/executor.ts resolves its tables the same way. One
+ * place decides what a configured table name means — including that a bare name
+ * inherits the fallback's schema, which is the rule that keeps `search_path`
+ * out of the answer.
+ */
+export function getConfiguredTableName(envKey: string, fallback: string) {
   const envValue = process.env[envKey]
   if (envValue && envValue.trim()) {
     const trimmed = envValue.trim()

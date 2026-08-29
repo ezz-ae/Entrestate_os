@@ -737,6 +737,17 @@ function buildEvidenceDrawerData(message: any) {
 
   const assumptions = outputs.flatMap((output) => {
     const items: unknown[] = []
+    // A tool that threw is not a market with nothing in it. Both used to render
+    // as "No direct rows returned", so a broken query read as a considered
+    // finding — see the safeTool wrappers in app/api/chat/route.ts.
+    if (output.failed === true || typeof output.error === "string") {
+      const label = typeof output.source === "string" && output.source.trim().length > 0
+        ? output.source
+        : "a data source"
+      items.push(
+        `TOOL FAILED — ${label} could not be read. Nothing below was measured from it.`,
+      )
+    }
     if (Array.isArray(output.guardrail_warnings)) {
       items.push(...output.guardrail_warnings)
     }
