@@ -168,42 +168,58 @@ function isEmptyPayload(value: unknown): boolean {
   return false
 }
 
-function firstNumericValue(record: Record<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    const value = record[key]
-    if (typeof value === "number" && Number.isFinite(value)) return value
-    if (typeof value === "string" && value.trim().length > 0) {
-      const parsed = Number(value.replace(/,/g, ""))
-      if (Number.isFinite(parsed)) return parsed
-    }
+/**
+ * THE DEVELOPER SECTION IS BUILT LIVE, BECAUSE THE STORED ROW DEFAMED EMAAR.
+ *
+ * The ETL row for developer-reliability stored, for Emaar Properties:
+ * { reliability: 5, avgScore: 62, projects: 259 }. Whatever scale that 5 was on,
+ * the view renders reliability out of 100 — so the biggest developer in the
+ * country drew a 12%-wide red bar under a heading that said "reliability",
+ * while canonical.inventory_clean's actual developer_reliability_score for
+ * Emaar averages 83 (Sobha 92, Nakheel 92). The old normalizer made it worse:
+ * its fallback chain ended in "score"/"avg_score", so when the stored field was
+ * missing it presented the yield-heavy investor score AS reliability — 62 for
+ * Emaar — which is a different fact wearing the wrong name.
+ *
+ * A ranking that calls a real company unreliable is not a rendering bug, it is
+ * a liability. So this section no longer trusts the stored row at all: it is
+ * computed from the inventory the platform actually scores, keyed by the one
+ * column that means what the heading says, and gated on a minimum sample —
+ * a developer with one listed project cannot be ranked against one with 363.
+ */
+const DEVELOPER_TRACK_MIN_PROJECTS = 5
+
+async function buildDeveloperTrackRows(limit = 8) {
+  try {
+    const rows = await dbQuery<{
+      developer: string
+      projects: number
+      reliability: number
+      avg_yield: number | null
+    }>(Prisma.sql`
+      SELECT
+        developer,
+        COUNT(*)::int AS projects,
+        ROUND(AVG(developer_reliability_score))::int AS reliability,
+        ROUND(AVG(NULLIF(rental_yield, 0))::numeric, 1)::float AS avg_yield
+      FROM ${Prisma.raw(MARKET_TABLES.inventory)}
+      WHERE developer IS NOT NULL
+        AND developer_reliability_score IS NOT NULL
+      GROUP BY developer
+      HAVING COUNT(*) >= ${DEVELOPER_TRACK_MIN_PROJECTS}
+      ORDER BY reliability DESC, projects DESC
+      LIMIT ${limit}
+    `)
+    return rows.map((row) => ({
+      developer: row.developer,
+      projects: row.projects,
+      reliability: row.reliability,
+      avg_yield: row.avg_yield,
+    }))
+  } catch (error) {
+    console.error("Developer track rows unavailable; hiding the section.", { error })
+    return []
   }
-  return null
-}
-
-function normalizeDeveloperReliabilityPayload(value: unknown) {
-  if (!Array.isArray(value)) return value
-
-  return value.map((entry) => {
-    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return entry
-    const row = entry as Record<string, unknown>
-    return {
-      ...row,
-      developer: row.developer ?? row.name ?? row.developer_name ?? null,
-      projects: firstNumericValue(row, ["projects", "count", "project_count", "total_projects"]),
-      reliability:
-        firstNumericValue(row, [
-          "reliability",
-          "developer_reliability_score",
-          "developer_reliability",
-          "reliability_score",
-          "delivery_reliability_score",
-          "avg_reliability",
-          "score",
-          "avg_score",
-        ]),
-      safe_projects: firstNumericValue(row, ["safe_projects", "safe_count", "qualified_projects", "qualified_count"]),
-    }
-  })
 }
 
 async function buildDldMarketFallbackRows(limit = 12) {
@@ -696,6 +712,7 @@ export async function getTopDataRows() {
   }
 
   const dldFallbackRows = await buildDldMarketFallbackRows()
+  const developerTrackRows = await buildDeveloperTrackRows()
 
   const normalizedRows = rows.map((row) => {
     if (row.id === "dld-market") {
@@ -719,9 +736,27 @@ export async function getTopDataRows() {
     }
 
     if (row.id === "developer-reliability") {
+      // Live rows and an honest title — see buildDeveloperTrackRows above. The
+      // stored title said "reliability" over numbers that were not reliability.
       return {
         ...row,
-        data_json: normalizeDeveloperReliabilityPayload(row.data_json),
+        title: "Developer track record",
+        subtitle: `Average delivery-reliability across each developer's scored projects — developers with at least ${DEVELOPER_TRACK_MIN_PROJECTS} scored projects.`,
+        data_json: { developers: developerTrackRows },
+        last_updated: new Date().toISOString(),
+      }
+    }
+
+    if (row.id === "top-projects") {
+      // Say what the ranking IS. The composite leans on advertised yield, so
+      // small developers with 10%+ asking yields outrank the big names — which
+      // is the metric's honest output, but presented bare it read as "the top
+      // developer in Dubai is a five-project shop". The basis line keeps the
+      // ranking and removes the implied endorsement.
+      return {
+        ...row,
+        subtitle:
+          "Ranked by the composite investment score, which weighs advertised yield, evidence and timing. A high rank is a scoring read, not an endorsement of the developer.",
       }
     }
 

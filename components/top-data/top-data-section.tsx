@@ -939,6 +939,12 @@ function DeveloperReliabilityView({ data, locale }: { data: unknown; locale?: st
       {rows.slice(0, 12).map((row, index) => {
         const developer = asText(valueFromKeys(row, ["developer", "name"]), `Developer ${index + 1}`)
         const projects = asNumber(valueFromKeys(row, ["projects", "count", "project_count", "total_projects"])) ?? 0
+        // ONLY fields that MEAN reliability. This chain used to end in
+        // "score" / "avg_score", so when the stored payload had no reliability
+        // field the view presented the yield-heavy investor score under the
+        // heading "reliability" — Emaar read 62 while its actual
+        // developer_reliability_score averages 83. Different facts do not get
+        // to share a name because one of them was missing.
         const reliability = asNumber(
           valueFromKeys(row, [
             "developer_reliability_score",
@@ -947,11 +953,10 @@ function DeveloperReliabilityView({ data, locale }: { data: unknown; locale?: st
             "developer_reliability",
             "delivery_reliability_score",
             "avg_reliability",
-            "score",
-            "avg_score",
           ]),
         )
         const safeProjects = asNumber(valueFromKeys(row, ["safe_projects", "safe_count", "qualified_projects", "qualified_count"]))
+        const avgYield = asNumber(valueFromKeys(row, ["avg_yield", "avgYield"]))
         const safeCoverage = reliability === null && projects > 0 && typeof safeProjects === "number"
           ? Math.round((safeProjects / projects) * 100)
           : null
@@ -976,8 +981,8 @@ function DeveloperReliabilityView({ data, locale }: { data: unknown; locale?: st
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               {isArabicLocale(locale)
-                ? `${formatCount(projects, locale)} مشروع${typeof safeProjects === "number" ? ` · ${formatCount(safeProjects, locale)} آمن` : ""}`
-                : `${formatCount(projects, locale)} projects${typeof safeProjects === "number" ? ` · ${formatCount(safeProjects, locale)} safe` : ""}`}
+                ? `${formatCount(projects, locale)} مشروع${typeof safeProjects === "number" ? ` · ${formatCount(safeProjects, locale)} آمن` : ""}${avgYield !== null ? ` · متوسط العائد ${avgYield}%` : ""}`
+                : `${formatCount(projects, locale)} projects${typeof safeProjects === "number" ? ` · ${formatCount(safeProjects, locale)} safe` : ""}${avgYield !== null ? ` · avg yield ${avgYield}%` : ""}`}
             </p>
           </div>
         )

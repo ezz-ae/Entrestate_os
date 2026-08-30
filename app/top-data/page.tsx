@@ -224,9 +224,11 @@ export default async function TopDataPage() {
             </div>
           ) : null}
           <div className="rounded-xl border border-border/60 bg-card/70 px-4 py-2.5 text-[11px] text-muted-foreground/70">
+            {/* The chip used to print `api.market_pulse_v1` — an internal view
+                name — on a customer page. The reader needs when, not where. */}
             {isArabic
-              ? `مزامنة API · ${syncMeta.primaryView} · ${syncTimestamp} GST`
-              : `API sync · ${syncMeta.primaryView} · ${syncTimestamp} GST`}
+              ? `آخر مزامنة للبيانات · ${syncTimestamp} GST`
+              : `Data synced · ${syncTimestamp} GST`}
           </div>
         </section>
 
