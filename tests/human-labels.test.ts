@@ -108,11 +108,16 @@ describe("data chips speak human, not schema", () => {
 })
 
 describe("the free tier says Free", () => {
-  it("renders 0 as a word in both languages", () => {
+  it("the pricing page speaks free in both languages and quotes no amount", () => {
+    // The tier grid retired with the owner's decision (the account and its
+    // packages are completely free; the store sells) — so there is no 0 to
+    // format any more. What survives of the old rule: the page must still SAY
+    // free, in both languages, and never quote a number for the door.
     const src = read("app/pricing/page.tsx")
-    expect(src).toContain('value === 0')
-    expect(src).toContain('"Free"')
-    expect(src).toContain('"مجاناً"')
+    const code = stripComments(src)
+    expect(src.toLowerCase()).toContain("free")
+    expect(src).toContain("مجاني")
+    expect(code).not.toMatch(/AED\s*\d/)
   })
 })
 

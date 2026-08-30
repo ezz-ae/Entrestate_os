@@ -17,34 +17,38 @@ describe("platform score surfaces", () => {
     expect(home).toContain('href: "/docs/documentation"')
   })
 
-  it("keeps pricing SEO and monetization clarity surfaces", () => {
+  it("prices nothing — the free story, and the one store that sells", () => {
+    // THE MODEL CHANGED BY THE OWNER'S WORD: "الأدوات اللي في الأكاونت
+    // والباكيدجات احنا مخلّيين ده فري تماماً" — the Terminal account and its
+    // packages are completely free, and selling happens in exactly one place,
+    // the business's App Store. This block used to pin the tier grid
+    // (offerCatalogSchema, "What changes across tiers?", pricingPlans.free);
+    // those assertions guarded the OLD commercial layer, so they retired with
+    // it. What must now stay true on /pricing:
     const pricingPage = read("app/pricing/page.tsx")
     const pricingLayout = read("app/pricing/layout.tsx")
-
-    // These used to grep the page for `"@type": "FAQPage"` and
-    // `"@type": "OfferCatalog"`. The FAQ schema was refactored into
-    // lib/seo/schema.ts and kept working, so that assertion failed on a page
-    // that was fine — while the OfferCatalog quietly disappeared in the same
-    // refactor and the failure looked identical. Asserting the literal in the
-    // page was asserting an implementation detail; following the call to where
-    // the schema is actually built tells the two apart.
     const schema = read("lib/seo/schema.ts")
 
+    // 1. It answers honestly and structurally (FAQ schema still reaches the page).
     expect(pricingPage).toMatch(/faqSchema\(/)
     expect(schema).toContain('"@type": "FAQPage"')
-    expect(pricingPage).toMatch(/offerCatalogSchema\(/)
-    expect(schema).toContain('"@type": "OfferCatalog"')
-    // Both must reach the page, not merely be computed.
     expect(pricingPage).toMatch(/<JsonLd data=\{jsonLdFaq\}/)
-    expect(pricingPage).toMatch(/<JsonLd data=\{jsonLdOffers\}/)
 
-    // The free tier has to be SAID, not only priced. The old assertion pinned
-    // one headline ("Start free before you buy") that a rewrite removed while
-    // the free plan itself stayed — so it pins the promise now, not the phrase.
-    expect(pricingPage).toMatch(/pricingPlans\.free/)
-    expect(pricingPage.toLowerCase()).toContain("free access opens the core surfaces")
+    // 2. It SELLS NOTHING: no offer catalog, no checkout door, no AED amount.
+    //    Comments stripped first — the page's own header NARRATES the retired
+    //    /checkout model, and a guard that reads comments arrests the historian.
+    const pricingCode = pricingPage.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
+    expect(pricingCode).not.toMatch(/offerCatalogSchema/)
+    expect(pricingCode).not.toContain("/checkout")
+    expect(pricingCode).not.toMatch(/AED\s*\d/)
 
-    expect(pricingPage).toContain("What changes across tiers?")
+    // 3. It says free and points buying intent at the ONE store.
+    expect(pricingPage.toLowerCase()).toContain("free")
+    expect(pricingPage).toContain("entrestate.com/business/store")
+
+    // 4. The dormant money path stays guarded elsewhere, not re-linked here:
+    //    lib/pricing/plans.ts and the Tap literals remain pinned by
+    //    tests/pricing-money.test.ts even while nothing links to them.
     expect(pricingLayout).toContain("generateMetadata")
   })
 

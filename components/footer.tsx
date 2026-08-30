@@ -51,6 +51,9 @@ const columns = [
       { label: "Research Notebooks", labelAr: "دفاتر الأبحاث", href: "/account/book" },
       { label: "Reports Library", labelAr: "مكتبة التقارير", href: "/reports/library" },
       { label: "Pricing", labelAr: "التسعير", href: "/pricing" },
+      // The ONE shop window. Selling lives on the business's App Store — the
+      // owner's rule: one account, one place that sells to it.
+      { label: "App Store", labelAr: "متجر التطبيقات", href: "https://entrestate.com/business/store", external: true },
       { label: "Contact Sales", labelAr: "مبيعات المؤسسات", href: "/contact" },
     ],
   },
@@ -70,6 +73,7 @@ const columns = [
     headingAr: "الشركة",
     links: [
       { label: "About", labelAr: "من نحن", href: "/about" },
+      { label: "For Business", labelAr: "للشركات", href: "https://entrestate.com/business", external: true },
       { label: "Enterprise", labelAr: "المؤسسات", href: "/enterprise" },
       { label: "Infrastructure", labelAr: "البنية", href: "/infrastructure" },
       { label: "Investor Relations", labelAr: "علاقات المستثمرين", href: "/investor-relations" },
@@ -140,7 +144,10 @@ export function Footer() {
   const isDedicatedMobileShell = runtimeShell === "mobile"
   const isArabic = locale === "ar"
   const t = (en: string, ar: string) => (isArabic ? ar : en)
-  const toHref = (href: string) => (href.endsWith(".xml") ? href : prefixLocalePath(href, locale))
+  // Absolute URLs cross to the business site — the locale prefix belongs only
+  // to this app's own routes ("/ar" + "https://…" would 404).
+  const toHref = (href: string) =>
+    href.endsWith(".xml") || href.startsWith("http") ? href : prefixLocalePath(href, locale)
   const { data: session } = authClient.useSession()
   const decisionTerminalHref = session?.user
     ? prefixLocalePath("/me?openChat=true", locale)
