@@ -164,7 +164,8 @@
       "deals": "Find me deals",
       "market": "What's happening in the market?",
       "plan": "Plan my investment"
-    }
+    },
+    "workspacePanel": "Workspace"
   },
   "dashboard": {
     "title": "Dashboard",

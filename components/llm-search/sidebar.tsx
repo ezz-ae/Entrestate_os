@@ -708,7 +708,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const mobilePanels = [
     { id: "chat",      icon: MessageSquare, label: t("chat") },
     { id: "history",   icon: Clock,         label: t("history") },
-    { id: "workspace", icon: LayoutGrid,     label: t("workspace") },
+    { id: "workspace", icon: LayoutGrid,     label: t("workspacePanel") },
   ] as const
 
   const sidebarContent = (
@@ -768,7 +768,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
               <LayoutGrid className="h-5 w-5" />
             </Button>
             <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
-              {t("workspace")}
+              {t("workspacePanel")}
             </span>
           </div>
         </nav>
@@ -783,7 +783,7 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
               <Image src={avatar} alt={displayName} width={36} height={36} className="object-cover" />
             </Link>
             <span className="absolute left-full ml-4 rounded bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 z-50 pointer-events-none whitespace-nowrap">
-              {t("workspace")}
+              {t("workspacePanel")}
             </span>
           </div>
         </div>
@@ -1117,6 +1117,16 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   return (
     <>
       {authenticated ? (
+        <div className="fixed inset-y-0 left-0 rtl:left-auto rtl:right-0 z-50 hidden md:flex">
+          {sidebarContent}
+        </div>
+      ) : isSidebarOpen ? (
+        // An unauthenticated DESKTOP visitor gets the drawer too. This branch
+        // used to be `null`, which quietly broke "one chat everywhere": every
+        // /markets submit called openSidebar() and, for the signed-out
+        // majority, nothing at all appeared — the conversation existed in the
+        // provider with no surface to show it. Signed-out gets an overlay
+        // drawer (no rail, no layout offset); signed-in keeps the docked rail.
         <div className="fixed inset-y-0 left-0 rtl:left-auto rtl:right-0 z-50 hidden md:flex">
           {sidebarContent}
         </div>
