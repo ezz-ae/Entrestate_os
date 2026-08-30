@@ -1,5 +1,6 @@
 "use client"
 
+import { ChatMarkdown } from "@/components/chat-markdown"
 import { useEffect, useState } from "react"
 import { Send } from "lucide-react"
 
@@ -125,7 +126,7 @@ export function LeadAgentChat() {
                   : "bg-secondary text-foreground"
               }`}
             >
-              {message.content}
+              {message.role === "user" ? message.content : <ChatMarkdown text={message.content} />}
             </div>
           </div>
         ))}
