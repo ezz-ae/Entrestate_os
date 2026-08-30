@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
-import { generateText, tool } from "ai"
+import { generateText, stepCountIs, streamText, tool } from "ai"
+import {
+  deeperAnalysisSuggestion,
+  stepDetail,
+  stepDoneLabel,
+  stepResultCount,
+  stepRunningLabel,
+} from "@/lib/chat/steps"
 import { z } from "zod"
 import { getPublicErrorMessage, getRequestId } from "@/lib/api-errors"
 import { resolveCopilotModel } from "@/lib/ai-provider"
@@ -281,36 +288,28 @@ function isNonActionableTerminalInput(message: string) {
 }
 
 function buildTerminalCommandGuide(locale: string) {
+  // This used to print "ENTRESTATE Decision Terminal — Mode: Awaiting command —
+  // COMMANDS: SCREEN | PROJECT | AREA…" at anyone who said hello. The person
+  // typing "dubai" is an investor, not an operator; they get a sentence and
+  // tappable examples, not a command syntax.
   if (locale === "ar") {
     return [
-      "ENTRESTATE Decision Terminal",
-      "────────────────────────────────",
-      "الوضع: بانتظار أمر",
-      "الأوامر: SCREEN | PROJECT | AREA | COMPARE | RISK | MEMO | PULSE",
+      "أهلاً بك. أنا مستشار Entrestate العقاري — اسألني عن أي منطقة أو مشروع أو مطوّر في الإمارات وسأبحث في البيانات الحية وأجيبك بلغة واضحة.",
       "",
-      "أمثلة:",
-      "- PULSE",
-      "- PROJECT Marina Vista",
-      "- SCREEN مشاريع تحت AED 2M",
-      "- AREA Jumeirah Village Circle",
-      "- COMPARE Dubai Marina vs JBR",
-      "- RISK Emaar Properties",
+      "أمثلة تقدر تبدأ بها:",
+      "· إيه أفضل عائد تحت مليوني درهم في دبي؟",
+      "· قارن لي بين دبي مارينا و JBR",
+      "· إيه وضع إعمار كمطوّر؟",
     ].join("\n")
   }
 
   return [
-    "ENTRESTATE Decision Terminal",
-    "────────────────────────────────",
-    "Mode: Awaiting command",
-    "Commands: SCREEN | PROJECT | AREA | COMPARE | RISK | MEMO | PULSE",
+    "Welcome. I'm Entrestate's market advisor — ask me about any area, project or developer in the UAE and I'll search the live data and answer in plain language.",
     "",
-    "Examples:",
-    "- PULSE",
-    "- PROJECT Marina Vista",
-    "- SCREEN projects under AED 2M",
-    "- AREA Jumeirah Village Circle",
-    "- COMPARE Dubai Marina vs JBR",
-    "- RISK Emaar Properties",
+    "A few ways to start:",
+    "· What's the best yield under AED 2M in Dubai?",
+    "· Compare Dubai Marina with JBR for me",
+    "· How solid is Emaar as a developer?",
   ].join("\n")
 }
 
@@ -811,6 +810,72 @@ async function buildSafeDeterministicFallback(message: string, locale: string, c
   }
 }
 
+/**
+ * ONE FINISHING PATH FOR BOTH TRANSPORTS. The streaming branch narrates the
+ * steps live and then must land on exactly the answer the JSON branch would
+ * have produced — data cards, notifications, suggestions, fallbacks. Two
+ * copies of this logic would drift the way every duplicated surface in this
+ * codebase has drifted; both branches call this instead.
+ */
+async function buildFinalChatPayload(input: {
+  text: string
+  toolResults: unknown[]
+  message: string
+  locale: string
+  context?: { city?: string; area?: string }
+  requestId: string
+  runId: string
+  provenance: Awaited<ReturnType<typeof resolveProvenanceFast>>
+  usage: Awaited<ReturnType<typeof safeConsumeCopilotUsage>>["usage"]
+}) {
+  const { text, toolResults, message, locale, context, requestId, runId, provenance, usage } = input
+
+  const rows = extractRowsFromToolResults(toolResults)
+  const dataCards = rows.length > 0 ? buildDataCardsFromRows(rows, locale) : undefined
+  const notifications = buildDldNotificationsFromToolResults(toolResults)
+  const confidenceWarnings = collectToolWarnings(toolResults)
+  const pulseContent = buildPulseContentFromToolResults(toolResults, locale)
+  const toolSummary = toolResults.length > 0 ? JSON.stringify(toolResults[toolResults.length - 1]).slice(0, 1200) : ""
+  const deterministic = text.length === 0 && rows.length === 0 && !pulseContent
+    ? await buildDeterministicFallback(message, locale, context)
+    : null
+  const projectQuery = extractProjectQuery(message)
+  const content = text.length > 0
+    ? text
+    : projectQuery && rows.length > 0
+      ? buildProjectContent(rows[0], locale)
+    : pulseContent && message.trim().toUpperCase().includes("PULSE")
+      ? pulseContent
+    : rows.length > 0
+      ? buildScreeningTable(rows, locale)
+    : deterministic?.content
+      ? deterministic.content
+    : toolSummary.length > 0
+      ? `The data shows: ${toolSummary}`
+      : "No matching projects found."
+
+  const sourcesUsed = deterministic?.evidence?.sources_used ?? collectSources(toolResults)
+
+  return buildChatResponse({
+    content,
+    requestId,
+    runId,
+    provenance,
+    sourcesUsed,
+    dataCards: dataCards ?? deterministic?.dataCards,
+    dataAsOf: deterministic?.data_as_of ?? resolveDataAsOf(toolResults),
+    warnings: confidenceWarnings,
+    extra: {
+      notifications: notifications.length > 0 ? notifications : undefined,
+      // The answer ends by offering one deeper pass; the chip makes the offer
+      // tappable instead of retypable.
+      suggestions: [deeperAnalysisSuggestion(locale), ...getDefaultSuggestions(locale).slice(0, 3)],
+      compiler_output: buildCompilerOutput(message),
+      usage,
+    },
+  })
+}
+
 export async function POST(request: Request) {
   const requestId = getRequestId(request)
   const provenance = await resolveProvenanceFast()
@@ -1001,12 +1066,7 @@ export async function POST(request: Request) {
           provenance,
           sourcesUsed: ["terminal_command_guide"],
           extra: {
-            suggestions: [
-              locale === "ar" ? "PULSE" : "PULSE",
-              "PROJECT Marina Vista",
-              locale === "ar" ? "SCREEN مشاريع تحت AED 2M" : "SCREEN projects under AED 2M",
-              "AREA Jumeirah Village Circle",
-            ],
+            suggestions: getDefaultSuggestions(locale),
             compiler_output: buildCompilerOutput(message),
             usage,
           },
@@ -1052,72 +1112,163 @@ export async function POST(request: Request) {
     try {
       const enterpriseConfig = await getEnterpriseConfig()
 
+      const systemPrompt = getCopilotSystemPrompt(locale, {
+        voice: enterpriseConfig.prompt.voice,
+        constraints: enterpriseConfig.prompt.constraints,
+        language: enterpriseConfig.prompt.language,
+        brandName: enterpriseConfig.brand.brand_name,
+        tone: enterpriseConfig.brand.tone,
+      })
+
+      // ── The narrated path ─────────────────────────────────────────────────
+      // The client opts in with x-chat-stream: 1 and receives NDJSON events:
+      //   {type:"step"…} when a tool starts   — "جاري البحث في المخزون…"
+      //   {type:"step-done"…} when it returns — "تم إدراج ٤ من المشاريع للتحليل"
+      //   {type:"delta"…} as the answer writes itself
+      //   {type:"final"…} the exact payload the JSON branch would have sent
+      // The person watches the work happen instead of staring at a spinner —
+      // and the steps speak human, never tool or table names.
+      if (request.headers.get("x-chat-stream") === "1") {
+        const encoder = new TextEncoder()
+        const stream = new ReadableStream<Uint8Array>({
+          start: (controller) => {
+            const emit = (event: Record<string, unknown>) => {
+              controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`))
+            }
+
+            const run = async () => {
+              try {
+                const result = streamText({
+                  model,
+                  system: systemPrompt,
+                  prompt,
+                  temperature: enterpriseConfig.prompt.temperature,
+                  stopWhen: stepCountIs(6),
+                  toolChoice: "auto",
+                  tools: toolset,
+                })
+
+                const toolResults: unknown[] = []
+                let finalText = ""
+                let stepSeq = 0
+
+                for await (const part of result.fullStream) {
+                  const kind = (part as { type?: string }).type
+                  if (kind === "tool-call") {
+                    const toolName = String((part as { toolName?: unknown }).toolName ?? "")
+                    const id = String((part as { toolCallId?: unknown }).toolCallId ?? `step-${++stepSeq}`)
+                    emit({ type: "step", id, label: stepRunningLabel(toolName, locale) })
+                  } else if (kind === "tool-result") {
+                    const toolName = String((part as { toolName?: unknown }).toolName ?? "")
+                    const id = String((part as { toolCallId?: unknown }).toolCallId ?? "")
+                    const output =
+                      (part as { output?: unknown }).output ?? (part as { result?: unknown }).result
+                    if (output !== undefined) toolResults.push(output)
+                    emit({
+                      type: "step-done",
+                      id,
+                      label: stepDoneLabel(toolName, stepResultCount(output), locale),
+                      detail: stepDetail(output, locale),
+                    })
+                  } else if (kind === "text-delta") {
+                    const delta = String(
+                      (part as { text?: unknown }).text ?? (part as { textDelta?: unknown }).textDelta ?? "",
+                    )
+                    if (delta) {
+                      finalText += delta
+                      emit({ type: "delta", text: delta })
+                    }
+                  } else if (kind === "error") {
+                    throw (part as { error?: unknown }).error ?? new Error("chat stream failed")
+                  }
+                }
+
+                const payload = await buildFinalChatPayload({
+                  text: finalText.trim(),
+                  toolResults,
+                  message,
+                  locale,
+                  context: parsed.data.context,
+                  requestId,
+                  runId,
+                  provenance,
+                  usage,
+                })
+                emit({ type: "final", ...payload })
+              } catch (error) {
+                console.error("Chat stream failed; sending deterministic final.", { requestId, error })
+                const fallback = await buildSafeDeterministicFallback(message, locale, parsed.data.context)
+                emit({
+                  type: "final",
+                  ...buildChatResponse({
+                    content: fallback.content,
+                    requestId,
+                    runId,
+                    provenance,
+                    sourcesUsed: fallback.evidence?.sources_used ?? ["deterministic_fallback"],
+                    dataCards: fallback.dataCards,
+                    dataAsOf: fallback.data_as_of,
+                    extra: {
+                      warning: "Live model unavailable. Returned deterministic market response.",
+                      suggestions: getDefaultSuggestions(locale),
+                      compiler_output: buildCompilerOutput(message),
+                      usage,
+                    },
+                  }),
+                })
+              } finally {
+                controller.close()
+              }
+            }
+
+            void run()
+          },
+        })
+
+        return new Response(stream, {
+          status: 200,
+          headers: {
+            "content-type": "application/x-ndjson; charset=utf-8",
+            "cache-control": "no-store",
+            "x-request-id": requestId,
+            ...buildUsageHeaders(usage),
+          },
+        })
+      }
+
       const response = await withTimeout(
         generateText({
           model,
-          system: getCopilotSystemPrompt(locale, {
-            voice: enterpriseConfig.prompt.voice,
-            constraints: enterpriseConfig.prompt.constraints,
-            language: enterpriseConfig.prompt.language,
-            brandName: enterpriseConfig.brand.brand_name,
-            tone: enterpriseConfig.brand.tone,
-          }),
+          system: systemPrompt,
           prompt,
           temperature: enterpriseConfig.prompt.temperature,
-          maxSteps: 6,
+          // maxSteps was v4 vocabulary; under this SDK it fell into the `as
+          // any` and did nothing, so the model got ONE step — a single tool
+          // call and no prose over it, which is part of why answers arrived as
+          // bare tables. stopWhen is the working spelling.
+          stopWhen: stepCountIs(6),
           toolChoice: "auto",
           tools: toolset,
-        } as any),
+        }),
         chatModelTimeoutMs,
         "chat model",
       )
 
       const text = response.text.trim()
-      const toolResults = ((response as { toolResults?: Array<{ result?: unknown }> }).toolResults ?? [])
-        .map((entry) => entry.result)
+      const toolResults = ((response as { toolResults?: Array<{ result?: unknown; output?: unknown }> }).toolResults ?? [])
+        .map((entry) => entry.output ?? entry.result)
         .filter((entry) => entry !== undefined)
 
-      const rows = extractRowsFromToolResults(toolResults)
-      const dataCards = rows.length > 0 ? buildDataCardsFromRows(rows, locale) : undefined
-      const notifications = buildDldNotificationsFromToolResults(toolResults)
-      const confidenceWarnings = collectToolWarnings(toolResults)
-      const pulseContent = buildPulseContentFromToolResults(toolResults, locale)
-      const toolSummary = toolResults.length > 0 ? JSON.stringify(toolResults[toolResults.length - 1]).slice(0, 1200) : ""
-      const deterministic = text.length === 0 && rows.length === 0 && !pulseContent
-        ? await buildDeterministicFallback(message, locale, parsed.data.context)
-        : null
-      const projectQuery = extractProjectQuery(message)
-      const content = text.length > 0
-        ? text
-        : projectQuery && rows.length > 0
-          ? buildProjectContent(rows[0], locale)
-        : pulseContent && message.trim().toUpperCase().includes("PULSE")
-          ? pulseContent
-        : rows.length > 0
-          ? buildScreeningTable(rows, locale)
-        : deterministic?.content
-          ? deterministic.content
-        : toolSummary.length > 0
-          ? `The data shows: ${toolSummary}`
-          : "No matching projects found."
-
-      const sourcesUsed = deterministic?.evidence?.sources_used ?? collectSources(toolResults)
-
-      const responsePayload = buildChatResponse({
-        content,
+      const responsePayload = await buildFinalChatPayload({
+        text,
+        toolResults,
+        message,
+        locale,
+        context: parsed.data.context,
         requestId,
         runId,
         provenance,
-        sourcesUsed,
-        dataCards: dataCards ?? deterministic?.dataCards,
-        dataAsOf: deterministic?.data_as_of ?? resolveDataAsOf(toolResults),
-        warnings: confidenceWarnings,
-        extra: {
-          notifications: notifications.length > 0 ? notifications : undefined,
-          suggestions: getDefaultSuggestions(locale),
-          compiler_output: buildCompilerOutput(message),
-          usage,
-        },
+        usage,
       })
 
       return NextResponse.json(responsePayload, {

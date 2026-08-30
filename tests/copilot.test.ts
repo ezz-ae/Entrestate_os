@@ -33,8 +33,15 @@ describe("copilot schemas", () => {
     expect(parsed.filters.timing_label).toBe("BUY")
   })
 
-  it("requires decision engine identity in system prompt", () => {
-    expect(copilotSystemPrompt).toContain("YOU ARE A DECISION ENGINE")
+  it("keeps the advisor identity and the one-recommendation contract", () => {
+    // The prompt used to open "YOU ARE NOT A CHATBOT. YOU ARE A DECISION
+    // ENGINE" and forbid paragraphs. The owner reversed that on purpose after
+    // watching real users: the reader is an investor or a working agent, and
+    // the answer is paragraphs, one recommendation, one closing question.
+    expect(copilotSystemPrompt).toContain("market advisor")
+    expect(copilotSystemPrompt).toContain('starting with "Recommendation:"')
+    expect(copilotSystemPrompt).toContain("Would you like a deeper analysis of these results?")
+    expect(copilotSystemPrompt).toContain("NEVER show internal vocabulary")
   })
 
   it("accepts developer due diligence lookup", () => {
