@@ -84,6 +84,15 @@ describe("one conversation", () => {
     }
   })
 
+  it("the empty state never hides behind a JS animation", () => {
+    // A real Chrome profile stalled framer-motion's entrance and served a
+    // pitch-black /chat — SSR content held at opacity 0 — on every
+    // deployment, old and new. Content visibility must not depend on an
+    // animation frame that may never come.
+    const src = read("components/ChatInterface.tsx")
+    expect(src).not.toContain("initial={{ opacity: 0")
+  })
+
   it("streaming renders are throttled at the provider", () => {
     expect(read("components/copilot-provider.tsx")).toContain("experimental_throttle")
   })

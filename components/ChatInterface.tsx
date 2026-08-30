@@ -2214,7 +2214,11 @@ export function ChatInterface({
     return (
       <div className="mx-auto w-full max-w-6xl">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          // initial={false} — the page must be readable even when the
+          // entrance animation never runs. One real Chrome profile stalled
+          // framer's first animation frame and served a pitch-black /chat
+          // (SSR content held at opacity 0) on EVERY deployment for weeks.
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col items-center text-center"
@@ -2458,7 +2462,7 @@ export function ChatInterface({
               ].map((item, i) => (
                 <motion.div 
                   key={item.title}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + (i * 0.1), duration: 0.8 }}
                   className="p-8 rounded-[2.5rem] border border-border/40 bg-card/30 backdrop-blur-xl hover:border-primary/40 hover:bg-card/50 transition-all group relative overflow-hidden"
