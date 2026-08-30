@@ -107,17 +107,30 @@ describe("data chips speak human, not schema", () => {
   })
 })
 
-describe("the free tier says Free", () => {
-  it("the pricing page speaks free in both languages and quotes no amount", () => {
-    // The tier grid retired with the owner's decision (the account and its
-    // packages are completely free; the store sells) — so there is no 0 to
-    // format any more. What survives of the old rule: the page must still SAY
-    // free, in both languages, and never quote a number for the door.
-    const src = read("app/pricing/page.tsx")
-    const code = stripComments(src)
-    expect(src.toLowerCase()).toContain("free")
-    expect(src).toContain("مجاني")
+describe("the cheap word never sells", () => {
+  // THE OWNER'S RULE, verbatim: "بلاش نستخدم فري لأنها دايماً بتعطي انطباع
+  // بالغير أهمية" — the word "free" cheapens whatever it describes, so the
+  // selling surfaces name what the account GIVES (market discovery, the full
+  // analysis) and never call it free, in either language. Comments are
+  // stripped (history may quote the word); the bare "free" token is masked
+  // first because tier LOGIC legitimately compares against "free".
+  const bansCheapWord = (rel: string) => {
+    const code = stripComments(read(rel)).replaceAll('"free"', '"__tier__"')
+    expect(code, `${rel} says the cheap word`).not.toMatch(/\bfree\b/i)
+    expect(code, `${rel} says the cheap word in Arabic`).not.toContain("مجان")
+  }
+
+  it("pricing page, pricing metadata, and the account store section", () => {
+    bansCheapWord("app/pricing/page.tsx")
+    bansCheapWord("app/pricing/layout.tsx")
+    bansCheapWord("app/me/page.tsx")
+  })
+
+  it("the pricing page still quotes no amount and names the store", () => {
+    const code = stripComments(read("app/pricing/page.tsx"))
     expect(code).not.toMatch(/AED\s*\d/)
+    expect(code.toLowerCase()).toContain("discovery")
+    expect(code).toContain("entrestate.com/business/store")
   })
 })
 

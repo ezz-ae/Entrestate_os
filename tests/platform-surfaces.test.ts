@@ -42,8 +42,10 @@ describe("platform score surfaces", () => {
     expect(pricingCode).not.toContain("/checkout")
     expect(pricingCode).not.toMatch(/AED\s*\d/)
 
-    // 3. It says free and points buying intent at the ONE store.
-    expect(pricingPage.toLowerCase()).toContain("free")
+    // 3. It names what the account gives (never "free" — the owner's word ban,
+    //    pinned in tests/human-labels.test.ts) and points buying intent at the
+    //    ONE store.
+    expect(pricingCode.toLowerCase()).toContain("discovery")
     expect(pricingPage).toContain("entrestate.com/business/store")
 
     // 4. The dormant money path stays guarded elsewhere, not re-linked here:

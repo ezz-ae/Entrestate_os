@@ -18,9 +18,12 @@ import { faqSchema } from "@/lib/seo/schema"
  * happens in ONE place: the business's App Store, so it is never "حساب هنا
  * وحساب هناك".
  *
- * So this page now states the deal instead of quoting tiers: everything that
- * answers a question is free; everything that does selling work for you is an
- * app in the store. lib/pricing/plans.ts and the Tap/checkout plumbing stay in
+ * So this page now states the deal instead of quoting tiers — and it names
+ * what the account gives instead of calling it free. The owner's second rule,
+ * verbatim: "بلاش نستخدم فري لأنها دايماً بتعطي انطباع بالغير أهمية" — the
+ * word cheapens what it describes. The included layer is called what it IS:
+ * market discovery / the full market analysis. The selling work is apps in
+ * the store. lib/pricing/plans.ts and the Tap/checkout plumbing stay in
  * the codebase, dormant and still pinned by tests/pricing-money.test.ts — a
  * money path is decommissioned by unlinking it, not by deleting the guard
  * that watches it.
@@ -28,7 +31,7 @@ import { faqSchema } from "@/lib/seo/schema"
 
 const BUSINESS_STORE_URL = "https://entrestate.com/business/store"
 
-const FREE_SURFACES = [
+const DISCOVERY_SURFACES = [
   { en: "Search & screening across the scored inventory", ar: "البحث والفرز في كامل المخزون المقيّم" },
   { en: "Area intelligence — all areas, all metrics", ar: "ملفات المناطق — كل المناطق وكل المؤشرات" },
   { en: "Developer reliability records", ar: "سجلات موثوقية المطورين" },
@@ -43,10 +46,10 @@ export default async function PricingPage() {
 
   const jsonLdFaq = faqSchema([
     {
-      q: isArabic ? "هل استخدام المنصة مجاني فعلاً؟" : "Is the Terminal really free?",
+      q: isArabic ? "ما الذي يأتي مع الحساب؟" : "What comes with the account?",
       a: isArabic
-        ? "نعم. البحث والبيانات والمستشار مجانية لكل حساب، بدون باقات وبدون ترقيات داخل المنصة."
-        : "Yes. Search, the data, and the advisor are free for every account — no tiers and no in-product upgrades.",
+        ? "طبقة الاستكشاف كاملة — البحث والبيانات والمستشار — بدون باقات وبدون ترقيات داخل المنصة."
+        : "The full discovery layer — search, the data, and the advisor — with no tiers and no in-product upgrades.",
     },
     {
       q: isArabic ? "إذاً ما الذي يُباع؟" : "Then what is for sale?",
@@ -67,13 +70,13 @@ export default async function PricingPage() {
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground md:text-6xl">
             {isArabic
-              ? "كل ما يجيب عن سؤالك — مجاني."
-              : "Everything that answers your question is free."}
+              ? "تحليل السوق كامل — مع حسابك."
+              : "The full market analysis comes with your account."}
           </h1>
           <p className="mt-4 text-base leading-relaxed text-muted-foreground md:text-lg">
             {isArabic
-              ? "حساب واحد مجاني يفتح البحث والبيانات والمستشار كاملةً. وما يجلب لك العميل التالي — الإعلانات والصفحات والمتابعة — تطبيقات تضيفها من المتجر وقت ما تحتاجها."
-              : "One free account opens the search, the data, and the advisor in full. What wins you the next client — the ads, the pages, the follow-up — are apps you add from the store when you need them."}
+              ? "حساب واحد يفتح البحث والبيانات والمستشار — استكشاف السوق من أوله لآخره. وما يجلب لك العميل التالي — الإعلانات والصفحات والمتابعة — تطبيقات تضيفها من المتجر وقت ما تحتاجها."
+              : "One account opens the search, the data, and the advisor — market discovery end to end. What wins you the next client — the ads, the pages, the follow-up — are apps you add from the store when you need them."}
           </p>
         </header>
 
@@ -82,11 +85,11 @@ export default async function PricingPage() {
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
               <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
-                {isArabic ? "مجاني لكل حساب" : "Free for every account"}
+                {isArabic ? "استكشاف السوق — مع كل حساب" : "Market discovery — with every account"}
               </p>
             </div>
             <ul className="mt-5 space-y-3">
-              {FREE_SURFACES.map((item) => (
+              {DISCOVERY_SURFACES.map((item) => (
                 <li key={item.en} className="flex items-start gap-2.5 text-sm text-foreground">
                   <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
                   <span>{isArabic ? item.ar : item.en}</span>
@@ -95,7 +98,7 @@ export default async function PricingPage() {
             </ul>
             <Button asChild className="mt-6 w-full">
               <Link href={prefixLocalePath("/login", locale)}>
-                {isArabic ? "أنشئ حسابك المجاني" : "Create your free account"}
+                {isArabic ? "افتح حسابك" : "Open your account"}
               </Link>
             </Button>
           </div>
