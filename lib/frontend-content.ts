@@ -699,7 +699,16 @@ export async function getTopDataRows() {
 
   const normalizedRows = rows.map((row) => {
     if (row.id === "dld-market") {
-      if (!isEmptyPayload(row.data_json)) {
+      // The stored payload has to be a FEED to be rendered as one. The row in
+      // api.entrestate_top_data holds a summary — { volumeAED, transactions,
+      // topVelocity[] } — and DldMarketView reads transaction rows, so it found
+      // no headline, no amount, no area, and the section drew nothing useful
+      // while claiming to be live. `isEmptyPayload` said "not empty" and handed
+      // the summary straight through; "not empty" and "renderable" are not the
+      // same question. When the stored payload carries no transaction rows, the
+      // live feed built from the database is what the section shows.
+      const storedRows = Array.isArray(row.data_json) ? row.data_json : []
+      if (storedRows.length > 0) {
         return row
       }
 
