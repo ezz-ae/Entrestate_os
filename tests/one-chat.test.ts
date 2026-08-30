@@ -71,6 +71,23 @@ describe("one conversation", () => {
     expect(offenders).toEqual([])
   })
 
+  it("no label ever points at an OBJECT in the catalog", () => {
+    // t("workspace") resolved to a DICT (workspace.viewAndAnalyze…), so it
+    // threw INSUFFICIENT_PATH on every render — and the provider re-renders
+    // the sidebar on every streamed delta, so one answer logged thousands of
+    // errors and starved the main thread into a black page.
+    const sidebar = read("components/llm-search/sidebar.tsx")
+    expect(sidebar).not.toContain('t("workspace")')
+    for (const loc of ["en", "ar"]) {
+      const catalog = JSON.parse(read(`messages/${loc}.json`))
+      expect(typeof catalog.sidebar.workspacePanel, `${loc} sidebar.workspacePanel`).toBe("string")
+    }
+  })
+
+  it("streaming renders are throttled at the provider", () => {
+    expect(read("components/copilot-provider.tsx")).toContain("experimental_throttle")
+  })
+
   it("a signed-out desktop visitor can SEE the one chat", () => {
     // openSidebar() with nothing rendered is a conversation with no surface —
     // exactly how the unification silently failed its first live test.
