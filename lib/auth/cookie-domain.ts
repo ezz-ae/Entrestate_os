@@ -1,5 +1,13 @@
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"])
-const SHARED_SITE_SUBDOMAINS = new Set(["www", "m"])
+/**
+ * Subdomains whose sessions belong to the WHOLE site, not to themselves.
+ * "terminal" is here because the account model is ONE account across
+ * terminal.entrestate.com and entrestate.com — the person who signs up on
+ * the Terminal is the same person the business sells to. With "terminal"
+ * absent, the session cookie scoped itself to .terminal.entrestate.com and
+ * the business could never see it, whatever the env said.
+ */
+const SHARED_SITE_SUBDOMAINS = new Set(["www", "m", "terminal"])
 
 function normalizeHost(value: string) {
   return value.trim().toLowerCase().replace(/:\d+$/, "")

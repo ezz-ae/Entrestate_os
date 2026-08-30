@@ -14,6 +14,7 @@ import {
   Bell,
 } from "lucide-react"
 import { getPersonalHomeBundle } from "@/lib/me/personal-home"
+import { getBusinessStore } from "@/lib/business-store"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { VerdictPill } from "@/components/me/verdict-pill"
@@ -27,6 +28,7 @@ export default async function MeHomePage() {
   const locale = await getRequestLocale()
   const bundle = await getPersonalHomeBundle()
   if (!bundle) return null
+  const businessStore = await getBusinessStore()
   const terminalHref = prefixLocalePath("/me?openChat=true", locale)
 
   const publicSurfaces = [
@@ -234,6 +236,41 @@ export default async function MeHomePage() {
           ))}
         </div>
       </section>
+
+      {businessStore ? (
+        <section aria-label="Entrestate App Store">
+          <SectionHeader
+            title="App Store"
+            subtitle="Search and data stay free. These are the working tools the business sells — one account, one place to add them."
+            action={{ label: "Open the store", href: businessStore.storeUrl }}
+          />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {businessStore.products.map((product) => (
+              <Card key={product.id}>
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold">{product.name}</h3>
+                    <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {product.status === "planned" ? "In build" : product.tier === "lite" ? "Lite" : "Full"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{product.tagline}</p>
+                  {product.status === "live" ? (
+                    <a
+                      href={`${businessStore.storeUrl}#${product.id}`}
+                      className="mt-4 inline-flex items-center text-sm font-semibold text-primary hover:underline"
+                    >
+                      View in the store <ArrowRight className="ml-1 h-4 w-4" />
+                    </a>
+                  ) : (
+                    <p className="mt-4 text-xs text-muted-foreground">Being built — it will appear here the day it opens.</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section aria-label="Alerts">
         <SectionHeader
