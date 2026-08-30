@@ -3,7 +3,9 @@ import "server-only"
 import { createProfile, sampleRows } from "@/lib/profiler"
 import { setDataset } from "@/lib/dataset-store"
 import type { StoredDataset, UploadResponse } from "@/lib/types"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
+import { MARKET_TABLES } from "@/lib/market-tables"
 const QUERY_TIMEOUT_MS = 20000
 
 export async function POST() {
@@ -21,7 +23,7 @@ export async function POST() {
     if (hasDatabaseUrl) {
       try {
         const rawRows = await withTimeout(
-          prisma.$queryRaw<Record<string, unknown>[]>`SELECT * FROM entrestate_master`,
+          prisma.$queryRaw<Record<string, unknown>[]>`SELECT * FROM ${Prisma.raw(MARKET_TABLES.entrestateMaster)}`,
           QUERY_TIMEOUT_MS,
           "entrestate_master",
         )

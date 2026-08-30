@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
+import { MARKET_TABLES } from "@/lib/market-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -97,8 +98,8 @@ export async function GET(request: Request) {
         me.bedroom_types,
         me.demand_hotness,
         me.verified_image
-      FROM media_enrichment AS me
-      LEFT JOIN entrestate_master AS em
+      FROM ${Prisma.raw(MARKET_TABLES.mediaEnrichment)} AS me
+      LEFT JOIN ${Prisma.raw(MARKET_TABLES.entrestateMaster)} AS em
         ON em.project_id = me.project_id
       WHERE me.name IS NOT NULL
       ORDER BY me.verified_image DESC NULLS LAST, me.project_id DESC
@@ -119,7 +120,7 @@ export async function GET(request: Request) {
         me.bedroom_types,
         me.demand_hotness,
         me.verified_image
-      FROM media_enrichment AS me
+      FROM ${Prisma.raw(MARKET_TABLES.mediaEnrichment)} AS me
       WHERE me.name IS NOT NULL
       ORDER BY me.verified_image DESC NULLS LAST, me.project_id DESC
       LIMIT ${limit};

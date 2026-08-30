@@ -51,7 +51,7 @@ import {
   getCopilotSystemPrompt,
   copilotToolDescriptions,
 } from "@/lib/copilot/tools"
-import { mcpCrossReference, mcpDescribeTable, mcpQuery } from "@/lib/mcp/server"
+import { mcpCrossReference, mcpDescribeTable, mcpQuery, mcpTableCatalogue } from "@/lib/mcp/server"
 import {
   mcpCrossReferenceInputSchema,
   mcpDescribeTableInputSchema,
@@ -427,7 +427,10 @@ export async function POST(request: Request) {
       }),
       mcp_query: tool({
         description:
-          "Execute a read-only SQL query against the full Entrestate database. Use for custom analytics, cross-joins, aggregations. Only SELECT/WITH allowed, max 100 rows.",
+          "Execute a read-only SQL query against the Entrestate database. Only SELECT/WITH, max 100 rows. "
+          + "Table names MUST be written exactly as listed below, schema included — this database keeps its market "
+          + "data outside the default search_path, so a bare name will not resolve:\n"
+          + mcpTableCatalogue(),
         inputSchema: mcpQueryInputSchema,
         execute: safeTool("mcp_query", mcpQuery),
       }),

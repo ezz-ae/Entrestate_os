@@ -1,7 +1,14 @@
 import "server-only"
 import { Prisma } from "@prisma/client"
 import { withStatementTimeout } from "@/lib/db-guardrails"
-import { getConfiguredTableName } from "@/lib/inventory-table"
+import {
+  MARKET_TABLES,
+  INVENTORY_IS_CURATED,
+  INVENTORY_PRICE_COLUMN,
+  INVENTORY_AREA_COLUMN,
+  INVENTORY_HAS_BEDROOM_RANGE,
+  DEVELOPER_PROJECT_COUNT_SQL,
+} from "@/lib/market-tables"
 import {
   AreaRiskBriefInput,
   CompareProjectsInput,
@@ -22,58 +29,20 @@ import {
 } from "@/lib/copilot/tools"
 import { getEnterpriseStrategicContext, getStrategicNarrative } from "@/lib/ai/enterprise/service"
 
-const IDENTIFIER_RE = /^[A-Za-z_][A-Za-z0-9_]*$/
-
-// Copilot runs against a curated inventory table with V1 columns.
-const COPILOT_INVENTORY_TABLE = getConfiguredTableName(
-  "COPILOT_INVENTORY_TABLE",
-  "canonical.inventory_clean",
-)
+// Copilot runs against a curated inventory table with V1 columns. Which table
+// that is, and what its columns are called, is decided once in lib/market-tables.
+const COPILOT_INVENTORY_TABLE = MARKET_TABLES.inventory
 const COPILOT_TABLE_HINT = COPILOT_INVENTORY_TABLE.toLowerCase()
-const COPILOT_DEFAULT_AREA_COLUMN =
-  COPILOT_TABLE_HINT.includes("inventory_full") || COPILOT_TABLE_HINT.includes("inventory_spine")
-    ? "final_area"
-    : "area"
-const COPILOT_AREA_COLUMN = ((process.env.COPILOT_AREA_COLUMN ?? "").trim() || COPILOT_DEFAULT_AREA_COLUMN)
+const COPILOT_AREA_COLUMN = INVENTORY_AREA_COLUMN
 const COPILOT_HAS_AR_COLUMNS =
   COPILOT_TABLE_HINT.includes("inventory_clean")
   || COPILOT_TABLE_HINT.includes("projects_api")
   || COPILOT_TABLE_HINT.includes("projects_v1")
 
-/**
- * THE TWO INVENTORY TABLES ARE SHAPED DIFFERENTLY, AND THE DEFAULTS FOLLOWED
- * THE WRONG ONE.
- *
- * `canonical.inventory_clean` is the curated V1 table and the default here: it
- * is where stress_grade_v1, investor_score_v1, price_confidence,
- * developer_reliability_score and rental_yield live — every column the decision
- * layer reads. It names its price `price_from`, its area `area`, and it has no
- * bedrooms_min/bedrooms_max and no `emirate`.
- *
- * The wide tables (raw.inventory_full, public.inventory_spine,
- * api.entrestate_inventory) are the mirror image: price_from_aed, final_area,
- * bedrooms_min/max — and not one of the V1 columns.
- *
- * The defaults were written for the wide shape while the table pointed at the
- * clean one, so `price_from_aed` did not exist and every priced query threw. The
- * shape is derived from the table name, the same way the area column already was.
- */
-const COPILOT_IS_CLEAN_TABLE = COPILOT_TABLE_HINT.includes("inventory_clean")
-
-const COPILOT_DEFAULT_PRICE_COLUMN = COPILOT_IS_CLEAN_TABLE ? "price_from" : "price_from_aed"
-const COPILOT_PRICE_COLUMN = ((process.env.COPILOT_PRICE_COLUMN ?? "").trim() || COPILOT_DEFAULT_PRICE_COLUMN)
-
-/**
- * bedrooms_min / bedrooms_max exist only on the wide tables. deal_screener
- * already caught the missing-column error and retried without them, but
- * developer_due_diligence and price_reality_check did not — they simply threw.
- * Knowing the shape up front costs one fewer round trip and fixes the tools
- * that had no fallback.
- */
-const COPILOT_HAS_BEDROOM_RANGE = !COPILOT_IS_CLEAN_TABLE
-const COPILOT_SAFE_PRICE_COLUMN = IDENTIFIER_RE.test(COPILOT_PRICE_COLUMN)
-  ? COPILOT_PRICE_COLUMN
-  : "price_from_aed"
+const COPILOT_IS_CLEAN_TABLE = INVENTORY_IS_CURATED
+const COPILOT_PRICE_COLUMN = INVENTORY_PRICE_COLUMN
+const COPILOT_HAS_BEDROOM_RANGE = INVENTORY_HAS_BEDROOM_RANGE
+const COPILOT_SAFE_PRICE_COLUMN = COPILOT_PRICE_COLUMN
 
 const STATEMENT_TIMEOUT_MS = 8000
 const STRESS_GRADE_ORDER = ["A", "B", "C", "D", "E"] as const
@@ -96,42 +65,18 @@ const UAE_CITIES = [
 ] as const
 
 /**
- * EVERY TABLE THIS FILE READS IS SCHEMA-QUALIFIED, AND THAT IS THE POINT.
- *
- * The market data does not live in `public`. Projects and developers are in
- * `canonical`, the DLD feeds are in `raw`, and the connection's search_path is
- * plain `public` — so `FROM developer_registry` and `FROM dld_transactions_arvo`
- * resolved to nothing and threw "relation does not exist" on every single call.
- * safeTool() in app/api/chat/route.ts then turned each throw into
- * `no_results: true`, and the Evidence Drawer rendered that as "No direct rows
- * returned from this tool invocation."
- *
- * So the terminal reported an empty market while the database held 2,813
- * projects, 481 developers and 36,841 DLD transactions. Nothing was missing and
- * nothing was slow; four table names were simply unqualified.
- *
- * COPILOT_INVENTORY_TABLE already carried its schema (`canonical.inventory_clean`)
- * and was the only tool that worked. These follow the same rule. All five go
- * through getConfiguredTableName, so an env override may name a different table
- * and a bare name inherits the fallback's schema instead of being handed to
- * search_path — the one behaviour that started this.
+ * The tables this module reads, all schema-qualified — see lib/market-tables.ts
+ * for why that sentence had to be written down. Kept as local names so the SQL
+ * below reads as SQL.
  */
-const DEVELOPER_REGISTRY_TABLE = getConfiguredTableName(
-  "COPILOT_DEVELOPER_REGISTRY_TABLE",
-  "canonical.developer_registry",
-)
-const DLD_AREA_BENCHMARKS_TABLE = getConfiguredTableName(
-  "COPILOT_DLD_AREA_BENCHMARKS_TABLE",
-  "canonical.dld_area_benchmarks_live",
-)
-const DLD_TRANSACTIONS_TABLE = getConfiguredTableName(
-  "COPILOT_DLD_TRANSACTIONS_TABLE",
-  "raw.dld_transactions_arvo",
-)
-const DLD_FEED_TABLE = getConfiguredTableName(
-  "COPILOT_DLD_FEED_TABLE",
-  "raw.dld_transaction_feed",
-)
+const DEVELOPER_REGISTRY_TABLE = MARKET_TABLES.developerRegistry
+const DLD_AREA_BENCHMARKS_TABLE = MARKET_TABLES.dldAreaBenchmarks
+const DLD_TRANSACTIONS_TABLE = MARKET_TABLES.dldTransactions
+const DLD_FEED_TABLE = MARKET_TABLES.dldFeed
+
+const DEVELOPER_REGISTRY_SQL = Prisma.raw(DEVELOPER_REGISTRY_TABLE)
+const DLD_AREA_BENCHMARKS_SQL = Prisma.raw(DLD_AREA_BENCHMARKS_TABLE)
+const DLD_TRANSACTIONS_SQL = Prisma.raw(DLD_TRANSACTIONS_TABLE)
 
 /** Exported for tests: the tables this module reads, all schema-qualified. */
 export const COPILOT_TABLES = {
@@ -141,10 +86,6 @@ export const COPILOT_TABLES = {
   dld_transactions: DLD_TRANSACTIONS_TABLE,
   dld_feed: DLD_FEED_TABLE,
 } as const
-
-const DEVELOPER_REGISTRY_SQL = Prisma.raw(DEVELOPER_REGISTRY_TABLE)
-const DLD_AREA_BENCHMARKS_SQL = Prisma.raw(DLD_AREA_BENCHMARKS_TABLE)
-const DLD_TRANSACTIONS_SQL = Prisma.raw(DLD_TRANSACTIONS_TABLE)
 
 const COPILOT_TABLE_SQL = Prisma.raw(COPILOT_INVENTORY_TABLE)
 const COPILOT_PRICE_SQL = Prisma.raw(COPILOT_SAFE_PRICE_COLUMN)
@@ -528,7 +469,7 @@ export async function executeDeveloperDueDiligence(
   const registryRows = await runQuery(
     Prisma.sql`
       SELECT name, tier,
-             COALESCE(clean_project_count, dxb_project_count, 0) AS project_count
+             ${Prisma.raw(DEVELOPER_PROJECT_COUNT_SQL)} AS project_count
       FROM ${DEVELOPER_REGISTRY_SQL}
       WHERE name ILIKE '%' || ${input.developer_name} || '%'
       -- The registry carries scraped duplicates whose name is a whole marketing
@@ -540,7 +481,7 @@ export async function executeDeveloperDueDiligence(
       ORDER BY
         CASE WHEN LOWER(name) = LOWER(${input.developer_name}) THEN 0 ELSE 1 END,
         CASE WHEN LOWER(name) LIKE LOWER(${input.developer_name}) || '%' THEN 0 ELSE 1 END,
-        COALESCE(clean_project_count, dxb_project_count, 0) DESC,
+        ${Prisma.raw(DEVELOPER_PROJECT_COUNT_SQL)} DESC,
         LENGTH(name) ASC
       LIMIT 1
     `,

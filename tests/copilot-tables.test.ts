@@ -3,6 +3,7 @@ import path from "node:path"
 import { describe, expect, it } from "vitest"
 import { PrismaClient } from "@prisma/client"
 import { COPILOT_TABLES } from "@/lib/copilot/executor"
+import { MARKET_TABLES } from "@/lib/market-tables"
 
 /**
  * THE TERMINAL SAID THE MARKET WAS EMPTY BECAUSE FOUR TABLE NAMES HAD NO SCHEMA.
@@ -96,4 +97,59 @@ describe("copilot tables exist in the database", () => {
       await prisma.$disconnect()
     }
   }, 30_000)
+})
+
+/**
+ * The executor was not the only reader. lib/mcp/server.ts, the public market
+ * feed, the homepage content loaders and the dataset routes all named the same
+ * tables the same wrong way, and each one degraded quietly: mcp_query returned
+ * status "error", getTopDataRows() caught "missing relation" and served a
+ * fallback, the feed returned nothing. So the rule is enforced over the whole
+ * source, not one file.
+ */
+describe("no source file names a non-public relation without its schema", () => {
+  const ROOTS = ["app", "lib", "ai-data-scientist", "components", "automation-builder", "agent-builder", "seq"]
+
+  function walk(dir: string, out: string[] = []): string[] {
+    let entries: fs.Dirent[]
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }) } catch { return out }
+    for (const e of entries) {
+      const full = path.join(dir, e.name)
+      if (e.isDirectory()) {
+        if (e.name === "node_modules" || e.name === ".next") continue
+        walk(full, out)
+      } else if (e.name.endsWith(".ts") || e.name.endsWith(".tsx")) {
+        out.push(full)
+      }
+    }
+    return out
+  }
+
+  it("keeps every schema-bearing table name qualified", () => {
+    // Only the relations that genuinely live outside `public`: a bare name for
+    // one of these cannot resolve, whereas a public table legitimately can.
+    const guarded = Object.values(MARKET_TABLES)
+      .filter((rel) => !rel.startsWith("public."))
+      .map((rel) => rel.split(".")[1])
+    expect(guarded.length).toBeGreaterThan(5)
+
+    const pattern = new RegExp(`\\b(?:FROM|JOIN)\\s+(?:"?)(${guarded.join("|")})(?:"?)\\b`, "i")
+    const offenders: string[] = []
+
+    for (const root of ROOTS) {
+      for (const file of walk(path.join(process.cwd(), root))) {
+        const src = fs.readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, " ")
+        for (const literal of src.match(/`[^`]*`/g) ?? []) {
+          const sql = literal.replace(/--[^\n]*/g, " ")
+          const hit = sql.match(pattern)
+          if (hit) offenders.push(`${path.relative(process.cwd(), file)} -> ${hit[1]}`)
+        }
+      }
+    }
+
+    expect(
+      [...new Set(offenders)],
+      "these resolve against search_path ('public'), where this data is not — use MARKET_TABLES",
+    ).toEqual([])
+  })
 })
