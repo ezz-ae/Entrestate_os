@@ -1867,6 +1867,52 @@ export async function getAreaBySlug(slug: string): Promise<{
   }
 }
 
+/**
+ * ONE SOURCE FOR "DEVELOPER RELIABILITY", BECAUSE TWO WERE ANSWERING.
+ *
+ * Two columns carry this concept on different scales, and the surfaces had
+ * split between them:
+ *
+ *   canonical.inventory_clean.developer_reliability_score — the curated layer.
+ *     Emaar 83, Sobha 92, Nakheel 92. What the chat's developer_due_diligence
+ *     quotes, and what /top-data's track-record section now computes.
+ *   raw.inventory_full.l2_developer_reliability — a PER-LISTING raw-layer blend
+ *     (27→94 across one developer's own listings). Averaged per developer it
+ *     said Emaar 41.8, BELOW Binghatti's 79.6 — and that average is what the
+ *     public /developers pages printed as "Reliability 43.8" on Emaar's page.
+ *
+ * A per-listing quantity averaged over whichever listings happen to sit in the
+ * raw table is not a judgment of a company, and publishing it as one about the
+ * largest developer in the country is a liability, not a bug. The curated
+ * column is the platform's own definition of the concept ("the decision
+ * columns live only here" — lib/market-tables.ts), so every surface reads it
+ * through this one map. The listing pages ALSO used to brand the curated
+ * view's avg_score — a yield-heavy composite — as reliability when the column
+ * was missing; that alias is gone with the same change.
+ */
+async function getCanonicalDeveloperReliabilityMap(): Promise<
+  Map<string, { reliability: number; scoredProjects: number }>
+> {
+  const rows = await runOptionalQuery(Prisma.sql`
+    SELECT
+      developer,
+      ROUND(AVG(developer_reliability_score))::int AS reliability,
+      COUNT(*)::int AS scored_projects
+    FROM ${Prisma.raw(MARKET_TABLES.inventory)}
+    WHERE developer IS NOT NULL
+      AND developer_reliability_score IS NOT NULL
+    GROUP BY developer
+  `)
+  const map = new Map<string, { reliability: number; scoredProjects: number }>()
+  for (const row of rows as Array<{ developer?: unknown; reliability?: unknown; scored_projects?: unknown }>) {
+    const name = typeof row.developer === "string" ? row.developer.trim().toLowerCase() : ""
+    const reliability = Number(row.reliability)
+    if (!name || !Number.isFinite(reliability)) continue
+    map.set(name, { reliability, scoredProjects: Number(row.scored_projects) || 0 })
+  }
+  return map
+}
+
 export async function listDevelopers(): Promise<{
   data_as_of: string
   developers: Array<DecisionRecord & { slug: string }>
@@ -1963,13 +2009,22 @@ export async function listDevelopers(): Promise<{
     }
   }
 
+  const reliabilityByDeveloper = await getCanonicalDeveloperReliabilityMap()
+  const canonicalReliability = (name: unknown) => {
+    const key = typeof name === "string" ? name.trim().toLowerCase() : ""
+    return key ? reliabilityByDeveloper.get(key)?.reliability ?? null : null
+  }
+
   let rows = curatedRows.length > 0
     ? curatedRows.map((row) => ({
         ...row,
         developer: row.name,
         logo_url: row.logo,
         projects: row.project_count,
-        reliability: row.avg_score,
+        // avg_score is the yield-heavy composite. It used to be branded as
+        // reliability here, which put a one-listing developer above Emaar on a
+        // page titled "Reliability scores". Different facts, different names.
+        reliability: canonicalReliability(row.name),
         efficiency: row.avg_score,
         top_areas:
           Array.isArray((row as DecisionRecord).areas)
@@ -2001,6 +2056,13 @@ export async function listDevelopers(): Promise<{
       rows = buildDeveloperRowsFromPropertySnapshot(snapshotProjects)
     }
   }
+
+  // Whatever path produced the rows, "reliability" means the canonical column.
+  rows = rows.map((row) => {
+    const record = row as DecisionRecord
+    const canonical = canonicalReliability(record.developer ?? (record as { name?: unknown }).name)
+    return canonical === null ? { ...record, reliability: record.reliability ?? null } : { ...record, reliability: canonical }
+  })
 
   const profiles = await runOptionalQuery<{ name: string; developer_ar: string | null; logo_url: string | null; founded_year: string | null; hq: string | null }>(Prisma.sql`
     SELECT
@@ -2135,7 +2197,8 @@ export async function getDeveloperBySlug(slug: string): Promise<{
           NULLIF(TRIM(to_jsonb(d) ->> 'developer_ar'), ''),
           NULLIF(TRIM(to_jsonb(d) ->> 'name_ar'), '')
         ) AS developer_ar,
-        d.avg_score AS reliability,
+        -- avg_score is the composite, NOT reliability; it was aliased to both
+        -- names here, which is how the fallback path defamed whoever it served.
         d.avg_score AS efficiency,
         d.avg_price,
         d.safe_projects,
@@ -2241,6 +2304,22 @@ export async function getDeveloperBySlug(slug: string): Promise<{
   }
 
   if (!developer) return null
+
+  // "Reliability" on this page means the canonical column, same as the chat
+  // and /top-data. The query above still averages the raw per-listing blend
+  // for its other fields; its reliability read is replaced, not trusted —
+  // it is what printed "Reliability 43.8" on Emaar's public page.
+  {
+    const reliabilityByDeveloper = await getCanonicalDeveloperReliabilityMap()
+    const candidates = [developer.developer, canonicalDeveloperName, developerNameFromSlug]
+    let canonical: number | null = null
+    for (const candidate of candidates) {
+      const key = typeof candidate === "string" ? candidate.trim().toLowerCase() : ""
+      const hit = key ? reliabilityByDeveloper.get(key) : undefined
+      if (hit) { canonical = hit.reliability; break }
+    }
+    developer = { ...developer, reliability: canonical }
+  }
 
   let projects = detailProjectRows.map((row) => mapProjectRecord(row as DecisionRecord))
 
@@ -2523,9 +2602,19 @@ export async function getDeveloperReliabilityByName(name: string) {
     GROUP BY 1
   `)
 
+  // Same rule as the pages: "reliability" is the canonical column, not the
+  // raw per-listing average the query above computes for its other fields.
+  const reliabilityByDeveloper = await getCanonicalDeveloperReliabilityMap()
+  const normalized = rows.map((row) => {
+    const record = row as DecisionRecord
+    const key = typeof record.developer === "string" ? record.developer.trim().toLowerCase() : ""
+    const canonical = key ? reliabilityByDeveloper.get(key)?.reliability ?? null : null
+    return { ...record, reliability: canonical }
+  })
+
   return {
     data_as_of: new Date().toISOString(),
-    rows,
+    rows: normalized,
   }
 }
 

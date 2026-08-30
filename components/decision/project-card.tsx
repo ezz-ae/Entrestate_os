@@ -96,7 +96,6 @@ function buildEvidenceLink(slug?: string, name?: string) {
 
 export function ProjectCard(project: ProjectCardProps) {
   const locale = useLocale() as AppLocale
-  const [showApi, setShowApi] = useState(false)
   const price = project.price_from ?? project.l1_canonical_price ?? null
   const yieldValue = project.rental_yield ?? project.l1_canonical_yield ?? null
   const score = project.investor_score_v1 ?? project.engine_god_metric ?? null
@@ -110,8 +109,6 @@ export function ProjectCard(project: ProjectCardProps) {
         yield: "العائد",
         grade: "الدرجة",
         score: "النتيجة",
-        apiResponse: "استجابة API",
-        cardView: "عرض البطاقة",
         verdict: "الحكم",
       }
     : {
@@ -119,8 +116,6 @@ export function ProjectCard(project: ProjectCardProps) {
         yield: "Yield",
         grade: "Grade",
         score: "Score",
-        apiResponse: "API Response",
-        cardView: "Card View",
         verdict: "Verdict",
       }
 
@@ -130,12 +125,12 @@ export function ProjectCard(project: ProjectCardProps) {
   const signalLabel = formatCanonicalArabicLabel(locale, signal, SIGNAL_LABELS_AR)
   const gradeLabel = grade ? formatCanonicalArabicLabel(locale, grade, STRESS_LABELS_AR) : "—"
   const verdict = normalizeVerdict(project.decision_label_v1 ?? timing)
-  const apiPreview = project.apiPreview
-  const apiPreviewText = useMemo(() => {
-    if (!apiPreview) return ""
-    return JSON.stringify(apiPreview, null, 2)
-  }, [apiPreview])
-  const evidenceLevel = normalizeEvidenceLevel(project.apiPreview?.evidence_level ?? project.evidence_level)
+  const previewEvidence = project.apiPreview?.evidence_level
+  const evidenceLevel = normalizeEvidenceLevel(
+    typeof previewEvidence === "string"
+      ? previewEvidence
+      : (project as { evidence_level?: string | null }).evidence_level,
+  )
   const evidenceHref = prefixLocalePath(buildEvidenceLink(project.slug, project.name), locale)
 
   return (
@@ -159,24 +154,9 @@ export function ProjectCard(project: ProjectCardProps) {
           </div>
 
           <div className="flex items-center gap-1.5">
-            {apiPreview ? (
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  setShowApi((prev) => !prev)
-                }}
-                className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest transition ${
-                  showApi
-                    ? "border-primary/50 bg-primary/10 text-primary"
-                    : "border-border/60 bg-muted/40 text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                }`}
-                aria-pressed={showApi}
-              >
-                {showApi ? copy.cardView : copy.apiResponse}
-              </button>
-            ) : null}
+            {/* The "API Response" flip — a raw JSON dump of the payload on a
+                customer card — is gone. The card shows the product, not the
+                plumbing. */}
             <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-border bg-muted/40 opacity-0 transition-all duration-200 group-hover:opacity-100">
               <ArrowUpRight className="h-3.5 w-3.5 text-foreground" />
             </span>
@@ -208,21 +188,7 @@ export function ProjectCard(project: ProjectCardProps) {
         </div>
       </div>
 
-      {showApi && apiPreviewText ? (
-        <div
-          className="px-5 pb-5"
-          onClick={(event) => {
-            event.preventDefault()
-            event.stopPropagation()
-          }}
-        >
-          <div className="rounded-xl border border-border/60 bg-background/60 p-4">
-            <pre className="whitespace-pre-wrap break-words text-[11px] leading-relaxed text-foreground/80">
-              {apiPreviewText}
-            </pre>
-          </div>
-        </div>
-      ) : (
+      {(
         <>
           {/* Divider */}
           <div className="mx-5 h-px bg-border/60" />
