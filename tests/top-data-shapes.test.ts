@@ -1,3 +1,5 @@
+import fs from "node:fs"
+import path from "node:path"
 import { describe, expect, it } from "vitest"
 import {
   ROW_WRAPPER_KEYS,
@@ -146,5 +148,65 @@ describe("the LIVE badge states what the timestamp supports", () => {
   it("says undated rather than live when there is no timestamp", () => {
     expect(freshnessOf(null, now).state).toBe("unknown")
     expect(freshnessOf("not a date", now).state).toBe("unknown")
+  })
+})
+
+describe("the page header agrees with the badges under it", () => {
+  const page = fs.readFileSync(path.join(process.cwd(), "app/top-data/page.tsx"), "utf8")
+
+  it("does not promise 'right now' unconditionally", () => {
+    // The per-section badge was made honest first; leaving the headline alone
+    // made the page contradict itself in one screenful — "Live market data,
+    // right now" above a row of amber "171 DAYS OLD" chips.
+    expect(page).toMatch(/headerIsLive[\s\S]{0,200}"Live market data, right now"/)
+    expect(page).toContain("Market data, as last scored")
+  })
+
+  it("derives its freshness from the sections, not from the request time", () => {
+    // data_as_of is set to new Date() on every request by getTopDataRows, so it
+    // reports when the PAGE was built and never when the DATA was written.
+    expect(page).toMatch(/freshestUpdate/)
+    expect(page).toMatch(/last_updated/)
+    expect(page).toMatch(/freshnessOf\(/)
+  })
+
+  it("stops calling sections live when they are not", () => {
+    expect(page).toContain("sections ${headerIsLive ? \"live\" : \"readable\"}")
+  })
+})
+
+describe("the developer section says reliability only when it means it", () => {
+  const view = fs.readFileSync(path.join(process.cwd(), "components/top-data/top-data-section.tsx"), "utf8")
+  const content = fs.readFileSync(path.join(process.cwd(), "lib/frontend-content.ts"), "utf8")
+
+  it("never presents an investor score under the reliability heading", () => {
+    // The stored ETL row had no usable reliability field, and the old fallback
+    // chains ended in "score"/"avg_score" — so Emaar rendered 62 (a yield-heavy
+    // composite) under "reliability" while its actual
+    // developer_reliability_score averages 83. Different facts, one name.
+    // Comments explain the history; only code counts — this codebase has now
+    // tripped a guard on its own explanation four times.
+    const viewChain = view.slice(view.indexOf("function DeveloperReliabilityView"))
+    const chain = viewChain
+      .slice(0, viewChain.indexOf("const safeProjects"))
+      .replace(/\/\/[^\n]*/g, "")
+    expect(chain).not.toMatch(/"avg_score"/)
+    expect(chain).not.toMatch(/"score"/)
+  })
+
+  it("builds the rows live from the scored inventory, evidence-gated", () => {
+    expect(content).toMatch(/buildDeveloperTrackRows/)
+    expect(content).toMatch(/AVG\(developer_reliability_score\)/)
+    expect(content).toMatch(/DEVELOPER_TRACK_MIN_PROJECTS = 5/)
+    expect(content).toMatch(/HAVING COUNT\(\*\) >= \$\{DEVELOPER_TRACK_MIN_PROJECTS\}/)
+  })
+
+  it("frames the top-projects ranking as a scoring read, not an endorsement", () => {
+    expect(content).toContain("not an endorsement of the developer")
+  })
+
+  it("keeps internal view names off the page", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/top-data/page.tsx"), "utf8")
+    expect(page).not.toMatch(/`[^`]*\$\{syncMeta\.primaryView\}[^`]*`/)
   })
 })

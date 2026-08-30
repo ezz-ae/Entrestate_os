@@ -30,6 +30,13 @@ export interface ExplorerDldNotification {
   is_notable: boolean
 }
 
+export interface ExplorerChatStep {
+  id: string
+  label: string
+  status: "running" | "done"
+  detail?: string | null
+}
+
 export interface ExplorerChatMessage {
   id: string
   role: ExplorerMessageRole
@@ -38,6 +45,11 @@ export interface ExplorerChatMessage {
   suggestions?: string[]
   dataCards?: ExplorerDataCard[]
   notifications?: ExplorerDldNotification[]
+  /** The narrated work — "جاري البحث… تم إدراج ٤ مشاريع" — kept after the
+   * answer lands so the person can reopen how it was reached. */
+  steps?: ExplorerChatStep[]
+  /** True while this assistant message is still being produced. */
+  streaming?: boolean
 }
 
 export interface ExplorerChatState {
@@ -129,20 +141,40 @@ export const useExplorerChatStore = () => {
   }
 }
 
-async function fetchChatResponse(
-  query: string,
-  context?: { city?: string; area?: string },
-): Promise<{
+type ExplorerFinalPayload = {
   content: string
   dataCards?: ExplorerDataCard[]
   notifications?: ExplorerDldNotification[]
   suggestions?: string[]
-}> {
+}
+
+/**
+ * THE CHAT NARRATES ITS WORK. The old transport was one JSON round trip: the
+ * person asked, watched three dots for ten seconds, and received a wall. The
+ * owner's spec is the opposite — say what you are doing while you do it
+ * ("جاري البحث في المخزون… تم إدراج ٤ من المشاريع للتحليل…"), each step
+ * expandable, then a written answer. The route streams NDJSON events when
+ * asked with x-chat-stream: 1; this reader applies them to the placeholder
+ * message as they arrive. If the server answers with plain JSON instead — an
+ * old deployment, a proxy that buffered the stream away — the same code path
+ * degrades to exactly the previous behaviour, so the chat can never be more
+ * broken than it was.
+ */
+async function streamChatResponse(
+  query: string,
+  context: { city?: string; area?: string } | undefined,
+  apply: (patch: {
+    step?: { id: string; label: string; detail?: string | null; done: boolean }
+    delta?: string
+    final?: ExplorerFinalPayload
+  }) => void,
+): Promise<void> {
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-entrestate-locale": resolveChatLocaleHeader(),
+      "x-chat-stream": "1",
     },
     body: JSON.stringify({ message: query, context }),
   })
@@ -157,13 +189,70 @@ async function fetchChatResponse(
     } catch {
       // ignore parse errors
     }
-
     const error = new Error(errorMessage) as Error & { status?: number }
     error.status = res.status
     throw error
   }
 
-  return res.json()
+  const contentType = res.headers.get("content-type") ?? ""
+
+  if (!contentType.includes("x-ndjson") || !res.body) {
+    // Legacy JSON — one shot, same shape as before.
+    const payload = (await res.json()) as ExplorerFinalPayload
+    apply({ final: payload })
+    return
+  }
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ""
+  let sawFinal = false
+
+  const handleLine = (line: string) => {
+    const trimmed = line.trim()
+    if (!trimmed) return
+    let event: Record<string, unknown>
+    try {
+      event = JSON.parse(trimmed) as Record<string, unknown>
+    } catch {
+      return
+    }
+    if (event.type === "step" && typeof event.id === "string" && typeof event.label === "string") {
+      apply({ step: { id: event.id, label: event.label, done: false } })
+    } else if (event.type === "step-done" && typeof event.id === "string") {
+      apply({
+        step: {
+          id: event.id,
+          label: typeof event.label === "string" ? event.label : "",
+          detail: typeof event.detail === "string" ? event.detail : null,
+          done: true,
+        },
+      })
+    } else if (event.type === "delta" && typeof event.text === "string") {
+      apply({ delta: event.text })
+    } else if (event.type === "final") {
+      sawFinal = true
+      apply({ final: event as unknown as ExplorerFinalPayload })
+    }
+  }
+
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    for (;;) {
+      const newline = buffer.indexOf("\n")
+      if (newline === -1) break
+      const line = buffer.slice(0, newline)
+      buffer = buffer.slice(newline + 1)
+      handleLine(line)
+    }
+  }
+  if (buffer.trim()) handleLine(buffer)
+
+  if (!sawFinal) {
+    throw new Error("The stream ended without an answer.")
+  }
 }
 
 export async function sendExplorerChatMessage(options: {
@@ -181,34 +270,71 @@ export async function sendExplorerChatMessage(options: {
     timestamp: new Date().toISOString(),
   }
 
-  setExplorerChatMessages((prev) => [...prev, userMessage])
+  // The assistant message exists from the first moment, empty, so the person
+  // watches the steps land in it instead of staring at three dots.
+  const assistantId = `assistant-${Date.now()}`
+  const placeholder: ExplorerChatMessage = {
+    id: assistantId,
+    role: "assistant",
+    content: "",
+    timestamp: new Date().toISOString(),
+    steps: [],
+    streaming: true,
+  }
+
+  setExplorerChatMessages((prev) => [...prev, userMessage, placeholder])
   setExplorerChatState({ isOpen: true, isMinimized: false, isTyping: true })
 
+  const patchAssistant = (patch: (message: ExplorerChatMessage) => ExplorerChatMessage) => {
+    setExplorerChatMessages((prev) =>
+      prev.map((message) => (message.id === assistantId ? patch(message) : message)),
+    )
+  }
+
   try {
-    const response = await fetchChatResponse(trimmed, options.context)
-    const assistantMessage: ExplorerChatMessage = {
-      id: `assistant-${Date.now()}`,
-      role: "assistant",
-      content: response.content,
-      timestamp: new Date().toISOString(),
-      dataCards: response.dataCards,
-      notifications: response.notifications,
-      suggestions: response.suggestions ?? options.quickSuggestions.slice(0, 3),
-    }
-    setExplorerChatMessages((prev) => [...prev, assistantMessage])
+    await streamChatResponse(trimmed, options.context, ({ step, delta, final }) => {
+      if (step) {
+        patchAssistant((message) => {
+          const steps = [...(message.steps ?? [])]
+          const index = steps.findIndex((entry) => entry.id === step.id)
+          const next: ExplorerChatStep = {
+            id: step.id,
+            label: step.label || steps[index]?.label || "",
+            status: step.done ? "done" : "running",
+            detail: step.detail ?? steps[index]?.detail ?? null,
+          }
+          if (index === -1) steps.push(next)
+          else steps[index] = next
+          return { ...message, steps }
+        })
+      }
+      if (delta) {
+        patchAssistant((message) => ({ ...message, content: message.content + delta }))
+      }
+      if (final) {
+        patchAssistant((message) => ({
+          ...message,
+          content: final.content || message.content,
+          dataCards: final.dataCards,
+          notifications: final.notifications,
+          suggestions: final.suggestions ?? options.quickSuggestions.slice(0, 3),
+          streaming: false,
+          steps: (message.steps ?? []).map((entry) => ({ ...entry, status: "done" as const })),
+        }))
+      }
+    })
   } catch (error) {
     const status = (error as Error & { status?: number }).status
     const isLimitError = status === 429
-    const assistantMessage: ExplorerChatMessage = {
-      id: `assistant-${Date.now()}`,
-      role: "assistant",
+    patchAssistant((message) => ({
+      ...message,
       content: isLimitError
         ? "Free usage is cooling down. Try again shortly, or upgrade for uninterrupted access: /pricing"
         : "I could not process this request right now. Please try again.",
-      timestamp: new Date().toISOString(),
       suggestions: options.quickSuggestions.slice(0, 3),
-    }
-    setExplorerChatMessages((prev) => [...prev, assistantMessage])
+      streaming: false,
+      steps: (message.steps ?? []).map((entry) => ({ ...entry, status: "done" as const })),
+    }))
   } finally {
     setExplorerChatState({ isTyping: false })
   }

@@ -206,8 +206,8 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
               </p>
               <p className="mt-2 text-[10px] text-muted-foreground/60">
                 {isArabic
-                  ? `مزامنة API · ${syncMeta.primaryView} · ${syncTimestamp}`
-                  : `API sync · ${syncMeta.primaryView} · ${syncTimestamp}`}
+                  ? `آخر مزامنة للبيانات · ${syncTimestamp}`
+                  : `Data synced · ${syncTimestamp}`}
               </p>
             </div>
           )}

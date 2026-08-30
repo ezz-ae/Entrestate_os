@@ -15,11 +15,16 @@ import {
   Sparkles,
   ArrowUpRight,
   BarChart3,
+  Check,
+  ChevronDown,
+  FileText,
+  Loader2,
 } from "lucide-react"
 import {
   sendExplorerChatMessage,
   useExplorerChatStore,
   type ExplorerChatMessage,
+  type ExplorerChatStep,
 } from "@/lib/explorer-chat-store"
 import { TransactionNotification } from "@/components/dld/transaction-notification"
 
@@ -30,6 +35,118 @@ const explorerSuggestions = [
   "Studios under AED 800K in Business Bay",
   "Townhouses under AED 2M in Dubai Hills",
 ]
+
+/**
+ * THE WORK, NARRATED. While the assistant searches, the person reads what it
+ * is doing — "جاري البحث في المخزون المصنّف… تم إدراج ٤ من المشاريع للتحليل" —
+ * and any step opens to show its one-line human detail. This replaces the
+ * silent spinner the owner rejected; nothing here ever prints a tool name,
+ * a table, or a payload.
+ */
+function StepTimeline({ steps, streaming }: { steps: ExplorerChatStep[]; streaming?: boolean }) {
+  const [openStep, setOpenStep] = useState<string | null>(null)
+  if (steps.length === 0) return null
+
+  return (
+    <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+      <ol className="space-y-1.5">
+        {steps.map((step) => {
+          const expandable = Boolean(step.detail)
+          const isOpen = openStep === step.id
+          return (
+            <li key={step.id}>
+              <button
+                type="button"
+                disabled={!expandable}
+                onClick={() => setOpenStep(isOpen ? null : step.id)}
+                className={`flex w-full items-center gap-2 text-left text-xs ${expandable ? "cursor-pointer" : "cursor-default"}`}
+              >
+                {step.status === "done" ? (
+                  <Check className="h-3 w-3 flex-shrink-0 text-emerald-500" />
+                ) : (
+                  <Loader2 className="h-3 w-3 flex-shrink-0 animate-spin text-accent" />
+                )}
+                <span className={step.status === "done" ? "text-muted-foreground" : "text-foreground"}>
+                  {step.label}
+                </span>
+                {expandable ? (
+                  <ChevronDown
+                    className={`ml-auto h-3 w-3 flex-shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`}
+                  />
+                ) : null}
+              </button>
+              {isOpen && step.detail ? (
+                <p className="mt-1 pl-5 text-[11px] leading-relaxed text-muted-foreground">{step.detail}</p>
+              ) : null}
+            </li>
+          )
+        })}
+        {streaming && steps.every((step) => step.status === "done") ? (
+          <li className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin text-accent" />
+            <span>…</span>
+          </li>
+        ) : null}
+      </ol>
+    </div>
+  )
+}
+
+/**
+ * The bubble shows the CONCLUSION; the organized statement opens as a report.
+ * Splitting on the first blank line needs no protocol with the model — the
+ * prompt asks for "conclusion first, then the detail", and whatever arrives,
+ * the first paragraph is the most conclusion-like thing in it.
+ */
+function splitAnswer(content: string): { conclusion: string; report: string | null } {
+  const trimmed = content.trim()
+  const gap = trimmed.search(/\n\s*\n/)
+  if (gap === -1) return { conclusion: trimmed, report: null }
+  return { conclusion: trimmed.slice(0, gap).trim(), report: trimmed }
+}
+
+function ReportModal({
+  content,
+  isArabic,
+  onClose,
+}: {
+  content: string
+  isArabic: boolean
+  onClose: () => void
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4 sm:p-8"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+        dir={isArabic ? "rtl" : "ltr"}
+      >
+        <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-accent" />
+            <p className="text-sm font-semibold text-foreground">{isArabic ? "نتيجة البحث" : "Search result"}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            aria-label={isArabic ? "إغلاق" : "Close"}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="overflow-y-auto px-5 py-4 text-foreground">
+          <ChatMarkdown text={content} />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function buildWelcomeMessage(suggestions: string[]): ExplorerChatMessage {
   return {
@@ -54,6 +171,7 @@ export function ExplorerChat() {
   } = useExplorerChatStore()
 
   const [input, setInput] = useState("")
+  const [openReportId, setOpenReportId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -190,9 +308,39 @@ export function ExplorerChat() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="px-4 py-3 bg-secondary rounded-lg rounded-bl-sm text-foreground">
-                    <ChatMarkdown text={msg.content} />
-                  </div>
+                  {msg.steps && msg.steps.length > 0 ? (
+                    <StepTimeline steps={msg.steps} streaming={msg.streaming} />
+                  ) : null}
+
+                  {msg.streaming && !msg.content && (!msg.steps || msg.steps.length === 0) ? (
+                    <div className="flex items-center gap-2 px-4 py-3 bg-secondary rounded-lg rounded-bl-sm text-xs text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin text-accent" />
+                      <span>…</span>
+                    </div>
+                  ) : null}
+
+                  {msg.content ? (() => {
+                    const isArabicAnswer = /[\u0600-\u06FF]/.test(msg.content)
+                    const { conclusion, report } = splitAnswer(msg.content)
+                    return (
+                      <div className="px-4 py-3 bg-secondary rounded-lg rounded-bl-sm text-foreground" dir={isArabicAnswer ? "rtl" : "ltr"}>
+                        {/* While streaming the whole text runs in the bubble;
+                            once final, the bubble keeps the conclusion and the
+                            organized statement opens as a report. */}
+                        <ChatMarkdown text={msg.streaming ? msg.content : conclusion} />
+                        {!msg.streaming && report ? (
+                          <button
+                            type="button"
+                            onClick={() => setOpenReportId(msg.id)}
+                            className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                            {isArabicAnswer ? "عرض التقرير الكامل" : "View the full report"}
+                          </button>
+                        ) : null}
+                      </div>
+                    )
+                  })() : null}
 
                   {msg.dataCards && msg.dataCards.length > 0 && (
                     <div className="grid grid-cols-2 gap-2">
@@ -283,6 +431,18 @@ export function ExplorerChat() {
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {openReportId ? (() => {
+        const message = messages.find((entry) => entry.id === openReportId)
+        if (!message?.content) return null
+        return (
+          <ReportModal
+            content={message.content}
+            isArabic={/[\u0600-\u06FF]/.test(message.content)}
+            onClose={() => setOpenReportId(null)}
+          />
+        )
+      })() : null}
 
       {messages.length <= 1 && (
         <div className="px-5 pb-2">

@@ -28,14 +28,20 @@ export function Navbar() {
   const runtimeShell = useRuntimeShell()
   const isDedicatedMobileShell = runtimeShell === "mobile"
   const normalizedPathname = stripLocalePrefix(pathname)
+  // THE NAV IS THE VISIT PATH, in the order a visitor actually walks it:
+  // explore the market → drill into areas / developers / projects → read the
+  // research → see the price. Enterprise led this list while half the product
+  // under it was unfinished — the owner's words: "I can't put Enterprise at
+  // the top of the header while my developer and project pages are broken."
+  // It lives in the footer until the core path earns it back.
   const navLinks = [
-    { label: t("enterprise"), href: "/infrastructure" },
     { label: t("chat"), href: "/chat" },
     { label: t("areas"), href: "/areas" },
     { label: t("developers"), href: "/developers" },
     { label: t("properties"), href: "/properties" },
     { label: t("signals"), href: "/top-data" },
     { label: t("research"), href: "/reports/library" },
+    { label: t("pricing"), href: "/pricing" },
   ]
   const isChatPage = normalizedPathname.startsWith("/chat")
   const router = useRouter()

@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { getTopDataRows } from "@/lib/frontend-content"
-import { TopDataSection, shouldRenderTopDataSection, deriveDistributionInsight } from "@/components/top-data/top-data-section"
+import { TopDataSection, shouldRenderTopDataSection, deriveDistributionInsight, freshnessOf } from "@/components/top-data/top-data-section"
 import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { getRequestLocale } from "@/i18n/request"
 import { getTranslations } from "next-intl/server"
@@ -114,6 +114,31 @@ export default async function TopDataPage() {
     ? deriveDistributionInsight(stressSection.data_json, "stress-grades", locale)
     : null
   const regimeLine = timingInsight ?? stressInsight
+  /**
+   * HOW OLD THE FRESHEST SECTION IS.
+   *
+   * The headline said "Live market data, right now" and the line under it said
+   * "updated throughout the day", over sections whose own badges now read "171
+   * DAYS OLD" — the per-section badge had been made honest and the page around
+   * it had not, which is a worse look than the original lie because the page
+   * contradicts itself in one screenful.
+   *
+   * data_as_of is set to new Date() by getTopDataRows on every request, so it
+   * says when the PAGE was built, never when the DATA was written. The only
+   * honest number is the newest last_updated across the sections actually shown.
+   */
+  const freshestUpdate = availableSections
+    .map((key) => rowsBySection.get(key)?.last_updated)
+    .filter((value): value is string => typeof value === "string" && value.length > 0)
+    .map((value) => new Date(value).getTime())
+    .filter((value) => Number.isFinite(value))
+    .reduce<number | null>((newest, at) => (newest === null || at > newest ? at : newest), null)
+  const headerFreshness = freshnessOf(
+    freshestUpdate === null ? null : new Date(freshestUpdate).toISOString(),
+  )
+  const headerIsLive = headerFreshness.state === "live"
+  const headerAgeDays = headerFreshness.ageHours === null ? null : Math.floor(headerFreshness.ageHours / 24)
+
   const syncMeta = buildDataSyncMeta("topData", topData.data_as_of)
   const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE-u-nu-latn" : "en-AE", {
     month: "short",
@@ -135,12 +160,20 @@ export default async function TopDataPage() {
               : "Market Signal Engine"}
           </div>
           <h1 className="mt-3 text-3xl font-semibold text-foreground md:text-5xl">
-            {isArabic ? "بيانات السوق" : "Live market data, right now"}
+            {isArabic
+              ? "بيانات السوق"
+              : headerIsLive
+                ? "Live market data, right now"
+                : "Market data, as last scored"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isArabic
-              ? "كل مقطع أدناه يعكس الحالة الحالية للمخزون المصنّف، ويتم تحديثه طوال اليوم من بيانات DLD ومصادر القوائم."
-              : "Every section below reflects the current state of scored inventory, updated throughout the day from DLD and listing sources."}
+              ? headerIsLive
+                ? "كل مقطع أدناه يعكس الحالة الحالية للمخزون المصنّف، ويتم تحديثه طوال اليوم من بيانات DLD ومصادر القوائم."
+                : `كل مقطع أدناه يحمل تاريخ آخر تسجيل له. أحدثها${headerAgeDays !== null ? ` عمره ${headerAgeDays} يوم` : ""}.`
+              : headerIsLive
+                ? "Every section below reflects the current state of scored inventory, updated throughout the day from DLD and listing sources."
+                : `Every section below carries the date it was last scored${headerAgeDays !== null ? `; the newest is ${headerAgeDays} days old` : ""}.`}
           </p>
           {regimeLine ? (
             <p className="mt-3 inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-1.5 text-xs font-medium text-emerald-300/90">
@@ -152,10 +185,18 @@ export default async function TopDataPage() {
         <section className="mb-6 flex flex-wrap items-center gap-3">
           {availableSections.length > 0 && (
             <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/70 px-4 py-2.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]" />
+              {/* "live sections" counted sections that RENDER, which is a
+                  different claim from sections that are live. It said 14/14
+                  while nine of them drew zeros, and it stayed green over data
+                  five months old. */}
+              <span
+                className={`h-2 w-2 rounded-full ${headerIsLive ? "bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]" : "bg-amber-400"}`}
+              />
               <span className="text-xs text-muted-foreground">
                 <span className="font-semibold text-foreground">{availableSections.length}</span>
-                {isArabic ? `/${visibleSectionCount} أقسام مباشرة` : `/${visibleSectionCount} live sections`}
+                {isArabic
+                  ? `/${visibleSectionCount} ${headerIsLive ? "أقسام مباشرة" : "أقسام مقروءة"}`
+                  : `/${visibleSectionCount} sections ${headerIsLive ? "live" : "readable"}`}
               </span>
             </div>
           )}
@@ -183,9 +224,11 @@ export default async function TopDataPage() {
             </div>
           ) : null}
           <div className="rounded-xl border border-border/60 bg-card/70 px-4 py-2.5 text-[11px] text-muted-foreground/70">
+            {/* The chip used to print `api.market_pulse_v1` — an internal view
+                name — on a customer page. The reader needs when, not where. */}
             {isArabic
-              ? `مزامنة API · ${syncMeta.primaryView} · ${syncTimestamp} GST`
-              : `API sync · ${syncMeta.primaryView} · ${syncTimestamp} GST`}
+              ? `آخر مزامنة للبيانات · ${syncTimestamp} GST`
+              : `Data synced · ${syncTimestamp} GST`}
           </div>
         </section>
 
