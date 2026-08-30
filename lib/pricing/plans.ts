@@ -201,9 +201,15 @@ export function resolvePaidTier(value: string | null | undefined): PaidTier | nu
     case "solo-analyst":
       return "pro"
     case "team":
-    case "realtor":
-    case "realtor-pro":
       return "team"
+    // NOT "realtor" / "realtor-pro". They used to land here, so
+    // /checkout?tier=realtor rendered "Complete Team checkout — AED 999" and
+    // /api/billing/checkout?tier=realtor posted 999 to Tap as the charge —
+    // the BROKERAGE price for Meta for Realtors, which is the one-agent
+    // product and carries no monthly fee on this platform at all. Nothing
+    // errored, because a valid tier came back and every caller accepted it.
+    // Returning null instead makes the page 404 and the webhook fall back to
+    // "free", both of which are correct: this is not a tier sold here.
     case "institutional":
     case "enterprise":
     case "enterprise-os":
