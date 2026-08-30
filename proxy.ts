@@ -25,7 +25,72 @@ function isMobileUserAgent(userAgent: string | null) {
   return /mobile|android|iphone|ipad|phone/i.test(userAgent ?? "")
 }
 
-export function proxy(request: NextRequest) {
+/**
+ * THE OAUTH RETURN LEG — the exchange the sign-in loop was missing.
+ *
+ * Google sign-in came back to the app as
+ * /{callbackURL}?neon_auth_session_verifier=... plus a challenge cookie, and
+ * NOTHING exchanged that verifier for a session: @neondatabase/auth performs
+ * the exchange in ITS Next middleware (neonAuthMiddleware), which this app
+ * never mounted — and mounting it wholesale is wrong here, because it
+ * force-redirects every anonymous route and this Terminal is public-first.
+ * So /me's server layout saw no session, bounced to /login, and the bounce
+ * destroyed the verifier param: sign in with Google, land back on the login
+ * form, forever. The owner hit exactly that.
+ *
+ * The fix is the exchange leg alone: when a page request carries the
+ * verifier AND the challenge cookie, forward it once to our own
+ * /api/auth/get-session (the lib's handler proxies query params and cookies
+ * upstream, the auth backend validates challenge+verifier, and our route
+ * re-signs and rewrites Domain=.entrestate.com on the way back), then
+ * redirect to the same URL with the verifier removed, carrying the fresh
+ * Set-Cookie headers. Failure falls through to today's behaviour.
+ */
+// The lib's constant — "challange" [sic] is THEIR spelling
+// (NEON_AUTH_SESSION_CHALLENGE_COOKIE_NAME); correcting it breaks the match.
+const OAUTH_VERIFIER_PARAM = "neon_auth_session_verifier"
+const OAUTH_CHALLENGE_COOKIE = "__Secure-neon-auth.session_challange"
+
+async function completeOAuthReturn(request: NextRequest): Promise<NextResponse | null> {
+  const { nextUrl } = request
+  // Never intercept API routes: the exchange below fetches /api/auth itself,
+  // and intercepting that fetch would recurse forever.
+  if (nextUrl.pathname.startsWith("/api/")) return null
+  const verifier = nextUrl.searchParams.get(OAUTH_VERIFIER_PARAM)
+  if (!verifier || !request.cookies.has(OAUTH_CHALLENGE_COOKIE)) return null
+
+  try {
+    const exchangeUrl = new URL("/api/auth/get-session", nextUrl.origin)
+    exchangeUrl.searchParams.set(OAUTH_VERIFIER_PARAM, verifier)
+    const upstream = await fetch(exchangeUrl, {
+      headers: { cookie: request.headers.get("cookie") ?? "" },
+      redirect: "manual",
+      signal: AbortSignal.timeout(8000),
+    })
+    const getSetCookie = (upstream.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie
+    const setCookies = typeof getSetCookie === "function" ? getSetCookie.call(upstream.headers) : []
+    if (!upstream.ok || setCookies.length === 0) return null
+
+    const cleanUrl = nextUrl.clone()
+    cleanUrl.searchParams.delete(OAUTH_VERIFIER_PARAM)
+    const response = NextResponse.redirect(cleanUrl)
+    for (const cookie of setCookies) {
+      response.headers.append("set-cookie", cookie)
+    }
+    return response
+  } catch {
+    // Unreachable auth backend or timeout: fall through — the page then
+    // behaves exactly as before this fix (bounce to login), never a 500.
+    return null
+  }
+}
+
+export async function proxy(request: NextRequest) {
+  // The OAuth return leg runs before every other rule: a session being born
+  // must not be eaten by the mobile-host redirect or a protected layout.
+  const oauthResponse = await completeOAuthReturn(request)
+  if (oauthResponse) return oauthResponse
+
   const { pathname } = request.nextUrl
   const requestHost = request.headers.get("x-forwarded-host") || request.headers.get("host")
   const runtimeShell = resolveRuntimeShell(requestHost)
