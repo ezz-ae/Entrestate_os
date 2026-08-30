@@ -2,6 +2,14 @@ import "server-only"
 import { Prisma } from "@prisma/client"
 import { withStatementTimeout } from "@/lib/db-guardrails"
 import {
+  MARKET_TABLES,
+  INVENTORY_IS_CURATED,
+  INVENTORY_PRICE_COLUMN,
+  INVENTORY_AREA_COLUMN,
+  INVENTORY_HAS_BEDROOM_RANGE,
+  DEVELOPER_PROJECT_COUNT_SQL,
+} from "@/lib/market-tables"
+import {
   AreaRiskBriefInput,
   CompareProjectsInput,
   ApplyDecisionLensInput,
@@ -21,28 +29,20 @@ import {
 } from "@/lib/copilot/tools"
 import { getEnterpriseStrategicContext, getStrategicNarrative } from "@/lib/ai/enterprise/service"
 
-const IDENTIFIER_RE = /^[A-Za-z_][A-Za-z0-9_]*$/
-
-// Copilot runs against a curated inventory table with V1 columns.
-const COPILOT_INVENTORY_TABLE =
-  process.env.COPILOT_INVENTORY_TABLE
-  ?? "canonical.inventory_clean"
+// Copilot runs against a curated inventory table with V1 columns. Which table
+// that is, and what its columns are called, is decided once in lib/market-tables.
+const COPILOT_INVENTORY_TABLE = MARKET_TABLES.inventory
 const COPILOT_TABLE_HINT = COPILOT_INVENTORY_TABLE.toLowerCase()
-const COPILOT_DEFAULT_AREA_COLUMN =
-  COPILOT_TABLE_HINT.includes("inventory_full") || COPILOT_TABLE_HINT.includes("inventory_spine")
-    ? "final_area"
-    : "area"
-const COPILOT_AREA_COLUMN = ((process.env.COPILOT_AREA_COLUMN ?? "").trim() || COPILOT_DEFAULT_AREA_COLUMN)
+const COPILOT_AREA_COLUMN = INVENTORY_AREA_COLUMN
 const COPILOT_HAS_AR_COLUMNS =
   COPILOT_TABLE_HINT.includes("inventory_clean")
   || COPILOT_TABLE_HINT.includes("projects_api")
   || COPILOT_TABLE_HINT.includes("projects_v1")
 
-const COPILOT_DEFAULT_PRICE_COLUMN = "price_from_aed"
-const COPILOT_PRICE_COLUMN = ((process.env.COPILOT_PRICE_COLUMN ?? "").trim() || COPILOT_DEFAULT_PRICE_COLUMN)
-const COPILOT_SAFE_PRICE_COLUMN = IDENTIFIER_RE.test(COPILOT_PRICE_COLUMN)
-  ? COPILOT_PRICE_COLUMN
-  : "price_from_aed"
+const COPILOT_IS_CLEAN_TABLE = INVENTORY_IS_CURATED
+const COPILOT_PRICE_COLUMN = INVENTORY_PRICE_COLUMN
+const COPILOT_HAS_BEDROOM_RANGE = INVENTORY_HAS_BEDROOM_RANGE
+const COPILOT_SAFE_PRICE_COLUMN = COPILOT_PRICE_COLUMN
 
 const STATEMENT_TIMEOUT_MS = 8000
 const STRESS_GRADE_ORDER = ["A", "B", "C", "D", "E"] as const
@@ -63,6 +63,29 @@ const UAE_CITIES = [
   "umm al quwain",
   "al ain",
 ] as const
+
+/**
+ * The tables this module reads, all schema-qualified — see lib/market-tables.ts
+ * for why that sentence had to be written down. Kept as local names so the SQL
+ * below reads as SQL.
+ */
+const DEVELOPER_REGISTRY_TABLE = MARKET_TABLES.developerRegistry
+const DLD_AREA_BENCHMARKS_TABLE = MARKET_TABLES.dldAreaBenchmarks
+const DLD_TRANSACTIONS_TABLE = MARKET_TABLES.dldTransactions
+const DLD_FEED_TABLE = MARKET_TABLES.dldFeed
+
+const DEVELOPER_REGISTRY_SQL = Prisma.raw(DEVELOPER_REGISTRY_TABLE)
+const DLD_AREA_BENCHMARKS_SQL = Prisma.raw(DLD_AREA_BENCHMARKS_TABLE)
+const DLD_TRANSACTIONS_SQL = Prisma.raw(DLD_TRANSACTIONS_TABLE)
+
+/** Exported for tests: the tables this module reads, all schema-qualified. */
+export const COPILOT_TABLES = {
+  inventory: COPILOT_INVENTORY_TABLE,
+  developer_registry: DEVELOPER_REGISTRY_TABLE,
+  dld_area_benchmarks: DLD_AREA_BENCHMARKS_TABLE,
+  dld_transactions: DLD_TRANSACTIONS_TABLE,
+  dld_feed: DLD_FEED_TABLE,
+} as const
 
 const COPILOT_TABLE_SQL = Prisma.raw(COPILOT_INVENTORY_TABLE)
 const COPILOT_PRICE_SQL = Prisma.raw(COPILOT_SAFE_PRICE_COLUMN)
@@ -141,12 +164,17 @@ function buildQualityClauses(options: QualityOptions = {}): Prisma.Sql[] {
     clauses.push(Prisma.sql`COALESCE(price_confidence, 'LOW') IN ('MEDIUM', 'HIGH')`)
   }
 
-  if (options.onlyUae) {
-    if (COPILOT_INVENTORY_TABLE !== "inventory_clean") {
-      clauses.push(
-        Prisma.sql`LOWER(COALESCE(NULLIF(TRIM(city), ''), NULLIF(TRIM(emirate), ''), '')) IN (${toSqlList([...UAE_CITIES])})`,
-      )
-    }
+  if (options.onlyUae && !COPILOT_IS_CLEAN_TABLE) {
+    // Two bugs lived in three lines. The skip compared COPILOT_INVENTORY_TABLE
+    // ("canonical.inventory_clean") to the bare string "inventory_clean", so it
+    // never skipped; and the clause it then added read `emirate`, a column that
+    // exists on none of the inventory tables. Every tool asking for UAE-only
+    // rows — which is all of them — threw "column emirate does not exist".
+    // The curated table is UAE-only by construction, hence the skip; elsewhere
+    // `city` is the column that is actually there.
+    clauses.push(
+      Prisma.sql`LOWER(COALESCE(NULLIF(TRIM(city), ''), '')) IN (${toSqlList([...UAE_CITIES])})`,
+    )
   }
 
   if (options.excludeGarbageDeveloper) {
@@ -156,7 +184,7 @@ function buildQualityClauses(options: QualityOptions = {}): Prisma.Sql[] {
     clauses.push(Prisma.sql`LENGTH(COALESCE(developer, '')) <= 80`)
   }
 
-  const includeBedroomColumns = options.includeBedroomColumns !== false
+  const includeBedroomColumns = options.includeBedroomColumns ?? COPILOT_HAS_BEDROOM_RANGE
 
   if (options.requireBedroomSanity && includeBedroomColumns) {
     clauses.push(Prisma.sql`(bedrooms_min IS NULL OR bedrooms_min BETWEEN 0 AND 10)`)
@@ -270,7 +298,7 @@ function buildDealScreenerFilters(
   return clauses
 }
 
-function buildDealScreenerQuery(input: DealScreenerInput, includeBedroomColumns = true): Prisma.Sql {
+function buildDealScreenerQuery(input: DealScreenerInput, includeBedroomColumns = COPILOT_HAS_BEDROOM_RANGE): Prisma.Sql {
   const clauses = [
     ...buildQualityClauses({
       requirePrice: true,
@@ -440,10 +468,21 @@ export async function executeDeveloperDueDiligence(
 ): Promise<ToolEnvelope<DbRow>> {
   const registryRows = await runQuery(
     Prisma.sql`
-      SELECT name, tier, project_count
-      FROM developer_registry
+      SELECT name, tier,
+             ${Prisma.raw(DEVELOPER_PROJECT_COUNT_SQL)} AS project_count
+      FROM ${DEVELOPER_REGISTRY_SQL}
       WHERE name ILIKE '%' || ${input.developer_name} || '%'
-      ORDER BY CASE WHEN LOWER(name) = LOWER(${input.developer_name}) THEN 0 ELSE 1 END
+      -- The registry carries scraped duplicates whose name is a whole marketing
+      -- sentence ("Emaar Properties, one of the Most Reputable...") with a zero
+      -- project count. On a partial match like "Emaar" those tied with the real
+      -- row and could win, so due diligence reported a mega-developer as having
+      -- nothing built. Rank: exact name, then prefix, then the row that actually
+      -- has projects, then the shortest name.
+      ORDER BY
+        CASE WHEN LOWER(name) = LOWER(${input.developer_name}) THEN 0 ELSE 1 END,
+        CASE WHEN LOWER(name) LIKE LOWER(${input.developer_name}) || '%' THEN 0 ELSE 1 END,
+        ${Prisma.raw(DEVELOPER_PROJECT_COUNT_SQL)} DESC,
+        LENGTH(name) ASC
       LIMIT 1
     `,
   )
@@ -1001,10 +1040,10 @@ export async function executeDldTransactionSearch(input: DldTransactionSearchInp
   const limit = Math.min(input.limit || 20, 50)
 
   const rowsSql = `
-    SELECT transaction_id, area, project, amount, reg_type, prop_type,
-           rooms, size_sqm, price_per_sqm, transaction_date,
+    SELECT id AS transaction_id, area, project, amount, reg_type, prop_type,
+           rooms, prop_size_sqm AS size_sqm, price_per_sqm, transaction_date,
            sub_type, freehold, usage
-    FROM dld_transactions_arvo
+    FROM ${DLD_TRANSACTIONS_TABLE}
     ${whereClause}
     ORDER BY transaction_date DESC, amount DESC
     LIMIT ${limit}
@@ -1020,7 +1059,7 @@ export async function executeDldTransactionSearch(input: DldTransactionSearchInp
            SUM(amount) as total_volume,
            AVG(amount)::bigint as avg_price,
            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY amount)::bigint as median_price
-    FROM dld_transactions_arvo
+    FROM ${DLD_TRANSACTIONS_TABLE}
     ${whereClause}
   `
 
@@ -1042,7 +1081,7 @@ export async function executeDldAreaBenchmark(input: DldAreaBenchmarkInput) {
   const rows = normalizeRows((await withStatementTimeout(
     (tx) =>
       tx.$queryRaw<DbRow[]>`
-        SELECT * FROM dld_area_benchmarks_live
+        SELECT * FROM ${DLD_AREA_BENCHMARKS_SQL}
         WHERE UPPER(area) = UPPER(${input.area_name})
            OR UPPER(area) LIKE '%' || UPPER(${input.area_name}) || '%'
            OR UPPER(${input.area_name}) LIKE '%' || UPPER(area) || '%'
@@ -1087,7 +1126,7 @@ export async function executeDldMarketPulse() {
           COUNT(*) FILTER (WHERE amount >= 2000000 AND freehold = 'Free Hold') as golden_visa_eligible,
           AVG(amount) FILTER (WHERE reg_type = 'Off-Plan')::bigint as avg_offplan,
           AVG(amount) FILTER (WHERE reg_type = 'Ready')::bigint as avg_ready
-        FROM dld_transactions_arvo
+        FROM ${DLD_TRANSACTIONS_SQL}
       `,
     STATEMENT_TIMEOUT_MS,
   )) as DbRow[])
@@ -1099,7 +1138,7 @@ export async function executeDldMarketPulse() {
                COUNT(*) as txn_count,
                SUM(amount) as volume,
                AVG(amount)::bigint as avg_price
-        FROM dld_transactions_arvo
+        FROM ${DLD_TRANSACTIONS_SQL}
         GROUP BY area
         ORDER BY volume DESC
         LIMIT 10
@@ -1111,7 +1150,7 @@ export async function executeDldMarketPulse() {
     (tx) =>
       tx.$queryRaw<DbRow[]>`
         SELECT area, daily_velocity, total_transactions, median_price
-        FROM dld_area_benchmarks_live
+        FROM ${DLD_AREA_BENCHMARKS_SQL}
         ORDER BY daily_velocity DESC
         LIMIT 10
       `,
@@ -1143,7 +1182,7 @@ export async function executeDldNotableDeals(input: DldNotableDealsInput) {
            prop_type, badge, is_notable, transaction_date, icon,
            metadata->>'freehold' as freehold,
            metadata->>'nearestLandmark' as landmark
-    FROM dld_transaction_feed
+    FROM ${DLD_FEED_TABLE}
     WHERE transaction_date >= CURRENT_DATE - INTERVAL '${daysBack} days'
     ${badgeFilter}
     ORDER BY

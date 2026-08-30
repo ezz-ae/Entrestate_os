@@ -1,4 +1,5 @@
 import "server-only"
+import { MARKET_TABLES } from "@/lib/market-tables"
 import { Prisma } from "@prisma/client"
 import { withStatementTimeout } from "@/lib/db-guardrails"
 import { buildCoverageSummary, type CoverageSummary } from "@/lib/data-coverage"
@@ -2382,7 +2383,7 @@ export async function getMarketPulse() {
 export async function getTopDataSections() {
   const rows = await runOptionalQuery(Prisma.sql`
     SELECT *
-    FROM entrestate_top_data
+    FROM ${Prisma.raw(MARKET_TABLES.topData)}
     WHERE is_live = true
     ORDER BY display_order
   `)
@@ -2427,7 +2428,7 @@ export async function getTopDataSections() {
 export async function getHomepageSections() {
   const rows = await runOptionalQuery(Prisma.sql`
     SELECT *
-    FROM entrestate_homepage
+    FROM ${Prisma.raw(MARKET_TABLES.homepageSections)}
     ORDER BY display_order
   `)
 

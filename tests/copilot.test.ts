@@ -61,30 +61,52 @@ describe("copilot route", () => {
 })
 
 describe("copilot SQL builder", () => {
-  it("builds deal screener SQL with key filters", () => {
-    const sql = buildDealScreenerQuery(
-      dealScreenerInputSchema.parse({
-        filters: {
-          budget_max_aed: 2_000_000,
-          beds_min: 2,
-          beds_max: 2,
-          timing_label: "BUY",
-        },
-        sort_by: "investor_score_v1",
-        limit: 10,
-      }),
-    )
+  const screenerInput = () =>
+    dealScreenerInputSchema.parse({
+      filters: {
+        budget_max_aed: 2_000_000,
+        beds_min: 2,
+        beds_max: 2,
+        timing_label: "BUY",
+      },
+      sort_by: "investor_score_v1",
+      limit: 10,
+    })
 
-    const text = sqlText(sql)
+  /**
+   * This test used to assert `price_from_aed <=` and the bedrooms_min/max
+   * filters unconditionally. Those columns belong to the WIDE inventory tables
+   * (raw.inventory_full, public.inventory_spine, api.entrestate_inventory). The
+   * configured table is canonical.inventory_clean — the curated V1 table, the
+   * only one carrying stress_grade_v1 / investor_score_v1 / price_confidence —
+   * and it names its price `price_from` and has no bedroom range at all.
+   *
+   * So the assertions passed while the query they described could not run. The
+   * shape is now derived from the table name, and each shape is asserted as
+   * itself rather than one being asserted for both.
+   */
+  it("builds deal screener SQL for the curated table it is configured against", () => {
+    const text = sqlText(buildDealScreenerQuery(screenerInput()))
+
     expect(text).toContain("FROM")
-    expect(text).toContain("price_from_aed <=")
-    expect(text).toContain("COALESCE(bedrooms_max, bedrooms_min) >=")
-    expect(text).toContain("COALESCE(bedrooms_min, bedrooms_max) <=")
+    expect(text).toContain("price_from <=")
+    // No bedroom range on this table: filtering on it threw, it did not narrow.
+    expect(text).not.toContain("bedrooms_min IS NULL OR bedrooms_min BETWEEN")
     expect(text).toContain("COALESCE(price_confidence, 'LOW') IN ('MEDIUM', 'HIGH')")
     expect(text).toContain("TRIM(COALESCE(developer, '')) <>")
     expect(text).toContain("timing_label =")
     expect(text).toContain("ORDER BY investor_score_v1 DESC")
     expect(text).toContain("LIMIT")
+    // The result still reports a price_from_aed field, so callers and the UI are
+    // unchanged by which column the table happens to use.
+    expect(text).toContain("AS price_from_aed")
+  })
+
+  it("still filters on the bedroom range when the table has one", () => {
+    const text = sqlText(buildDealScreenerQuery(screenerInput(), true))
+
+    expect(text).toContain("COALESCE(bedrooms_max, bedrooms_min) >=")
+    expect(text).toContain("COALESCE(bedrooms_min, bedrooms_max) <=")
   })
 })
 

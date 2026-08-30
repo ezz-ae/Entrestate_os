@@ -51,7 +51,7 @@ import {
   getCopilotSystemPrompt,
   copilotToolDescriptions,
 } from "@/lib/copilot/tools"
-import { mcpCrossReference, mcpDescribeTable, mcpQuery } from "@/lib/mcp/server"
+import { mcpCrossReference, mcpDescribeTable, mcpQuery, mcpTableCatalogue } from "@/lib/mcp/server"
 import {
   mcpCrossReferenceInputSchema,
   mcpDescribeTableInputSchema,
@@ -321,6 +321,20 @@ export async function POST(request: Request) {
         }
       }
     }
+    /**
+     * A THROWN QUERY IS NOT AN EMPTY MARKET.
+     *
+     * These wrappers used to return `no_results: true` on any exception — the
+     * same envelope a genuinely empty result set produces. Four table names in
+     * lib/copilot/executor.ts were unqualified while search_path was `public`,
+     * so every developer and DLD tool threw, and the terminal reported an empty
+     * market in a confident voice over a database holding 2,813 projects and
+     * 36,841 transactions. A failure indistinguishable from an answer is worse
+     * than an error.
+     *
+     * `failed` is what the Evidence Drawer renders; `message` is what stops the
+     * model filling the silence from memory.
+     */
 
     const safeTool = <TInput,>(
       source: string,
@@ -333,8 +347,10 @@ export async function POST(request: Request) {
         return withGuardrails({
           source,
           data_as_of: new Date().toISOString(),
-          no_results: true,
+          failed: true,
           error: "tool_failed",
+          message:
+            "This tool did not run — its data source could not be read. Say the source is unavailable; do not answer from memory or from another tool's rows.",
         })
       }
     }
@@ -350,8 +366,10 @@ export async function POST(request: Request) {
         return {
           source,
           data_as_of: new Date().toISOString(),
-          no_results: true,
+          failed: true,
           error: "tool_failed",
+          message:
+            "This tool did not run — its data source could not be read. Say the source is unavailable; do not answer from memory or from another tool's rows.",
         }
       }
     }
@@ -409,7 +427,10 @@ export async function POST(request: Request) {
       }),
       mcp_query: tool({
         description:
-          "Execute a read-only SQL query against the full Entrestate database. Use for custom analytics, cross-joins, aggregations. Only SELECT/WITH allowed, max 100 rows.",
+          "Execute a read-only SQL query against the Entrestate database. Only SELECT/WITH, max 100 rows. "
+          + "Table names MUST be written exactly as listed below, schema included — this database keeps its market "
+          + "data outside the default search_path, so a bare name will not resolve:\n"
+          + mcpTableCatalogue(),
         inputSchema: mcpQueryInputSchema,
         execute: safeTool("mcp_query", mcpQuery),
       }),

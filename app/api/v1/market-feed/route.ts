@@ -4,6 +4,7 @@ import { getRequestId } from "@/lib/api-errors"
 import { Prisma, dbQuery } from "@/lib/db"
 import { listAreas, getMarketPulse } from "@/lib/decision-infrastructure"
 import { hashApiKey } from "@/lib/api-keys"
+import { MARKET_TABLES, INVENTORY_PRICE_COLUMN } from "@/lib/market-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -71,7 +72,7 @@ export async function GET(request: Request) {
           name,
           area,
           developer,
-          price_from_aed,
+          ${Prisma.raw(INVENTORY_PRICE_COLUMN)} AS price_from_aed,
           rental_yield,
           timing_label,
           stress_grade_v1,
@@ -82,7 +83,7 @@ export async function GET(request: Request) {
           golden_visa,
           price_confidence,
           price_source
-        FROM inventory_clean
+        FROM ${Prisma.raw(MARKET_TABLES.inventory)}
         WHERE price_confidence = 'HIGH'
         ORDER BY investor_score_v1 DESC
         LIMIT 50

@@ -1,4 +1,5 @@
 import "server-only"
+import { MARKET_TABLES } from "@/lib/market-tables"
 import { Prisma, dbQuery } from "@/lib/db"
 import { getInventoryTableName, getInventoryTableSql } from "@/lib/inventory-table"
 import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
@@ -664,7 +665,7 @@ async function buildTopDataFallback(inventoryTotal: number) {
 export async function getHomepageContentSections() {
   const rows = await dbQuery<HomepageSectionRow>(Prisma.sql`
     SELECT id, section, content_json, display_order
-    FROM entrestate_homepage
+    FROM ${Prisma.raw(MARKET_TABLES.homepageSections)}
     WHERE is_live = true
     ORDER BY display_order
   `)
@@ -683,7 +684,7 @@ export async function getTopDataRows() {
   try {
     rows = await dbQuery<TopDataRow>(Prisma.sql`
       SELECT id, section, title, subtitle, data_json, display_order, confidence, last_updated
-      FROM entrestate_top_data
+      FROM ${Prisma.raw(MARKET_TABLES.topData)}
       WHERE is_live = true
       ORDER BY display_order
     `)
@@ -790,7 +791,7 @@ export async function getOutcomeIntentCounts() {
 export async function getApiContentRows() {
   const rows = await dbQuery<ApiContentRow>(Prisma.sql`
     SELECT endpoint, method, description, tier_required
-    FROM entrestate_api_content
+    FROM ${Prisma.raw(MARKET_TABLES.apiContent)}
     WHERE is_live = true
     ORDER BY endpoint
   `)
