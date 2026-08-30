@@ -13,7 +13,8 @@
     "openAssistant": "افتح المحطة",
     "openMenu": "فتح القائمة",
     "closeMenu": "إغلاق القائمة",
-    "mainNavigation": "التنقل الرئيسي"
+    "mainNavigation": "التنقل الرئيسي",
+    "pricing": "الأسعار"
   },
   "locale": {
     "label": "اللغة",
@@ -256,18 +257,6 @@
     "view": "عرض",
     "chat": "دردشة",
     "history": "السجل",
-    "workspace": "مساحة العمل",
-    "close": "إغلاق",
-    "showLess": "عرض أقل",
-    "readMore": "اقرأ المزيد",
-    "noRecentSessions": "لم يتم العثور على جلسات حديثة.",
-    "untitledSession": "جلسة بدون عنوان",
-    "starterCards": {
-      "compare": "ساعدني في المقارنة",
-      "deals": "ابحث لي عن صفقات",
-      "market": "ماذا يحدث في السوق؟",
-      "plan": "خطط لاستثماري"
-    },
     "workspace": {
       "askAndCreate": "اسأل وأنشئ",
       "viewAndAnalyze": "عرض وتحليل",
@@ -309,6 +298,17 @@
         "dataSources": "مصادر البيانات",
         "dataSourcesDesc": "الإدخال والحوكمة"
       }
+    },
+    "close": "إغلاق",
+    "showLess": "عرض أقل",
+    "readMore": "اقرأ المزيد",
+    "noRecentSessions": "لم يتم العثور على جلسات حديثة.",
+    "untitledSession": "جلسة بدون عنوان",
+    "starterCards": {
+      "compare": "ساعدني في المقارنة",
+      "deals": "ابحث لي عن صفقات",
+      "market": "ماذا يحدث في السوق؟",
+      "plan": "خطط لاستثماري"
     }
   },
   "signals": {

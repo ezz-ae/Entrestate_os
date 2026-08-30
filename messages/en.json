@@ -13,7 +13,8 @@
     "openAssistant": "Open Terminal",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "mainNavigation": "Main navigation"
+    "mainNavigation": "Main navigation",
+    "pricing": "Pricing"
   },
   "locale": {
     "label": "Language",
@@ -111,18 +112,6 @@
     "view": "View",
     "chat": "Chat",
     "history": "History",
-    "workspace": "Workspace",
-    "close": "Close",
-    "showLess": "Show less",
-    "readMore": "Read more",
-    "noRecentSessions": "No recent sessions found.",
-    "untitledSession": "Untitled Session",
-    "starterCards": {
-      "compare": "Help me compare",
-      "deals": "Find me deals",
-      "market": "What's happening in the market?",
-      "plan": "Plan my investment"
-    },
     "workspace": {
       "askAndCreate": "Ask & Create",
       "viewAndAnalyze": "View & Analyze",
@@ -164,6 +153,17 @@
         "dataSources": "Data Sources",
         "dataSourcesDesc": "Managed ingestion"
       }
+    },
+    "close": "Close",
+    "showLess": "Show less",
+    "readMore": "Read more",
+    "noRecentSessions": "No recent sessions found.",
+    "untitledSession": "Untitled Session",
+    "starterCards": {
+      "compare": "Help me compare",
+      "deals": "Find me deals",
+      "market": "What's happening in the market?",
+      "plan": "Plan my investment"
     }
   },
   "dashboard": {
