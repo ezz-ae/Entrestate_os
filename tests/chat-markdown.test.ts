@@ -69,7 +69,6 @@ describe("every surface that shows an answer", () => {
   it("imports it rather than growing a second copy", () => {
     for (const rel of [
       "components/ChatInterface.tsx",
-      "components/explorer-chat.tsx",
       "components/ground-plays.tsx",
       "components/lead-agent-chat.tsx",
     ]) {

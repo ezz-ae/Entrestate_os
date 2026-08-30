@@ -8,6 +8,7 @@ import {
   stepRunningLabel,
 } from "@/lib/chat/steps"
 import { answerLocale, humanizeFinalText } from "@/lib/chat/final-text"
+import { buildHumanWelcome } from "@/lib/chat/welcome"
 import { z } from "zod"
 import { getPublicErrorMessage, getRequestId } from "@/lib/api-errors"
 import { resolveCopilotModel } from "@/lib/ai-provider"
@@ -292,26 +293,11 @@ function buildTerminalCommandGuide(locale: string) {
   // This used to print "ENTRESTATE Decision Terminal — Mode: Awaiting command —
   // COMMANDS: SCREEN | PROJECT | AREA…" at anyone who said hello. The person
   // typing "dubai" is an investor, not an operator; they get a sentence and
-  // tappable examples, not a command syntax.
-  if (locale === "ar") {
-    return [
-      "أهلاً بك. أنا مستشار Entrestate العقاري — اسألني عن أي منطقة أو مشروع أو مطوّر في الإمارات وسأبحث في البيانات الحية وأجيبك بلغة واضحة.",
-      "",
-      "أمثلة تقدر تبدأ بها:",
-      "· إيه أفضل عائد تحت مليوني درهم في دبي؟",
-      "· قارن لي بين دبي مارينا و JBR",
-      "· إيه وضع إعمار كمطوّر؟",
-    ].join("\n")
-  }
-
-  return [
-    "Welcome. I'm Entrestate's market advisor — ask me about any area, project or developer in the UAE and I'll search the live data and answer in plain language.",
-    "",
-    "A few ways to start:",
-    "· What's the best yield under AED 2M in Dubai?",
-    "· Compare Dubai Marina with JBR for me",
-    "· How solid is Emaar as a developer?",
-  ].join("\n")
+  // tappable examples, not a command syntax. The text lives in
+  // lib/chat/welcome.ts because /api/copilot greets through the SAME words —
+  // two welcomes drifted once already (this one became human, that one kept
+  // shouting COMMANDS) and مستشار means the same person at either door.
+  return buildHumanWelcome(locale)
 }
 
 function extractProjectQuery(message: string) {
