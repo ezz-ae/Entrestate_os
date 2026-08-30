@@ -57,6 +57,10 @@ export function CopilotProvider({
     ...(activeSessionId != null ? { id: activeSessionId } : {}),
     messages: activeSessionMessages,
     transport,
+    // Every consumer of this context re-renders on every streamed delta —
+    // navbar, sidebar, and whichever page is mounted. Throttling the UI
+    // updates keeps streaming smooth instead of a render storm.
+    experimental_throttle: 80,
     onError: (error) => {
       console.error("Copilot error:", error)
     },
