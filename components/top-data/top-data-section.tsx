@@ -114,9 +114,37 @@ function formatLiveTimestamp(value: string | null, locale?: string | null) {
   return timestamp === "—" ? timestamp : `${timestamp} GST`
 }
 
+/**
+ * ONE SPELLING OF A FIELD NAME, BECAUSE THE WRITER AND THE READER DISAGREED.
+ *
+ * Every payload in api.entrestate_top_data is written in camelCase —
+ * totalProjects, avgPrice, buySignals, safeCount, confidenceDistribution — and
+ * almost every lookup on this page asked for snake_case. Where the two happened
+ * to coincide (projects, areas, developers, tiers, intents) a section rendered;
+ * everywhere else the field came back undefined and the card printed 0 or —.
+ * Five of fourteen sections worked, and the page said "14/14 live sections".
+ *
+ * The alias list was being extended one field at a time, which is how it ended
+ * up half right: shouldRenderTopDataSection had learned "totalProjects" and
+ * "avgPrice" while MarketPulseView, four screens below, had not — so the check
+ * that decides whether to SHOW a section understood the data and the code that
+ * DRAWS it did not.
+ *
+ * So the key is normalised instead of aliased: case and separators are dropped,
+ * making avg_price, avgPrice and AVG_PRICE the same lookup. A caller still
+ * passes the spellings it means; it no longer has to guess which one was used.
+ */
+const canonicalKey = (key: string) => key.toLowerCase().replace(/[^a-z0-9]/g, "")
+
 function valueFromKeys(record: GenericObject, keys: string[]) {
   for (const key of keys) {
     if (key in record) return record[key]
+  }
+  // Nothing matched literally — compare on the canonical form. Built lazily so
+  // the common case stays a plain property read.
+  const wanted = new Set(keys.map(canonicalKey))
+  for (const actual of Object.keys(record)) {
+    if (wanted.has(canonicalKey(actual))) return record[actual]
   }
   return undefined
 }
@@ -141,6 +169,38 @@ function normalizeJsonPayload(value: unknown): unknown {
   }
 }
 
+/**
+ * THE KEY A SECTION WRAPS ITS ROWS IN. Every one of these is a shape that
+ * actually ships in api.entrestate_top_data. The four that were missing —
+ * signals, grades, labels, levels — are why Timing Signals, Stress Grades,
+ * Yield Labels, Decision Labels and Evidence Levels all rendered as zeros over
+ * a LIVE badge, while projects/areas/developers/tiers/intents were here, which
+ * is exactly why those five worked and made the page look mostly fine.
+ *
+ * Exported so tests/top-data-shapes.test.ts can assert it covers every wrapper
+ * the live table uses — the check nobody was doing when four went missing.
+ */
+export const ROW_WRAPPER_KEYS = [
+  "rows",
+  "items",
+  "data",
+  "results",
+  "records",
+  "entries",
+  "list",
+  "distribution",
+  // The shapes this page's own sections ship.
+  "projects",
+  "developers",
+  "areas",
+  "intents",
+  "tiers",
+  "signals",
+  "grades",
+  "labels",
+  "levels",
+] as const
+
 function dataToRecords(data: unknown): GenericObject[] {
   const normalizedData = normalizeJsonPayload(data)
 
@@ -152,21 +212,7 @@ function dataToRecords(data: unknown): GenericObject[] {
 
   const payload = asObject(normalizedData)
 
-  for (const key of [
-    "rows",
-    "items",
-    "data",
-    "projects",
-    "developers",
-    "areas",
-    "intents",
-    "tiers",
-    "distribution",
-    "results",
-    "records",
-    "entries",
-    "list",
-  ]) {
+  for (const key of ROW_WRAPPER_KEYS) {
     const value = normalizeJsonPayload(payload[key])
     if (Array.isArray(value)) {
       return value
@@ -187,16 +233,41 @@ function dataToRecords(data: unknown): GenericObject[] {
     }
   }
 
-  if (Object.keys(payload).length > 0) {
-    return [payload]
-  }
+  /**
+   * A SECTION THAT IS ONE RECORD, versus one this function does not understand.
+   *
+   * market-pulse, golden-visa and trust-bar are single objects — returning the
+   * payload as one row is correct for them. But this branch used to catch EVERY
+   * unrecognised shape, including `{ signals: [...] }` before "signals" was in
+   * the list above: the array went unread, the wrapper object was handed back
+   * as though it were a row, shouldRenderTopDataSection counted one row and
+   * showed the section, and the view found none of its fields and drew zeros
+   * under "Live · Confidence: HIGH".
+   *
+   * So a payload whose content is an array under a key this function does not
+   * know is NOT a record. Returning nothing hides the section, which is the
+   * honest outcome: a section that cannot be read must not be drawn as a
+   * section that reads zero.
+   */
+  const keys = Object.keys(payload)
+  if (keys.length === 0) return []
+  if (keys.some((key) => Array.isArray(normalizeJsonPayload(payload[key])))) return []
 
-  return []
+  return [payload]
 }
 
 function sectionSubtitle(confidence: string | null, lastUpdated: string | null, locale?: string | null) {
   const parts = []
-  parts.push(isArabicLocale(locale) ? "مباشر" : "Live")
+  // "Live" only when the timestamp supports it — see freshnessOf. This line
+  // used to open with "Live" unconditionally, which is how a row last written
+  // in March read as "Live · 12 Mar, 18:01 GST · Confidence: HIGH" on 30
+  // August: the word and the date printed beside it disagreed, and the word won.
+  const freshness = freshnessOf(lastUpdated)
+  parts.push(
+    freshness.state === "live"
+      ? (isArabicLocale(locale) ? "مباشر" : "Live")
+      : (isArabicLocale(locale) ? "آخر تحديث" : "Last updated"),
+  )
   if (lastUpdated) parts.push(formatLiveTimestamp(lastUpdated, locale))
   const normalizedConfidence = typeof confidence === "string" ? confidence.trim().toUpperCase() : ""
   if (normalizedConfidence === "HIGH" || normalizedConfidence === "MEDIUM" || normalizedConfidence === "LOW") {
@@ -204,6 +275,32 @@ function sectionSubtitle(confidence: string | null, lastUpdated: string | null, 
   }
   return parts.join(" · ")
 }
+
+/**
+ * TRUST BAR fields. The table stores `confidenceDistribution` and
+ * `dataHierarchy`; both the gate and the view read `payload.confidence_distribution`
+ * and `payload.hierarchy` off the object directly, so neither ever found them.
+ * Listed in both spellings because "dataHierarchy" and "hierarchy" are
+ * different words, not different casings — normalising a key cannot rescue that.
+ */
+export const TRUST_BAR_KEYS = {
+  confidenceDistribution: ["confidence_distribution", "confidenceDistribution"],
+  hierarchy: ["hierarchy", "data_hierarchy", "dataHierarchy"],
+} as const
+
+/**
+ * THE FIELDS MARKET PULSE READS — named once, so the gate and the view cannot
+ * disagree again. They did: shouldRenderTopDataSection accepted "totalProjects"
+ * (the spelling the table stores) while MarketPulseView asked only for "total"
+ * and "projects". The gate said the section had data, the view found none of
+ * it, and the card printed 0 · — · — · 0 under a LIVE badge.
+ */
+const MARKET_PULSE_KEYS = {
+  total: ["total", "projects", "totalProjects"],
+  avgPrice: ["avg_price", "price_avg", "avgPrice"],
+  avgYield: ["avg_yield", "yield_avg", "avgYield"],
+  buySignals: ["buy_signals", "buy", "buySignals"],
+} as const
 
 export function shouldRenderTopDataSection(section: string, data: unknown) {
   const rows = dataToRecords(data)
@@ -219,22 +316,60 @@ export function shouldRenderTopDataSection(section: string, data: unknown) {
 
   if (section === "trust-bar") {
     const payload = asObject(data)
-    const confidenceRows = dataToRecords(payload.confidence_distribution)
-    const hierarchy = asArray(payload.hierarchy).filter((entry) => typeof entry === "string")
+    const confidenceRows = dataToRecords(valueFromKeys(payload, [...TRUST_BAR_KEYS.confidenceDistribution]))
+    const hierarchy = asArray(valueFromKeys(payload, [...TRUST_BAR_KEYS.hierarchy])).filter((entry) => typeof entry === "string")
     const engines = asArray(payload.engines).filter((entry) => typeof entry === "string")
     return confidenceRows.length > 0 || hierarchy.length > 0 || engines.length > 0
   }
 
   if (section === "market-pulse") {
     const payload = rows[0] ?? asObject(data)
-    const total = asNumber(valueFromKeys(payload, ["total", "projects", "totalProjects"])) ?? 0
-    const avgPrice = asNumber(valueFromKeys(payload, ["avg_price", "price_avg", "avgPrice"]))
-    const avgYield = asNumber(valueFromKeys(payload, ["avg_yield", "yield_avg", "avgYield"]))
-    const buySignals = asNumber(valueFromKeys(payload, ["buy_signals", "buy", "buySignals"])) ?? 0
+    const total = asNumber(valueFromKeys(payload, [...MARKET_PULSE_KEYS.total])) ?? 0
+    const avgPrice = asNumber(valueFromKeys(payload, [...MARKET_PULSE_KEYS.avgPrice]))
+    const avgYield = asNumber(valueFromKeys(payload, [...MARKET_PULSE_KEYS.avgYield]))
+    const buySignals = asNumber(valueFromKeys(payload, [...MARKET_PULSE_KEYS.buySignals])) ?? 0
     return total > 0 || avgPrice !== null || avgYield !== null || buySignals > 0
   }
 
   return rows.length > 0
+}
+
+/**
+ * "LIVE" IS A CLAIM, AND IT HAS TO BE TRUE.
+ *
+ * Every section drew a green LIVE dot and "Confidence: HIGH" from a hardcoded
+ * label. The rows in api.entrestate_top_data were last written on 12 March; the
+ * page was read on 30 August, under a headline that says "Live market data,
+ * right now" and a line that says "updated throughout the day". Five and a half
+ * months of drift, presented as this minute.
+ *
+ * This repository already rules that numbers shown to users are evidence-gated
+ * — the bound facing the threshold or a stated Withheld, never a bare point
+ * estimate. A freshness badge is that rule applied to time: it states what the
+ * timestamp supports, not what the page would like to be true.
+ *
+ * The window is 48 hours, not 24: the ETL runs daily, so one missed pass is a
+ * late night rather than a stale page, and a badge that cries stale every time
+ * a job slips is a badge people learn to ignore. Past that, the section says how
+ * old it is and drops the green.
+ */
+const LIVE_WINDOW_MS = 48 * 60 * 60 * 1000
+
+export function freshnessOf(lastUpdated: string | null | undefined, now: number = Date.now()) {
+  if (!lastUpdated) return { state: "unknown" as const, ageHours: null }
+  const at = new Date(lastUpdated).getTime()
+  if (!Number.isFinite(at)) return { state: "unknown" as const, ageHours: null }
+  const ageMs = Math.max(0, now - at)
+  const ageHours = Math.floor(ageMs / (60 * 60 * 1000))
+  return { state: ageMs <= LIVE_WINDOW_MS ? ("live" as const) : ("stale" as const), ageHours }
+}
+
+function ageLabel(ageHours: number, locale?: string | null) {
+  const days = Math.floor(ageHours / 24)
+  if (days >= 1) {
+    return isArabicLocale(locale) ? `منذ ${days} يوم` : `${days} day${days === 1 ? "" : "s"} old`
+  }
+  return isArabicLocale(locale) ? `منذ ${ageHours} ساعة` : `${ageHours}h old`
 }
 
 function SectionShell({
@@ -254,7 +389,17 @@ function SectionShell({
   lastUpdated: string | null
   children: React.ReactNode
 }) {
-  const syncLabel = isArabicLocale(locale) ? "مباشر" : "Live"
+  const freshness = freshnessOf(lastUpdated)
+  const isLive = freshness.state === "live"
+  const syncLabel = isLive
+    ? (isArabicLocale(locale) ? "مباشر" : "Live")
+    : freshness.state === "stale" && freshness.ageHours !== null
+      ? ageLabel(freshness.ageHours, locale)
+      : (isArabicLocale(locale) ? "غير مؤرخ" : "Undated")
+  const badgeTone = isLive
+    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+    : "border-amber-500/25 bg-amber-500/10 text-amber-500"
+  const dotTone = isLive ? "bg-emerald-500" : "bg-amber-500"
   const syncTimestamp = formatLiveTimestamp(lastUpdated, locale)
 
   return (
@@ -269,8 +414,8 @@ function SectionShell({
           ) : null}
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-500">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${badgeTone}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${dotTone}`} />
             {syncLabel}
           </span>
           {lastUpdated ? <span className="text-[10px] text-muted-foreground">{syncTimestamp}</span> : null}
@@ -287,10 +432,10 @@ function MarketPulseView({ data, locale }: { data: unknown; locale?: string }) {
   const rootPayload = asObject(data)
   const summaryPayload = asObject(rootPayload.summary)
   const payload = dataToRecords(data)[0] ?? (Object.keys(summaryPayload).length > 0 ? summaryPayload : rootPayload)
-  const total = asNumber(valueFromKeys(payload, ["total", "projects"])) ?? 0
-  const avgPrice = asNumber(valueFromKeys(payload, ["avg_price", "price_avg"]))
-  const avgYield = asNumber(valueFromKeys(payload, ["avg_yield", "yield_avg"]))
-  const buySignals = asNumber(valueFromKeys(payload, ["buy_signals", "buy"])) ?? 0
+  const total = asNumber(valueFromKeys(payload, [...MARKET_PULSE_KEYS.total])) ?? 0
+  const avgPrice = asNumber(valueFromKeys(payload, [...MARKET_PULSE_KEYS.avgPrice]))
+  const avgYield = asNumber(valueFromKeys(payload, [...MARKET_PULSE_KEYS.avgYield]))
+  const buySignals = asNumber(valueFromKeys(payload, [...MARKET_PULSE_KEYS.buySignals])) ?? 0
 
   return (
     <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -876,8 +1021,8 @@ function GoldenVisaView({ data, locale }: { data: unknown; locale?: string }) {
 
 function TrustBarView({ data, locale }: { data: unknown; locale?: string }) {
   const payload = asObject(data)
-  const confidenceRows = dataToRecords(payload.confidence_distribution)
-  const hierarchyFromData = asArray(payload.hierarchy).filter((entry) => typeof entry === "string") as string[]
+  const confidenceRows = dataToRecords(valueFromKeys(payload, [...TRUST_BAR_KEYS.confidenceDistribution]))
+  const hierarchyFromData = asArray(valueFromKeys(payload, [...TRUST_BAR_KEYS.hierarchy])).filter((entry) => typeof entry === "string") as string[]
   const enginesFromData = asArray(payload.engines).filter((entry) => typeof entry === "string") as string[]
 
   const hierarchy = hierarchyFromData.length > 0 ? hierarchyFromData : DEFAULT_HIERARCHY
