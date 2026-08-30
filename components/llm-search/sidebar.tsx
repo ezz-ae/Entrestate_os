@@ -1120,6 +1120,16 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
         <div className="fixed inset-y-0 left-0 rtl:left-auto rtl:right-0 z-50 hidden md:flex">
           {sidebarContent}
         </div>
+      ) : isSidebarOpen ? (
+        // An unauthenticated DESKTOP visitor gets the drawer too. This branch
+        // used to be `null`, which quietly broke "one chat everywhere": every
+        // /markets submit called openSidebar() and, for the signed-out
+        // majority, nothing at all appeared — the conversation existed in the
+        // provider with no surface to show it. Signed-out gets an overlay
+        // drawer (no rail, no layout offset); signed-in keeps the docked rail.
+        <div className="fixed inset-y-0 left-0 rtl:left-auto rtl:right-0 z-50 hidden md:flex">
+          {sidebarContent}
+        </div>
       ) : null}
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[55] bg-background/80 backdrop-blur-sm md:hidden animate-in fade-in duration-300" onClick={handleCloseSidebar} />
