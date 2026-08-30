@@ -137,8 +137,8 @@ export function MobileHomePage({
       label: isArabic ? "المطورون" : "Developers",
       value: formatInteger(ratedDevelopers, locale),
       body: isArabic
-        ? `${formatInteger(buySignals, locale)} إشارة توقيت BUY/STRONG_BUY`
-        : `${formatInteger(buySignals, locale)} BUY/STRONG_BUY timing`,
+        ? `${formatInteger(buySignals, locale)} إشارة نافذة شراء`
+        : `${formatInteger(buySignals, locale)} buy-window signals`,
       icon: Users2,
     },
   ]
@@ -161,8 +161,8 @@ export function MobileHomePage({
         <div className="mt-5 flex flex-wrap gap-2">
           <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11px] text-muted-foreground">
             {isArabic
-              ? `${formatInteger(buySignals, locale)} إشارة BUY/STRONG_BUY`
-              : `${formatInteger(buySignals, locale)} BUY/STRONG_BUY timing`}
+              ? `${formatInteger(buySignals, locale)} إشارة نافذة شراء`
+              : `${formatInteger(buySignals, locale)} buy-window signals`}
           </span>
           <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11px] text-muted-foreground">
             {isArabic ? `آخر دورة ${syncLabel}` : `Last cycle ${syncLabel}`}

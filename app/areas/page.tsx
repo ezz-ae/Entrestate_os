@@ -151,8 +151,8 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
           </p>
           <p className="mt-2 text-[11px] text-muted-foreground/60">
             {isArabic
-              ? `مزامنة API · ${data.source_view} · ${syncTimestamp}${isFallbackSource ? " · مصدر احتياطي" : ""}`
-              : `API sync · ${data.source_view} · ${syncTimestamp}${isFallbackSource ? " · fallback source" : ""}`}
+              ? `آخر مزامنة للبيانات · ${syncTimestamp}${isFallbackSource ? " · مصدر احتياطي" : ""}`
+              : `Data synced · ${syncTimestamp}${isFallbackSource ? " · fallback source" : ""}`}
           </p>
         </header>
 

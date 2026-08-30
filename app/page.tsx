@@ -515,8 +515,8 @@ export default async function HomePage({
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {isArabic
-                  ? `${formatter.format(totalProjects)} أصل مقيّم · ${formatter.format(buySignals)} إشارة توقيت BUY/STRONG_BUY · آخر دورة ${syncLabel}`
-                  : `${formatter.format(totalProjects)} scored assets · ${formatter.format(buySignals)} BUY/STRONG_BUY timing signals · last cycle ${syncLabel}`}
+                  ? `${formatter.format(totalProjects)} أصل مقيّم · ${formatter.format(buySignals)} إشارة نافذة شراء · آخر دورة ${syncLabel}`
+                  : `${formatter.format(totalProjects)} scored assets · ${formatter.format(buySignals)} buy-window signals · last cycle ${syncLabel}`}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {trustMarkers.map((marker) => (

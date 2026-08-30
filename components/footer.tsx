@@ -568,8 +568,8 @@ export function Footer() {
         <div className="container mx-auto px-6 py-4">
           <p className="text-[11px] leading-relaxed text-muted-foreground/60">
             {t(
-              "Entrestate is a market-intelligence layer, not a property listing marketplace, broker, or financial advisor. Verdicts and scores are evidence-backed reads of public and licensed data — they are not investment advice and do not replace legal or due-diligence review. Live counts and snapshots refresh on each ETL pass; canonical numbers are exposed via /api/platform-metrics.",
-              "Entrestate طبقة استخبارات سوقية، وليست منصة قوائم عقارية أو وسيطاً أو مستشاراً مالياً. الأحكام والدرجات قراءات مدعومة بالأدلة من البيانات العامة والمرخّصة، وليست توصيات استثمارية ولا تُغني عن المراجعة القانونية. تتحدّث اللقطات مع كل دورة ETL؛ الأرقام المرجعية متاحة عبر /api/platform-metrics."
+              "Entrestate is a market-intelligence layer, not a property listing marketplace, broker, or financial advisor. Verdicts and scores are evidence-backed reads of public and licensed data — they are not investment advice and do not replace legal or due-diligence review. Live counts and snapshots refresh throughout the day as new data lands.",
+              "Entrestate طبقة استخبارات سوقية، وليست منصة قوائم عقارية أو وسيطاً أو مستشاراً مالياً. الأحكام والدرجات قراءات مدعومة بالأدلة من البيانات العامة والمرخّصة، وليست توصيات استثمارية ولا تُغني عن المراجعة القانونية. تتحدّث اللقطات على مدار اليوم مع وصول بيانات جديدة."
             )}
           </p>
         </div>

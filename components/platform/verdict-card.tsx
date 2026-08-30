@@ -8,6 +8,7 @@ import { StressGradeBadge, TimingSignalBadge } from "@/components/decision/badge
 import { formatScore, formatYield } from "@/components/decision/formatters"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import { cn } from "@/lib/utils"
+import { timingSignalLabel } from "@/lib/format/verdicts"
 
 type VerdictCardProps = {
   name: string
@@ -109,7 +110,7 @@ export function VerdictCard({
               gated && "blur-[4px] select-none",
             )}
           >
-            {verdict ?? (isArabic ? "مقفل" : "Locked")}
+            {verdict ? timingSignalLabel(verdict, isArabic ? "ar" : "en") : (isArabic ? "مقفل" : "Locked")}
           </span>
           {confidencePercent !== null ? (
             <span className={cn("text-sm font-semibold text-foreground", gated && "blur-[4px] select-none")}>

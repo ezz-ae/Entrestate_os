@@ -9,7 +9,7 @@ const marketMetrics = [
   { value: "Multi-thousand", label: "Active Projects", detail: "Tracked across UAE — current count exposed via /api/platform-metrics" },
   { value: "~70%", label: "Speculative", detail: "Of scored inventory (recent snapshot)" },
   { value: "~100", label: "Conservative Plays", detail: "Projects meeting low-risk + capital-preservation overlap" },
-  { value: "Thousands", label: "Timing BUY Signals", detail: "Of currently scored projects — refreshed on each ETL pass" },
+  { value: "Thousands", label: "Buy-window signals", detail: "Of currently scored projects — refreshed on every data cycle" },
 ]
 
 const roiComparison = [

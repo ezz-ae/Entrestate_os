@@ -88,7 +88,7 @@ const docPagesEn: Record<string, DocPage> = {
       },
     ],
     steps: ["Pick a role", "Set the rules", "Launch the agent"],
-    cta: { label: "Open Automation-First Builder", href: "/apps/automation-builder" },
+    cta: { label: "Open Automation-First Builder", href: "/apps/agent-builder" },
   },
   "cold-calling": {
     title: "Cold Calling",
@@ -122,7 +122,7 @@ const docPagesEn: Record<string, DocPage> = {
       },
     ],
     steps: ["Connect Instagram DM", "Set the qualifying flow", "Start capturing leads"],
-    cta: { label: "Open Insta DM Lead Automation", href: "/apps/lead-automation" },
+    cta: { label: "Open Insta DM Lead Automation", href: "/apps/lead-agent" },
   },
 }
 
@@ -193,7 +193,7 @@ const docPagesAr: Record<string, DocPage> = {
       },
     ],
     steps: ["حدد الدور", "ضع القواعد", "شغّل الوكيل"],
-    cta: { label: "افتح مصمم الأتمتة", href: "/apps/automation-builder" },
+    cta: { label: "افتح مصمم الأتمتة", href: "/apps/agent-builder" },
   },
   "cold-calling": {
     title: "المكالمات الاستباقية",
@@ -227,7 +227,7 @@ const docPagesAr: Record<string, DocPage> = {
       },
     ],
     steps: ["اربط قناة الرسائل", "حدد مسار التأهيل", "ابدأ استقبال العملاء"],
-    cta: { label: "افتح أتمتة الرسائل", href: "/apps/lead-automation" },
+    cta: { label: "افتح أتمتة الرسائل", href: "/apps/lead-agent" },
   },
 }
 

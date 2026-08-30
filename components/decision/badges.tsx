@@ -2,14 +2,7 @@
 
 import { useLocale } from "next-intl"
 import { cn } from "@/lib/utils"
-
-const SIGNAL_LABELS_AR: Record<string, string> = {
-  STRONG_BUY: "شراء قوي",
-  BUY: "شراء",
-  HOLD: "احتفاظ",
-  WAIT: "انتظار",
-  AVOID: "تجنب",
-}
+import { confidenceLabel, timingSignalLabel } from "@/lib/format/verdicts"
 
 const STRESS_LABELS_AR: Record<string, string> = {
   A: "ممتاز",
@@ -17,13 +10,6 @@ const STRESS_LABELS_AR: Record<string, string> = {
   C: "متوسط",
   D: "ضعيف",
   E: "خطر",
-}
-
-const CONFIDENCE_LABELS_AR: Record<string, string> = {
-  HIGH: "عالية",
-  MEDIUM: "متوسطة",
-  LOW: "منخفضة",
-  UNKNOWN: "غير محدد",
 }
 
 function baseClassName(colorClass: string) {
@@ -54,7 +40,7 @@ export function TimingSignalBadge({ signal }: { signal: string | null | undefine
             ? "border-orange-500/50 bg-orange-500/10 text-orange-300"
             : "border-red-500/50 bg-red-500/10 text-red-300"
 
-  return <span className={baseClassName(tone)}>{formatBadgeLabel(locale, value, SIGNAL_LABELS_AR[value])}</span>
+  return <span className={baseClassName(tone)}>{timingSignalLabel(value, locale)}</span>
 }
 
 export function StressGradeBadge({ grade }: { grade: string | null | undefined }) {
@@ -86,5 +72,5 @@ export function ConfidenceBadge({ confidence }: { confidence: string | null | un
       : value === "MEDIUM"
         ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
         : "border-slate-500/50 bg-slate-500/10 text-slate-300"
-  return <span className={baseClassName(tone)}>{formatBadgeLabel(locale, value, CONFIDENCE_LABELS_AR[value])}</span>
+  return <span className={baseClassName(tone)}>{confidenceLabel(value, locale)}</span>
 }

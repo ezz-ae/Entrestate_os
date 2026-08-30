@@ -48,7 +48,7 @@ const COPY = {
     stats: {
       projects: "Projects scored",
       avgPrice: "Avg. entry price",
-      buySignals: "BUY/STRONG_BUY timing",
+      buySignals: "Buy-window signals",
       dld: "DLD transactions",
       areas: "Area profiles",
       developers: "Tracked developers",
@@ -71,7 +71,7 @@ const COPY = {
     stats: {
       projects: "مشروع مقيّم",
       avgPrice: "متوسط سعر الدخول",
-      buySignals: "إشارات توقيت BUY/STRONG_BUY",
+      buySignals: "إشارات نافذة الشراء",
       dld: "معاملة DLD",
       areas: "ملف منطقة",
       developers: "مطور متابع",
