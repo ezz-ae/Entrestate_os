@@ -10,6 +10,7 @@ import {
   stepResultCount,
   stepRunningLabel,
 } from "@/lib/chat/steps"
+import { answerLocale, humanizeFinalText } from "@/lib/chat/final-text"
 
 /**
  * THE CHAT SPEAKS HUMAN, AND NARRATES ITS WORK — locked.
@@ -117,5 +118,66 @@ describe("the welcome and the voice", () => {
     // Natural conversation is allowed again — the old prompt forbade greeting.
     expect(copilotSystemPrompt).not.toContain("Never greet")
     expect(copilotSystemPrompt).toContain("natural, warm, short reply")
+  })
+})
+
+describe("the final text speaks the asker's language and never glosses a code", () => {
+  // Found on the LIVE site minutes after the advisor deployed: an Arabic
+  // question got an Arabic answer that wrote «"شراء قوي" (STRONG_BUY)» — the
+  // exact leak the owner named — and closed with the English label and
+  // question because the fixed furniture followed the page locale instead of
+  // the asker. The prompt asks nicely; lib/chat/final-text.ts is the door;
+  // these pins keep it shut.
+
+  it("detects the asker's language, page locale only breaking ties", () => {
+    expect(answerLocale("معايا ٢ مليون درهم وعايز استثمر في دبي", "en")).toBe("ar")
+    expect(answerLocale("best yield areas under 2M", "ar")).toBe("en")
+    expect(answerLocale("123", "ar")).toBe("ar")
+  })
+
+  it("drops a parenthesised internal code after the human phrase", () => {
+    const cleaned = humanizeFinalText('تصنيف "شراء قوي" (STRONG_BUY) وعوائد إيجارية تصل إلى 7.8%.')
+    expect(cleaned).not.toContain("STRONG_BUY")
+    expect(cleaned).toContain("شراء قوي")
+  })
+
+  it("translates a bare underscore code into the answer's own language", () => {
+    expect(humanizeFinalText("هذه المشاريع مصنفة STRONG_BUY في السوق العقاري الحالي وتستحق نظرة جادة")).toContain("شراء قوي")
+    expect(humanizeFinalText("These projects are rated STRONG_BUY by the screen")).toContain("strong buy")
+  })
+
+  it("re-voices the fixed label and closing to match an Arabic answer", () => {
+    const raw = [
+      "بميزانية مليونين من الدراهم هناك فرص استثمارية قوية في دبي، والعوائد الإيجارية في هذه المناطق ممتازة مقارنة بالسوق العام.",
+      "",
+      "Recommendation: ركز على المشاريع في دبي لاند ومدينة المطار.",
+      "",
+      "Would you like a deeper analysis of these results?",
+    ].join("\n")
+    const cleaned = humanizeFinalText(raw)
+    expect(cleaned).toContain("التوصية:")
+    expect(cleaned).toContain("هل ترغب في تحليل أعمق للنتائج؟")
+    expect(cleaned).not.toContain("Recommendation:")
+    expect(cleaned).not.toMatch(/Would you like a deeper analysis/)
+  })
+
+  it("leaves an English answer's furniture English", () => {
+    const raw = [
+      "Strong options exist under your budget in Dubai with solid rental yields.",
+      "",
+      "Recommendation: focus on Jumeirah Village Circle.",
+      "",
+      "Would you like a deeper analysis of these results?",
+    ].join("\n")
+    expect(humanizeFinalText(raw)).toBe(raw)
+  })
+
+  it("is wired into the one finishing path, and the narration follows the asker", () => {
+    expect(code).toContain("humanizeFinalText(text)")
+    const derivations = code.match(/answerLocale\(message, locale\)/g) ?? []
+    expect(
+      derivations.length,
+      "buildFinalChatPayload and the stream narration must both derive the asker's language",
+    ).toBeGreaterThanOrEqual(2)
   })
 })

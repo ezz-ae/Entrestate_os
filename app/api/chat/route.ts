@@ -7,6 +7,7 @@ import {
   stepResultCount,
   stepRunningLabel,
 } from "@/lib/chat/steps"
+import { answerLocale, humanizeFinalText } from "@/lib/chat/final-text"
 import { z } from "zod"
 import { getPublicErrorMessage, getRequestId } from "@/lib/api-errors"
 import { resolveCopilotModel } from "@/lib/ai-provider"
@@ -830,24 +831,29 @@ async function buildFinalChatPayload(input: {
 }) {
   const { text, toolResults, message, locale, context, requestId, runId, provenance, usage } = input
 
+  // The asker's language, not the page's. An Arabic question typed into the
+  // English site is owed Arabic cards, Arabic fallbacks, and the Arabic
+  // deeper-analysis chip; the page locale only breaks ties.
+  const voice = answerLocale(message, locale)
+
   const rows = extractRowsFromToolResults(toolResults)
-  const dataCards = rows.length > 0 ? buildDataCardsFromRows(rows, locale) : undefined
+  const dataCards = rows.length > 0 ? buildDataCardsFromRows(rows, voice) : undefined
   const notifications = buildDldNotificationsFromToolResults(toolResults)
   const confidenceWarnings = collectToolWarnings(toolResults)
-  const pulseContent = buildPulseContentFromToolResults(toolResults, locale)
+  const pulseContent = buildPulseContentFromToolResults(toolResults, voice)
   const toolSummary = toolResults.length > 0 ? JSON.stringify(toolResults[toolResults.length - 1]).slice(0, 1200) : ""
   const deterministic = text.length === 0 && rows.length === 0 && !pulseContent
-    ? await buildDeterministicFallback(message, locale, context)
+    ? await buildDeterministicFallback(message, voice, context)
     : null
   const projectQuery = extractProjectQuery(message)
   const content = text.length > 0
-    ? text
+    ? humanizeFinalText(text)
     : projectQuery && rows.length > 0
-      ? buildProjectContent(rows[0], locale)
+      ? buildProjectContent(rows[0], voice)
     : pulseContent && message.trim().toUpperCase().includes("PULSE")
       ? pulseContent
     : rows.length > 0
-      ? buildScreeningTable(rows, locale)
+      ? buildScreeningTable(rows, voice)
     : deterministic?.content
       ? deterministic.content
     : toolSummary.length > 0
@@ -868,8 +874,8 @@ async function buildFinalChatPayload(input: {
     extra: {
       notifications: notifications.length > 0 ? notifications : undefined,
       // The answer ends by offering one deeper pass; the chip makes the offer
-      // tappable instead of retypable.
-      suggestions: [deeperAnalysisSuggestion(locale), ...getDefaultSuggestions(locale).slice(0, 3)],
+      // tappable instead of retypable — in the answer's language.
+      suggestions: [deeperAnalysisSuggestion(voice), ...getDefaultSuggestions(voice).slice(0, 3)],
       compiler_output: buildCompilerOutput(message),
       usage,
     },
@@ -1129,6 +1135,8 @@ export async function POST(request: Request) {
       // The person watches the work happen instead of staring at a spinner —
       // and the steps speak human, never tool or table names.
       if (request.headers.get("x-chat-stream") === "1") {
+        // Steps narrate to the person who asked, in the language they asked in.
+        const narration = answerLocale(message, locale)
         const encoder = new TextEncoder()
         const stream = new ReadableStream<Uint8Array>({
           start: (controller) => {
@@ -1157,7 +1165,7 @@ export async function POST(request: Request) {
                   if (kind === "tool-call") {
                     const toolName = String((part as { toolName?: unknown }).toolName ?? "")
                     const id = String((part as { toolCallId?: unknown }).toolCallId ?? `step-${++stepSeq}`)
-                    emit({ type: "step", id, label: stepRunningLabel(toolName, locale) })
+                    emit({ type: "step", id, label: stepRunningLabel(toolName, narration) })
                   } else if (kind === "tool-result") {
                     const toolName = String((part as { toolName?: unknown }).toolName ?? "")
                     const id = String((part as { toolCallId?: unknown }).toolCallId ?? "")
@@ -1167,8 +1175,8 @@ export async function POST(request: Request) {
                     emit({
                       type: "step-done",
                       id,
-                      label: stepDoneLabel(toolName, stepResultCount(output), locale),
-                      detail: stepDetail(output, locale),
+                      label: stepDoneLabel(toolName, stepResultCount(output), narration),
+                      detail: stepDetail(output, narration),
                     })
                   } else if (kind === "text-delta") {
                     const delta = String(
