@@ -71,6 +71,13 @@ describe("one conversation", () => {
     expect(offenders).toEqual([])
   })
 
+  it("a signed-out desktop visitor can SEE the one chat", () => {
+    // openSidebar() with nothing rendered is a conversation with no surface —
+    // exactly how the unification silently failed its first live test.
+    const sidebar = read("components/llm-search/sidebar.tsx")
+    expect(sidebar).toContain(") : isSidebarOpen ? (")
+  })
+
   it("/markets speaks through the copilot provider", () => {
     const markets = read("app/markets/page.tsx")
     expect(markets).toContain('from "@/components/copilot-provider"')
