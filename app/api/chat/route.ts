@@ -16,6 +16,7 @@ import {
   executeDldNotableDeals,
   executeDldTransactionSearch,
   executeDeveloperDueDiligence,
+  executeCompareProjects,
   executeGenerateInvestorMemo,
   executePriceRealityCheck,
 } from "@/lib/copilot/executor"
@@ -38,6 +39,7 @@ import {
   dldNotableDealsInputSchema,
   dldTransactionSearchInputSchema,
   developerDueDiligenceInputSchema,
+  compareProjectsInputSchema,
   generateInvestorMemoInputSchema,
   priceRealityCheckInputSchema,
 } from "@/lib/copilot/tools"
@@ -928,6 +930,19 @@ export async function POST(request: Request) {
         description: copilotToolDescriptions.generate_investor_memo,
         inputSchema: generateInvestorMemoInputSchema,
         execute: safeTool("generate_investor_memo", executeGenerateInvestorMemo),
+      }),
+      // COMPARE is one of the seven commands the system prompt tells the model
+      // to convert every question into — and this endpoint, the one the
+      // Explorer Desk on /markets calls, was the only one without the tool that
+      // answers it. /api/copilot had it. So "Compare Emaar vs Damac" reached a
+      // model told to produce a comparison matrix with nothing to build one
+      // from, and it fell back to deal_screener: the user asked about two
+      // developers and got eight Jumeirah Village Circle listings by four other
+      // developers. Correct data, correct SQL, wrong question answered.
+      compare_projects: tool({
+        description: copilotToolDescriptions.compare_projects,
+        inputSchema: compareProjectsInputSchema,
+        execute: safeTool("compare_projects", executeCompareProjects),
       }),
       dld_transaction_search: tool({
         description: copilotToolDescriptions.dld_transaction_search,

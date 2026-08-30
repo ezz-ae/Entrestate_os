@@ -1,5 +1,6 @@
 "use client"
 
+import { ChatMarkdown } from "@/components/chat-markdown"
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
 import {
@@ -189,8 +190,8 @@ export function ExplorerChat() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="px-4 py-3 bg-secondary rounded-lg rounded-bl-sm">
-                    <p className="text-sm text-foreground leading-relaxed">{msg.content}</p>
+                  <div className="px-4 py-3 bg-secondary rounded-lg rounded-bl-sm text-foreground">
+                    <ChatMarkdown text={msg.content} />
                   </div>
 
                   {msg.dataCards && msg.dataCards.length > 0 && (

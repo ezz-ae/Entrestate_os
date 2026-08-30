@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { defaultLocale, isLocale, localeCookieName, prefixLocalePath, stripLocalePrefix } from "@/i18n/locale"
 import { getMobileWebHostname, isPrimaryWebHost, resolveRuntimeShell } from "@/lib/runtime-host"
+import { isHiddenRoute } from "@/lib/surface"
 
 const AUTOMATION_BUILDER_PATHS = ["/apps/automation-builder", "/api/automation-builder"]
 const KILL_SWITCH_PATHS = ["/api/time-table", "/api/scoring", "/api/profile", "/api/distribution"]
@@ -91,6 +92,26 @@ export function proxy(request: NextRequest) {
         headers: requestHeaders,
       },
     })
+  }
+
+  // ── The surface is what this product IS ─────────────────────────────────────
+  //
+  // 51 of the 145 page routes here are reachable only by typing the address, and
+  // most are the same product built again — /os, /dashboard, /me and
+  // /workspace/* are four attempts at one screen. A visitor who found one saw a
+  // half-built Entrestate that nobody maintains. lib/surface.ts names what is
+  // hidden and why; SHOW_ALL_ROUTES=1 turns it off for a preview.
+  //
+  // Placed after the locale prefix is stripped so /en/os and /os are one
+  // decision, and before every rewrite below so a hidden page cannot slip
+  // through on one branch of them.
+  if (isHiddenRoute(internalPathname)) {
+    // Rewritten to a path that has no route, so Next renders the app's own
+    // not-found page with a real 404 — a hidden page must look missing, not
+    // blank, and must not answer 200 to a crawler.
+    const missing = request.nextUrl.clone()
+    missing.pathname = "/_hidden"
+    return NextResponse.rewrite(missing)
   }
 
   if (isLocale(pathLocale) && LOCALE_SHORTCUT_REDIRECTS[internalPathname]) {

@@ -10,14 +10,19 @@ import { Eye, EyeOff } from "lucide-react"
 import { authClient } from "@/lib/auth/client"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 import { resolvePostLoginHref } from "@/lib/auth/navigation"
+import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
+
+/** 2813 → "2,813". Grouping only; the number itself is never rounded up. */
+function formatCount(value: number) {
+  return new Intl.NumberFormat("en-US").format(value)
+}
 
 const COPY = {
   en: {
-    quote: '"When the market signal is organized, the decision becomes faster and calmer."',
-    person: "Ahmed Al-Rashid",
-    role: "Investment Director, Gulf Capital Partners",
-    markets: "Markets",
+    quote: "When the market signal is organized, the decision becomes faster and calmer.",
+    quoteBy: "The Entrestate operating principle",
     areas: "Areas tracked",
+    developers: "Developers rated",
     projects: "Projects scored",
     title: "Welcome back",
     subtitle: "Sign in to your Entrestate account",
@@ -41,12 +46,11 @@ const COPY = {
     googleTimeout: "Google sign-in timed out. Check Neon Auth settings and try again.",
   },
   ar: {
-    quote: '"لما تتجمع الإشارة والبيان في شاشة واحدة، يصير القرار أسرع وأهدأ."',
-    person: "أحمد الراشد",
-    role: "مدير الاستثمار، Gulf Capital Partners",
-    markets: "أسواق",
-    areas: "منطقة",
-    projects: "مشروع",
+    quote: "لما تتجمع الإشارة والبيان في شاشة واحدة، يصير القرار أسرع وأهدأ.",
+    quoteBy: "مبدأ العمل في Entrestate",
+    areas: "منطقة مُتابَعة",
+    developers: "مطوّر مُقيَّم",
+    projects: "مشروع مُقيَّم",
     title: "أهلاً بعودتك",
     subtitle: "ادخل إلى حساب Entrestate",
     google: "الدخول عبر Google",
@@ -75,6 +79,7 @@ export function LoginPageClient() {
   const searchParams = useSearchParams()
   const locale = useLocale() as AppLocale
   const copy = COPY[locale] ?? COPY.en
+  const metrics = usePlatformMetrics()
   const { data: session, isPending } = authClient.useSession()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -184,24 +189,31 @@ export function LoginPageClient() {
         </Link>
 
         <div className="max-w-md">
-          <blockquote className="font-serif text-2xl leading-relaxed text-primary-foreground">{copy.quote}</blockquote>
-          <div className="mt-6">
-            <p className="font-medium text-primary-foreground">{copy.person}</p>
-            <p className="text-sm text-primary-foreground/60">{copy.role}</p>
-          </div>
+          {/* Our own sentence, said in our own name. It used to be a quotation
+              attributed to "Ahmed Al-Rashid, Investment Director, Gulf Capital
+              Partners" — a person and a firm that do not exist, on the sign-in
+              screen of a live product. */}
+          <blockquote className="font-serif text-2xl leading-relaxed text-primary-foreground">
+            {copy.quote}
+          </blockquote>
+          <p className="mt-6 text-sm text-primary-foreground/60">{copy.quoteBy}</p>
         </div>
 
+        {/* The same counts the rest of the site shows, from the same endpoint.
+            These read 8 / 200+ / 7,000+ while the footer of /markets said 1,946
+            scored projects from /api/platform-metrics — two numbers for one
+            fact, and the bigger one was on the page asking for a password. */}
         <div className="flex gap-12">
           <div>
-            <p className="font-serif text-3xl text-primary-foreground">8</p>
-            <p className="mt-1 text-sm text-primary-foreground/60">{copy.markets}</p>
-          </div>
-          <div>
-            <p className="font-serif text-3xl text-primary-foreground">200+</p>
+            <p className="font-serif text-3xl text-primary-foreground">{formatCount(metrics.totalAreas)}</p>
             <p className="mt-1 text-sm text-primary-foreground/60">{copy.areas}</p>
           </div>
           <div>
-            <p className="font-serif text-3xl text-primary-foreground">7,000+</p>
+            <p className="font-serif text-3xl text-primary-foreground">{formatCount(metrics.ratedDevelopers)}</p>
+            <p className="mt-1 text-sm text-primary-foreground/60">{copy.developers}</p>
+          </div>
+          <div>
+            <p className="font-serif text-3xl text-primary-foreground">{formatCount(metrics.totalProjects)}</p>
             <p className="mt-1 text-sm text-primary-foreground/60">{copy.projects}</p>
           </div>
         </div>

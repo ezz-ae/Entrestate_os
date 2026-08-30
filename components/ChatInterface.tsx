@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { useCopilot } from "@/components/copilot-provider"
+import { ChatMarkdown } from "@/components/chat-markdown"
 import { motion, AnimatePresence } from "framer-motion"
 import { MarqueePrompts } from "@/components/marketing/marquee-prompts"
 import { authClient } from "@/lib/auth/client"
@@ -144,59 +145,6 @@ type SlashCommand = {
   buildPrompt: (context: SlashCommandContext) => string
 }
 
-function ChatMarkdown({ text }: { text: string }) {
-  const lines = text.split("\n")
-  const nodes: React.ReactNode[] = []
-  let i = 0
-
-  const inlineFormat = (s: string): React.ReactNode => {
-    const parts = s.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g)
-    return parts.map((part, idx) => {
-      if (part.startsWith("**") && part.endsWith("**"))
-        return <strong key={idx}>{part.slice(2, -2)}</strong>
-      if (part.startsWith("*") && part.endsWith("*"))
-        return <em key={idx}>{part.slice(1, -1)}</em>
-      if (part.startsWith("`") && part.endsWith("`"))
-        return <code key={idx} className="rounded bg-muted px-1 py-0.5 text-[11px] font-mono">{part.slice(1, -1)}</code>
-      return part
-    })
-  }
-
-  while (i < lines.length) {
-    const line = lines[i]
-
-    if (line.startsWith("### ")) {
-      nodes.push(<p key={i} className="mt-3 mb-1 text-xs font-semibold text-foreground/80 uppercase tracking-wide">{inlineFormat(line.slice(4))}</p>)
-    } else if (line.startsWith("## ")) {
-      nodes.push(<p key={i} className="mt-4 mb-1.5 text-sm font-bold text-foreground border-b border-border/40 pb-1">{inlineFormat(line.slice(3))}</p>)
-    } else if (line.startsWith("# ")) {
-      nodes.push(<p key={i} className="mt-4 mb-1.5 text-base font-bold text-foreground">{inlineFormat(line.slice(2))}</p>)
-    } else if (line.startsWith("- ") || line.startsWith("* ")) {
-      const items: React.ReactNode[] = []
-      while (i < lines.length && (lines[i].startsWith("- ") || lines[i].startsWith("* "))) {
-        items.push(<li key={i} className="leading-relaxed">{inlineFormat(lines[i].slice(2))}</li>)
-        i++
-      }
-      nodes.push(<ul key={`ul-${i}`} className="my-2 ml-4 list-disc space-y-0.5 text-sm">{items}</ul>)
-      continue
-    } else if (/^\d+\. /.test(line)) {
-      const items: React.ReactNode[] = []
-      while (i < lines.length && /^\d+\. /.test(lines[i])) {
-        items.push(<li key={i} className="leading-relaxed">{inlineFormat(lines[i].replace(/^\d+\. /, ""))}</li>)
-        i++
-      }
-      nodes.push(<ol key={`ol-${i}`} className="my-2 ml-4 list-decimal space-y-0.5 text-sm">{items}</ol>)
-      continue
-    } else if (line.trim() === "") {
-      nodes.push(<div key={i} className="h-2" />)
-    } else {
-      nodes.push(<p key={i} className="leading-relaxed text-sm">{inlineFormat(line)}</p>)
-    }
-    i++
-  }
-
-  return <div className="space-y-0.5">{nodes}</div>
-}
 
 function messageText(message: any): string {
   if (typeof message.content === "string") return message.content

@@ -13,18 +13,47 @@ const adminModeRequested = process.env.NEXT_PUBLIC_ADMIN_MODE === "true"
 const adminModeEnabled = adminModeRequested && process.env.NODE_ENV !== "production"
 let adminModeWarned = false
 
-export const authEnabled = Boolean(baseUrl && cookieSecret)
-const invalidSecret = authEnabled && cookieSecret && cookieSecret.length < 32
+/**
+ * WHY SIGN-IN IS OFF, AS A VALUE THE PAGE CAN READ.
+ *
+ * Sign-in was dead on terminal.entrestate.com and the screen gave no reason:
+ * /en/login rendered the full form — Google button, email, password, "Sign in" —
+ * over an auth object that was null, so /api/auth/session answered 501 and the
+ * form did nothing a person could interpret. The only explanation existed as a
+ * console.warn in a serverless log.
+ *
+ * A deployment misconfiguration must be visible on the screen it breaks, so the
+ * reason is returned instead of logged, and app/login and app/signup say it.
+ * The values themselves are never exposed — only which one is missing.
+ */
+export type AuthStatus =
+  | { ready: true }
+  | { ready: false; reason: "missing-base-url" | "missing-cookie-secret" | "weak-cookie-secret" }
 
-if (invalidSecret) {
-  console.warn("Neon Auth disabled: NEON_AUTH_COOKIE_SECRET must be at least 32 characters.")
+export function authStatus(): AuthStatus {
+  if (!baseUrl) return { ready: false, reason: "missing-base-url" }
+  if (!cookieSecret) return { ready: false, reason: "missing-cookie-secret" }
+  // Neon Auth signs session cookies with this; a short secret is a weak
+  // signature, so it is refused rather than quietly accepted.
+  if (cookieSecret.length < 32) return { ready: false, reason: "weak-cookie-secret" }
+  return { ready: true }
+}
+
+export const authEnabled = authStatus().ready
+
+if (!authEnabled) {
+  const reason = authStatus()
+  console.warn(
+    `Neon Auth disabled (${"reason" in reason ? reason.reason : "unknown"}): sign-in and sign-up will refuse. `
+    + "Set NEON_AUTH_BASE_URL and a NEON_AUTH_COOKIE_SECRET of at least 32 characters on this deployment.",
+  )
 }
 
 if (adminModeRequested && !adminModeEnabled) {
   console.warn("Admin mode ignored in production. Disable NEXT_PUBLIC_ADMIN_MODE for production.")
 }
 
-export const auth = authEnabled && !invalidSecret
+export const auth = authEnabled
   ? createNeonAuth({
       baseUrl: baseUrl!,
       cookies: {

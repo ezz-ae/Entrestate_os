@@ -1062,7 +1062,7 @@ function MarketsContent() {
             <form onSubmit={handleSubmit} className={`${running ? "mt-6" : "mt-8"}`}>
               <div className="rounded-3xl border border-border/60 bg-card/60 backdrop-blur-lg shadow-[0_24px_80px_-50px_rgba(15,23,42,0.45)]">
                 <div className="px-6 pt-5 text-sm text-muted-foreground">
-                  {isArabic ? "اكتشف ما هو ممكن" : "Discover what&apos;s possible"}
+                  {isArabic ? "اكتشف ما هو ممكن" : "Discover what’s possible"}
                 </div>
                 <div className="px-6 pb-4">
                   <input
@@ -1168,7 +1168,7 @@ function MarketsContent() {
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <p className="text-xs uppercase tracking-wider text-muted-foreground">{isArabic ? "لقطة السوق الآن" : "Live market snapshot"}</p>
-                    <h2 className="text-xl font-semibold text-foreground mt-2">{isArabic ? "شكل المعروض اليوم" : "Today&apos;s inventory posture"}</h2>
+                    <h2 className="text-xl font-semibold text-foreground mt-2">{isArabic ? "شكل المعروض اليوم" : "Today’s inventory posture"}</h2>
                   </div>
                   <span className="text-xs text-muted-foreground">
                     {snapshot ? (isArabic ? "الاتصال المباشر جاهز" : "Live feed connected") : snapshotLoading ? (isArabic ? "جارٍ الاتصال..." : "Connecting…") : isArabic ? "التغذية ليست جاهزة بعد" : "Feed not ready"}

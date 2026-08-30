@@ -147,7 +147,7 @@ export const CONNECTORS: ConnectorDefinition[] = [
       { key: "client_id", label: "Connected App client ID", type: "text", required: true },
       { key: "client_secret", label: "Connected App secret", type: "password", required: true },
     ],
-    capabilities: ["OAuth", "Custom object mapping", "Real-time push", "Bidirectional sync"],
+    capabilities: ["OAuth", "Custom object mapping", "Push on write", "Bidirectional sync"],
   },
 
   // ──────────────────────────────── FEEDS ────────────────────────────────
