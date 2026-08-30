@@ -60,10 +60,15 @@ describe("copilot schemas", () => {
 })
 
 describe("copilot route", () => {
-  it("enforces required tool choice", () => {
+  it("lets the advisor converse — auto tools, never forced", () => {
+    // The old pin here ENFORCED toolChoice: "required": the decision-engine
+    // era, when every turn had to hit a database. Under the advisor contract
+    // a person can say "شكراً" and get a sentence back; forcing a tool call
+    // on every step made that impossible. "auto" is what /api/chat runs.
     const routePath = path.join(process.cwd(), "app/api/copilot/route.ts")
-    const source = fs.readFileSync(routePath, "utf8")
-    expect(source).toContain('toolChoice: "required"')
+    const source = fs.readFileSync(routePath, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
+    expect(source).toContain('toolChoice: "auto"')
+    expect(source).not.toContain('toolChoice: "required"')
   })
 })
 

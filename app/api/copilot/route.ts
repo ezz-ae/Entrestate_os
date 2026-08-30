@@ -9,6 +9,8 @@ import {
   type UIMessage,
 } from "ai"
 import { getPublicErrorMessage, getRequestId } from "@/lib/api-errors"
+import { buildHumanWelcome } from "@/lib/chat/welcome"
+import { humanizeFinalText } from "@/lib/chat/final-text"
 import { resolveCopilotModel } from "@/lib/ai-provider"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
 import {
@@ -170,37 +172,10 @@ function isNonActionableTerminalInput(message: string) {
 }
 
 function buildTerminalCommandGuide(locale: string) {
-  if (locale === "ar") {
-    return [
-      "ENTRESTATE Decision Terminal",
-      "────────────────────────────────",
-      "الوضع: بانتظار أمر",
-      "الأوامر: SCREEN | PROJECT | AREA | COMPARE | RISK | MEMO | PULSE",
-      "",
-      "أمثلة:",
-      "- PULSE",
-      "- PROJECT Marina Vista",
-      "- SCREEN مشاريع تحت AED 2M",
-      "- AREA Jumeirah Village Circle",
-      "- COMPARE Dubai Marina vs JBR",
-      "- RISK Emaar Properties",
-    ].join("\n")
-  }
-
-  return [
-    "ENTRESTATE Decision Terminal",
-    "────────────────────────────────",
-    "Mode: Awaiting command",
-    "Commands: SCREEN | PROJECT | AREA | COMPARE | RISK | MEMO | PULSE",
-    "",
-    "Examples:",
-    "- PULSE",
-    "- PROJECT Marina Vista",
-    "- SCREEN projects under AED 2M",
-    "- AREA Jumeirah Village Circle",
-    "- COMPARE Dubai Marina vs JBR",
-    "- RISK Emaar Properties",
-  ].join("\n")
+  // The sidebar and /chat greet through the same human welcome as /api/chat —
+  // the "Mode: Awaiting command" terminal card that used to live here is the
+  // exact voice the advisor rebuild retired.
+  return buildHumanWelcome(locale)
 }
 
 export async function POST(request: Request) {
@@ -560,14 +535,19 @@ export async function POST(request: Request) {
       messages: await convertToModelMessages(normalizedMessages, { tools: toolset }),
       temperature: enterpriseConfig.prompt.temperature,
       stopWhen: stepCountIs(6),
-      toolChoice: "required",
+      // "required" forced a tool call on EVERY step — the advisor could not
+      // answer "شكراً" without querying a database. "auto" is what /api/chat
+      // runs and what a conversation needs.
+      toolChoice: "auto",
       tools: toolset,
       onFinish: async ({ text, toolCalls }) => {
         if (userId && (text || (toolCalls && toolCalls.length > 0))) {
           try {
             await saveChatMessage(userId, sessionId, {
               role: "assistant",
-              content: text || "",
+              // The same door the JSON transport goes through: no code glossed
+              // in parentheses, fixed lines in the answer's own language.
+              content: humanizeFinalText(text || ""),
               toolCalls: toolCalls,
             })
           } catch (error) {

@@ -97,12 +97,27 @@ describe("the route streams and converges", () => {
 })
 
 describe("the welcome and the voice", () => {
-  it("greets like a person, not a command terminal", () => {
-    const guide = code.slice(code.indexOf("function buildTerminalCommandGuide"), code.indexOf("function extractProjectQuery"))
-    expect(guide).not.toContain("COMMANDS:")
-    expect(guide).not.toContain("SCREEN |")
-    expect(guide).not.toContain("Awaiting command")
-    expect(guide).toContain("مستشار")
+  it("greets like a person, not a command terminal — at BOTH doors", () => {
+    // The welcome lives once, in lib/chat/welcome.ts, because /api/copilot
+    // kept its own "Mode: Awaiting command" card long after this route went
+    // human. Both routes must greet through the shared words.
+    // Comments stripped before scanning — this suite's own hard-won rule
+    // (the welcome module's header QUOTES the retired terminal card).
+    const welcome = fs
+      .readFileSync(path.join(ROOT, "lib/chat/welcome.ts"), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "")
+    expect(welcome).not.toContain("COMMANDS:")
+    expect(welcome).not.toContain("Awaiting command")
+    expect(welcome).toContain("مستشار")
+    expect(code).toContain("buildHumanWelcome(locale)")
+    const copilotCode = fs
+      .readFileSync(path.join(ROOT, "app/api/copilot/route.ts"), "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "")
+    expect(copilotCode).toContain("buildHumanWelcome(locale)")
+    expect(copilotCode).not.toContain("Awaiting command")
+    expect(copilotCode).not.toContain("SCREEN | PROJECT")
   })
 
   it("demands the advisor shape in both prompts", () => {

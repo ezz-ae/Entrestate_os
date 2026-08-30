@@ -4,6 +4,7 @@ import React, { type FormEvent, type KeyboardEvent, useState, useEffect, useRef 
 import Link from "next/link"
 import { useLocale, useTranslations } from "next-intl"
 import { useCopilot } from "@/components/copilot-provider"
+import { AdvisorAnswer, ToolStepsTimeline, extractToolSteps } from "@/components/chat/advisor-narration"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -181,12 +182,14 @@ function MarkdownContent({ content }: { content: string }) {
 
 // ── Message bubble ────────────────────────────────────────────────────────────
 
-function MessageBubble({ message }: { message: any }) {
+function MessageBubble({ message, isActive = false }: { message: any; isActive?: boolean }) {
   const t = useTranslations("sidebar")
+  const locale = useLocale()
   const [isExpanded, setIsExpanded] = useState(false)
   const isUser = message.role === "user"
   const content = getMessageText(message)
   const isLong = isUser && content.length > 300
+  const steps = isUser ? [] : extractToolSteps(message, locale)
 
   return (
     <div
@@ -221,7 +224,14 @@ function MessageBubble({ message }: { message: any }) {
             )}
           </>
         ) : (
-          <MarkdownContent content={content} />
+          <div className="space-y-3">
+            <ToolStepsTimeline steps={steps} streaming={isActive} />
+            <AdvisorAnswer
+              text={content}
+              streaming={isActive}
+              render={(text) => <MarkdownContent content={text} />}
+            />
+          </div>
         )}
       </div>
     </div>
@@ -837,7 +847,13 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                   </div>
                 ) : (
                   <div className="space-y-4 md:space-y-5">
-                    {messages.map((m) => <MessageBubble key={m.id} message={m} />)}
+                    {messages.map((m, index) => (
+                      <MessageBubble
+                        key={m.id}
+                        message={m}
+                        isActive={status === "streaming" && index === messages.length - 1 && m.role === "assistant"}
+                      />
+                    ))}
                     {isBusy && (
                       <div className="flex justify-start">
                         <div className="bg-muted/60 rounded-2xl rounded-tl-md px-4 py-2.5">

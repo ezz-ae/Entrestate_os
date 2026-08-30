@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEven
 import { useLocale, useTranslations } from "next-intl"
 import { useCopilot } from "@/components/copilot-provider"
 import { ChatMarkdown } from "@/components/chat-markdown"
+import { AdvisorAnswer, ToolStepsTimeline, extractToolSteps } from "@/components/chat/advisor-narration"
 import { motion, AnimatePresence } from "framer-motion"
 import { MarqueePrompts } from "@/components/marketing/marquee-prompts"
 import { authClient } from "@/lib/auth/client"
@@ -2574,7 +2575,6 @@ export function ChatInterface({
             const cleanMessage = message.role === "assistant"
               ? resolveAssistantDisplayText(message, locale)
               : displayMessageText(message)
-            const toolTrace = message.role === "assistant" ? deriveToolTrace(message, locale) : null
             const evidenceDrawer = message.role === "assistant" ? buildEvidenceDrawerData(message) : null
 
             return (
@@ -2597,17 +2597,21 @@ export function ChatInterface({
                         {locale === "ar" ? "محطة القرار" : "Decision Terminal"}
                       </span>
                     </div>
-                    <ChatMarkdown text={cleanMessage || (locale === "ar" ? "جارٍ تشغيل التحليل..." : "Running analysis...")} />
-                    {toolTrace ? (
-                      <div className="mt-3 text-[10px] font-mono text-muted-foreground/70">
-                        [{toolTrace}]
-                      </div>
-                    ) : null}
-                    {evidenceDrawer?.requestId ? (
-                      <div className="mt-2 text-[10px] font-mono text-muted-foreground/70">
-                        request_id={evidenceDrawer.requestId}
-                      </div>
-                    ) : null}
+                    <div className="mb-3">
+                      <ToolStepsTimeline
+                        steps={extractToolSteps(message, locale)}
+                        streaming={status === "streaming" && message.id === (messages as any[])[(messages as any[]).length - 1]?.id}
+                      />
+                    </div>
+                    {cleanMessage ? (
+                      <AdvisorAnswer
+                        text={cleanMessage}
+                        streaming={status === "streaming" && message.id === (messages as any[])[(messages as any[]).length - 1]?.id}
+                        render={(text) => <ChatMarkdown text={text} />}
+                      />
+                    ) : (
+                      <ChatMarkdown text={locale === "ar" ? "جارٍ تشغيل التحليل..." : "Running analysis..."} />
+                    )}
                     {evidenceDrawer ? (
                       <div className="mt-4">
                         <EvidenceDrawer

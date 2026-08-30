@@ -4,10 +4,9 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { useLocale } from "next-intl"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { ExplorerChat } from "@/components/explorer-chat"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
-import { sendExplorerChatMessage, useExplorerChatStore } from "@/lib/explorer-chat-store"
+import { useCopilot } from "@/components/copilot-provider"
 import type { MarketScoreSummary } from "@/lib/market-score/types"
 import { getSavedSearchById, saveSearch, removeSavedSearch } from "@/lib/saved-searches"
 import {
@@ -578,15 +577,19 @@ function MarketsContent() {
   const inputsRef = useRef<HTMLDivElement>(null)
   const heroInputRef = useRef<HTMLInputElement>(null)
   const searchParams = useSearchParams()
-  const {
-    messages,
-    setExplorerChatState,
-  } = useExplorerChatStore()
+  const { messages, sendMessage, openSidebar } = useCopilot()
 
   const hasConversation = useMemo(() => messages.some((msg) => msg.role === "user"), [messages])
   const lastUserMessage = useMemo(() => {
-    const last = [...messages].reverse().find((msg) => msg.role === "user")
-    return last?.content ?? ""
+    const last = [...(messages as any[])].reverse().find((msg) => msg.role === "user")
+    if (!last) return ""
+    if (Array.isArray(last.parts)) {
+      return last.parts
+        .filter((part: any) => part?.type === "text" && typeof part.text === "string")
+        .map((part: any) => part.text)
+        .join("")
+    }
+    return typeof last.content === "string" ? last.content : ""
   }, [messages])
   const topSafetyBand = snapshot?.safetyDistribution?.reduce<{ label: string; count: number } | null>(
     (best, item) => (!best || item.count > best.count ? item : best),
@@ -610,16 +613,9 @@ function MarketsContent() {
     const [left, right] = compareParam.split("|").map((item) => item.trim())
     if (!left || !right) return
 
-    setExplorerChatState({ isOpen: true, isMinimized: false })
-    void sendExplorerChatMessage({
-      query: `Compare ${left} vs ${right} for pricing, yield, delivery, and safety.`,
-      quickSuggestions: [
-        `Which area has better yield: ${left} or ${right}?`,
-        `Delivery timing differences between ${left} and ${right}`,
-        `Price gaps for studios in ${left} vs ${right}`,
-      ],
-    })
-  }, [searchParams, hasConversation, setExplorerChatState])
+    openSidebar()
+    void sendMessage({ text: `Compare ${left} vs ${right} for pricing, yield, delivery, and safety.` })
+  }, [searchParams, hasConversation, openSidebar, sendMessage])
 
   useEffect(() => {
     const savedParam = searchParams.get("saved")
@@ -826,15 +822,8 @@ function MarketsContent() {
       )
       if (candidates.length < 2) return
       const [left, right] = candidates
-      setExplorerChatState({ isOpen: true, isMinimized: false })
-      void sendExplorerChatMessage({
-        query: `Compare ${left} vs ${right} for pricing, yield, delivery, and safety.`,
-        quickSuggestions: [
-          `Which area has better yield: ${left} or ${right}?`,
-          `Delivery timing differences between ${left} and ${right}`,
-          `Price gaps for studios in ${left} vs ${right}`,
-        ],
-      })
+      openSidebar()
+      void sendMessage({ text: `Compare ${left} vs ${right} for pricing, yield, delivery, and safety.` })
       return
     }
 
@@ -861,16 +850,8 @@ function MarketsContent() {
     const trimmed = query.trim()
     if (!trimmed) return
     clearScript()
-    setExplorerChatState({ isOpen: true, isMinimized: false })
-    void sendExplorerChatMessage({
-      query: trimmed,
-      quickSuggestions: [
-        "Best yield under AED 2M in Dubai",
-        "Compare Marina vs JBR for 2BR",
-        "Projects delivering in 2025 with proven demand",
-        "Studios under AED 800K in Business Bay",
-      ],
-    })
+    openSidebar()
+    void sendMessage({ text: trimmed })
   }
 
   const quickShortcuts = [
@@ -960,27 +941,15 @@ function MarketsContent() {
       }
 
       if (devLeft && devRight) {
-        setExplorerChatState({ isOpen: true, isMinimized: false })
-        void sendExplorerChatMessage({
-          query: `Compare ${devLeft} vs ${devRight} for delivery pace, pricing, and safety.`,
-          quickSuggestions: [
-            `Which developer has higher delivery confidence, ${devLeft} or ${devRight}?`,
-            `Safety band mix for ${devLeft} vs ${devRight}`,
-          ],
-        })
+        openSidebar()
+        void sendMessage({ text: `Compare ${devLeft} vs ${devRight} for delivery pace, pricing, and safety.` })
         setRunning(false)
         return
       }
 
       if (emirateLeft && emirateRight) {
-        setExplorerChatState({ isOpen: true, isMinimized: false })
-        void sendExplorerChatMessage({
-          query: `Compare ${emirateLeft} vs ${emirateRight} for villa value, pricing, and delivery.`,
-          quickSuggestions: [
-            `Where is villa value stronger: ${emirateLeft} or ${emirateRight}?`,
-            `Delivery bands in ${emirateLeft} vs ${emirateRight}`,
-          ],
-        })
+        openSidebar()
+        void sendMessage({ text: `Compare ${emirateLeft} vs ${emirateRight} for villa value, pricing, and delivery.` })
         setRunning(false)
         return
       }
@@ -1117,7 +1086,7 @@ function MarketsContent() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setExplorerChatState({ isOpen: true, isMinimized: false })}
+                  onClick={() => openSidebar()}
                   className="rounded-full border border-border/60 bg-secondary/60 px-4 py-2 text-foreground hover:bg-secondary/80"
                 >
                   {isArabic ? "افتح المحادثة" : "Open chat"}
@@ -1620,7 +1589,6 @@ function MarketsContent() {
       <Footer />
       </div>
 
-      <ExplorerChat />
     </main>
   )
 }
