@@ -42,6 +42,15 @@ describe("the store is served, never copied", () => {
     expect(src).toContain("https://entrestate.com")
   })
 
+  it("never speaks the client's name", () => {
+    // Freehold is a CLIENT of Entrestate — his workspace, sessions, data,
+    // ads and leads run untouched. Nothing the Terminal renders may carry
+    // his name or point into his signed-in workspace.
+    for (const file of ["lib/business-store.ts", "app/me/page.tsx"]) {
+      expect(read(file).toLowerCase(), `${file} mentions the client`).not.toContain("freehold")
+    }
+  })
+
   it("keeps no product catalog of its own", () => {
     // The one product-shaped literal allowed here is the TYPE — no STORE
     // array, no hardcoded product ids from the business.

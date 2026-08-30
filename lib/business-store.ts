@@ -77,7 +77,7 @@ export async function getBusinessStore(): Promise<BusinessStore | null> {
     if (products.length === 0) return null
     const storePath = typeof payload.store_url === "string" && payload.store_url.startsWith("/")
       ? payload.store_url
-      : "/freehold-intelligence/store"
+      : "/business/store"
     return { storeUrl: `${origin}${storePath}`, products }
   } catch {
     return null
