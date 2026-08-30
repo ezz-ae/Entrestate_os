@@ -21,9 +21,29 @@ describe("platform score surfaces", () => {
     const pricingPage = read("app/pricing/page.tsx")
     const pricingLayout = read("app/pricing/layout.tsx")
 
-    expect(pricingPage).toContain('"@type": "FAQPage"')
-    expect(pricingPage).toContain('"@type": "OfferCatalog"')
-    expect(pricingPage).toContain("Start free before you buy")
+    // These used to grep the page for `"@type": "FAQPage"` and
+    // `"@type": "OfferCatalog"`. The FAQ schema was refactored into
+    // lib/seo/schema.ts and kept working, so that assertion failed on a page
+    // that was fine — while the OfferCatalog quietly disappeared in the same
+    // refactor and the failure looked identical. Asserting the literal in the
+    // page was asserting an implementation detail; following the call to where
+    // the schema is actually built tells the two apart.
+    const schema = read("lib/seo/schema.ts")
+
+    expect(pricingPage).toMatch(/faqSchema\(/)
+    expect(schema).toContain('"@type": "FAQPage"')
+    expect(pricingPage).toMatch(/offerCatalogSchema\(/)
+    expect(schema).toContain('"@type": "OfferCatalog"')
+    // Both must reach the page, not merely be computed.
+    expect(pricingPage).toMatch(/<JsonLd data=\{jsonLdFaq\}/)
+    expect(pricingPage).toMatch(/<JsonLd data=\{jsonLdOffers\}/)
+
+    // The free tier has to be SAID, not only priced. The old assertion pinned
+    // one headline ("Start free before you buy") that a rewrite removed while
+    // the free plan itself stayed — so it pins the promise now, not the phrase.
+    expect(pricingPage).toMatch(/pricingPlans\.free/)
+    expect(pricingPage.toLowerCase()).toContain("free access opens the core surfaces")
+
     expect(pricingPage).toContain("What changes across tiers?")
     expect(pricingLayout).toContain("generateMetadata")
   })

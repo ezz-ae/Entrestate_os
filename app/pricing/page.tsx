@@ -15,7 +15,7 @@ import {
   pricingFaq,
   pricingPlans,
 } from "@/lib/pricing/plans"
-import { faqSchema, productSchema } from "@/lib/seo/schema"
+import { faqSchema, offerCatalogSchema, productSchema } from "@/lib/seo/schema"
 
 function formatAed(value: number | null, locale: AppLocale) {
   if (value === null) return locale === "ar" ? "تسعير مخصص" : "Custom pricing"
@@ -46,6 +46,20 @@ export default async function PricingPage() {
       a: getLocalizedText(item.a, locale),
     })),
   )
+  // The whole price list, not just the two paid tiers productSchema covers —
+  // a pricing page that describes one plan to a search engine has described
+  // none of the choice a buyer actually makes.
+  const pricingUrl = `https://www.entrestate.com${prefixLocalePath("/pricing", locale)}`
+  const jsonLdOffers = offerCatalogSchema({
+    name: isArabic ? "خطط Entrestate" : "Entrestate plans",
+    url: pricingUrl,
+    plans: [pricingPlans.free, proPlan, teamPlan, institutionalPlan].map((plan) => ({
+      name: getLocalizedText(plan.name, locale),
+      description: getLocalizedText(plan.tagline, locale),
+      price: plan.monthlyAed,
+      anchor: plan.tier,
+    })),
+  })
   const productSchemas = [proPlan, teamPlan].map((plan) =>
     productSchema({
       name: getLocalizedText(plan.name, locale),
@@ -59,6 +73,7 @@ export default async function PricingPage() {
   return (
     <main id="main-content">
       <JsonLd data={jsonLdFaq} />
+      <JsonLd data={jsonLdOffers} />
       {productSchemas.map((item, index) => (
         <JsonLd key={index} data={item} />
       ))}

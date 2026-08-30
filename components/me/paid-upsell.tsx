@@ -13,7 +13,7 @@ const COPY: Record<PaidCapability, { headline: string; body: string }> = {
   listings_score: { headline: "Score your listings", body: "Run the same evidence stack against your own deals." },
   portal_connections: { headline: "Connect Bayut & Property Finder", body: "Sync your portal listings nightly with one-click connectors." },
   crm_connections: { headline: "Push verdicts into your CRM", body: "HubSpot, Pipedrive, Bitrix24 — pin Entrestate verdicts to every deal." },
-  custom_feeds: { headline: "Custom feeds + webhooks", body: "JSON webhooks, SFTP drops, real-time event streams." },
+  custom_feeds: { headline: "Custom feeds + webhooks", body: "JSON webhooks, SFTP drops, event streams pushed on write." },
   api_keys: { headline: "Programmatic API access", body: "Create keys to integrate Entrestate into your stack." },
   api_read_market: { headline: "Public market API", body: "Public — works without sign-in." },
   api_read_listings: { headline: "Listings API", body: "Read your own listings programmatically." },

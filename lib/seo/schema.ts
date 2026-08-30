@@ -134,6 +134,57 @@ export function faqSchema(items: Array<{ q: string; a: string }>) {
   }
 }
 
+/**
+ * The whole price list as one OfferCatalog.
+ *
+ * productSchema() describes ONE plan; a search engine reading a pricing page
+ * wants the set, and the set is what disappeared when this page was refactored
+ * — tests/platform-surfaces.test.ts had been asserting the literal
+ * `"@type": "OfferCatalog"` in the page source, which is how the loss was
+ * caught, months after it happened.
+ *
+ * Prices come from the plan data, so a tier that changes price here cannot
+ * disagree with the tier printed on the page. A plan with no monthly price
+ * (enquire-only) is listed WITHOUT an offer rather than with a zero, because
+ * "free" and "ask us" are not the same thing and structured data that says
+ * otherwise is a lie a search engine repeats.
+ */
+export function offerCatalogSchema(input: {
+  name: string
+  url: string
+  plans: Array<{ name: string; description: string; price: number | null; anchor: string }>
+  currency?: "AED" | "USD" | "SAR"
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "OfferCatalog",
+    name: input.name,
+    url: input.url,
+    itemListElement: input.plans.map((plan, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "Service",
+        name: plan.name,
+        description: plan.description,
+        url: `${input.url}#${plan.anchor}`,
+        provider: { "@type": "Organization", name: SITE.name },
+        ...(plan.price === null
+          ? {}
+          : {
+              offers: {
+                "@type": "Offer",
+                price: plan.price,
+                priceCurrency: input.currency ?? "AED",
+                url: `${input.url}#${plan.anchor}`,
+                availability: "https://schema.org/InStock",
+              },
+            }),
+      },
+    })),
+  }
+}
+
 export function productSchema(input: {
   name: string
   description: string
