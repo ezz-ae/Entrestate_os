@@ -23,12 +23,12 @@ type TerminalPromptTeaserProps = {
 const DEFAULT_EXAMPLES = {
   en: [
     "Best yield under AED 1.5M in JVC",
-    "Grade A projects with STRONG_BUY",
+    "Grade A projects in a strong-buy window",
     "Imtiaz track record in Dubai Land",
   ],
   ar: [
     "أفضل عائد تحت AED 1.5M في JVC",
-    "مشاريع بدرجة A مع STRONG_BUY",
+    "مشاريع بدرجة A في نافذة شراء قوي",
     "سجل Imtiaz في دبي لاند",
   ],
 } as const

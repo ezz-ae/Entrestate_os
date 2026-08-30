@@ -456,7 +456,10 @@ function buildDeveloperMatchClause(terms: string[]) {
   const compactMatches = normalizedTerms
     .map((term) => normalizeDeveloperComparable(term))
     .filter(Boolean)
-    .map((term) => Prisma.sql`LOWER(REGEXP_REPLACE(COALESCE(developer, ''), '[^a-z0-9]+', '', 'g')) LIKE '%' || ${term} || '%'`)
+    // LOWER must run BEFORE the character class strips: '[^a-z0-9]' removes
+    // CAPITALS, so the old order turned "Emaar Properties" into "maarroperties"
+    // and the compact match could never hit. Same defect as buildComparableSql.
+    .map((term) => Prisma.sql`REGEXP_REPLACE(LOWER(COALESCE(developer, '')), '[^a-z0-9]+', '', 'g') LIKE '%' || ${term} || '%'`)
 
   return Prisma.sql`(${Prisma.join([...rawMatches, ...compactMatches], " OR ")})`
 }
@@ -465,8 +468,19 @@ function buildNormalizedSlugSql(expr: Prisma.Sql) {
   return Prisma.sql`TRIM(BOTH '-' FROM REGEXP_REPLACE(LOWER(COALESCE(${expr}, '')), '[^a-z0-9]+', '-', 'g'))`
 }
 
+/**
+ * LOWER FIRST, THEN STRIP — the order is the whole function.
+ *
+ * '[^a-z0-9]' is case-sensitive: it strips CAPITAL letters along with spaces.
+ * The old order ran the strip on the raw value, so "Jumeirah Village Circle"
+ * became "umeirahillageircle" while the JS side (normalizeAreaComparable)
+ * correctly produced "jumeirahvillagecircle" — the two could never be equal,
+ * and getAreaBySlug's stats query matches on THIS EXPRESSION ALONE. Every one
+ * of the 166 area cards on /areas linked to "Area not found" because of the
+ * argument order in this one line. tests/area-links-resolve.test.ts pins it.
+ */
 function buildComparableSql(expr: Prisma.Sql) {
-  return Prisma.sql`LOWER(REGEXP_REPLACE(COALESCE(${expr}, ''), '[^a-z0-9]+', '', 'g'))`
+  return Prisma.sql`REGEXP_REPLACE(LOWER(COALESCE(${expr}, '')), '[^a-z0-9]+', '', 'g')`
 }
 
 function getProjectSlug(record: DecisionRecord) {

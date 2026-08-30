@@ -644,7 +644,7 @@ export default function SearchPage() {
                 </p>
                 {syncMeta ? (
                   <p className="mt-1 text-[10px] text-muted-foreground/40">
-                    API sync · {syncMeta.sourceView} · {new Date(syncMeta.syncedAt).toLocaleString(locale === "ar" ? "ar-AE" : "en-AE")}
+                    {locale === "ar" ? "آخر مزامنة للبيانات" : "Data synced"} · {new Date(syncMeta.syncedAt).toLocaleString(locale === "ar" ? "ar-AE" : "en-AE")}
                   </p>
                 ) : null}
               </div>
@@ -804,8 +804,8 @@ export default function SearchPage() {
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{copy.trustBody}</p>
             <div className="mt-4 rounded-xl border border-border/50 bg-background/50 px-4 py-3 text-sm text-muted-foreground">
               <p>
-                <span className="font-medium text-foreground">{isArabic ? "السطح الحالي:" : "Current source:"}</span>{" "}
-                {syncMeta?.sourceView ?? "api.search_index"}
+                <span className="font-medium text-foreground">{isArabic ? "المصدر:" : "Source:"}</span>{" "}
+                {isArabic ? "فهرس البحث في المخزون المصنّف" : "The scored-inventory search index"}
               </p>
               <p className="mt-1">
                 <span className="font-medium text-foreground">{isArabic ? "جودة التغطية:" : "Coverage score:"}</span>{" "}

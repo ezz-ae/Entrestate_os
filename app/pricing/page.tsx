@@ -19,6 +19,8 @@ import { faqSchema, offerCatalogSchema, productSchema } from "@/lib/seo/schema"
 
 function formatAed(value: number | null, locale: AppLocale) {
   if (value === null) return locale === "ar" ? "تسعير مخصص" : "Custom pricing"
+  // The free tier is FREE, not "AED 0" — a robot's spelling of a gift.
+  if (value === 0) return locale === "ar" ? "مجاناً" : "Free"
 
   return new Intl.NumberFormat(locale === "ar" ? "ar-AE" : "en-AE", {
     style: "currency",

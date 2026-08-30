@@ -449,7 +449,7 @@ function methodology(locale: AppLocale): PolicyDocument {
             "نُولّد ثلاث إشارات منفصلة لكل أصل، ولا نخلطها داخل رقم واحد دون شفافية:",
           ],
           bullets: [
-            "Timing Signal: STRONG_BUY / BUY / HOLD / WAIT / AVOID — إشارة لحظة الدخول حسب السوق والعرض الحالي.",
+            "إشارة التوقيت: شراء قوي / شراء / احتفاظ / انتظار / تجنب — إشارة لحظة الدخول حسب السوق والعرض الحالي.",
             "Decision Label: نفس الفئات بمعايير أصرم — يجب أن تتجاوز كل بوابات الأدلة والضغط والموثوقية لتُمنح BUY.",
             "Stress Grade: A–F — مدى تحمل المشروع لسيناريوهات ضغط منهجية (سعر، فائدة، إشغال، تأخر تسليم).",
           ],
@@ -522,7 +522,7 @@ function methodology(locale: AppLocale): PolicyDocument {
           "Each project carries three distinct signals; we do not roll them into one opaque number:",
         ],
         bullets: [
-          "Timing Signal: STRONG_BUY / BUY / HOLD / WAIT / AVOID — the read on the current entry window given supply and recent comps.",
+          "Timing signal: Strong buy / Buy / Hold / Wait / Avoid — the read on the current entry window given supply and recent comps.",
           "Decision Label: the same categories under stricter gates — must clear evidence, stress, and reliability gates before BUY is awarded.",
           "Stress Grade: A–F — how the project tolerates systematic stress scenarios (price, rate, occupancy, delivery slippage).",
         ],

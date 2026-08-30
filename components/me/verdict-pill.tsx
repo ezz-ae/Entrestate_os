@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils"
+import { timingSignalLabel } from "@/lib/format/verdicts"
 
 interface Props {
   verdict?: string | null
@@ -18,7 +19,7 @@ export function VerdictPill({ verdict, confidence }: Props) {
   const cls = STYLES[verdict] ?? STYLES.HOLD
   return (
     <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap", cls)}>
-      {verdict}{typeof confidence === "number" ? ` · ${Math.round(confidence)}%` : ""}
+      {timingSignalLabel(verdict, "en")}{typeof confidence === "number" ? ` · ${Math.round(confidence)}%` : ""}
     </span>
   )
 }

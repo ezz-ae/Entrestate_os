@@ -12,6 +12,7 @@ import { prefixLocalePath } from "@/i18n/locale"
 import { getRequestLocale } from "@/i18n/request"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { formatInteger } from "@/lib/format/number"
+import { timingSignalLabel } from "@/lib/format/verdicts"
 import { getProjectBySlug } from "@/lib/decision-infrastructure"
 import { SEO, absoluteUrl, getLocaleAlternates, getOpenGraphLocale } from "@/lib/seo"
 import { breadcrumbSchema, realEstateListingSchema } from "@/lib/seo/schema"
@@ -275,15 +276,17 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
   const intelligenceItems = [
     {
       label: copy.verdict,
-      value: typeof project.decision_label_v1 === "string" ? project.decision_label_v1 : null,
+      value: typeof project.decision_label_v1 === "string"
+        ? timingSignalLabel(project.decision_label_v1, locale)
+        : null,
       tone: "primary" as const,
     },
     {
       label: copy.timingSignal,
       value: typeof project.l3_timing_signal === "string"
-        ? project.l3_timing_signal
+        ? timingSignalLabel(project.l3_timing_signal, locale)
         : typeof project.timing_label === "string"
-          ? project.timing_label
+          ? timingSignalLabel(project.timing_label, locale)
           : null,
     },
     {

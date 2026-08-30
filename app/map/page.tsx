@@ -279,8 +279,8 @@ export default function MapPage() {
               </p>
               <div className="mt-4 rounded-xl border border-border/50 bg-background/50 px-4 py-3 text-sm text-muted-foreground">
                 <p>
-                  <span className="font-medium text-foreground">{isArabic ? "المصدر الحالي:" : "Current source:"}</span>{" "}
-                  {meta?.sourceView ?? "api.areas_v1"}
+                  <span className="font-medium text-foreground">{isArabic ? "المصدر:" : "Source:"}</span>{" "}
+                  {isArabic ? "بيانات المناطق المصنّفة" : "The scored area intelligence layer"}
                 </p>
                 <p className="mt-1">
                   <span className="font-medium text-foreground">{isArabic ? "جودة التغطية:" : "Coverage score:"}</span>{" "}

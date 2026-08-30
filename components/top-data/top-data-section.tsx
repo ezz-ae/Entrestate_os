@@ -4,6 +4,7 @@ import { formatAed, formatScore, formatYield } from "@/components/decision/forma
 import { TransactionNotification } from "@/components/dld/transaction-notification"
 import { prefixLocalePath } from "@/i18n/locale"
 import { localizeAnalyticsLabel } from "@/lib/format/analytics-labels"
+import { timingSignalLabel } from "@/lib/format/verdicts"
 import { formatInteger } from "@/lib/format/number"
 import {
   computeMedian,
@@ -271,7 +272,7 @@ function sectionSubtitle(confidence: string | null, lastUpdated: string | null, 
   if (lastUpdated) parts.push(formatLiveTimestamp(lastUpdated, locale))
   const normalizedConfidence = typeof confidence === "string" ? confidence.trim().toUpperCase() : ""
   if (normalizedConfidence === "HIGH" || normalizedConfidence === "MEDIUM" || normalizedConfidence === "LOW") {
-    parts.push(isArabicLocale(locale) ? `الثقة: ${localizeAnalyticsLabel(normalizedConfidence, locale)}` : `Confidence: ${normalizedConfidence}`)
+    parts.push(isArabicLocale(locale) ? `الثقة: ${localizeAnalyticsLabel(normalizedConfidence, locale)}` : `Confidence: ${normalizedConfidence.charAt(0)}${normalizedConfidence.slice(1).toLowerCase()}`)
   }
   return parts.join(" · ")
 }
@@ -537,20 +538,20 @@ function TimingSignalsView({ data, locale }: { data: unknown; locale?: string })
               <p className="mt-2 text-sm leading-relaxed text-foreground">
                 {isArabicLocale(locale)
                   ? `متوسط سعر فئة ${localizeAnalyticsLabel("STRONG_BUY", locale)} هو ${formatCompactAedValue(strongBuyAvgPrice, locale)} فقط، أي أقل بنحو ${priceGap.toFixed(1)}× من فئة ${localizeAnalyticsLabel("AVOID", locale)} عند ${formatCompactAedValue(avoidAvgPrice, locale)}، ومع ذلك تحقق ${Math.abs(yieldGap).toFixed(1)} نقطة مئوية ${yieldGap >= 0 ? "أعلى" : "أقل"} في العائد. هنا لا تبدو تكلفة الدخول المنخفضة كتنازل، بل كأفضلية.`
-                  : `STRONG_BUY inventory averages ${formatCompactAedValue(strongBuyAvgPrice, locale)} — ${priceGap.toFixed(1)}x cheaper than AVOID at ${formatCompactAedValue(avoidAvgPrice, locale)} — while delivering ${Math.abs(yieldGap).toFixed(1)} percentage points ${yieldGap >= 0 ? "more" : "less"} yield. Lower entry cost is the edge here, not the tradeoff.`}
+                  : `Strong-buy inventory averages ${formatCompactAedValue(strongBuyAvgPrice, locale)} — ${priceGap.toFixed(1)}x cheaper than the avoid tier at ${formatCompactAedValue(avoidAvgPrice, locale)} — while delivering ${Math.abs(yieldGap).toFixed(1)} percentage points ${yieldGap >= 0 ? "more" : "less"} yield. Lower entry cost is the edge here, not the tradeoff.`}
               </p>
             </div>
 
             <div className="space-y-3 rounded-xl border border-border/60 bg-background/40 p-3">
               {[
                 {
-                  label: "STRONG_BUY",
+                  label: timingSignalLabel("STRONG_BUY", "en"),
                   labelAr: localizeAnalyticsLabel("STRONG_BUY", locale),
                   price: strongBuyAvgPrice,
                   tone: "bg-emerald-500",
                 },
                 {
-                  label: "AVOID",
+                  label: timingSignalLabel("AVOID", "en"),
                   labelAr: localizeAnalyticsLabel("AVOID", locale),
                   price: avoidAvgPrice,
                   tone: "bg-rose-500",
