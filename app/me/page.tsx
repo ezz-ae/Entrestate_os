@@ -76,12 +76,14 @@ export default async function MeHomePage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">
-              {bundle.tier === "free" ? "Free" : bundle.tier} member
+              {/* The included level is NAMED, never called free — the owner's
+                  word ban: the badge says what the account holds. */}
+              {bundle.tier === "free" ? "Discovery" : bundle.tier} member
             </p>
             <h1 className="mt-2 text-3xl font-bold">{bundle.greeting}</h1>
             <p className="mt-2 max-w-2xl text-slate-300">
               {bundle.tier === "free"
-                ? "This is your signed-in home. The full public read surface stays open; paid plans start only when you want Entrestate to work on your own listings, feeds, and platform."
+                ? "This is your signed-in home. The full discovery layer stays open — search, data, and the advisor — and the working tools the business sells plug in from the App Store when you want them."
                 : "This is your personal Entrestate site: the full public read surface plus your own listings, connectors, alerts, and programmable access."}
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
@@ -241,7 +243,7 @@ export default async function MeHomePage() {
         <section aria-label="Entrestate App Store">
           <SectionHeader
             title="App Store"
-            subtitle="Search and data stay free. These are the working tools the business sells — one account, one place to add them."
+            subtitle="The discovery layer comes with the account. These are the working tools the business sells — one account, one place to add them."
             action={{ label: "Open the store", href: businessStore.storeUrl }}
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
