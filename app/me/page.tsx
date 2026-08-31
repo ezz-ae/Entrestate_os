@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { getPersonalHomeBundle } from "@/lib/me/personal-home"
 import { getBusinessStore } from "@/lib/business-store"
+import { getBusinessAccountSummary } from "@/lib/business-account"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { VerdictPill } from "@/components/me/verdict-pill"
@@ -29,6 +30,9 @@ export default async function MeHomePage() {
   const bundle = await getPersonalHomeBundle()
   if (!bundle) return null
   const businessStore = await getBusinessStore()
+  // Phase 5: the business account, rendered here — never kept here. Fail-soft:
+  // no summary, no card, and /me is exactly the page it was.
+  const businessAccount = await getBusinessAccountSummary()
   const terminalHref = prefixLocalePath("/me?openChat=true", locale)
 
   const publicSurfaces = [
@@ -239,6 +243,65 @@ export default async function MeHomePage() {
         </div>
       </section>
 
+      {businessAccount ? (
+        <section aria-label="Your business account">
+          <SectionHeader
+            title="Your business account"
+            subtitle="The wallet and the apps live on the business side of the same account — this is the live read."
+            action={{ label: "Open the account", href: businessAccount.accountUrl }}
+          />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Card>
+              <CardContent className="p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ads Coin wallet</p>
+                {businessAccount.wallet ? (
+                  <>
+                    <p className="mt-2 text-2xl font-bold tabular-nums">AED {businessAccount.wallet.balanceAed}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{businessAccount.wallet.accountNo}</p>
+                    {businessAccount.wallet.pendingTopUps > 0 ? (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {businessAccount.wallet.pendingTopUps === 1
+                          ? "One top-up is waiting for the team's confirmation."
+                          : `${businessAccount.wallet.pendingTopUps} top-ups are waiting for the team's confirmation.`}
+                      </p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground">The wallet opens with your first top-up or app.</p>
+                )}
+                <a href={businessAccount.accountUrl} className="mt-4 inline-flex items-center text-sm font-semibold text-primary hover:underline">
+                  Top up / see movements <ArrowRight className="ml-1 h-4 w-4" />
+                </a>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Apps on this account</p>
+                {businessAccount.apps.length === 0 ? (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Market discovery is already on. Add the selling work below — each app lands on this same account.
+                  </p>
+                ) : (
+                  <ul className="mt-2 space-y-2">
+                    {businessAccount.apps.map((app) => (
+                      <li key={app.id} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="font-medium">{app.name}</span>
+                        <span className={`text-[11px] font-semibold uppercase tracking-wide ${app.status === "active" ? "text-emerald-500" : "text-muted-foreground"}`}>
+                          {app.status === "active" ? "Active" : app.status === "declined" ? "Declined" : "Requested"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <a href={businessAccount.storeUrl} className="mt-4 inline-flex items-center text-sm font-semibold text-primary hover:underline">
+                  Open the App Store <ArrowRight className="ml-1 h-4 w-4" />
+                </a>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      ) : null}
+
       {businessStore ? (
         <section aria-label="Entrestate App Store">
           <SectionHeader
@@ -258,11 +321,13 @@ export default async function MeHomePage() {
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">{product.tagline}</p>
                   {product.status === "live" ? (
+                    // Phase 2's deep link: straight into the install flow, so
+                    // the click that starts here lands on this same account.
                     <a
-                      href={`${businessStore.storeUrl}#${product.id}`}
+                      href={`${businessStore.storeUrl}/start?app=${product.id}`}
                       className="mt-4 inline-flex items-center text-sm font-semibold text-primary hover:underline"
                     >
-                      View in the store <ArrowRight className="ml-1 h-4 w-4" />
+                      Add to your account <ArrowRight className="ml-1 h-4 w-4" />
                     </a>
                   ) : (
                     <p className="mt-4 text-xs text-muted-foreground">Being built — it will appear here the day it opens.</p>
