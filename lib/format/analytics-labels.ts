@@ -1,3 +1,5 @@
+import { TIMING_SIGNAL_LABELS } from "@/lib/format/verdicts"
+
 const ARABIC_LABELS: Record<string, string> = {
   STRONG_BUY: "شراء قوي",
   BUY: "شراء",
@@ -64,17 +66,35 @@ function normalizeLabelKey(value: string) {
     .toUpperCase()
 }
 
+/**
+ * English labels never print the enum. "STRONG_BUY" used to survive this
+ * function as "STRONG BUY" (ALL-CAPS tokens were preserved wholesale) and sat
+ * on the Decision canvas as a code — the owner's rule, again: "الموقع فاضح
+ * نفسه وبيعطي الكود لكل حاجة". Timing codes go through the shared verdict
+ * vocabulary (lib/format/verdicts.ts); any other pure-alphabetic ALL-CAPS
+ * word longer than three letters is sentence-cased (HIGH → High). Short
+ * caps stay — JBR, JVC, DLD, L4 are names, not codes.
+ */
 function titleCaseLabel(value: string) {
+  const code = value.trim().toUpperCase().replace(/[\s-]+/g, "_")
+  const verdict = TIMING_SIGNAL_LABELS[code]
+  if (verdict) return verdict.en
   return value
     .trim()
     .replace(/_/g, " ")
     .split(/\s+/)
     .map((part) => {
+      if (/^[A-Z]{4,}$/.test(part)) return part.charAt(0) + part.slice(1).toLowerCase()
       if (/^[A-Z0-9()\-+/%]+$/.test(part)) return part
       return part.charAt(0).toUpperCase() + part.slice(1)
     })
     .join(" ")
 }
+
+/** ARABIC_LABELS is keyed the way people wrote it (STRONG_BUY); lookups arrive normalized (STRONG BUY). */
+const ARABIC_LABELS_NORMALIZED: Record<string, string> = Object.fromEntries(
+  Object.entries(ARABIC_LABELS).map(([key, label]) => [normalizeLabelKey(key), label]),
+)
 
 export function isArabicAnalyticsLocale(locale?: string | null) {
   return locale === "ar" || locale?.startsWith("ar-")
@@ -93,7 +113,10 @@ export function localizeAnalyticsLabel(
   }
 
   const normalized = normalizeLabelKey(trimmed)
-  const exact = ARABIC_LABELS[normalized]
+  // Both spellings: the map's own keys (STRONG_BUY) and the normalized form
+  // (STRONG BUY) — the second lookup is what the canvas actually sends, and
+  // without it Arabic readers saw "STRONG BUY" while the map held "شراء قوي".
+  const exact = ARABIC_LABELS[normalized] ?? ARABIC_LABELS_NORMALIZED[normalized]
   if (exact) return exact
 
   const layerMatch = normalized.match(/^L([1-5])\s+(.+)$/)
