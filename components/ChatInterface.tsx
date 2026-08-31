@@ -2656,7 +2656,7 @@ export function ChatInterface({
                           assumptions={evidenceDrawer.assumptions}
                           steps={evidenceDrawer.steps}
                           timestamp={evidenceDrawer.timestamp}
-                          snapshotId="copilot-tool-trace"
+                          snapshotId={locale === "ar" ? "تحليل المستشار" : "The advisor's own analysis"}
                           runId={evidenceDrawer.runId}
                           snapshotTs={evidenceDrawer.snapshotTs}
                           locale={locale}

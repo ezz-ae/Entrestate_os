@@ -106,9 +106,12 @@ export function EvidenceDrawer({
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {([
               { items: sources, label: copy.sources, dot: "bg-emerald-500", emptyEn: "No source row attached", emptyAr: "لا توجد سجلات مصدر مرفقة" },
-              { items: exclusions, label: copy.exclusions, dot: "bg-amber-500", emptyEn: "No exclusions applied", emptyAr: "لا توجد استبعادات مطبَّقة" },
-              { items: assumptions, label: copy.assumptions, dot: "bg-sky-500", emptyEn: "No assumptions declared", emptyAr: "لا توجد افتراضات مُعلنة" },
-              { items: steps, label: copy.steps, dot: "bg-violet-500", emptyEn: "No calculation trace", emptyAr: "لا يوجد أثر حساب" },
+              // An empty section is a FINDING, not an absence — "No calculation
+              // trace" read to the owner as "nothing was done" ("بيكتب إن مفيش
+              // حاجة اتعملت"). Each empty line now says what the emptiness means.
+              { items: exclusions, label: copy.exclusions, dot: "bg-amber-500", emptyEn: "Nothing was excluded — every matching row is in the answer", emptyAr: "لم يُستبعد شيء — كل الصفوف المطابقة في الإجابة" },
+              { items: assumptions, label: copy.assumptions, dot: "bg-sky-500", emptyEn: "Read straight from the data — no assumptions were needed", emptyAr: "قُرئت من البيانات مباشرةً — بلا افتراضات" },
+              { items: steps, label: copy.steps, dot: "bg-violet-500", emptyEn: "The numbers are the source's own — no arithmetic on top", emptyAr: "الأرقام كما وردت من المصدر — بلا حسابات إضافية" },
             ] as const).map((column) => {
               const items = Array.isArray(column.items) ? column.items : []
               return (

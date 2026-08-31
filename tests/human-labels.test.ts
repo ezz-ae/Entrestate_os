@@ -161,3 +161,28 @@ describe("every apps link lands", () => {
     }
   })
 })
+
+describe("the decision canvas never prints the enum either", () => {
+  it("timing codes and confidence read as words in both languages", async () => {
+    const { localizeAnalyticsLabel } = await import("@/lib/format/analytics-labels")
+    // Seen live on the canvas after the chat polish shipped: "STRONG_BUY",
+    // "Timing: STRONG BUY", "HIGH" — the English branch preserved ALL-CAPS
+    // tokens, and the Arabic map was keyed STRONG_BUY while lookups arrived
+    // as STRONG BUY, so BOTH languages leaked the code.
+    expect(localizeAnalyticsLabel("STRONG_BUY", "en")).toBe("Strong buy")
+    expect(localizeAnalyticsLabel("STRONG_BUY", "ar")).toBe("شراء قوي")
+    expect(localizeAnalyticsLabel("BUY", "en")).toBe("Buy")
+    expect(localizeAnalyticsLabel("HIGH", "en")).toBe("High")
+    expect(localizeAnalyticsLabel("HIGH", "ar")).toBe("عالية")
+    // Names stay names.
+    expect(localizeAnalyticsLabel("JBR", "en")).toBe("JBR")
+    expect(localizeAnalyticsLabel("L4", "en")).toBe("L4")
+  })
+
+  it("the evidence drawer's empty sections state a finding, and its snapshot has a name", () => {
+    const drawer = read("components/decision/evidence-drawer.tsx")
+    expect(drawer).not.toContain('"No calculation trace"')
+    expect(drawer).toContain("no arithmetic on top")
+    expect(stripComments(read("components/ChatInterface.tsx"))).not.toContain('snapshotId="copilot-tool-trace"')
+  })
+})
