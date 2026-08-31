@@ -84,3 +84,17 @@ export function humanizeFinalText(raw: string): string {
 
   return text
 }
+
+/**
+ * "قدام كل نتيجة زرار تخليه يكمل على النتيجة دي" — the follow-up a result
+ * row's button sends into the ONE chat. Written once here so /chat and the
+ * sidebar ask the identical question, in the ANSWER's language (the table the
+ * person clicked was in that language), and so the advisor gets a complete
+ * brief — detail, risks, recommendation — instead of a bare project name.
+ */
+export function followUpOnResult(label: string, locale: string): string {
+  const name = label.trim()
+  return locale === "ar"
+    ? `كمّل على ${name}: التفاصيل الكاملة، المخاطر، والتوصية.`
+    : `Continue on ${name}: full detail, the risks, and your recommendation.`
+}
