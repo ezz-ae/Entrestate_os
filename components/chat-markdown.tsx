@@ -64,7 +64,30 @@ function splitCells(line: string): string[] {
     .map((c) => c.trim())
 }
 
-export function ChatMarkdown({ text }: { text: string }) {
+/**
+ * "قدام كل نتيجة زرار تخليه يكمل على النتيجة دي" — the owner, looking at a
+ * results table. A row in a COMPARE or SCREEN answer is a thing a person
+ * wants to keep talking about, so when the surface hands in `onPickRow`, every
+ * body row whose first cell is a name (not a number) grows a trailing button
+ * that sends that name back into the ONE chat. The button's language follows
+ * the table's own text, not the page locale — an Arabic answer on /en gets an
+ * Arabic button. Without `onPickRow` the table renders exactly as before.
+ */
+export type ChatMarkdownProps = {
+  text: string
+  /** Called with the row's first-cell label — the surface turns it into a follow-up. */
+  onPickRow?: (label: string) => void
+}
+
+const looksLikeName = (cell: string): boolean => {
+  const t = cell.replace(/\*\*/g, "").trim()
+  if (!t) return false
+  return !/^[\d\s.,%+\-–—/]+$/.test(t)
+}
+
+export function ChatMarkdown({ text, onPickRow }: ChatMarkdownProps) {
+  const arabic = /[\u0600-\u06FF]/.test(text)
+  const pickLabel = arabic ? "كمّل على ده" : "Continue with this"
   const lines = text.split("\n")
   const nodes: React.ReactNode[] = []
   let i = 0
@@ -96,6 +119,7 @@ export function ChatMarkdown({ text }: { text: string }) {
                     {inlineFormat(cell)}
                   </th>
                 ))}
+                {onPickRow ? <th className="px-2.5 py-1.5" aria-label={pickLabel} /> : null}
               </tr>
             </thead>
             <tbody>
@@ -106,6 +130,19 @@ export function ChatMarkdown({ text }: { text: string }) {
                       {inlineFormat(row[c] ?? "")}
                     </td>
                   ))}
+                  {onPickRow ? (
+                    <td className="whitespace-nowrap px-2.5 py-1">
+                      {looksLikeName(row[0] ?? "") ? (
+                        <button
+                          type="button"
+                          onClick={() => onPickRow(row[0].replace(/\*\*/g, "").trim())}
+                          className="rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20"
+                        >
+                          {pickLabel} →
+                        </button>
+                      ) : null}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>

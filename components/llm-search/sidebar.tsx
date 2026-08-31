@@ -5,6 +5,8 @@ import Link from "next/link"
 import { useLocale, useTranslations } from "next-intl"
 import { useCopilot } from "@/components/copilot-provider"
 import { AdvisorAnswer, ToolStepsTimeline, extractToolSteps } from "@/components/chat/advisor-narration"
+import { ChatMarkdown } from "@/components/chat-markdown"
+import { answerLocale, followUpOnResult } from "@/lib/chat/final-text"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -60,129 +62,20 @@ function getMessageText(message: any): string {
 
 // ── Inline markdown renderer ─────────────────────────────────────────────────
 
-function inlineFormat(text: string): React.ReactNode[] {
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|~~[^~]+~~)/g)
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**"))
-      return <strong key={i} className="font-semibold text-foreground">{part.slice(2, -2)}</strong>
-    if (part.startsWith("*") && part.endsWith("*"))
-      return <em key={i}>{part.slice(1, -1)}</em>
-    if (part.startsWith("`") && part.endsWith("`"))
-      return <code key={i} className="rounded bg-background/80 px-1 py-0.5 text-[11px] font-mono text-primary/90 border border-border/40">{part.slice(1, -1)}</code>
-    if (part.startsWith("~~") && part.endsWith("~~"))
-      return <s key={i} className="text-muted-foreground">{part.slice(2, -2)}</s>
-    return part
-  })
-}
 
-function MarkdownContent({ content }: { content: string }) {
-  const lines = content.split("\n")
-  const elements: React.ReactNode[] = []
-  let i = 0
-  let key = 0
-
-  while (i < lines.length) {
-    const line = lines[i]
-
-    // Fenced code block
-    if (line.startsWith("```")) {
-      const codeLines: string[] = []
-      i++
-      while (i < lines.length && !lines[i].startsWith("```")) {
-        codeLines.push(lines[i])
-        i++
-      }
-      elements.push(
-        <pre key={key++} className="my-2 overflow-x-auto rounded-lg bg-background/80 border border-border/60 p-3 text-[11px] font-mono text-foreground/90 leading-relaxed">
-          <code>{codeLines.join("\n")}</code>
-        </pre>
-      )
-      i++
-      continue
-    }
-
-    // Headings
-    const h1 = line.match(/^#\s+(.+)/)
-    const h2 = line.match(/^##\s+(.+)/)
-    const h3 = line.match(/^###\s+(.+)/)
-    if (h3) { elements.push(<p key={key++} className="mt-3 mb-0.5 text-sm font-semibold text-foreground/90">{inlineFormat(h3[1])}</p>); i++; continue }
-    if (h2) { elements.push(<p key={key++} className="mt-3 mb-1 text-sm font-bold text-foreground">{inlineFormat(h2[1])}</p>); i++; continue }
-    if (h1) { elements.push(<p key={key++} className="mt-3 mb-1 text-base font-bold text-foreground">{inlineFormat(h1[1])}</p>); i++; continue }
-
-    // Horizontal rule
-    if (line.match(/^---+$/) || line.match(/^\*\*\*+$/)) {
-      elements.push(<hr key={key++} className="my-2 border-border/50" />)
-      i++
-      continue
-    }
-
-    // Unordered list
-    if (line.match(/^[-*]\s+/)) {
-      const items: string[] = []
-      while (i < lines.length && lines[i].match(/^[-*]\s+/)) {
-        items.push(lines[i].replace(/^[-*]\s+/, ""))
-        i++
-      }
-      elements.push(
-        <ul key={key++} className="my-1.5 space-y-1">
-          {items.map((item, idx) => (
-            <li key={idx} className="flex gap-2 text-sm leading-relaxed">
-              <span className="text-primary mt-1 shrink-0 text-[10px]">▸</span>
-              <span>{inlineFormat(item)}</span>
-            </li>
-          ))}
-        </ul>
-      )
-      continue
-    }
-
-    // Ordered list
-    if (line.match(/^\d+\.\s+/)) {
-      const items: string[] = []
-      while (i < lines.length && lines[i].match(/^\d+\.\s+/)) {
-        items.push(lines[i].replace(/^\d+\.\s+/, ""))
-        i++
-      }
-      elements.push(
-        <ol key={key++} className="my-1.5 space-y-1">
-          {items.map((item, idx) => (
-            <li key={idx} className="flex gap-2 text-sm leading-relaxed">
-              <span className="text-primary/60 shrink-0 font-mono text-[11px] mt-0.5 w-4 text-right">{idx + 1}.</span>
-              <span>{inlineFormat(item)}</span>
-            </li>
-          ))}
-        </ol>
-      )
-      continue
-    }
-
-    // Blockquote
-    if (line.startsWith("> ")) {
-      elements.push(
-        <div key={key++} className="my-1.5 border-l-2 border-primary/40 pl-3 italic text-sm text-muted-foreground leading-relaxed">
-          {inlineFormat(line.slice(2))}
-        </div>
-      )
-      i++
-      continue
-    }
-
-    // Empty line
-    if (line.trim() === "") { i++; continue }
-
-    // Paragraph
-    elements.push(
-      <p key={key++} className="text-sm leading-relaxed">{inlineFormat(line)}</p>
-    )
-    i++
-  }
-
-  return <div className="space-y-1">{elements}</div>
-}
 
 // ── Message bubble ────────────────────────────────────────────────────────────
 
-function MessageBubble({ message, isActive = false }: { message: any; isActive?: boolean }) {
+function MessageBubble({
+  message,
+  isActive = false,
+  onPickRow,
+}: {
+  message: any
+  isActive?: boolean
+  /** A result row's "continue with this" — routed to the ONE chat by the sidebar. */
+  onPickRow?: (label: string, answerLanguage: string) => void
+}) {
   const t = useTranslations("sidebar")
   const locale = useLocale()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -229,7 +122,12 @@ function MessageBubble({ message, isActive = false }: { message: any; isActive?:
             <AdvisorAnswer
               text={content}
               streaming={isActive}
-              render={(text) => <MarkdownContent content={text} />}
+              render={(text) => (
+                <ChatMarkdown
+                  text={text}
+                  onPickRow={onPickRow ? (label) => onPickRow(label, answerLocale(content, locale)) : undefined}
+                />
+              )}
             />
           </div>
         )}
@@ -852,6 +750,9 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
                         key={m.id}
                         message={m}
                         isActive={status === "streaming" && index === messages.length - 1 && m.role === "assistant"}
+                        onPickRow={(label, answerLanguage) => {
+                          void sendMessage({ text: followUpOnResult(label, answerLanguage) })
+                        }}
                       />
                     ))}
                     {isBusy && (

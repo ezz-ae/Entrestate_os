@@ -7,6 +7,8 @@ import { useLocale, useTranslations } from "next-intl"
 import { useCopilot } from "@/components/copilot-provider"
 import { ChatMarkdown } from "@/components/chat-markdown"
 import { AdvisorAnswer, ToolStepsTimeline, extractToolSteps } from "@/components/chat/advisor-narration"
+import { answerLocale, followUpOnResult } from "@/lib/chat/final-text"
+import { sourceLabel } from "@/lib/format/sources"
 import { motion, AnimatePresence } from "framer-motion"
 import { MarqueePrompts } from "@/components/marketing/marquee-prompts"
 import { authClient } from "@/lib/auth/client"
@@ -335,7 +337,7 @@ function chatUiCopy(locale: AppLocale) {
       stressSuggestion: (label: string) => `اعرض ملف الضغط الحقيقي لـ ${label} شاملاً درجات المرونة الفرعية.`,
       outlookSuggestion: (label: string) => `ما أهم المخاطر الاستثمارية في ${label} وما الذي قد يغيّر النظرة الحالية؟`,
       riskBriefPrompt: (label: string) => `اعرض موجز مخاطر المنطقة لـ ${label}. أعد projects وavg_price وavg_yield وavg_score وbuy_signals وsafe_projects، ثم أخبرني هل هذا السوق أقوى من البدائل المجاورة ولماذا.`,
-      projectStressPrompt: (label: string) => `اعرض ملف الضغط V1 الحقيقي لـ ${label}. أعد stress_score وstress_grade_v1 وtiming_label وinvestor_score_v1 وdecision_label_v1 وdeveloper_reliability_score وsupply_resilience_score وliquidity_resilience_score وpricing_discipline_score وhandover_reliability_score وarea_stability_score وpayment_plan_score.`,
+      projectStressPrompt: (label: string) => `اعمل اختبار تحمّل لـ ${label}: درجة المخاطر، والتوقيت، ودرجة المستثمر، وكيف يصمد في موثوقية المطور والمعروض والسيولة وانضباط التسعير وسجل التسليم واستقرار المنطقة وخطة الدفع.`,
     }
   }
 
@@ -366,7 +368,7 @@ function chatUiCopy(locale: AppLocale) {
     stressSuggestion: (label: string) => `Show the real V1 stress profile for ${label}, including all resilience sub-scores.`,
     outlookSuggestion: (label: string) => `What are the key investment risks for ${label} and what would change the outlook?`,
     riskBriefPrompt: (label: string) => `Run an area risk brief for ${label}. Return projects, avg_price, avg_yield, avg_score, buy_signals, safe_projects, and tell me whether this market screens stronger than nearby alternatives.`,
-    projectStressPrompt: (label: string) => `Show the real V1 stress profile for ${label}. Return stress_score, stress_grade_v1, timing_label, investor_score_v1, decision_label_v1, developer_reliability_score, supply_resilience_score, liquidity_resilience_score, pricing_discipline_score, handover_reliability_score, area_stability_score, and payment_plan_score.`,
+    projectStressPrompt: (label: string) => `Stress-test ${label}: its risk grade, timing, investor score, and how it holds up on developer reliability, supply, liquidity, pricing discipline, handover record, area stability, and payment plan.`,
   }
 }
 
@@ -657,26 +659,41 @@ function extractNarrativeStrings(outputs: Record<string, unknown>[]) {
   return snippets
 }
 
-function buildEvidenceDrawerData(message: any) {
+function buildEvidenceDrawerData(message: any, locale: string) {
   const outputs = extractMessageToolOutputs(message)
   const metadata = toRecord(message?.metadata)
   const provenance = toRecord(metadata?.provenance)
   if (outputs.length === 0 && !provenance) return null
 
+  // Sources are NAMED before they are shown (lib/format/sources.ts): the
+  // drawer used to print "deal_screener" and "dld_transactions_arvo" — the
+  // owner: "بيعطي جوه الأدلة الكود بتاع الداتا". Same source twice is one line.
+  const seenSources = new Set<string>()
+  const nameSource = (value: unknown): { source: string } | null => {
+    if (typeof value !== "string" || !value.trim()) return null
+    const label = sourceLabel(value, locale)
+    if (seenSources.has(label)) return null
+    seenSources.add(label)
+    return { source: label }
+  }
+
   const sourceEntries = outputs.flatMap((output) => {
     const entries: unknown[] = []
-    if (typeof output.source === "string") {
-      entries.push({ source: output.source })
-    }
+    const own = nameSource(output.source)
+    if (own) entries.push(own)
     if (Array.isArray(output.sources_used)) {
-      entries.push(...output.sources_used.map((value) => ({ source: value })))
+      for (const value of output.sources_used) {
+        const named = nameSource(value)
+        if (named) entries.push(named)
+      }
     }
     return entries
   })
 
   if (Array.isArray(provenance?.sources_used)) {
     for (const source of provenance.sources_used) {
-      sourceEntries.push({ source })
+      const named = nameSource(source)
+      if (named) sourceEntries.push(named)
     }
   }
 
@@ -692,16 +709,18 @@ function buildEvidenceDrawerData(message: any) {
     if (output.failed === true || typeof output.error === "string") {
       const label = typeof output.source === "string" && output.source.trim().length > 0
         ? output.source
-        : "a data source"
+        : "default"
       items.push(
-        `TOOL FAILED — ${label} could not be read. Nothing below was measured from it.`,
+        locale === "ar"
+          ? `تعذّرت قراءة ${sourceLabel(label, locale)} — لا شيء أدناه مقاس منه.`
+          : `${sourceLabel(label, locale)} could not be read — nothing below was measured from it.`,
       )
     }
     if (Array.isArray(output.guardrail_warnings)) {
       items.push(...output.guardrail_warnings)
     }
     if (output.no_results === true) {
-      items.push("No direct rows returned from this tool invocation.")
+      items.push(locale === "ar" ? "لم تُرجع هذه الخطوة أي صفوف مباشرة." : "This step returned no direct rows.")
     }
     if (typeof output.overview === "string" && output.overview.trim().length > 0) {
       items.push(output.overview)
@@ -1345,8 +1364,8 @@ const CAPABILITY_CARDS: Record<AppLocale, Array<{ label: string; description: st
     {
       label: "Screen Properties",
       description: "Find ranked projects by budget, area, and return profile using live scoring data.",
-      example: "2BR under AED 2M, BUY signal, Grade A risk",
-      prompt: "Find 2BR projects under AED 2M with BUY timing label and stress grade A or B. Rank by investor_score_v1 and show yield for each.",
+      example: "2BR under AED 2M, buy signal, low risk",
+      prompt: "Find two-bedroom projects under AED 2M with a buy signal and a strong risk grade. Rank them by investor score and show the yield for each.",
       icon: Search,
     },
     {
@@ -1359,15 +1378,15 @@ const CAPABILITY_CARDS: Record<AppLocale, Array<{ label: string; description: st
     {
       label: "Stress Test",
       description: "Review real V1 stress grades, scores, and resilience sub-scores for live projects.",
-      example: "Show Marina Vista V1 stress grade and sub-scores",
-      prompt: "Show the real V1 stress profile for Marina Vista. Return stress_score, stress_grade_v1, developer_reliability_score, supply_resilience_score, liquidity_resilience_score, pricing_discipline_score, handover_reliability_score, area_stability_score, and payment_plan_score.",
+      example: "Stress-test Marina Vista",
+      prompt: "Stress-test Marina Vista for me: its risk grade, and how it holds up on developer reliability, supply, liquidity, pricing discipline, handover record, area stability, and payment plan.",
       icon: SlidersHorizontal,
     },
     {
       label: "Investor Memo",
       description: "Generate a structured due diligence brief with price reality, developer track record, and risk verdict.",
       example: "Full memo: Marina Vista - pricing, risk, verdict",
-      prompt: "Generate a full investor memo for Marina Vista. Include: price reality check versus area average, developer reliability score, stress grade assessment, timing label context, and final investment verdict.",
+      prompt: "Write a full investor memo for Marina Vista: price reality against the area average, the developer's track record, the risk grade, the timing, and your final verdict.",
       icon: FileText,
     },
   ],
@@ -1375,8 +1394,8 @@ const CAPABILITY_CARDS: Record<AppLocale, Array<{ label: string; description: st
     {
       label: "فرز المشاريع",
       description: "اعثر على المشاريع الأنسب حسب الميزانية والمنطقة والعائد باستخدام البيانات المباشرة.",
-      example: "شقق غرفتين تحت AED 2M مع BUY ومخاطر A",
-      prompt: "اعرض شقق غرفتين تحت AED 2M بإشارة BUY ودرجة ضغط A أو B، ورتّبها حسب investor_score_v1 مع العائد.",
+      example: "شقق غرفتين تحت 2 مليون، إشارة شراء، مخاطر منخفضة",
+      prompt: "اعرض شقق غرفتين تحت 2 مليون درهم بإشارة شراء ودرجة مخاطر قوية، ورتّبها حسب درجة المستثمر مع العائد لكل واحدة.",
       icon: Search,
     },
     {
@@ -1387,10 +1406,10 @@ const CAPABILITY_CARDS: Record<AppLocale, Array<{ label: string; description: st
       icon: Scale,
     },
     {
-      label: "اختبار الضغط",
-      description: "اعرض درجات الضغط الفعلية ودرجات المرونة الفرعية للمشاريع الحية.",
-      example: "اعرض ملف الضغط V1 لمارينا فيستا",
-      prompt: "اعرض ملف الضغط V1 الحقيقي لمارينا فيستا متضمناً stress_score وstress_grade_v1 وجميع درجات المرونة الفرعية.",
+      label: "اختبار التحمّل",
+      description: "اعرض درجات المخاطر الفعلية ومرونة المشاريع الحية أمام الضغوط.",
+      example: "اختبار تحمّل لمارينا فيستا",
+      prompt: "اعمل اختبار تحمّل لمارينا فيستا: درجة مخاطرها، وكيف تصمد في موثوقية المطور، والمعروض، والسيولة، وانضباط التسعير، وسجل التسليم، واستقرار المنطقة، وخطة الدفع.",
       icon: SlidersHorizontal,
     },
     {
@@ -1403,48 +1422,57 @@ const CAPABILITY_CARDS: Record<AppLocale, Array<{ label: string; description: st
   ],
 }
 
+/**
+ * The pills above the conversation. They used to send prompts about "Marina
+ * Vista" — a project nobody in the conversation had asked about — written in
+ * column codes (investor_score_v1, stress_grade_v1). Pressed mid-conversation
+ * they looked like they did nothing sensible; the owner: "مربع في الشات فوق
+ * فيه كذا أوبشن دول مش بيشتغلوا". Each one now continues THIS conversation
+ * ("the strongest result above") in human words, and none is ever disabled
+ * silently — sendPrompt says why when it cannot send.
+ */
 const COMMAND_PROMPTS: Record<AppLocale, Array<{ label: string; prompt: string; icon: LucideIcon }>> = {
   en: [
     {
       label: "Screen",
-      prompt: "Find 2BR projects under AED 2M with BUY timing label and stress grade A or B. Rank by investor_score_v1.",
+      prompt: "Screen the market for me: two-bedroom projects under AED 2M with a buy signal and a strong risk grade, ranked by investor score.",
       icon: Search,
     },
     {
       label: "Compare",
-      prompt: "Compare Dubai Marina vs JBR on price, yield, stress grade, and timing label. Which is the better entry point?",
+      prompt: "Compare the top two results above on price, yield, risk grade and timing — which is the better entry point, and why?",
       icon: Scale,
     },
     {
       label: "Stress test",
-      prompt: "Show Marina Vista stress_score, stress_grade_v1, timing_label, investor_score_v1, and all real V1 resilience sub-scores.",
+      prompt: "Stress-test the strongest result above: its risk grade, the resilience behind it, and what could go wrong.",
       icon: Radar,
     },
     {
       label: "Investor memo",
-      prompt: "Generate a full investor memo for Marina Vista: price reality, area risk, developer diligence, stress test, and verdict.",
+      prompt: "Write a full investor memo for the strongest result above: price reality, area risk, developer track record, stress test, and your verdict.",
       icon: FileText,
     },
   ],
   ar: [
     {
       label: "فرز",
-      prompt: "اعرض شقق غرفتين تحت AED 2M بإشارة BUY ودرجة ضغط A أو B، ورتّبها حسب investor_score_v1.",
+      prompt: "افرزلي السوق: مشاريع غرفتين تحت 2 مليون درهم بإشارة شراء ودرجة مخاطر قوية، مرتّبة حسب درجة المستثمر.",
       icon: Search,
     },
     {
       label: "مقارنة",
-      prompt: "قارن دبي مارينا وJBR في السعر والعائد ودرجة الضغط وإشارة التوقيت. أيهما أفضل للدخول؟",
+      prompt: "قارن أقوى نتيجتين فوق في السعر والعائد ودرجة المخاطر والتوقيت — أيهما أفضل للدخول، وليه؟",
       icon: Scale,
     },
     {
-      label: "الضغط",
-      prompt: "اعرض stress_score وstress_grade_v1 وtiming_label وinvestor_score_v1 وكل درجات المرونة الحقيقية لمارينا فيستا.",
+      label: "اختبار التحمّل",
+      prompt: "اعمل اختبار تحمّل لأقوى نتيجة فوق: درجة مخاطرها، والمرونة وراها، وإيه اللي ممكن يغلط.",
       icon: Radar,
     },
     {
       label: "مذكرة",
-      prompt: "أنشئ مذكرة استثمار كاملة لمارينا فيستا تشمل السعر والمنطقة والمطور واختبار الضغط والحكم النهائي.",
+      prompt: "اكتب مذكرة استثمار كاملة لأقوى نتيجة فوق: واقعية السعر، مخاطر المنطقة، سجل المطور، اختبار التحمّل، والحكم النهائي.",
       icon: FileText,
     },
   ],
@@ -1504,7 +1532,7 @@ const slashCommands: SlashCommand[] = [
     description: "Find ranked projects with constraints.",
     icon: Search,
     buildPrompt: () =>
-      "Find 2BR projects under AED 2M with BUY timing label and stress grade A or B. Rank by investor_score_v1.",
+      "Find two-bedroom projects under AED 2M with a buy signal and a strong risk grade, ranked by investor score.",
   },
   {
     id: "memo",
@@ -1512,7 +1540,7 @@ const slashCommands: SlashCommand[] = [
     description: "Generate full investor memo.",
     icon: FileText,
     buildPrompt: ({ selectedRow }) =>
-      `Generate an investor memo for ${selectedRow?.label ?? "Marina Vista"} with price reality, area risk, developer due diligence, and stress test.`,
+      selectedRow ? `Write an investor memo for ${selectedRow.label}: price reality, area risk, developer track record, and stress test.` : "Write an investor memo for the strongest result above: price reality, area risk, developer track record, and stress test.",
   },
   {
     id: "risk",
@@ -1520,14 +1548,14 @@ const slashCommands: SlashCommand[] = [
     description: "Show real V1 stress metrics.",
     icon: SlidersHorizontal,
     buildPrompt: ({ selectedRow }) =>
-      `Show the real V1 stress profile for ${selectedRow?.label ?? "Marina Vista"}. Return stress_score, stress_grade_v1, timing_label, investor_score_v1, decision_label_v1, and all V1 resilience sub-scores.`,
+      selectedRow ? `Stress-test ${selectedRow.label}: risk grade, timing, investor score, and every resilience score behind it.` : "Stress-test the strongest result above: risk grade, timing, investor score, and every resilience score behind it.",
   },
   {
     id: "price",
     title: "/price",
     description: "Run price reality check.",
     icon: Gauge,
-    buildPrompt: ({ selectedRow }) => `Run price reality check for ${selectedRow?.label ?? "Marina Vista"}.`,
+    buildPrompt: ({ selectedRow }) => selectedRow ? `Run a price reality check for ${selectedRow.label}.` : "Run a price reality check on the strongest result above.",
   },
 ]
 
@@ -1587,31 +1615,31 @@ export function ChatInterface({
   const heroCopy = isArabic
     ? {
         engine: "محطة القرار",
-        feed: "محرك الاستعلامات المنظّم",
+        feed: "اسأل بكلامك",
         titleLineOne: "محطة القرار",
-        titleLineTwo: "استعلامات منظَّمة قابلة للتدقيق.",
-        subtitle: "استعلامات منظَّمة على طبقة بيانات العقار الإماراتية. كل نتيجة تُرفق بأثر الأدوات وحمولة الـ API لتظل قابلة للتحقق.",
+        titleLineTwo: "اسأل السوق أي حاجة.",
+        subtitle: "اسأل بكلامك — فرز مشاريع، مقارنة مناطق، فحص سعر، تقدير مخاطر. كل إجابة بتوريك خطواتها والأدلة ورا كل رقم.",
         dataLabel: "البيانات",
-        analysing: "جارٍ التنفيذ",
+        analysing: "شغّال عليها",
         ready: "جاهز",
         showCanvas: "إظهار اللوحة",
         hideCanvas: "إخفاء اللوحة",
         emptyState: "ابدأ باستعلام منظم: مثال \"مشاريع A في المارينا تحت 5M بعائد فوق 6%\".",
-        systemBadge: "Decision Terminal · استعلام منظَّم · أثر الأدوات · MCP Protocol",
+        systemBadge: "محطة القرار · بيانات مباشرة · كل إجابة بأدلتها",
       }
     : {
         engine: "Decision Terminal",
-        feed: "Structured Query Engine",
+        feed: "Ask in your own words",
         titleLineOne: "Decision Terminal.",
-        titleLineTwo: "Auditable structured queries.",
-        subtitle: "Run structured queries against the UAE real estate data layer. Every result is returned with the tool trace and API payload that produced it, so the answer stays inspectable.",
+        titleLineTwo: "Ask the market anything.",
+        subtitle: "Ask in your own words — screen projects, compare areas, check a price, size a risk. Every answer shows the steps it took and the evidence behind every number.",
         dataLabel: "Data",
-        analysing: "Executing",
+        analysing: "Working on it",
         ready: "Ready",
         showCanvas: "Show canvas",
         hideCanvas: "Hide canvas",
         emptyState: "Start with a structured query. Example: \"A-grade Marina projects under 5M with 6%+ yield.\"",
-        systemBadge: "Decision Terminal · Structured Query · Tool Trace · MCP Protocol",
+        systemBadge: "Decision Terminal · Live data · Every answer shows its evidence",
       }
 
   useEffect(() => {
@@ -1948,12 +1976,12 @@ export function ChatInterface({
     if (!cleanedPrompt) return false
 
     if (isBusy) {
-      setLimitMessage("Please wait for the current analysis to finish.")
+      setLimitMessage(locale === "ar" ? "استنّى التحليل الحالي يخلص." : "Wait for the current analysis to finish.")
       return false
     }
 
     if (chatBlocked) {
-      setLimitMessage("Free usage is cooling down. Please try again soon.")
+      setLimitMessage(locale === "ar" ? "الاستخدام في فترة تهدئة — جرّب بعد لحظات." : "Usage is cooling down — try again in a moment.")
       return false
     }
 
@@ -2539,8 +2567,7 @@ export function ChatInterface({
                 key={command.label}
                 type="button"
                 onClick={() => void sendPrompt(command.prompt)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={submitBlocked}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 text-xs font-medium text-foreground transition hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
               >
                 <Icon className="h-3 w-3" />
                 {command.label}
@@ -2553,8 +2580,7 @@ export function ChatInterface({
               key={suggestion}
               type="button"
               onClick={() => void sendPrompt(suggestion)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary/35 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={submitBlocked}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-card/60 px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary/35 hover:text-foreground"
             >
               <WandSparkles className="h-3 w-3" />
               <span className="max-w-48 truncate">{suggestion}</span>
@@ -2579,7 +2605,7 @@ export function ChatInterface({
             const cleanMessage = message.role === "assistant"
               ? resolveAssistantDisplayText(message, locale)
               : displayMessageText(message)
-            const evidenceDrawer = message.role === "assistant" ? buildEvidenceDrawerData(message) : null
+            const evidenceDrawer = message.role === "assistant" ? buildEvidenceDrawerData(message, locale) : null
 
             return (
               <div
@@ -2611,7 +2637,12 @@ export function ChatInterface({
                       <AdvisorAnswer
                         text={cleanMessage}
                         streaming={status === "streaming" && message.id === (messages as any[])[(messages as any[]).length - 1]?.id}
-                        render={(text) => <ChatMarkdown text={text} />}
+                        render={(text) => (
+                          <ChatMarkdown
+                            text={text}
+                            onPickRow={(label) => void sendPrompt(followUpOnResult(label, answerLocale(cleanMessage, locale)))}
+                          />
+                        )}
                       />
                     ) : (
                       <ChatMarkdown text={locale === "ar" ? "جارٍ تشغيل التحليل..." : "Running analysis..."} />
@@ -2731,8 +2762,8 @@ export function ChatInterface({
         {!limitMessage && isLimitError ? (
           <p className="mt-3 text-sm text-amber-600">
             {isArabic
-              ? "الاستخدام المجاني في فترة تهدئة. حاول مجدداً بعد قليل."
-              : "Free usage is cooling down. Please try again soon."}
+              ? "الاستخدام في فترة تهدئة — جرّب بعد لحظات."
+              : "Usage is cooling down — try again in a moment."}
           </p>
         ) : null}
 

@@ -71,6 +71,9 @@ describe("every surface that shows an answer", () => {
       "components/ChatInterface.tsx",
       "components/ground-plays.tsx",
       "components/lead-agent-chat.tsx",
+      // The sidebar kept a private MarkdownContent for months — the ONE chat's
+      // own drawer rendered a COMPARE table as a paragraph of pipes.
+      "components/llm-search/sidebar.tsx",
     ]) {
       const src = read(rel)
       expect(src, `${rel} must use the shared renderer`).toContain('from "@/components/chat-markdown"')

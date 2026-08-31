@@ -21,7 +21,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Check, ChevronDown, FileText, Loader2, X } from "lucide-react"
+import { Check, ChevronDown, ChevronUp, FileText, Loader2 } from "lucide-react"
 import {
   stepDetail,
   stepDoneLabel,
@@ -151,55 +151,19 @@ export function splitAnswer(content: string): { conclusion: string; report: stri
   return { conclusion: trimmed.slice(0, gap).trim(), report: trimmed }
 }
 
-function ReportModal({
-  content,
-  isArabic,
-  render,
-  onClose,
-}: {
-  content: string
-  isArabic: boolean
-  render: (text: string) => React.ReactNode
-  onClose: () => void
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4 sm:p-8"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-        dir={isArabic ? "rtl" : "ltr"}
-      >
-        <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-accent" />
-            <p className="text-sm font-semibold text-foreground">{isArabic ? "نتيجة البحث" : "Search result"}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            aria-label={isArabic ? "إغلاق" : "Close"}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="overflow-y-auto px-5 py-4 text-foreground">{render(content)}</div>
-      </div>
-    </div>
-  )
-}
-
 /**
  * The advisor's answer as the owner specified it: while streaming, the text
  * runs whole; once final, the bubble keeps the conclusion and the organized
- * statement opens as a popup report. The text passes through the final-text
- * door here too, so a surface whose transport bypassed the server door still
- * shows no glossed code and closes in the asker's language.
+ * statement opens — INSIDE the bubble. It was a popup first, and the owner
+ * saw it live: "البوب أب جوه المربع بتاع الرسالة مربوط بحجمه… الأفضل يكون
+ * جوه الرد بدل ما يبقى بيقطع على الشات ويكون مساحته بتتظبط على حسب الشاشة".
+ * A modal is a fixed box over the conversation — its tables clipped, its
+ * height fought the viewport, and it hid the very chat it came from. The
+ * report now expands in place: it takes the bubble's width, tables scroll
+ * inside their own box (ChatMarkdown), and the conversation stays visible.
+ * The text passes through the final-text door here too, so a surface whose
+ * transport bypassed the server door still shows no glossed code and closes
+ * in the asker's language.
  */
 export function AdvisorAnswer({
   text,
@@ -216,22 +180,23 @@ export function AdvisorAnswer({
   const clean = streaming ? text : humanizeFinalText(text)
   const isArabic = answerLocale(clean, "en") === "ar"
   const { conclusion, report } = splitAnswer(clean)
+  const showFull = streaming || !report || reportOpen
 
   return (
     <div dir={isArabic ? "rtl" : "ltr"}>
-      {render(streaming ? clean : conclusion)}
+      {render(showFull ? clean : conclusion)}
       {!streaming && report ? (
         <button
           type="button"
-          onClick={() => setReportOpen(true)}
+          onClick={() => setReportOpen((open) => !open)}
+          aria-expanded={reportOpen}
           className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
         >
-          <FileText className="h-3.5 w-3.5" />
-          {isArabic ? "عرض التقرير الكامل" : "View the full report"}
+          {reportOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
+          {reportOpen
+            ? isArabic ? "إخفاء التقرير" : "Hide the report"
+            : isArabic ? "عرض التقرير الكامل" : "View the full report"}
         </button>
-      ) : null}
-      {reportOpen && report ? (
-        <ReportModal content={clean} isArabic={isArabic} render={render} onClose={() => setReportOpen(false)} />
       ) : null}
     </div>
   )

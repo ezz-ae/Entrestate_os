@@ -93,8 +93,11 @@ const EN: Record<ChatStepKey, StepCopy> = {
     done: (n) => (n !== null ? `Found ${n} notable deal${n === 1 ? "" : "s"}` : "Notable deals scanned"),
   },
   analyze: {
-    running: "Analyzing the data…",
-    done: () => "Analysis complete",
+    // Three direct queries used to narrate as three identical "Analysis
+    // complete" lines (the owner's screenshot). A count makes each line say
+    // what it actually did.
+    running: "Checking the data…",
+    done: (count) => (count === null ? "Checked the data" : `Checked ${count} records`),
   },
 }
 
@@ -140,8 +143,8 @@ const AR: Record<ChatStepKey, StepCopy> = {
     done: (n) => (n !== null ? `تم رصد ${n} من الصفقات البارزة` : "تم فحص أبرز الصفقات"),
   },
   analyze: {
-    running: "جاري تحليل البيانات…",
-    done: () => "اكتمل التحليل",
+    running: "جاري فحص البيانات…",
+    done: (count) => (count === null ? "تم فحص البيانات" : `تم فحص ${count} سجل`),
   },
 }
 
