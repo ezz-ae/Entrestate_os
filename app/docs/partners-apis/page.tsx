@@ -196,7 +196,7 @@ export default async function PartnersApisDocsPage() {
             <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
               <li>Cache: <code className="rounded bg-background/60 px-1 text-xs">public, max-age=3600</code></li>
               <li>Rate limit: 100 req/min authenticated, 10 unauthenticated</li>
-              <li>Free tier: &quot;Powered by Entrestate&quot; (non-removable)</li>
+              <li>Discovery accounts: &quot;Powered by Entrestate&quot; (non-removable)</li>
               <li>Pro: Custom accent color via <code className="rounded bg-background/60 px-1 text-xs">data-accent</code></li>
             </ul>
           </div>

@@ -66,7 +66,7 @@ const competitiveEdges = [
 
 const revenueStreams = [
   {
-    tier: "Free",
+    tier: "Discovery",
     users: "Individual investors",
     features: "Basic search, limited Decision Objects, community-grade evidence",
     model: "Lead generation + brand trust",

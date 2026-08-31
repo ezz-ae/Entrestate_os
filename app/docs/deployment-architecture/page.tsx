@@ -40,7 +40,7 @@ const infraStack = [
   { layer: "Compute", component: "Next.js 15 (App Router)", note: "Server components, streaming RSC, edge runtime for API routes", icon: Zap },
   { layer: "Hosting", component: "Vercel", note: "Global edge CDN, instant rollback, PR preview deployments, ISR", icon: Server },
   { layer: "Database", component: "Neon (PostgreSQL 16)", note: "Serverless Postgres with branching; Prisma ORM for schema + queries", icon: Database },
-  { layer: "Auth", component: "Clerk", note: "Managed auth, JWT session tokens, role-based access (free/pro/enterprise)", icon: Shield },
+  { layer: "Auth", component: "Neon Auth", note: "Google sign-in on the shared .entrestate.com session — one account across the Terminal and the business", icon: Shield },
   { layer: "AI / LLM", component: "Anthropic Claude + AI SDK", note: "claude-sonnet-4-6 for decision copilot; streaming via Vercel AI SDK", icon: Layers },
   { layer: "Storage", component: "Vercel Blob / Neon JSONB", note: "Report artifacts in Blob; evidence payloads in Neon JSONB columns", icon: Database },
 ]
@@ -219,7 +219,7 @@ export default async function DeploymentArchitecturePage() {
           {[
             { path: "GET /api/health", desc: "Basic liveness probe — returns 200 OK when compute is healthy", tag: "Liveness" },
             { path: "GET /api/market-pulse", desc: "Verifies database connectivity and data freshness", tag: "Readiness" },
-            { path: "GET /api/copilot/sessions", desc: "Auth + DB read path — confirms Clerk + Neon integration", tag: "Readiness" },
+            { path: "GET /api/copilot/sessions", desc: "Auth + DB read path — confirms the Neon Auth session and database integration", tag: "Readiness" },
             { path: "GET /properties", desc: "Full render path including decision-infrastructure query", tag: "Smoke" },
           ].map((item) => (
             <div key={item.path} className="flex flex-wrap items-start gap-3 rounded-xl border border-border/50 bg-card/40 px-5 py-3.5">

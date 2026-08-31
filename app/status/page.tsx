@@ -33,7 +33,7 @@ function getServices(locale: AppLocale) {
       {
         name: "الدخول والصلاحيات",
         status: "يعمل",
-        detail: "جلسات المستخدمين تصدر بشكل طبيعي عبر Clerk",
+        detail: "جلسات المستخدمين تصدر بشكل طبيعي عبر Neon Auth (تسجيل جوجل)",
         icon: Shield,
       },
       {
@@ -73,7 +73,7 @@ function getServices(locale: AppLocale) {
     {
       name: "Authentication",
       status: "Operational",
-      detail: "Clerk · Session issuance normal",
+      detail: "Neon Auth · Session issuance normal",
       icon: Shield,
     },
     {

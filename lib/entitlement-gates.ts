@@ -5,7 +5,7 @@ import { getCurrentEntitlement, type CurrentEntitlement } from "@/lib/account-en
  * Paid-tier capability gates — single source of truth for what each tier can do.
  *
  * Product model (decided 2026-05-02):
- *   - Data is FREE: every visitor and free-tier user gets the full evidence-graded
+ *   - Data is OPEN: every visitor and discovery-account user gets the full evidence-graded
  *     read surface (verdicts, areas, developers, properties, market pulse).
  *   - Open connection is PAID: anything that pushes data IN, pulls data OUT
  *     programmatically, or runs Entrestate's scoring against the user's own
