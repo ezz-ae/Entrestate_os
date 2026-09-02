@@ -51,9 +51,9 @@ export default function ArtifactsPage() {
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Embed Widgets</p>
-                <h2 className="mt-2 text-2xl font-semibold text-foreground">Distribution surfaces with locked free-tier branding.</h2>
+                <h2 className="mt-2 text-2xl font-semibold text-foreground">Distribution surfaces with locked discovery branding.</h2>
                 <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                  Use `/api/embed` to deliver overlay-first widgets that preserve the broker page, expose only approved columns, and keep the Entrestate badge locked on free tier.
+                  Use `/api/embed` to deliver overlay-first widgets that preserve the broker page, expose only approved columns, and keep the Entrestate badge locked on discovery accounts.
                 </p>
               </div>
               <div className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">

@@ -130,12 +130,12 @@ const scoreCategories: {
     category: "Enterprise Readiness",
     score: "amber",
     rating: "7 / 10",
-    summary: "Documentation is strong. Partner API surface and embed SDK are described in docs. Clerk provides managed auth with enterprise SSO support. However, SOC 2 compliance is claimed but not yet independently verifiable from the public surface.",
+    summary: "Documentation is strong. Partner API surface and embed SDK are described in docs. Neon Auth carries the shared account session across the Terminal and the business. However, SOC 2 compliance is claimed but not yet independently verifiable from the public surface.",
     evidence: [
       "Partner API docs with attribution engine and rate-limit tiers",
       "Embed SDK described for broker and media surfaces",
-      "Clerk managed auth supports SAML SSO for enterprise plans",
-      "Role-based entitlement system (free/pro/enterprise) implemented",
+      "Neon Auth carries the shared session (Google sign-in) across every entrestate.com surface",
+      "Role-based entitlements on the account: the discovery layer with every account, apps by their own economics",
       "Comprehensive FAQ documentation published",
     ],
     gaps: [

@@ -217,7 +217,7 @@ export async function POST(request: Request) {
     try {
       entitlement = await getCurrentEntitlement(headerAccountKey)
     } catch (error) {
-      console.error("Copilot entitlement lookup failed; using free tier fallback.", { requestId, error })
+      console.error("Copilot entitlement lookup failed; using discovery fallback.", { requestId, error })
     }
     const usageAccountKey = entitlement.accountKey || getAnonymousCopilotAccountKey(request)
     let allowed = true
