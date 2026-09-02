@@ -94,8 +94,14 @@ The live entry points: `/` (chat, search and map), `/markets`, `/chat`,
 - **Database contract** — `.github/workflows/db-contract-nightly.yml` runs
   nightly against a read-only branch, so schema drift surfaces on its own
   rather than during a demo.
-- **Preview integrity** — `.github/workflows/preview-smoke-promote.yml` gates
-  promotion behind a hardened smoke pass that protects production sign-in.
+- **Preview integrity** — `.github/workflows/preview-smoke-promote.yml` is
+  written to gate promotion behind a smoke pass, but it is **dormant, not
+  enforcing**: its preflight requires the `VERCEL_TOKEN` and `VERCEL_ORG_ID`
+  secrets, neither is set on this repository, so the deploy, smoke and promote
+  jobs skip on every push and always have. It is listed here as wiring that
+  exists, not as a gate that has stopped anything. Setting those two secrets
+  turns it on; `tests/ci-claims.test.ts` pins the three defects in
+  `scripts/smoke.sh` that the dormancy had been hiding.
 
 ## Specifications
 
