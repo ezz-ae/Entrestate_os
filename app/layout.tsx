@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server"
 import { CookieConsent } from "@/components/CookieConsent"
 import { ThemeProvider } from "@/components/theme-provider"
 import { CopilotProvider } from "@/components/copilot-provider"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { RuntimeShellProvider } from "@/components/runtime-shell-provider"
 import { getRequestRuntimeShell } from "@/lib/runtime-shell"
 import { SEO, absoluteUrl, getLocaleAlternates, getOpenGraphLocale, getSeoCopy, getSiteUrl } from "@/lib/seo"
@@ -121,6 +122,10 @@ export default async function RootLayout({
                 <CookieConsent />
               </CopilotProvider>
             </ThemeProvider>
+        {/* @vercel/speed-insights has been a dependency since March and was
+            never mounted, so the package shipped in the bundle and measured
+            nothing. Mounting it here is the whole feature. */}
+        <SpeedInsights />
           </NextIntlClientProvider>
         </RuntimeShellProvider>
       </body>
