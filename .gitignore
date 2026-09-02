@@ -37,8 +37,39 @@ _Entrestate*Full Market*.yaml
 docs/artifacts/
 
 # private specs
-Enterprise Decision Infrastructure Finalization.yaml
-Entrestate.yaml
+#
+# These carry live connection strings. The bare names below were already here,
+# but a browser that downloads the same file twice saves it as "X (1).yaml",
+# and that suffix walked straight past the pattern: two Hex exports holding a
+# production Neon URL sat in this public repo from 2026-03-18 to 2026-09-02.
+# The globs are therefore suffix-tolerant, and tests/repo-hygiene.test.ts
+# fails the build if a " (N)" filename is ever committed again.
+Enterprise Decision Infrastructure Finalization*.yaml
+Entrestate*.yaml
+
+# Downloaded-twice artefacts. "report (1).md" is never a file anyone meant to
+# commit; it is the browser's copy of one that already exists.
+*\ (0).*
+*\ (1).*
+*\ (2).*
+*\ (3).*
+*\ (4).*
+*\ (5).*
+*\ (6).*
+*\ (7).*
+*\ (8).*
+*\ (9).*
+
+# Documents and media are not source. They belong in docs/, not lib/ or
+# components/ — a 64 MB screen recording in components/ made every clone of
+# this repo pay for it.
+*.mov
+*.MOV
+*.mp4
+*.docx
+*.pdf
+!docs/**/*.pdf
+!docs/**/*.docx
 
 # data outputs
 data/

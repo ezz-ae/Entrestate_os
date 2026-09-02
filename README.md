@@ -79,10 +79,14 @@ The live entry points: `/` (chat, search and map), `/markets`, `/chat`,
 
 ## How correctness is enforced
 
-- **Tests as the rulebook** — 40 suites under `tests/`, run on every merge,
+- **Tests as the rulebook** — 41 suites under `tests/`, run on every merge,
   covering the TableSpec compiler and its validation, scoring, governance,
   ingestion, profile inference, API error shapes, copy rules, and the
   cross-product account bridge.
+- **Repository hygiene** — `tests/repo-hygiene.test.ts` fails the build if a
+  document, an archive or a file over 1 MB is committed under a source
+  directory, if a filename carries a browser's ` (N)` duplicate suffix, or if
+  any tracked file contains a database URL with a password in it.
 - **Repository contract** — `scripts/guardian.py` checks structural rules
   before a build is allowed.
 - **Documentation truth** — `tests/docs-truth.test.ts` fails the build if a
@@ -102,6 +106,9 @@ The live entry points: `/` (chat, search and map), `/markets`, `/chat`,
 - [`docs/decision-infrastructure/broker-dashboard-features.md`](docs/decision-infrastructure/broker-dashboard-features.md) — broker-facing intelligence
 - [`docs/neon-data-map.md`](docs/neon-data-map.md) — tables, functions and how they are used
 - `site-map.md` — the full route catalog with implementation status
+- [`docs/archive/`](docs/archive/) — dated planning drafts, kept for the record
+  and explicitly **not** authoritative; its README says which numbers to trust
+  instead and why two of the drafts contradict each other
 
 ## Stack
 
