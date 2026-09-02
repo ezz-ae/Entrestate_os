@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest"
  *
  * A second file, components/testimonials-section.tsx, held nine more invented
  * customers with quotes, handles and avatars. Nothing imported it — one import
- * away from shipping. It now sits in _to_delete/ with an .unused extension.
+ * away from shipping. It now sits in quarantine/ with an .unused extension.
  *
  * Two rules, because the codebase already says numbers shown to users are
  * evidence-gated and this is the same rule applied to words:

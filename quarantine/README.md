@@ -1,4 +1,8 @@
-# Not shipped, kept for the record
+# Quarantine — not shipped, kept on purpose
+
+This folder was called `_to_delete/`, which read like leftover mess a repository
+had failed to clean up. It is the opposite: a deliberate hold, with a test
+behind it. Renamed so the name says what the folder is for.
 
 `testimonials-section.tsx.unused` — nine testimonials with invented people:
 Sarah Chen (Brokerage Partner), Marcus Rodriguez (Sales Director), Emily Watson,
