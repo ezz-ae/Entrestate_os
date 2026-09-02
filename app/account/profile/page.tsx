@@ -1,9 +1,7 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
 
 import ProfileSettingsPage from "@/app/settings/profile/page"
-import { buildLoginHref } from "@/lib/auth/navigation"
-import { getSyncedUser } from "@/lib/auth/sync"
+import { requireSyncedUser } from "@/lib/auth/guard"
 import { getRequestLocale } from "@/i18n/request"
 
 export const metadata: Metadata = {
@@ -13,10 +11,7 @@ export const metadata: Metadata = {
 
 export default async function AccountProfilePage() {
   const locale = await getRequestLocale()
-  const user = await getSyncedUser()
-  if (!user) {
-    redirect(buildLoginHref(locale, "/account/profile"))
-  }
+  const user = await requireSyncedUser("/account/profile")
 
   return <ProfileSettingsPage />
 }

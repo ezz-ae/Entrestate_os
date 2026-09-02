@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic"
 
 import Link from "next/link"
 import { ArrowLeft, Globe, KeyRound, ShieldCheck, Zap } from "lucide-react"
-import { redirect } from "next/navigation"
 
 import { AccountSectionNav } from "@/components/account/account-section-nav"
 import ApiKeyManager from "@/components/account/api-key-manager"
@@ -14,8 +13,7 @@ import { Button } from "@/components/ui/button"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
-import { buildLoginHref } from "@/lib/auth/navigation"
-import { getSyncedUser } from "@/lib/auth/sync"
+import { requireSyncedUser } from "@/lib/auth/guard"
 import { prisma } from "@/lib/prisma"
 
 export const metadata: Metadata = {
@@ -26,9 +24,7 @@ export const metadata: Metadata = {
 export default async function ApiKeysPage() {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
-  const user = await getSyncedUser()
-
-  if (!user) redirect(buildLoginHref(locale, "/account/api-keys"))
+  const user = await requireSyncedUser("/account/api-keys")
 
   const entitlement = await getCurrentEntitlement()
   const activeKeyCount = await prisma.apiKey.count({

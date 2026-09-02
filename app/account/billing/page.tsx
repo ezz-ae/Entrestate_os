@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
 import { CheckCircle2, CreditCard, ExternalLink, History, Zap } from "lucide-react"
 
 import { AccountSectionNav } from "@/components/account/account-section-nav"
@@ -8,9 +7,8 @@ import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { buildLoginHref } from "@/lib/auth/navigation"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
-import { getSyncedUser } from "@/lib/auth/sync"
+import { requireSyncedUser } from "@/lib/auth/guard"
 import { listBillingEventsByAccountKey, type BillingActivityEvent } from "@/lib/billing-entitlements"
 import { getRequestLocale } from "@/i18n/request"
 import { type AppLocale, prefixLocalePath } from "@/i18n/locale"
@@ -72,11 +70,7 @@ export default async function BillingPage({
 }) {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
-  const user = await getSyncedUser()
-
-  if (!user) {
-    redirect(buildLoginHref(locale, "/account/billing"))
-  }
+  const user = await requireSyncedUser("/account/billing")
 
   const entitlement = await getCurrentEntitlement(user.id)
   const params = (await searchParams) ?? {}

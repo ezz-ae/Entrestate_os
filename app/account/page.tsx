@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
 import {
   ArrowRight,
   BookOpen,
@@ -20,9 +19,8 @@ import { Footer } from "@/components/footer"
 import { Navbar } from "@/components/navbar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { buildLoginHref } from "@/lib/auth/navigation"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
-import { getSyncedUser } from "@/lib/auth/sync"
+import { requireSyncedUser } from "@/lib/auth/guard"
 import { getCopilotDailyUsage } from "@/lib/copilot-usage"
 import { prisma } from "@/lib/prisma"
 import { getRequestLocale } from "@/i18n/request"
@@ -113,11 +111,7 @@ export default async function AccountPage({
 }) {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
-  const user = await getSyncedUser()
-
-  if (!user) {
-    redirect(buildLoginHref(locale, "/account"))
-  }
+  const user = await requireSyncedUser("/account")
 
   const profile = user.profile
   const entitlement = await getCurrentEntitlement(user.id)

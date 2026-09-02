@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { ArrowLeft, ChevronLeft, ChevronRight, CreditCard, ReceiptText } from "lucide-react"
-import { redirect } from "next/navigation"
 
 import { AccountSectionNav } from "@/components/account/account-section-nav"
 import { Footer } from "@/components/footer"
@@ -9,8 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
-import { buildLoginHref } from "@/lib/auth/navigation"
-import { getSyncedUser } from "@/lib/auth/sync"
+import { requireSyncedUser } from "@/lib/auth/guard"
 import {
   countBillingEventsByAccountKey,
   listBillingEventTypesByAccountKey,
@@ -75,9 +73,7 @@ export default async function BillingActivityPage({
 }) {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
-  const user = await getSyncedUser()
-
-  if (!user) redirect(buildLoginHref(locale, "/account/billing-activity"))
+  const user = await requireSyncedUser("/account/billing-activity")
 
   const params = (await searchParams) ?? {}
   const requestedEventType = toSingleQueryValue(params.event_type)?.trim() || null
