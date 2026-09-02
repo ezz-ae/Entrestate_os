@@ -38,19 +38,24 @@ Every path through the product passes four stages.
 | **Judgment** | Candidates are ranked under the user's decision lens: 65 % market score (the asset's objective quality) and 35 % match score (fit to risk appetite and time horizon). | The ranking is a stated formula, not a black box. |
 | **Action** | The result becomes a Decision Object — report, memo, deck, widget — each shipped with an evidence drawer listing sources, filters and assumptions. | The output can be defended in front of the person who has to sign. |
 
-## What is inside
+## What is inside, and what state each part is in
 
-- **Time Table** — the atomic unit: buildable, saveable, refreshable,
-  exportable, embeddable, auditable.
-- **TableSpec compiler** — user intent to a deterministic `TableSpec` JSON,
-  with an optional LLM-backed path and a rules path that does not need one.
-- **Decision Objects** — reports, presentations, memos, widgets, contracts and
-  automations, each grounded on a Time Table.
-- **Automation Studio** — a workflow builder with persistent state.
-- **Profile Intelligence** — learns preferences and makes its suggestions
-  explicit rather than silently reweighting.
-- **Market scoring** — signal definitions and their governance are documented,
-  and overrides are logged to `investor_override_audit`.
+**BUILT** — code in this repository, exercised by a test ·
+**PARTIAL** — part of the claim exists, a named part does not ·
+**PLANNED** — specified, no code yet. The rows that are not BUILT are the
+reason the rest can be believed.
+
+| Capability | Status | Notes |
+|---|---|---|
+| **Time Table** — the atomic unit: buildable, saveable, refreshable, exportable, embeddable, auditable | BUILT | `/api/timetables`, `/t/:id` |
+| **TableSpec compiler** — intent to a deterministic `TableSpec` JSON | BUILT | rules path always available; the LLM-backed path is opt-in and off by default. `tests/tablespec-compiler.test.ts`, `tests/tablespec-validation.test.ts`, `tests/tablespec-llm.test.ts` |
+| **Decision Objects** — reports, decks, memos, widgets, underwriting | BUILT | `/api/time-table/artifacts`, `/api/time-table/underwrite` |
+| **Market scoring** — signal definitions with documented governance; overrides logged | BUILT | `tests/scoring-engine.test.ts`, `tests/governance.test.ts`; audit table `investor_override_audit` |
+| **Profile Intelligence** — learns preferences and states its suggestions explicitly | BUILT | `tests/profile-inference.test.ts` |
+| **Ingestion and data coverage** | BUILT | `tests/ingestion.test.ts`, `tests/data-coverage.test.ts` |
+| **Cross-product account** — the business account rendered here, never kept here | BUILT | `lib/business-account.ts`, `tests/business-account.test.ts` |
+| **Automation Studio** — workflow builder with persistent state | PARTIAL | the builder and runtime exist; audio, embedding and structured-output nodes run in **preview** |
+| **Evidence drawer on every Decision Object** | PARTIAL | sources and filters are carried through the pipeline; a uniform drawer on every object type is not finished |
 
 Programmatic surfaces: `/api/timetables`, `/api/artifacts`, `/api/profile`,
 `/api/automations`, and the Time Table pipeline under `/api/time-table/*`
