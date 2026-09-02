@@ -39,7 +39,7 @@ export default function AgentSessionsPage() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/storyboard"
+              href="/apps"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent-primary)] text-accent-text-white text-sm font-medium hover:bg-[var(--accent-hover)] transition-colors"
             >
               Launch Storyboard
