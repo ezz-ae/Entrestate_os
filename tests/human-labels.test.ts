@@ -139,7 +139,13 @@ describe("every apps link lands", () => {
     const listing = read("app/apps/page.tsx")
     const docs = read("app/apps/docs/[slug]/page.tsx")
     const slugs = [...listing.matchAll(/\/apps\/docs\/([a-z0-9-]+)/g)].map((m) => m[1])
-    expect(slugs.length).toBeGreaterThanOrEqual(4)
+    // A floor, not a target: its job is to catch the regex silently matching
+    // nothing, which would make the loop below pass over an empty list. It was
+    // 4 until the three creative apps (storyboard, launch timeline, image
+    // studio) were retired from the catalog on 2026-08-31 and their doc pages
+    // removed with them. Raise it when the catalog grows, never to force a
+    // card back onto a page.
+    expect(slugs.length).toBeGreaterThanOrEqual(3)
     for (const slug of slugs) {
       expect(docs, `docs map is missing "${slug}" — the Learn-more link lands on Guide-not-found`).toContain(`"${slug}"`)
     }

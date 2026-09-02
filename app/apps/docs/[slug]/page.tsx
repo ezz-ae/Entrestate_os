@@ -22,57 +22,6 @@ type DocPage = {
 }
 
 const docPagesEn: Record<string, DocPage> = {
-  "storyboard-builder": {
-    title: "Storyboard Builder",
-    subtitle: "Turn project media into a launch-ready storyboard in minutes.",
-    useCases: ["New project launch", "Investor pitch", "Developer portfolio update"],
-    sections: [
-      {
-        title: "What it does",
-        body: "Builds a visual story from your project media so teams can pitch faster and stay on message.",
-      },
-      {
-        title: "Why it matters",
-        body: "A clean storyboard removes guesswork. Buyers see the narrative, not just scattered assets.",
-      },
-    ],
-    steps: ["Pick a project", "Choose a storyline", "Export the storyboard pack"],
-    cta: { label: "Open Storyboard Builder", href: "/storyboard" },
-  },
-  "launch-timeline": {
-    title: "Launch Timeline",
-    subtitle: "Create a timed media sequence for campaigns and listings.",
-    useCases: ["Campaign rollouts", "Pre-launch nurture", "Weekly listing cadence"],
-    sections: [
-      {
-        title: "What it does",
-        body: "Turns project media into a structured launch plan with clear timing and asset order.",
-      },
-      {
-        title: "Why it matters",
-        body: "Launch plans keep teams aligned and keep marketing consistent across channels.",
-      },
-    ],
-    steps: ["Select campaign window", "Set sequence blocks", "Share the timeline"],
-    cta: { label: "Open Launch Timeline", href: "/timeline" },
-  },
-  "image-playground": {
-    title: "Image Studio",
-    subtitle: "Create listing-ready visuals from your project media library.",
-    useCases: ["Listing refresh", "Social media packs", "Broker presentations"],
-    sections: [
-      {
-        title: "What it does",
-        body: "Creates clean, branded visuals with consistent framing and export sizes.",
-      },
-      {
-        title: "Why it matters",
-        body: "Better visuals lead to better response rates and fewer back-and-forth edits.",
-      },
-    ],
-    steps: ["Pick the asset set", "Apply a style pack", "Export for listings"],
-    cta: { label: "Open Image Studio", href: "/image-playground" },
-  },
   "automation-first-builder": {
     title: "Automation-First Builder",
     subtitle: "Create real estate automations with a guided business-first flow.",
@@ -127,57 +76,6 @@ const docPagesEn: Record<string, DocPage> = {
 }
 
 const docPagesAr: Record<string, DocPage> = {
-  "storyboard-builder": {
-    title: "لوحة السرد",
-    subtitle: "حوّل مواد المشروع إلى عرض بصري متماسك يصلح للإطلاق والعرض على المستثمر خلال دقائق.",
-    useCases: ["إطلاق مشروع جديد", "عرض للمستثمر", "تحديث ملف المطور"],
-    sections: [
-      {
-        title: "ماذا ينجز؟",
-        body: "يرتب صور المشروع ومشاهده ورسائله في تسلسل واضح يساعد الفريق على تقديم المشروع بنفس الحكاية في كل مرة.",
-      },
-      {
-        title: "لماذا يفيد؟",
-        body: "حين تكون القصة واضحة، يفهم العميل الفكرة بسرعة ويرى المشروع كوحدة واحدة بدل ملفات متفرقة وصور بلا سياق.",
-      },
-    ],
-    steps: ["اختر المشروع", "حدد زاوية العرض", "صدّر الحزمة الجاهزة"],
-    cta: { label: "افتح لوحة السرد", href: "/storyboard" },
-  },
-  "launch-timeline": {
-    title: "خطة الإطلاق",
-    subtitle: "ابنِ مسار نشر واضح للحملة والمواد التسويقية بحيث يعرف كل فريق ماذا يخرج ومتى.",
-    useCases: ["إطلاق حملة", "تهيئة ما قبل الإطلاق", "جدول المحتوى الأسبوعي"],
-    sections: [
-      {
-        title: "ماذا ينجز؟",
-        body: "يجمع مواد المشروع داخل خطة زمنية مرتبة تحدد التوقيت وتسلسل الأصول والنوافذ الأنسب للنشر.",
-      },
-      {
-        title: "لماذا يفيد؟",
-        body: "يعطي الفريق صورة واحدة متفقًا عليها، ويمنع التخبط بين القنوات أو تكرار الرسالة بصيغ متضاربة.",
-      },
-    ],
-    steps: ["اختر نافذة الإطلاق", "رتب المراحل", "شارك الخطة مع الفريق"],
-    cta: { label: "افتح خطة الإطلاق", href: "/timeline" },
-  },
-  "image-playground": {
-    title: "ستوديو الصور",
-    subtitle: "جهّز صورًا نظيفة وواضحة للإدراج والعرض والمواد التسويقية من مكتبة المشروع نفسها.",
-    useCases: ["تجديد صور الإدراج", "حزم للسوشال", "عروض الوسطاء"],
-    sections: [
-      {
-        title: "ماذا ينجز؟",
-        body: "يبني صورًا موحدة الهوية والمقاس والإخراج بحيث تبقى المواد متناسقة مهما اختلف الاستخدام.",
-      },
-      {
-        title: "لماذا يفيد؟",
-        body: "الصور الجيدة ترفع جودة الانطباع وتقلل المراجعات اليدوية المتكررة قبل النشر أو الإرسال.",
-      },
-    ],
-    steps: ["اختر مجموعة الصور", "طبّق النمط المناسب", "صدّر النسخ الجاهزة"],
-    cta: { label: "افتح ستوديو الصور", href: "/image-playground" },
-  },
   "automation-first-builder": {
     title: "مصمم الأتمتة",
     subtitle: "حوّل احتياج العمل إلى تدفق آلي واضح بدون الدخول في إعدادات تقنية معقدة.",

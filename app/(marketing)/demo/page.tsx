@@ -30,13 +30,13 @@ export default function DemoPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Link href="/storyboard">
+              <Link href="/apps">
                 <Button variant="outline" size="sm" className="h-8 px-3 text-xs bg-transparent">
                   <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                   Try Storyboard
                 </Button>
               </Link>
-              <Link href="/timeline">
+              <Link href="/apps">
                 <Button size="sm" className="h-8 px-3 text-xs">
                   Open Editor
                   <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -94,7 +94,7 @@ export default function DemoPage() {
                     We mapped the launch story from arrival to amenities and skyline. The master board set the tone,
                     then we refined each panel and added smooth transitions for pacing.
                   </p>
-                  <Link href="/storyboard">
+                  <Link href="/apps">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -120,7 +120,7 @@ export default function DemoPage() {
                     We arranged the clips on the timeline, pacing the arrival, lobby, amenities, and skyline moments.
                     Added ambient audio and exported the final cut for launch use.
                   </p>
-                  <Link href="/timeline">
+                  <Link href="/apps">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -163,7 +163,7 @@ export default function DemoPage() {
           <p className="text-muted-foreground text-sm mb-6 max-w-lg mx-auto">
             Start with a simple brief and let the studio handle the rest — from storyboard to final cut.
           </p>
-          <Link href="/storyboard">
+          <Link href="/apps">
             <Button size="lg" className="h-11 px-8">
               <Sparkles className="w-4 h-4 mr-2" />
               Start Creating

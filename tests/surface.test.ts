@@ -44,7 +44,25 @@ function pageRoutes(): string[] {
   return [...new Set(out)]
 }
 
-/** Every path the app links to, from any href / push / nav config. */
+/**
+ * Trees that belong to a RETIRED surface. Links found inside one of these do
+ * not keep a route visible.
+ *
+ * `seq/` is the creative studio that served /storyboard, /image-playground and
+ * /timeline. Those three were retired from the claim set on 2026-08-31 in
+ * favour of the workspace studio, and hidden in lib/surface.ts. Its components
+ * still link to one another — a sidebar, a landing page, a creation library —
+ * which is correct for a subtree nobody can reach any more, and is not a
+ * product link keeping a live page alive. Counting them would mean a retired
+ * surface could never be retired, because it always cites itself.
+ *
+ * This is deliberately a LIST OF TREES, not a list of routes: it stays honest
+ * only while every directory in it is genuinely unreachable. Remove a tree
+ * from here the moment any of its routes goes back on the product.
+ */
+const RETIRED_TREES = ["seq"]
+
+/** Every path the LIVE app links to, from any href / push / nav config. */
 function linkedPaths(): Set<string> {
   const out = new Set<string>()
   const PAT = /(?:href|path|to|url|push|replace|redirect)\s*[=:(]\s*[`'"](\/[a-zA-Z0-9/[\]._-]*)/g
@@ -62,6 +80,7 @@ function linkedPaths(): Set<string> {
     }
   }
   for (const d of ["app", "components", "lib", "seq", "agent-builder", "automation-builder", "ai-data-scientist"]) {
+    if (RETIRED_TREES.includes(d)) continue
     walk(path.join(ROOT, d))
   }
   return out

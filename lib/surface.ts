@@ -82,6 +82,18 @@ export const HIDDEN_ROUTES: Record<string, string> = {
   '/reports/generated': 'an intermediate report list nothing links to',
   '/onboarding': 'an onboarding flow no signup path reaches',
 
+  // ── Retired from the claim set, 2026-08-31 ────────────────────────────────
+  // The owner's ruling: with the workspace automation/creative studio running
+  // integrated, these three stop mattering — the Terminal connects to that
+  // studio and to the time-table instead of carrying its own creative
+  // surfaces. The code stays (hiding is reversible; deleting is not), but the
+  // product no longer offers them, so they must not answer 200 to a visitor
+  // or a crawler. Their catalog cards and doc pages were removed in the same
+  // change, because this file's own rule is that hiding never breaks a link.
+  '/storyboard': 'a creative surface retired in favour of the workspace studio',
+  '/image-playground': 'a creative surface retired in favour of the workspace studio',
+  '/timeline': 'a creative surface retired in favour of the workspace studio',
+
   // ── Settings and account, split across two builds ──────────────────────────
   '/settings/brand': 'settings split across two builds; this half is unreachable',
   '/settings/configuration': 'settings split across two builds; this half is unreachable',
