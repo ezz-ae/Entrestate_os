@@ -60,12 +60,20 @@ true the row says so, and [`db/README.md`](db/README.md) records why 28 of the
 | **Profile Intelligence** — learns preferences and states its suggestions explicitly | BUILT | `tests/profile-inference.test.ts` |
 | **Ingestion and data coverage** | BUILT | `tests/ingestion.test.ts`, `tests/data-coverage.test.ts` |
 | **Cross-product account** — the business account rendered here, never kept here | BUILT | `lib/business-account.ts`, `tests/business-account.test.ts` |
-| **Automation Studio** — workflow builder with persistent state | PARTIAL | the builder and runtime exist; audio, embedding and structured-output nodes run in **preview** |
+| **Automation Studio** — workflow builder with persistent state | PARTIAL | the builder (20+ routes under `app/api/automation-builder/`) and `lib/automation-runtime/` exist, and `agent_definitions` was created in production on 2026-09-03 — before that the Studio wrote to a table that did not exist. `agent_runs` still has no writer, so a run leaves no record, and both front doors (`/automations`, `/automation-runtime`) are deliberate 404s in `lib/surface.ts`. Audio, embedding and structured-output nodes run in **preview** |
 | **Evidence drawer on every Decision Object** | PARTIAL | sources and filters are carried through the pipeline; a uniform drawer on every object type is not finished |
 
 Programmatic surfaces: `/api/timetables`, `/api/artifacts`, `/api/profile`,
-`/api/automations`, and the Time Table pipeline under `/api/time-table/*`
-(compile, preview, summary, artifacts, underwrite).
+and the Time Table pipeline under `/api/time-table/*` (compile, preview,
+summary, artifacts, underwrite).
+
+`/api/automations` manages automation definitions — create, list, enable,
+disable, delete — each anchored to a Time Table or a Decision Object, with
+ownership resolved through that anchor. It does **not** dispatch them: nothing
+yet re-runs a table and fires what is attached to it, so every response carries
+`dispatch: "not-implemented"` rather than leaving a caller to discover it from
+an automation that never runs. The loop that would run them is
+[specified and unbuilt](docs/decision-infrastructure/automation-notebook-loop.md).
 
 ## The public surface is deliberately narrow
 
@@ -116,6 +124,7 @@ The live entry points: `/` (chat, search and map), `/markets`, `/chat`,
 - [`docs/decision-infrastructure/market-scoring-signals.md`](docs/decision-infrastructure/market-scoring-signals.md) — signal definitions and governance
 - [`docs/decision-infrastructure/core-data-objects.md`](docs/decision-infrastructure/core-data-objects.md) — Time Table, TableSpec, Decision Objects, Profile Intelligence
 - [`docs/decision-infrastructure/broker-dashboard-features.md`](docs/decision-infrastructure/broker-dashboard-features.md) — broker-facing intelligence
+- [`docs/decision-infrastructure/automation-notebook-loop.md`](docs/decision-infrastructure/automation-notebook-loop.md) — **SPECIFIED, not built**: how a Time Table refresh, an automation and a notebook page would form a loop, with the five pieces that are missing named
 - [`docs/neon-data-map.md`](docs/neon-data-map.md) — tables, functions and how they are used
 - `site-map.md` — the full route catalog with implementation status
 - [`docs/archive/`](docs/archive/) — dated planning drafts, kept for the record
