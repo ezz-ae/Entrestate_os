@@ -15,7 +15,7 @@ import { libraryArticles } from "@/lib/library-data"
 import { SEO, absoluteUrl, getLocaleAlternates, getSeoCopy } from "@/lib/seo"
 import { getPlatformMetrics } from "@/lib/platform-metrics.server"
 import { getRequestRuntimeShell } from "@/lib/runtime-shell"
-import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
+import { PLATFORM_METRICS_FALLBACK, coverageLabel } from "@/lib/platform-metrics"
 import { getSessionUser } from "@/lib/auth/server"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
@@ -450,14 +450,10 @@ export default async function HomePage({
             : null,
       }
     : null
-  const syncLabel = new Date(metrics.dataAsOf).toLocaleString(isArabic ? "ar-AE-u-nu-latn" : "en-AE", {
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Asia/Dubai",
-  }) + " GST"
+  // Was: new Date(metrics.dataAsOf) — which is the request clock, so the hero
+  // read "Sep 03, 22:14 GST" on every load while the newest DLD transaction in
+  // the database was 21 August. Now it states what the data covers, or nothing.
+  const syncLabel = coverageLabel(metrics.coverageThrough, isArabic)
 
   if (runtimeShell === "mobile") {
     return (
@@ -514,9 +510,12 @@ export default async function HomePage({
                   : "Trust bar for evidence-backed operations"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
+                {/* syncLabel is null when the coverage date cannot be read, and
+                    the clause drops out entirely rather than printing "last
+                    cycle null" or, worse, a time pulled from the request clock. */}
                 {isArabic
-                  ? `${formatter.format(totalProjects)} أصل مقيّم · ${formatter.format(buySignals)} إشارة نافذة شراء · آخر دورة ${syncLabel}`
-                  : `${formatter.format(totalProjects)} scored assets · ${formatter.format(buySignals)} buy-window signals · last cycle ${syncLabel}`}
+                  ? `${formatter.format(totalProjects)} أصل مقيّم · ${formatter.format(buySignals)} إشارة نافذة شراء${syncLabel ? ` · ${syncLabel}` : ""}`
+                  : `${formatter.format(totalProjects)} scored assets · ${formatter.format(buySignals)} buy-window signals${syncLabel ? ` · ${syncLabel}` : ""}`}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {trustMarkers.map((marker) => (
