@@ -391,15 +391,38 @@ model ApiKey {
   @@map("api_keys")
 }
 
+/// The columns are @map'd because this table already exists and holds data.
+///
+/// It was written by hand, in snake_case, like the rest of this database. The
+/// model was written later without the mappings, so Prisma addressed "userId"
+/// and "riskBias" — which in Postgres are different columns from user_id and
+/// risk_bias, not the same ones spelled differently. Every read and write
+/// against this table therefore failed, and `prisma db push` would have
+/// "fixed" it by adding seven camelCase columns and dropping seventeen live
+/// ones, including email, budget_min, budget_max, preferred_cities,
+/// golden_visa_required and role.
+///
+/// So the mappings are the fix, not a rename and not a push. Verified against
+/// the live table on 2026-09-02: seven of the eight fields already had their
+/// column, and only inferred_signals had to be added (nullable, additive).
+///
+/// WHAT THIS MODEL STILL IS NOT: a complete description of the table. The live
+/// user_profiles also has id (its real primary key), email, display_name,
+/// investor_archetype, budget_min, budget_max, preferred_cities,
+/// preferred_property_types, golden_visa_required, role and created_at, and
+/// its risk_bias is nullable with default 0.5 where this model says NOT NULL
+/// 0.65. Reads and writes work regardless — Prisma only touches the columns it
+/// names. `prisma db push` does not: it would drop every column above.
+/// See db/README.md. Reconciling the model to the table is its own change.
 model UserProfile {
-  userId          String             @id
-  teamId          String?            // Link to a team for shared strategic context
-  riskBias        Float              @default(0.65) // Default market weight
-  horizon         String?            // "Ready", "1-2yr", etc.
-  yieldVsSafety   Float              @default(0.5)
-  preferredMarkets String[]
-  inferredSignals Json?              // Auto-learned features
-  updatedAt       DateTime           @updatedAt
+  userId          String             @id @map("user_id")
+  teamId          String?            @map("team_id") // Link to a team for shared strategic context
+  riskBias        Float              @default(0.65) @map("risk_bias") // Default market weight
+  horizon         String?            // "Ready", "1-2yr", etc. — same name in both
+  yieldVsSafety   Float              @default(0.5) @map("yield_vs_safety")
+  preferredMarkets String[]          @map("preferred_markets")
+  inferredSignals Json?              @map("inferred_signals") // Auto-learned features
+  updatedAt       DateTime           @updatedAt @map("updated_at")
   
   user            User               @relation(fields: [userId], references: [id])
   team            Team?              @relation(fields: [teamId], references: [id])
