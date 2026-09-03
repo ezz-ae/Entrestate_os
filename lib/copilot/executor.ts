@@ -1,6 +1,7 @@
 import "server-only"
 import { Prisma } from "@prisma/client"
 import { withStatementTimeout } from "@/lib/db-guardrails"
+import { residentialSaleFilter, SALES_BASIS } from "@/lib/dld/sales"
 import {
   MARKET_TABLES,
   INVENTORY_IS_CURATED,
@@ -77,6 +78,13 @@ const DLD_FEED_TABLE = MARKET_TABLES.dldFeed
 const DEVELOPER_REGISTRY_SQL = Prisma.raw(DEVELOPER_REGISTRY_TABLE)
 const DLD_AREA_BENCHMARKS_SQL = Prisma.raw(DLD_AREA_BENCHMARKS_TABLE)
 const DLD_TRANSACTIONS_SQL = Prisma.raw(DLD_TRANSACTIONS_TABLE)
+/**
+ * The residential-sale filter, as a fragment these queries can drop into a
+ * WHERE. Built from constants in lib/dld/sales.ts — no caller input reaches it.
+ * Every price statistic below is computed on this basis; see that module for
+ * what the numbers looked like when they were not.
+ */
+const RESIDENTIAL_SALE_SQL = Prisma.raw(residentialSaleFilter())
 
 /** Exported for tests: the tables this module reads, all schema-qualified. */
 export const COPILOT_TABLES = {
@@ -1054,13 +1062,31 @@ export async function executeDldTransactionSearch(input: DldTransactionSearchInp
     STATEMENT_TIMEOUT_MS,
   )) as DbRow[])
 
+  /**
+   * THE ROWS ANSWER THE SEARCH; THE STATS ANSWER A DIFFERENT QUESTION.
+   *
+   * A search for "Palm Jumeirah" should list whatever is there — land, a whole
+   * building, a mortgage registration if that is what the caller asked for. An
+   * AVERAGE over that same mixture is not a price, it is an artefact: land in
+   * this table has a median of AED 11.2m against an apartment median of 1.3m,
+   * so a handful of plots decides the number a customer reads.
+   *
+   * So the stats carry the caller's filters AND the residential-sale basis, and
+   * the envelope names that basis. When the two do not overlap — a deliberate
+   * search for land, say — this returns zero rows and `stats` reports zero
+   * rather than a number computed on something else.
+   */
+  const statsWhere = whereClause
+    ? `${whereClause} AND ${residentialSaleFilter()}`
+    : `WHERE ${residentialSaleFilter()}`
+
   const statsSql = `
     SELECT COUNT(*) as total_txns,
            SUM(amount) as total_volume,
            AVG(amount)::bigint as avg_price,
            PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY amount)::bigint as median_price
     FROM ${DLD_TRANSACTIONS_TABLE}
-    ${whereClause}
+    ${statsWhere}
   `
 
   const statsRows = normalizeRows((await withStatementTimeout(
@@ -1072,6 +1098,9 @@ export async function executeDldTransactionSearch(input: DldTransactionSearchInp
     source: "dld_transactions_arvo",
     data_as_of: nowIso(),
     count: rows.length,
+    // `stats` is computed on this basis; `rows` is not. Naming it is what keeps
+    // the two from being read as the same set.
+    stats_basis: SALES_BASIS,
     stats: statsRows[0] || {},
     rows,
   }
@@ -1116,6 +1145,7 @@ export async function executeDldMarketPulse() {
           COUNT(*) as total_transactions,
           SUM(amount) as total_volume,
           AVG(amount)::bigint as avg_price,
+          PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY amount)::bigint as median_price,
           COUNT(DISTINCT area) as unique_areas,
           COUNT(DISTINCT project) as unique_projects,
           MIN(transaction_date) as date_from,
@@ -1127,6 +1157,7 @@ export async function executeDldMarketPulse() {
           AVG(amount) FILTER (WHERE reg_type = 'Off-Plan')::bigint as avg_offplan,
           AVG(amount) FILTER (WHERE reg_type = 'Ready')::bigint as avg_ready
         FROM ${DLD_TRANSACTIONS_SQL}
+        WHERE ${RESIDENTIAL_SALE_SQL}
       `,
     STATEMENT_TIMEOUT_MS,
   )) as DbRow[])
@@ -1139,9 +1170,28 @@ export async function executeDldMarketPulse() {
                SUM(amount) as volume,
                AVG(amount)::bigint as avg_price
         FROM ${DLD_TRANSACTIONS_SQL}
+        WHERE ${RESIDENTIAL_SALE_SQL}
         GROUP BY area
         ORDER BY volume DESC
         LIMIT 10
+      `,
+    STATEMENT_TIMEOUT_MS,
+  )) as DbRow[])
+
+  /**
+   * HOW MUCH THIS BASIS REMOVES, reported rather than assumed.
+   *
+   * The correction is large — on 2026-09-03 it took the average from AED 3.59m
+   * to 2.02m — so the size of it is a fact the caller is entitled to, not a
+   * detail to hide behind a cleaner number. It also makes the filter's own
+   * failure visible: if this ever reads zero, the filter stopped filtering.
+   */
+  const basisRows = normalizeRows((await withStatementTimeout(
+    (tx) =>
+      tx.$queryRaw<DbRow[]>`
+        SELECT COUNT(*)::int AS total_rows,
+               COUNT(*) FILTER (WHERE ${RESIDENTIAL_SALE_SQL})::int AS basis_rows
+        FROM ${DLD_TRANSACTIONS_SQL}
       `,
     STATEMENT_TIMEOUT_MS,
   )) as DbRow[])
@@ -1160,6 +1210,15 @@ export async function executeDldMarketPulse() {
   return {
     source: "dld_transactions_arvo + dld_area_benchmarks_live",
     data_as_of: nowIso(),
+    // Stated on the envelope so a reader never has to assume what was averaged.
+    basis: SALES_BASIS,
+    // Counted directly, not derived as total − excluded: a NULL prop_sub_type
+    // makes the IN test NULL and lands the row in NEITHER count, so subtraction
+    // would quietly invent rows that are in the basis and are not.
+    rows_in_basis: basisRows[0]?.basis_rows ?? null,
+    rows_outside_basis: basisRows[0]?.total_rows != null && basisRows[0]?.basis_rows != null
+      ? Number(basisRows[0].total_rows) - Number(basisRows[0].basis_rows)
+      : null,
     overview: overviewRows[0] || null,
     top_areas_by_volume: topAreasByVolume,
     top_areas_by_velocity: topAreasByVelocity,
