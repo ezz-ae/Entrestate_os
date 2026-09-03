@@ -2,6 +2,7 @@ import "server-only"
 import { Prisma } from "@prisma/client"
 import { withStatementTimeout } from "@/lib/db-guardrails"
 import { residentialSaleFilter, SALES_BASIS } from "@/lib/dld/sales"
+import { monthlyCoverageSql, summariseCoverage, type CoverageRow } from "@/lib/dld/coverage"
 import {
   MARKET_TABLES,
   INVENTORY_IS_CURATED,
@@ -1207,6 +1208,34 @@ export async function executeDldMarketPulse() {
     STATEMENT_TIMEOUT_MS,
   )) as DbRow[])
 
+  /**
+   * IS THE SPAN THIS SUMMARY COVERS ACTUALLY CONTINUOUS?
+   *
+   * Measured on the same rows every price above is computed on, because
+   * coverage of a different set answers a different question. On 2026-09-03
+   * this returns four missing months and two partial ones — so "32,803
+   * transactions this year" was describing ten weeks and two half-months.
+   *
+   * Non-fatal: a coverage read that fails costs the caller a warning, never the
+   * numbers. But it fails LOUDLY into the envelope as null rather than silently
+   * as "continuous", because absent evidence of a gap is not evidence of none.
+   */
+  const coverage = await withStatementTimeout(
+    (tx) => tx.$queryRawUnsafe<CoverageRow[]>(
+      monthlyCoverageSql(DLD_TRANSACTIONS_TABLE, residentialSaleFilter()),
+    ),
+    STATEMENT_TIMEOUT_MS,
+  )
+    .then((rows) => summariseCoverage(
+      (rows as unknown as Array<Record<string, unknown>>).map((r) => ({
+        month: String(r.month ?? ""),
+        transactions: Number(r.transactions ?? 0),
+        daysWithData: Number(r.days_with_data ?? 0),
+        daysInMonth: Number(r.days_in_month ?? 0),
+      })),
+    ))
+    .catch(() => null)
+
   return {
     source: "dld_transactions_arvo + dld_area_benchmarks_live",
     data_as_of: nowIso(),
@@ -1216,6 +1245,9 @@ export async function executeDldMarketPulse() {
     // makes the IN test NULL and lands the row in NEITHER count, so subtraction
     // would quietly invent rows that are in the basis and are not.
     rows_in_basis: basisRows[0]?.basis_rows ?? null,
+    // The span these numbers describe, and whether it has holes in it. Null
+    // means the check could not run — not that the data is continuous.
+    coverage,
     rows_outside_basis: basisRows[0]?.total_rows != null && basisRows[0]?.basis_rows != null
       ? Number(basisRows[0].total_rows) - Number(basisRows[0].basis_rows)
       : null,
