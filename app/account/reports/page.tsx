@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic"
 
 import Link from "next/link"
 import { ArrowLeft, Download, ExternalLink, FileText, MessageSquare, Sparkles } from "lucide-react"
-import { redirect } from "next/navigation"
 
 import { AccountSectionNav } from "@/components/account/account-section-nav"
 import { Footer } from "@/components/footer"
@@ -12,8 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
-import { buildLoginHref } from "@/lib/auth/navigation"
-import { getSyncedUser } from "@/lib/auth/sync"
+import { requireSyncedUser } from "@/lib/auth/guard"
 import { prisma } from "@/lib/prisma"
 
 export const metadata: Metadata = {
@@ -75,9 +73,7 @@ function formatDate(value: Date, locale: AppLocale) {
 export default async function ReportsPage() {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
-  const user = await getSyncedUser()
-
-  if (!user) redirect(buildLoginHref(locale, "/account/reports"))
+  const user = await requireSyncedUser("/account/reports")
   const terminalHref = prefixLocalePath("/me?openChat=true", locale)
 
   const reports = await prisma.assistantReport.findMany({
