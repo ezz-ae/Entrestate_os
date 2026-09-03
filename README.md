@@ -110,6 +110,7 @@ The live entry points: `/` (chat, search and map), `/markets`, `/chat`,
 - [`docs/decision-infrastructure/market-scoring-signals.md`](docs/decision-infrastructure/market-scoring-signals.md) — signal definitions and governance
 - [`docs/decision-infrastructure/core-data-objects.md`](docs/decision-infrastructure/core-data-objects.md) — Time Table, TableSpec, Decision Objects, Profile Intelligence
 - [`docs/decision-infrastructure/broker-dashboard-features.md`](docs/decision-infrastructure/broker-dashboard-features.md) — broker-facing intelligence
+- [`docs/decision-infrastructure/automation-notebook-loop.md`](docs/decision-infrastructure/automation-notebook-loop.md) — **SPECIFIED, not built**: how a Time Table refresh, an automation and a notebook page would form a loop, with the five pieces that are missing named
 - [`docs/neon-data-map.md`](docs/neon-data-map.md) — tables, functions and how they are used
 - `site-map.md` — the full route catalog with implementation status
 - [`docs/archive/`](docs/archive/) — dated planning drafts, kept for the record
