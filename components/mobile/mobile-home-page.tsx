@@ -22,7 +22,8 @@ type Props = {
   ratedDevelopers: number
   buySignals: number
   dldTransactions: number
-  syncLabel: string
+  /** Null when the coverage date cannot be read — render nothing, not a guess. */
+  syncLabel: string | null
   topProject: TopProject
 }
 
@@ -164,9 +165,11 @@ export function MobileHomePage({
               ? `${formatInteger(buySignals, locale)} إشارة نافذة شراء`
               : `${formatInteger(buySignals, locale)} buy-window signals`}
           </span>
-          <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11px] text-muted-foreground">
-            {isArabic ? `آخر دورة ${syncLabel}` : `Last cycle ${syncLabel}`}
-          </span>
+          {syncLabel ? (
+            <span className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-[11px] text-muted-foreground">
+              {syncLabel}
+            </span>
+          ) : null}
         </div>
       </section>
 

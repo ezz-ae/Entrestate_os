@@ -30,7 +30,7 @@ import { Button } from "@/components/ui/button"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { getPlatformMetrics } from "@/lib/platform-metrics.server"
-import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
+import { PLATFORM_METRICS_FALLBACK, coverageLabel } from "@/lib/platform-metrics"
 
 export const dynamic = "force-dynamic"
 
@@ -86,17 +86,19 @@ function marketSentiment(buyPct: number) {
   return { label: "Cautious", sub: "Hold & monitor phase", color: "border-red-400/40 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400", dot: "bg-red-400" }
 }
 
-function formatRelativeTime(iso: string) {
-  try {
-    const diff = Date.now() - new Date(iso).getTime()
-    const h = Math.floor(diff / 3_600_000)
-    if (h < 1) return "Updated just now"
-    if (h < 24) return `Updated ${h}h ago`
-    return `Updated ${Math.floor(h / 24)}d ago`
-  } catch {
-    return "Recently updated"
-  }
-}
+/*
+ * formatRelativeTime() used to live here and was deleted, not repaired.
+ *
+ * It measured `Date.now()` against `homepage.data_as_of`, and every read model
+ * in lib/decision-infrastructure.ts stamps that field with `new Date()`. So the
+ * difference was always under an hour and the Decision Terminal header always
+ * said "Updated just now" — and when the read failed outright it said
+ * "Recently updated", which is a claim with no reading behind it at all.
+ *
+ * There is no version of a relative time that is honest here, because the input
+ * was never a measurement. The header now states the DLD coverage boundary from
+ * PlatformMetrics.coverageThrough, and renders nothing when that is unknown.
+ */
 
 function generateInsight(buyPct: number, avgYield: number | null, highConfidencePct: number, topIntent: string) {
   const parts: string[] = []
@@ -148,7 +150,7 @@ export default async function OverviewPage() {
 
   const sentiment = marketSentiment(buyPct)
   const insightText = generateInsight(buyPct, avgYield, highConfidencePct, topIntent)
-  const updatedLabel = formatRelativeTime(homepage.data_as_of)
+  const updatedLabel = coverageLabel(pulse.coverageThrough, isArabic)
 
   const safeInt = (n: any) => {
     const v = Number(n)
@@ -172,8 +174,14 @@ export default async function OverviewPage() {
             <div>
               <div className="flex items-center gap-2">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">UAE Real Estate</p>
-                <span className="text-muted-foreground/30">·</span>
-                <p className="text-xs text-muted-foreground">{updatedLabel}</p>
+                {/* The separator belongs to the label, so a missing coverage
+                    date leaves no orphaned dot hanging after the eyebrow. */}
+                {updatedLabel ? (
+                  <>
+                    <span className="text-muted-foreground/30">·</span>
+                    <p className="text-xs text-muted-foreground">{updatedLabel}</p>
+                  </>
+                ) : null}
               </div>
               <h1 className="mt-1.5 text-2xl font-bold text-foreground md:text-3xl tracking-tight">{isArabic ? "محطة القرار" : "Decision Terminal"}</h1>
             </div>

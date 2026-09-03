@@ -22,6 +22,7 @@ import { ReadingControls } from "@/components/reading-controls"
 import { ExplainWithChat } from "@/components/explain-with-chat"
 import type { InventoryRow, MarketScoreInventoryResponse } from "@/lib/market-score/types"
 import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
+import { coverageLabel } from "@/lib/platform-metrics"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 type Category = "all" | LibraryCategory
@@ -245,11 +246,14 @@ export default function LibraryPage() {
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {isArabic ? "كل مادة في هذه المكتبة تمر بقراءة وتحليل وصياغة داخل Entrestate. هدفنا أن نحول الإشارة السوقية إلى معنى مفهوم يمكن الرجوع إليه، من دون دفعك إلى قرار شراء أو بيع." : "Every piece in the Library is researched, written, and signed by Entrestate analysts. We translate signals into plain market language and explain how to read the numbers without pushing buy or sell decisions."}
                 </p>
-                <p className="mt-3 text-xs text-muted-foreground/80">
-                  {isArabic
-                    ? `آخر تحديث للبيانات: ${new Date(metrics.dataAsOf).toLocaleString("ar-AE-u-nu-latn", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Dubai" })} GST`
-                    : `Data refreshed ${new Date(metrics.dataAsOf).toLocaleString("en-AE", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Dubai" })} GST`}
-                </p>
+                {/* Was "Data refreshed <now>" — metrics.dataAsOf is the request
+                    clock, so this line was fresh on every load regardless of the
+                    pipeline. It now states the coverage boundary, or nothing. */}
+                {coverageLabel(metrics.coverageThrough, isArabic) ? (
+                  <p className="mt-3 text-xs text-muted-foreground/80">
+                    {coverageLabel(metrics.coverageThrough, isArabic)}
+                  </p>
+                ) : null}
               </div>
               <div className="mt-8 grid grid-cols-3 gap-4">
                 <div>
