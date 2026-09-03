@@ -205,3 +205,44 @@ describe("the query asks the database the question this module claims to answer"
     expect(areaPricingSql("t", -50)).toContain(">= 1")
   })
 })
+
+describe("the gate the endpoint announces is the gate it applies", () => {
+  /**
+   * SHIPPED AND CAUGHT ON THE LIVE ENDPOINT, NOT IN A TEST.
+   *
+   * The first version of the route read
+   * `Number(searchParams.get("minSample"))`. With no parameter that is
+   * `Number(null)` — which is 0, and 0 is FINITE, so the "did they send one"
+   * guard passed, the clamp lifted 0 to the floor of 5, and every unqualified
+   * request ran the evidence gate at 5 while the payload announced 20.
+   *
+   * It was visible only because the endpoint publishes `minSample` in its own
+   * response, which is the argument for publishing it.
+   */
+  const readMinSample = (url: string, fallback = MIN_SAMPLE) => {
+    const param = new URL(url).searchParams.get("minSample")
+    const raw = param === null || param.trim() === "" ? Number.NaN : Number(param)
+    return Number.isFinite(raw) ? Math.min(500, Math.max(5, Math.floor(raw))) : fallback
+  }
+
+  it("no parameter means the default, not zero", () => {
+    expect(readMinSample("https://x/api/market/area-pricing")).toBe(MIN_SAMPLE)
+    expect(readMinSample("https://x/api/market/area-pricing?minSample=")).toBe(MIN_SAMPLE)
+  })
+
+  it("nonsense means the default too", () => {
+    expect(readMinSample("https://x/?minSample=abc")).toBe(MIN_SAMPLE)
+    expect(readMinSample("https://x/?minSample=NaN")).toBe(MIN_SAMPLE)
+  })
+
+  it("a caller cannot weaken the gate below the floor", () => {
+    expect(readMinSample("https://x/?minSample=1")).toBe(5)
+    expect(readMinSample("https://x/?minSample=-99")).toBe(5)
+    expect(readMinSample("https://x/?minSample=0")).toBe(5)
+  })
+
+  it("a caller may strengthen it, up to the ceiling", () => {
+    expect(readMinSample("https://x/?minSample=50")).toBe(50)
+    expect(readMinSample("https://x/?minSample=99999")).toBe(500)
+  })
+})
