@@ -45,11 +45,17 @@ Every path through the product passes four stages.
 **PLANNED** — specified, no code yet. The rows that are not BUILT are the
 reason the rest can be believed.
 
+A test passing is not the same as a feature working. The suites here use mocks,
+so a row can be green in CI and still be unavailable in production if its table
+was never created — which is exactly the case for two rows below. Where that is
+true the row says so, and [`db/README.md`](db/README.md) records why 28 of the
+31 tables `prisma/schema.prisma` declares do not exist.
+
 | Capability | Status | Notes |
 |---|---|---|
-| **Time Table** — the atomic unit: buildable, saveable, refreshable, exportable, embeddable, auditable | BUILT | `/api/timetables`, `/t/:id` |
+| **Time Table** — the atomic unit: buildable, saveable, refreshable, exportable, embeddable, auditable | PARTIAL | the code and its tests are here (`/api/timetables`, `/t/:id`), but the `timetables` table does not exist in the production database, so nothing can be saved there today — see [`db/README.md`](db/README.md) |
 | **TableSpec compiler** — intent to a deterministic `TableSpec` JSON | BUILT | rules path always available; the LLM-backed path is opt-in and off by default. `tests/tablespec-compiler.test.ts`, `tests/tablespec-validation.test.ts`, `tests/tablespec-llm.test.ts` |
-| **Decision Objects** — reports, decks, memos, widgets, underwriting | BUILT | `/api/time-table/artifacts`, `/api/time-table/underwrite` |
+| **Decision Objects** — reports, decks, memos, widgets, underwriting | PARTIAL | same: `/api/time-table/artifacts` and `/api/time-table/underwrite` are implemented, the `decision_objects` table is not created in production |
 | **Market scoring** — signal definitions with documented governance; overrides logged | BUILT | `tests/scoring-engine.test.ts`, `tests/governance.test.ts`; audit table `investor_override_audit` |
 | **Profile Intelligence** — learns preferences and states its suggestions explicitly | BUILT | `tests/profile-inference.test.ts` |
 | **Ingestion and data coverage** | BUILT | `tests/ingestion.test.ts`, `tests/data-coverage.test.ts` |
