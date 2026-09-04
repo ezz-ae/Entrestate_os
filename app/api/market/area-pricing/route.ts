@@ -26,7 +26,22 @@ export async function GET(request: Request) {
   const requestId = getRequestId(request)
 
   try {
-    const raw = Number(new URL(request.url).searchParams.get("minSample"))
+    /**
+     * ABSENT MUST MEAN "THE DEFAULT", NOT "ZERO".
+     *
+     * The first version read `Number(searchParams.get("minSample"))`. With no
+     * parameter that is `Number(null)` — which is 0, and 0 is finite, so the
+     * guard passed, the clamp lifted it to MIN_ALLOWED, and every unqualified
+     * request ran the evidence gate at 5 instead of 20. The endpoint reported
+     * `minSample: 5` and published medians from as few as five sales while its
+     * own payload said the gate was the stricter number.
+     *
+     * A weaker gate that announces itself as the stronger one is the exact
+     * failure this whole module exists to prevent, so the parameter is now read
+     * as a string and only parsed once something was actually sent.
+     */
+    const param = new URL(request.url).searchParams.get("minSample")
+    const raw = param === null || param.trim() === "" ? Number.NaN : Number(param)
     const minSample = Number.isFinite(raw)
       ? Math.min(MAX_ALLOWED, Math.max(MIN_ALLOWED, Math.floor(raw)))
       : MIN_SAMPLE
