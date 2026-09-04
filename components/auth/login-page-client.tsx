@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Eye, EyeOff } from "lucide-react"
 import { authClient } from "@/lib/auth/client"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
-import { resolvePostLoginHref } from "@/lib/auth/navigation"
+import { goToPostLoginHref, oauthCallbackHref, resolvePostLoginHref } from "@/lib/auth/navigation"
 import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
 
 /** 2813 → "2,813". Grouping only; the number itself is never rounded up. */
@@ -125,7 +125,7 @@ export function LoginPageClient() {
 
   useEffect(() => {
     if (session?.user) {
-      router.replace(targetHref)
+      goToPostLoginHref(router, targetHref)
     }
   }, [session, router, targetHref])
 
@@ -160,7 +160,7 @@ export function LoginPageClient() {
       const { error } = await withTimeout(
         authClient.signIn.social({
           provider: "google",
-          callbackURL: targetHref,
+          callbackURL: oauthCallbackHref(locale, targetHref, "/login"),
         }),
         15000,
         copy.googleTimeout,
