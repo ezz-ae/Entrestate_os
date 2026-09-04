@@ -26,6 +26,12 @@ export function MeNav({ tier }: Props) {
 
   const tabs = TABS.map((tab) => ({ ...tab, href: prefixLocalePath(tab.href, locale) }))
 
+  // The home itself carries no tab row: its doors are the navigation, and a
+  // second menu under the site header was the "duplicated header" the owner
+  // called out. The tabs return on the pages behind the doors, where a person
+  // needs to move between listings, connections, alerts and API access.
+  if (pathname === prefixLocalePath("/me", locale) || pathname === "/me") return null
+
   return (
     <nav aria-label="Personal home navigation" className="border-b border-border">
       <ul className="-mb-px flex flex-wrap gap-1 sm:gap-3 text-sm">
