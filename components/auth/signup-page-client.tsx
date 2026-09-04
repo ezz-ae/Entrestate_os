@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Eye, EyeOff } from "lucide-react"
 import { authClient } from "@/lib/auth/client"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
-import { resolvePostLoginHref } from "@/lib/auth/navigation"
+import { goToPostLoginHref, oauthCallbackHref, resolvePostLoginHref } from "@/lib/auth/navigation"
 
 const COPY = {
   en: {
@@ -134,7 +134,7 @@ export function SignUpPageClient() {
 
   useEffect(() => {
     if (session?.user) {
-      router.replace(targetHref)
+      goToPostLoginHref(router, targetHref)
     }
   }, [session, router, targetHref])
 
@@ -175,7 +175,7 @@ export function SignUpPageClient() {
       const { error } = await withTimeout(
         authClient.signIn.social({
           provider: "google",
-          callbackURL: targetHref,
+          callbackURL: oauthCallbackHref(locale, targetHref, "/signup"),
         }),
         15000,
         copy.googleTimeout,
