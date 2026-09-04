@@ -59,10 +59,13 @@ describe("the store is served, never copied", () => {
     expect(src).not.toMatch(/const STORE/)
   })
 
-  it("renders nothing when the business is unreachable", () => {
+  it("renders nothing invented when the business is unreachable", () => {
+    // The page passes `store` as null and the door falls back to the copy's
+    // own three lines — no product name, no price, no install link is made up.
     const me = read("app/me/page.tsx")
-    expect(me).toContain("businessStore ?")
-    expect(me).toContain(": null}")
+    expect(me).toContain("getBusinessStore().catch(() => null)")
+    expect(me).toContain("store={store ? {")
+    expect(me).toContain("} : null}")
     const src = read("lib/business-store.ts")
     expect(src).toContain("return null")
   })
@@ -70,7 +73,9 @@ describe("the store is served, never copied", () => {
   it("/me shows the store from the fetched catalog", () => {
     const me = read("app/me/page.tsx")
     expect(me).toContain('from "@/lib/business-store"')
-    expect(me).toContain("businessStore.products.map")
-    expect(me).toContain("businessStore.storeUrl")
+    expect(me).toContain("store.products.map(")
+    expect(me).toContain("storeUrl: store.storeUrl")
+    const home = read("components/me/account-home.tsx")
+    expect(home).toContain("store.storeUrl")
   })
 })

@@ -118,7 +118,7 @@ export async function getPersonalHomeBundle(): Promise<PersonalHomeBundle | null
   const upgradeNudge = entitlement.tier === "free"
     ? {
         headline: "Connect your inventory",
-        body: "Free gives you the full read surface. Upgrade to push your own listings, sync portals & CRMs, and run the same evidence-graded scoring on your own deals.",
+        body: "The market is open to you already. Pro adds your own listings, portal and CRM sync, and the same evidence-graded scoring on your own deals.",
         cta: { label: "View plans", href: "/pricing" },
       }
     : null

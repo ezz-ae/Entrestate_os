@@ -43,27 +43,36 @@ describe("the re-pointing is one relayed read, fail-soft everywhere", () => {
 
 describe("/me renders the account and deep-links the install flow", () => {
   const me = stripComments(read("app/me/page.tsx"))
-  it("shows the card only when the summary answered", () => {
-    expect(me).toContain("getBusinessAccountSummary()")
-    expect(me).toContain("{businessAccount ? (")
-    expect(me).toContain("Ads Coin wallet")
-    expect(me).toContain("businessAccount.wallet.balanceAed")
+  // Superseded 2026-09-04: /me is now app/me/page.tsx (gathers) +
+  // components/me/account-home.tsx (renders). The account facts still come
+  // from one relayed read and are rendered, never kept — the assertions below
+  // follow them to where they now live.
+  const home = stripComments(read("components/me/account-home.tsx"))
+  it("shows the account facts only when the summary answered", () => {
+    expect(me).toContain("getBusinessAccountSummary().catch(() => null)")
+    expect(me).toContain("account?.wallet ? { balanceAed: account.wallet.balanceAed } : null")
+    expect(me).toContain("account?.apps.map(")
+    expect(home).toContain("yours.wallet &&")
+    expect(home).toContain("yours.apps.length > 0 &&")
   })
-  it("a pending top-up renders as waiting, never as balance", () => {
-    expect(me).toContain("waiting for the team")
+  it("a held or pending amount never renders as balance", () => {
+    // Only balanceAed crosses into the page; held and pending stay on the account page.
+    expect(me).not.toContain("heldAed")
+    expect(me).not.toContain("pendingTopUps")
   })
   it("the store cards land on the install flow — the same account, no second identity", () => {
-    expect(me).toContain("/start?app=${product.id}")
-    expect(me).not.toContain("storeUrl}#${product.id}")
-    expect(me).toContain("Add to your account")
+    expect(home).toContain("/start?app=${p.id}")
+    expect(home).not.toContain("storeUrl}#${")
+    expect(home).toContain("liveProducts.map<Starter>")
   })
   it("the new copy keeps the word bans", () => {
-    // Rendered strings only — the tier token stays a code comparison.
-    const rendered = me.replaceAll('"free"', '"__tier__"')
-    const section = rendered.slice(rendered.indexOf("Your business account"), rendered.indexOf("Entrestate App Store"))
-    expect(section).not.toMatch(/\bfree\b/i)
-    expect(section).not.toContain("مجان")
-    expect(section).not.toMatch(/[Ff]reehold/)
+    // Rendered strings only — the tier token stays a code comparison. The
+    // whole home is one surface now; tests/account-home.test.ts holds the
+    // full insider-word list, this keeps the two standing bans.
+    const rendered = (me + home).replaceAll('"free"', '"__tier__"')
+    expect(rendered).not.toMatch(/\bfree\b/i)
+    expect(rendered).not.toContain("مجان")
+    expect(rendered).not.toMatch(/[Ff]reehold/)
   })
 })
 
@@ -86,12 +95,12 @@ describe("the workspace door is offered, and only the door the business handed o
   })
 
   it("/me offers the door when there is one, and the creation only when the business says it can complete", () => {
-    expect(me).toContain("businessAccount.workspaces.length > 0")
-    expect(me).toContain("href={w.enterUrl}")
-    expect(me).toContain("Open the workspace")
-    expect(me).toContain("businessAccount.canCreateWorkspace ?")
+    const home = stripComments(read("components/me/account-home.tsx"))
+    expect(home).toContain("yours.workspaces.length > 0")
+    expect(home).toContain("href: w.enterUrl")
+    expect(me).toContain("canCreateWorkspace: account?.canCreateWorkspace ?? false")
     // Creation happens on the business side, where the identity is verified.
-    expect(me).toMatch(/canCreateWorkspace \?[\s\S]{0,900}href=\{businessAccount\.accountUrl\}/)
+    expect(home).toMatch(/yours\.canCreateWorkspace && yours\.accountUrl[\s\S]{0,300}href: yours\.accountUrl/)
   })
 
   it("the Terminal never mints, signs or stores anything about the workspace itself", () => {
