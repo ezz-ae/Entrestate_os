@@ -250,6 +250,50 @@ export default async function MeHomePage() {
             subtitle="The wallet and the apps live on the business side of the same account — this is the live read."
             action={{ label: "Open the account", href: businessAccount.accountUrl }}
           />
+          {/*
+            THE DOOR, NOT JUST THE DESCRIPTION. This section used to show the
+            wallet and the apps and stop — the workspace those apps run in had
+            no link from here, so a person could read about their account on
+            the Terminal and still have to go find it. The business decides
+            which workspaces this identity owns (ownership, verified email,
+            suspension); the Terminal offers the link it was handed.
+          */}
+          {businessAccount.workspaces.length > 0 ? (
+            <Card className="mb-3">
+              <CardContent className="p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your workspace</p>
+                <ul className="mt-2 space-y-3">
+                  {businessAccount.workspaces.map((w) => (
+                    <li key={w.subdomain} className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">{w.company}</p>
+                        <p className="text-xs text-muted-foreground">{w.url.replace(/^https?:\/\//, "")}</p>
+                      </div>
+                      <a
+                        href={w.enterUrl}
+                        className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                      >
+                        Open the workspace <ArrowRight className="ml-1 h-4 w-4" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          ) : businessAccount.canCreateWorkspace ? (
+            <Card className="mb-3">
+              <CardContent className="p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your workspace</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Inventory, campaigns, leads and the team — on your own address, in your own brand. It opens with this
+                  account; there is no second sign-in.
+                </p>
+                <a href={businessAccount.accountUrl} className="mt-4 inline-flex items-center text-sm font-semibold text-primary hover:underline">
+                  Create the workspace <ArrowRight className="ml-1 h-4 w-4" />
+                </a>
+              </CardContent>
+            </Card>
+          ) : null}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Card>
               <CardContent className="p-5">

@@ -66,3 +66,36 @@ describe("/me renders the account and deep-links the install flow", () => {
     expect(section).not.toMatch(/[Ff]reehold/)
   })
 })
+
+describe("the workspace door is offered, and only the door the business handed over", () => {
+  const mod = stripComments(read("lib/business-account.ts"))
+  const me = stripComments(read("app/me/page.tsx"))
+
+  it("reads the workspaces the business decided this identity owns", () => {
+    expect(mod).toContain("data.workspaces")
+    expect(mod).toContain("canCreateWorkspace: data.canCreateWorkspace === true")
+  })
+
+  it("drops any workspace row whose enter link is not on entrestate.com", () => {
+    // The summary is fetched server-side over HTTPS from a fixed origin, but the
+    // rendered link is the one thing on /me that opens a workspace as its owner.
+    // A row with a foreign or missing enterUrl is not rendered as a dead or
+    // wrong link — it is not rendered at all.
+    expect(mod).toContain('enterUrl.startsWith("https://entrestate.com/")')
+    expect(mod).toMatch(/if \(!subdomain \|\| !company \|\| !url \|\| !enterUrl\.startsWith/)
+  })
+
+  it("/me offers the door when there is one, and the creation only when the business says it can complete", () => {
+    expect(me).toContain("businessAccount.workspaces.length > 0")
+    expect(me).toContain("href={w.enterUrl}")
+    expect(me).toContain("Open the workspace")
+    expect(me).toContain("businessAccount.canCreateWorkspace ?")
+    // Creation happens on the business side, where the identity is verified.
+    expect(me).toMatch(/canCreateWorkspace \?[\s\S]{0,900}href=\{businessAccount\.accountUrl\}/)
+  })
+
+  it("the Terminal never mints, signs or stores anything about the workspace itself", () => {
+    expect(mod).not.toMatch(/signSession|fh_session|claim\?token/)
+    expect(me).not.toMatch(/signSession|fh_session|claim\?token/)
+  })
+})
