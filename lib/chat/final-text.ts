@@ -10,7 +10,7 @@
  *      vocabulary, but a prompt is a request; this module is the door.
  *
  *   2. The question was Arabic and the answer was Arabic — but the fixed
- *      furniture came out English ("Recommendation:", "Would you like a
+ *      furniture came out English ("Decision:", "Would you like a
  *      deeper analysis of these results?"), because the furniture's language
  *      followed the PAGE locale (/en) while the answer's language followed
  *      the QUESTION. The asker's language wins everywhere or the answer
@@ -57,8 +57,14 @@ const PARENTHESIZED_CODE =
 
 const EN_CLOSING = /Would you like a deeper analysis of these results\?/gi
 const AR_CLOSING = /هل ترغب في تحليل أعمق للنتائج؟/g
-const EN_LABEL = /^[ \t]*Recommendation:/gim
-const AR_LABEL = /^[ \t]*التوصية:/gm
+/**
+ * "Decision:" since 2026-09-05, not "Recommendation:". The product computes
+ * a decision from the record and shows the arithmetic; it does not advise.
+ * The old label is still recognised on the way in so a model that reaches
+ * for it — or a persisted older answer — comes out in the product's word.
+ */
+const EN_LABEL = /^[ \t]*(?:Recommendation|Decision):/gim
+const AR_LABEL = /^[ \t]*(?:التوصية|القرار):/gm
 
 export function humanizeFinalText(raw: string): string {
   if (!raw) return raw
@@ -75,10 +81,12 @@ export function humanizeFinalText(raw: string): string {
 
   // The label and the closing question speak the answer's own language.
   if (arabic) {
-    text = text.replace(EN_LABEL, "التوصية:")
+    text = text.replace(EN_LABEL, "القرار:")
+    text = text.replace(AR_LABEL, "القرار:")
     text = text.replace(EN_CLOSING, "هل ترغب في تحليل أعمق للنتائج؟")
   } else {
-    text = text.replace(AR_LABEL, "Recommendation:")
+    text = text.replace(AR_LABEL, "Decision:")
+    text = text.replace(EN_LABEL, "Decision:")
     text = text.replace(AR_CLOSING, "Would you like a deeper analysis of these results?")
   }
 
@@ -95,6 +103,6 @@ export function humanizeFinalText(raw: string): string {
 export function followUpOnResult(label: string, locale: string): string {
   const name = label.trim()
   return locale === "ar"
-    ? `كمّل على ${name}: التفاصيل الكاملة، المخاطر، والتوصية.`
-    : `Continue on ${name}: full detail, the risks, and your recommendation.`
+    ? `كمّل على ${name}: التفاصيل الكاملة، المخاطر، والقرار.`
+    : `Continue on ${name}: full detail, the risks, and the decision the record supports.`
 }

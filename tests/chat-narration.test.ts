@@ -28,7 +28,7 @@ import { answerLocale, humanizeFinalText } from "@/lib/chat/final-text"
  *   2. The route streams the narration (x-chat-stream) and both transports
  *      finish through ONE payload builder.
  *   3. The welcome is a sentence, not a command syntax.
- *   4. The prompt demands: conclusion first, ONE recommendation, the closing
+ *   4. The prompt demands: conclusion first, ONE decision, the closing
  *      deeper-analysis question, and no internal vocabulary — in EN and AR.
  */
 
@@ -120,10 +120,10 @@ describe("the welcome and the voice", () => {
     expect(copilotCode).not.toContain("SCREEN | PROJECT")
   })
 
-  it("demands the advisor shape in both prompts", () => {
+  it("demands the Decision Terminal shape in both prompts — computed decision, not advice", () => {
     for (const [prompt, rec, closing] of [
-      [copilotSystemPrompt, '"Recommendation:"', "Would you like a deeper analysis of these results?"],
-      [copilotSystemPromptArabic, '"التوصية:"', "هل ترغب في تحليل أعمق للنتائج؟"],
+      [copilotSystemPrompt, '"Decision:"', "Would you like a deeper analysis of these results?"],
+      [copilotSystemPromptArabic, '"القرار:"', "هل ترغب في تحليل أعمق للنتائج؟"],
     ] as const) {
       expect(prompt).toContain(rec)
       expect(prompt).toContain(closing)
@@ -170,7 +170,9 @@ describe("the final text speaks the asker's language and never glosses a code", 
       "Would you like a deeper analysis of these results?",
     ].join("\n")
     const cleaned = humanizeFinalText(raw)
-    expect(cleaned).toContain("التوصية:")
+    // The old label on the way in becomes the product's word on the way out.
+    expect(cleaned).toContain("القرار:")
+    expect(cleaned).not.toContain("التوصية:")
     expect(cleaned).toContain("هل ترغب في تحليل أعمق للنتائج؟")
     expect(cleaned).not.toContain("Recommendation:")
     expect(cleaned).not.toMatch(/Would you like a deeper analysis/)
@@ -180,11 +182,13 @@ describe("the final text speaks the asker's language and never glosses a code", 
     const raw = [
       "Strong options exist under your budget in Dubai with solid rental yields.",
       "",
-      "Recommendation: focus on Jumeirah Village Circle.",
+      "Decision: focus on Jumeirah Village Circle.",
       "",
       "Would you like a deeper analysis of these results?",
     ].join("\n")
     expect(humanizeFinalText(raw)).toBe(raw)
+    // A model that still writes the retired label is corrected, in English.
+    expect(humanizeFinalText(raw.replace("Decision:", "Recommendation:"))).toBe(raw)
   })
 
   it("is wired into the one finishing path, and the narration follows the asker", () => {

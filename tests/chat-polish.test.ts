@@ -54,7 +54,7 @@ describe("2 — every result row can continue the conversation", () => {
   })
 
   it("the follow-up speaks the answer's language and asks for a complete brief", () => {
-    expect(followUpOnResult("The Palm Crown", "ar")).toBe("كمّل على The Palm Crown: التفاصيل الكاملة، المخاطر، والتوصية.")
+    expect(followUpOnResult("The Palm Crown", "ar")).toBe("كمّل على The Palm Crown: التفاصيل الكاملة، المخاطر، والقرار.")
     expect(followUpOnResult("The Palm Crown", "en")).toContain("Continue on The Palm Crown")
     expect(followUpOnResult("  Bulgari Ocean Mansions ", "en")).toContain("Bulgari Ocean Mansions:")
   })

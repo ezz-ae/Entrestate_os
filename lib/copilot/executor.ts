@@ -264,6 +264,10 @@ function buildDealScreenerFilters(
     clauses.push(Prisma.sql`LOWER(${COPILOT_AREA_EXPR}) LIKE LOWER(${`%${filters.area}%`})`)
   }
 
+  if (filters.developer) {
+    clauses.push(Prisma.sql`LOWER(developer) LIKE LOWER(${`%${filters.developer}%`})`)
+  }
+
   if (typeof filters.budget_max_aed === "number") {
     clauses.push(Prisma.sql`${COPILOT_PRICE_SQL} <= ${filters.budget_max_aed}`)
   }
@@ -373,31 +377,86 @@ function buildDealScreenerQuery(input: DealScreenerInput, includeBedroomColumns 
   `
 }
 
-export async function executeDealScreener(input: DealScreenerInput): Promise<ToolEnvelope<DbRow>> {
-  try {
-    const query = buildDealScreenerQuery(input)
-    const rows = await runQuery(query)
+/**
+ * THE ORDER IN WHICH A SEARCH LETS GO.
+ *
+ * "Emaar off-plan in Dubai Marina under AED 2M" matched nothing on the live
+ * site and the answer stopped there: "we could not find any … This means we
+ * cannot provide a comparison." A person asking a broker that question is
+ * told what the nearest true thing is — Emaar in the Marina starts at 2.3M;
+ * under 2M in the Marina there are these; Emaar under 2M is in these areas.
+ *
+ * So when the exact filters return nothing, the screener drops them one at a
+ * time, least essential first — the budget cap (a number the reader chose),
+ * bedrooms, then the area, then the developer — and returns the first
+ * non-empty result with `widened` naming what was dropped. The model is told
+ * to read `widened` and say it; the reader gets an answer and the reason it is
+ * not the exact one. Never invents: every row still came from the table.
+ */
+const WIDEN_ORDER = ["budget_max_aed", "beds_min", "beds_max", "area", "developer"] as const
+type WidenKey = (typeof WIDEN_ORDER)[number]
 
+export function widenSteps(filters: DealScreenerInput["filters"] | undefined): Array<{ dropped: WidenKey[]; filters: DealScreenerInput["filters"] }> {
+  const steps: Array<{ dropped: WidenKey[]; filters: DealScreenerInput["filters"] }> = []
+  let current = { ...(filters ?? {}) }
+  const dropped: WidenKey[] = []
+  for (const key of WIDEN_ORDER) {
+    if (current[key] === undefined) continue
+    const next = { ...current }
+    delete next[key]
+    dropped.push(key)
+    // beds_min and beds_max go together — half a bedroom range is no range.
+    if (key === "beds_min" && next.beds_max !== undefined) { delete next.beds_max; dropped.push("beds_max") }
+    current = next
+    steps.push({ dropped: [...dropped], filters: current })
+  }
+  return steps
+}
+
+async function runScreener(input: DealScreenerInput): Promise<DbRow[]> {
+  try {
+    return await runQuery(buildDealScreenerQuery(input))
+  } catch (error) {
+    if (isMissingColumnError(error, "bedrooms_min") || isMissingColumnError(error, "bedrooms_max")) {
+      return runQuery(buildDealScreenerQuery(input, false))
+    }
+    throw error
+  }
+}
+
+export async function executeDealScreener(input: DealScreenerInput): Promise<ToolEnvelope<DbRow> & { widened?: WidenKey[]; exact_filters?: DealScreenerInput["filters"] }> {
+  const rows = await runScreener(input)
+  if (rows.length > 0) {
     return {
       source: "deal_screener",
       data_as_of: nowIso(),
       count: rows.length,
-      no_results: rows.length === 0,
+      no_results: false,
       rows,
     }
-  } catch (error) {
-    if (isMissingColumnError(error, "bedrooms_min") || isMissingColumnError(error, "bedrooms_max")) {
-      const query = buildDealScreenerQuery(input, false)
-      const rows = await runQuery(query)
+  }
+
+  for (const step of widenSteps(input.filters)) {
+    const nearest = await runScreener({ ...input, filters: step.filters })
+    if (nearest.length > 0) {
       return {
         source: "deal_screener",
         data_as_of: nowIso(),
-        count: rows.length,
-        no_results: rows.length === 0,
-        rows,
+        count: nearest.length,
+        no_results: false,
+        widened: step.dropped,
+        exact_filters: input.filters,
+        rows: nearest,
       }
     }
-    throw error
+  }
+
+  return {
+    source: "deal_screener",
+    data_as_of: nowIso(),
+    count: 0,
+    no_results: true,
+    rows,
   }
 }
 
