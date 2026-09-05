@@ -12,19 +12,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      # pnpm 9 with pnpm/action-setup@v3 died at `pnpm store path` with
+      # "ERROR packages field missing or empty" — before install, on every
+      # pull request, for as long as this file pinned it. The lockfile is the
+      # pnpm 10 format (it carries a `settings:` block) and the nightly
+      # db-contract workflow already runs 10.28.0 green, so this job runs the
+      # same. A CI that fails in twelve seconds at setup is not a gate.
       - name: Install pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
-          
+          version: 10.28.0
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
-          
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
         
       - name: Generate Prisma Client
         run: pnpm exec prisma generate
