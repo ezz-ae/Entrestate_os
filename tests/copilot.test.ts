@@ -5,6 +5,7 @@ import { buildDealScreenerQuery } from "@/lib/copilot/executor"
 import { collectGuardrailWarnings, validateToolOutput } from "@/lib/copilot/guardrails"
 import {
   copilotSystemPrompt,
+  copilotSystemPromptArabic,
   dealScreenerInputSchema,
   developerDueDiligenceInputSchema,
   generateInvestorMemoInputSchema,
@@ -33,15 +34,36 @@ describe("copilot schemas", () => {
     expect(parsed.filters.timing_label).toBe("BUY")
   })
 
-  it("keeps the advisor identity and the one-recommendation contract", () => {
+  it("keeps the Decision Terminal identity and the one-decision contract", () => {
     // The prompt used to open "YOU ARE NOT A CHATBOT. YOU ARE A DECISION
     // ENGINE" and forbid paragraphs. The owner reversed that on purpose after
     // watching real users: the reader is an investor or a working agent, and
-    // the answer is paragraphs, one recommendation, one closing question.
-    expect(copilotSystemPrompt).toContain("market advisor")
-    expect(copilotSystemPrompt).toContain('starting with "Recommendation:"')
+    // the answer is paragraphs, one closing line, one closing question. On
+    // 2026-09-05 the closing line became "Decision:" — the computed read of
+    // the record — because the product computes and does not advise, and
+    // the identity stopped calling itself an advisor.
+    expect(copilotSystemPrompt).toContain("Entrestate Decision Terminal")
+    expect(copilotSystemPrompt).not.toContain("market advisor")
+    expect(copilotSystemPrompt).toContain("no financial advice")
+    expect(copilotSystemPrompt).toContain('starting with "Decision:"')
     expect(copilotSystemPrompt).toContain("Would you like a deeper analysis of these results?")
     expect(copilotSystemPrompt).toContain("NEVER show internal vocabulary")
+  })
+
+  it("routes off-plan to the inventory and secondary to the recorded Ready transactions", () => {
+    for (const prompt of [copilotSystemPrompt, copilotSystemPromptArabic]) {
+      expect(prompt).toContain('reg_type "Off-Plan"')
+      expect(prompt).toContain('reg_type "Ready"')
+      expect(prompt).toContain("deal_screener")
+    }
+    expect(copilotSystemPrompt).toContain("NEVER END AT \"NOT FOUND\"")
+    expect(copilotSystemPrompt).toContain('"widened"')
+    expect(copilotSystemPromptArabic).toContain('"widened"')
+  })
+
+  it("the screener takes a developer filter — 'Emaar in the Marina under 2M' is one call", () => {
+    const parsed = dealScreenerInputSchema.parse({ filters: { developer: "Emaar", area: "Dubai Marina", budget_max_aed: 2_000_000 } })
+    expect(parsed.filters.developer).toBe("Emaar")
   })
 
   it("accepts developer due diligence lookup", () => {
