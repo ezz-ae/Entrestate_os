@@ -254,8 +254,8 @@ export default async function TopDataPage() {
             {/* The chip used to print `api.market_pulse_v1` — an internal view
                 name — on a customer page. The reader needs when, not where. */}
             {isArabic
-              ? `آخر مزامنة للبيانات · ${syncTimestamp} GST`
-              : `Data synced · ${syncTimestamp} GST`}
+              ? `حُسب في · ${syncTimestamp} GST`
+              : `Computed at · ${syncTimestamp} GST`}
           </div>
         </section>
 

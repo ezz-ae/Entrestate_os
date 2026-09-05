@@ -51,3 +51,17 @@ describe("developers", () => {
     expect(page).not.toMatch(/Audit Freshness|Data synced|buildDataSyncMeta|syncTimestamp/)
   })
 })
+
+describe("no page prints the request clock as a data date", () => {
+  it("properties and areas carry the coverage line; top-data says computed; search says read", () => {
+    for (const rel of ["app/properties/page.tsx", "app/areas/page.tsx"]) {
+      const src = stripComments(read(rel))
+      expect(src, rel).toContain("coverageLabel(pageMetrics.coverageThrough")
+      expect(src, rel).not.toMatch(/Data synced|Data Freshness · |syncTimestamp/)
+    }
+    expect(stripComments(read("app/top-data/page.tsx"))).toContain("Computed at · ")
+    expect(stripComments(read("app/search/page.tsx"))).toContain("Read from the database")
+    const shipped = ["app/properties/page.tsx", "app/areas/page.tsx", "app/top-data/page.tsx", "app/search/page.tsx", "app/developers/page.tsx"]
+    for (const rel of shipped) expect(stripComments(read(rel)), rel).not.toMatch(/`Data synced|"Data synced/)
+  })
+})
