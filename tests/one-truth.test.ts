@@ -203,3 +203,20 @@ describe("the brand is appended once", () => {
     expect(offenders).toEqual([])
   })
 })
+
+describe("the overview speaks Arabic when asked, and pricing says computed, not analysed", () => {
+  it("every label on the Decision Terminal has an Arabic form", () => {
+    const overview = stripComments(read("app/overview/page.tsx"))
+    for (const en of ["Total Projects", "BUY Signals", "HIGH Confidence", "Avg Entry Price", "Avg Gross Yield", "Market Timing Signals", "Data Quality", "Investor Profiles", "Browse inventory by investment goal"]) {
+      expect(overview, en).toMatch(new RegExp(`isArabic \\? "[^"]+" : "${en.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`))
+    }
+    expect(overview).toContain("labelAr:")
+    expect(overview).toContain("isArabic ? f.labelAr : f.label")
+  })
+
+  it("pricing does not call the product analysis — it computes", () => {
+    for (const rel of ["app/pricing/page.tsx", "app/pricing/layout.tsx"]) {
+      expect(stripComments(read(rel)), rel).not.toMatch(/market analysis|the analysis with your account|تحليل السوق/)
+    }
+  })
+})

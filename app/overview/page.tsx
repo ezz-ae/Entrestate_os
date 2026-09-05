@@ -63,11 +63,11 @@ const OUTPUT_MODULES = [
 ]
 
 const QUICK_FILTERS = [
-  { label: "BUY signal · Grade A", href: "/properties?timing=BUY&stress=A", color: "border-emerald-400/40 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/15" },
-  { label: "High yield >6%", href: "/properties?yieldMin=6", color: "border-amber-400/40 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/15" },
-  { label: "Golden Visa eligible", href: "/properties?intent=golden_visa", color: "border-violet-400/40 text-violet-700 bg-violet-50 hover:bg-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:hover:bg-violet-500/15" },
-  { label: "Conservative · Grade A/B", href: "/properties?intent=conservative", color: "border-blue-400/40 text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/15" },
-  { label: "First-Time Buyer", href: "/properties?intent=first_time_buyer", color: "border-sky-400/40 text-sky-700 bg-sky-50 hover:bg-sky-100 dark:bg-sky-500/10 dark:text-sky-400 dark:hover:bg-sky-500/15" },
+  { label: "BUY signal · Grade A", labelAr: "إشارة BUY · درجة A", href: "/properties?timing=BUY&stress=A", color: "border-emerald-400/40 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/15" },
+  { label: "High yield >6%", labelAr: "عائد مرتفع >6%", href: "/properties?yieldMin=6", color: "border-amber-400/40 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/15" },
+  { label: "Golden Visa eligible", labelAr: "مؤهّل للإقامة الذهبية", href: "/properties?intent=golden_visa", color: "border-violet-400/40 text-violet-700 bg-violet-50 hover:bg-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:hover:bg-violet-500/15" },
+  { label: "Conservative · Grade A/B", labelAr: "متحفّظ · درجة A/B", href: "/properties?intent=conservative", color: "border-blue-400/40 text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/15" },
+  { label: "First-Time Buyer", labelAr: "المشتري الأول", href: "/properties?intent=first_time_buyer", color: "border-sky-400/40 text-sky-700 bg-sky-50 hover:bg-sky-100 dark:bg-sky-500/10 dark:text-sky-400 dark:hover:bg-sky-500/15" },
 ]
 
 /*
@@ -99,11 +99,11 @@ function pctOf(count: number, total: number) {
 }
 
 /** The header's one line: what the V1 engine says about the whole inventory, as shares. */
-function generateInsight(shares: Share[], avgYield: number | null, highConfidencePct: number, topProfile: string | null) {
+function generateInsight(shares: Share[], avgYield: number | null, highConfidencePct: number, topProfile: string | null, isArabic: boolean) {
   const parts: string[] = [shares.map((s) => `${s.label} ${s.pct.toFixed(0)}%`).join(" · ")]
-  if (avgYield !== null) parts.push(`avg yield ${avgYield.toFixed(1)}%`)
-  parts.push(`${highConfidencePct.toFixed(0)}% HIGH confidence`)
-  if (topProfile) parts.push(`largest profile — ${topProfile}`)
+  if (avgYield !== null) parts.push(isArabic ? `متوسط العائد ${avgYield.toFixed(1)}%` : `avg yield ${avgYield.toFixed(1)}%`)
+  parts.push(isArabic ? `${highConfidencePct.toFixed(0)}% ثقة سعر عالية` : `${highConfidencePct.toFixed(0)}% HIGH confidence`)
+  if (topProfile) parts.push(isArabic ? `أكبر ملف — ${topProfile}` : `largest profile — ${topProfile}`)
   return parts.join(" · ")
 }
 
@@ -127,10 +127,10 @@ export default async function OverviewPage() {
   // WAIT were `Math.round(notBuy * 0.45)` and the remainder — an estimate
   // dressed as a reading, on a page whose footer says "no black-box scores".
   const timingBars = [
-    { label: "BUY", count: buySignals, pct: buyPct, bar: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", desc: "Active entry window", href: "/properties?timing=BUY" },
-    { label: "HOLD", count: pulse.holdSignals, pct: pctOf(pulse.holdSignals, totalProjects), bar: "bg-amber-400", text: "text-amber-600 dark:text-amber-400", desc: "Monitor, not yet", href: "/properties?timing=HOLD" },
-    { label: "WAIT", count: pulse.waitSignals, pct: pctOf(pulse.waitSignals, totalProjects), bar: "bg-orange-400", text: "text-orange-600 dark:text-orange-400", desc: "Outside the window", href: "/properties?timing=WAIT" },
-    { label: "AVOID", count: pulse.avoidSignals, pct: pctOf(pulse.avoidSignals, totalProjects), bar: "bg-red-400", text: "text-red-600 dark:text-red-400", desc: "Fails the engine's floor", href: "/properties?timing=AVOID" },
+    { label: "BUY", count: buySignals, pct: buyPct, bar: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", desc: isArabic ? "نافذة دخول مفتوحة" : "Active entry window", href: "/properties?timing=BUY" },
+    { label: "HOLD", count: pulse.holdSignals, pct: pctOf(pulse.holdSignals, totalProjects), bar: "bg-amber-400", text: "text-amber-600 dark:text-amber-400", desc: isArabic ? "راقب، ليس بعد" : "Monitor, not yet", href: "/properties?timing=HOLD" },
+    { label: "WAIT", count: pulse.waitSignals, pct: pctOf(pulse.waitSignals, totalProjects), bar: "bg-orange-400", text: "text-orange-600 dark:text-orange-400", desc: isArabic ? "خارج النافذة" : "Outside the window", href: "/properties?timing=WAIT" },
+    { label: "AVOID", count: pulse.avoidSignals, pct: pctOf(pulse.avoidSignals, totalProjects), bar: "bg-red-400", text: "text-red-600 dark:text-red-400", desc: isArabic ? "دون حدّ المحرك" : "Fails the engine's floor", href: "/properties?timing=AVOID" },
   ]
 
   // Profiles: a count per definition, from the same table /properties lists.
@@ -148,6 +148,7 @@ export default async function OverviewPage() {
     avgYield,
     highConfidencePct,
     topProfile,
+    isArabic,
   )
   const updatedLabel = coverageLabel(pulse.coverageThrough, isArabic)
 
@@ -157,11 +158,11 @@ export default async function OverviewPage() {
   }
 
   const kpis = [
-    { label: "Total Projects", value: safeInt(totalProjects).toLocaleString(), icon: Building2, iconClass: "text-primary", sub: "Active UAE inventory", href: "/properties" },
-    { label: "BUY Signals", value: safeInt(buySignals).toLocaleString(), icon: TrendingUp, iconClass: "text-emerald-600 dark:text-emerald-400", sub: `${buyPct.toFixed(0)}% of total inventory`, href: "/properties?timing=BUY" },
-    { label: "HIGH Confidence", value: safeInt(highConfidence).toLocaleString(), icon: ShieldCheck, iconClass: "text-blue-600 dark:text-blue-400", sub: `${highConfidencePct.toFixed(0)}% data verified`, href: "/properties" },
-    { label: "Avg Asking Price", value: formatAed(avgPrice), icon: CircleDot, iconClass: "text-violet-600 dark:text-violet-400", sub: "L1 canonical pricing", href: "/properties" },
-    { label: "Avg Gross Yield", value: typeof avgYield === "number" ? `${avgYield.toFixed(1)}%` : "—", icon: BarChart3, iconClass: "text-amber-600 dark:text-amber-400", sub: "Across all inventory", href: "/top-data" },
+    { label: isArabic ? "إجمالي المشاريع" : "Total Projects", value: safeInt(totalProjects).toLocaleString(), icon: Building2, iconClass: "text-primary", sub: isArabic ? "المخزون المنقّح" : "Curated inventory", href: "/properties" },
+    { label: isArabic ? "إشارات BUY" : "BUY Signals", value: safeInt(buySignals).toLocaleString(), icon: TrendingUp, iconClass: "text-emerald-600 dark:text-emerald-400", sub: isArabic ? `${buyPct.toFixed(0)}% من المخزون` : `${buyPct.toFixed(0)}% of total inventory`, href: "/properties?timing=BUY" },
+    { label: isArabic ? "ثقة سعر عالية" : "HIGH Confidence", value: safeInt(highConfidence).toLocaleString(), icon: ShieldCheck, iconClass: "text-blue-600 dark:text-blue-400", sub: isArabic ? `${highConfidencePct.toFixed(0)}% من المشاريع` : `${highConfidencePct.toFixed(0)}% of scored projects`, href: "/properties" },
+    { label: isArabic ? "متوسط سعر الدخول" : "Avg Entry Price", value: formatAed(avgPrice), icon: CircleDot, iconClass: "text-violet-600 dark:text-violet-400", sub: isArabic ? "متوسط عبر المشاريع المقيّمة" : "Mean across scored projects", href: "/properties" },
+    { label: isArabic ? "متوسط العائد الإجمالي" : "Avg Gross Yield", value: typeof avgYield === "number" ? `${avgYield.toFixed(1)}%` : "—", icon: BarChart3, iconClass: "text-amber-600 dark:text-amber-400", sub: isArabic ? "عبر المشاريع المقيّمة" : "Across scored projects", href: "/top-data" },
   ]
 
   return (
@@ -221,7 +222,7 @@ export default async function OverviewPage() {
             {isArabic ? "فلاتر سريعة" : "Quick filters"}
           </span>
           {QUICK_FILTERS.map((f) => (
-            <Link key={f.label} href={prefixLocalePath(f.href, locale)} className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${f.color}`}>{f.label}</Link>
+            <Link key={f.label} href={prefixLocalePath(f.href, locale)} className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${f.color}`}>{isArabic ? f.labelAr : f.label}</Link>
           ))}
         </div>
 
@@ -229,10 +230,10 @@ export default async function OverviewPage() {
           <div className="flex flex-col gap-4">
             <article className="rounded-2xl border border-border bg-card p-5">
               <div className="mb-1 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-foreground">Market Timing Signals</h2>
-                <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">V1 engine · timing_label</span>
+                <h2 className="text-sm font-semibold text-foreground">{isArabic ? "إشارات توقيت السوق" : "Market Timing Signals"}</h2>
+                <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">{isArabic ? "محرك V1 · إشارة التوقيت" : "V1 engine · timing signal"}</span>
               </div>
-              <p className="mb-4 text-[11px] text-muted-foreground">{safeInt(totalProjects).toLocaleString()} projects scored</p>
+              <p className="mb-4 text-[11px] text-muted-foreground">{safeInt(totalProjects).toLocaleString()} {isArabic ? "مشروعاً مقيّماً" : "projects scored"}</p>
               <div className="space-y-4">
                 {timingBars.map((t) => (
                   <Link key={t.label} href={prefixLocalePath(t.href, locale)} className="block rounded-lg transition hover:bg-muted/30">
@@ -260,8 +261,8 @@ export default async function OverviewPage() {
             </article>
             <article className="rounded-2xl border border-border bg-card p-5">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-foreground">Data Quality</h2>
-                <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">{highConfidencePct.toFixed(0)}% HIGH confidence</span>
+                <h2 className="text-sm font-semibold text-foreground">{isArabic ? "جودة البيانات" : "Data Quality"}</h2>
+                <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">{highConfidencePct.toFixed(0)}% {isArabic ? "ثقة سعر عالية" : "HIGH confidence"}</span>
               </div>
               <TrustBar verifiedRows={totalProjects} highConfidencePct={highConfidencePct} coverage={updatedLabel} />
               <div className="mt-3 grid grid-cols-5 gap-0.5 overflow-hidden rounded-lg">
@@ -271,7 +272,7 @@ export default async function OverviewPage() {
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-center text-[10px] text-muted-foreground">Canonical → Derived → Dynamic → External → Raw</p>
+              <p className="mt-2 text-center text-[10px] text-muted-foreground">{isArabic ? "مرجعي ← مشتق ← ديناميكي ← خارجي ← خام" : "Canonical → Derived → Dynamic → External → Raw"}</p>
             </article>
           </div>
 
@@ -346,10 +347,10 @@ export default async function OverviewPage() {
 
           <article className="rounded-2xl border border-border bg-card p-5">
             <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">Investor Profiles</h2>
+              <h2 className="text-sm font-semibold text-foreground">{isArabic ? "ملفات المستثمرين" : "Investor Profiles"}</h2>
               <Target className="h-4 w-4 text-muted-foreground/50" />
             </div>
-            <p className="mb-4 text-[11px] text-muted-foreground">Browse inventory by investment goal</p>
+            <p className="mb-4 text-[11px] text-muted-foreground">{isArabic ? "تصفّح المخزون حسب هدف الاستثمار" : "Browse inventory by investment goal"}</p>
             {profileCards ? (
               <div className="space-y-2">
                 {profileCards.map((profile, i) => {
