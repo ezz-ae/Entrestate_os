@@ -1978,25 +1978,35 @@ export async function getAreaBySlug(slug: string): Promise<{
  * view's avg_score — a yield-heavy composite — as reliability when the column
  * was missing; that alias is gone with the same change.
  */
+/**
+ * What the curated inventory says about each developer: the mean reliability
+ * score, how many of their projects carry a score, and how many of those
+ * carry stress grade A or B — the "safe projects" the card's coverage cell
+ * shows. Until 2026-09-05 that cell read `safe_projects` from the developer
+ * registry view, which has no such column, through COALESCE(…, 0), so every
+ * card printed "0 / 99 · 0%". A count the source does not carry is null,
+ * never zero; here it is computed from the rows that do carry it.
+ */
 async function getCanonicalDeveloperReliabilityMap(): Promise<
-  Map<string, { reliability: number; scoredProjects: number }>
+  Map<string, { reliability: number; scoredProjects: number; safeProjects: number }>
 > {
   const rows = await runOptionalQuery(Prisma.sql`
     SELECT
       developer,
       ROUND(AVG(developer_reliability_score))::int AS reliability,
-      COUNT(*)::int AS scored_projects
+      COUNT(*)::int AS scored_projects,
+      COUNT(*) FILTER (WHERE UPPER(COALESCE(stress_grade_v1, '')) IN ('A', 'B'))::int AS safe_projects
     FROM ${Prisma.raw(MARKET_TABLES.inventory)}
     WHERE developer IS NOT NULL
       AND developer_reliability_score IS NOT NULL
     GROUP BY developer
   `)
-  const map = new Map<string, { reliability: number; scoredProjects: number }>()
-  for (const row of rows as Array<{ developer?: unknown; reliability?: unknown; scored_projects?: unknown }>) {
+  const map = new Map<string, { reliability: number; scoredProjects: number; safeProjects: number }>()
+  for (const row of rows as Array<{ developer?: unknown; reliability?: unknown; scored_projects?: unknown; safe_projects?: unknown }>) {
     const name = typeof row.developer === "string" ? row.developer.trim().toLowerCase() : ""
     const reliability = Number(row.reliability)
     if (!name || !Number.isFinite(reliability)) continue
-    map.set(name, { reliability, scoredProjects: Number(row.scored_projects) || 0 })
+    map.set(name, { reliability, scoredProjects: Number(row.scored_projects) || 0, safeProjects: Number(row.safe_projects) || 0 })
   }
   return map
 }
@@ -2067,10 +2077,7 @@ export async function listDevelopers(): Promise<{
             (to_jsonb(d) ->> 'buy_signals')::int,
             0
           ) AS buy_signals,
-          COALESCE(
-            (to_jsonb(d) ->> 'safe_projects')::int,
-            0
-          ) AS safe_projects,
+          (to_jsonb(d) ->> 'safe_projects')::int AS safe_projects,
           COALESCE(to_jsonb(d) -> 'areas', to_jsonb(d) -> 'top_areas') AS areas,
           COALESCE(
             NULLIF(TRIM(to_jsonb(d) ->> 'top_project'), ''),
@@ -2101,6 +2108,11 @@ export async function listDevelopers(): Promise<{
   const canonicalReliability = (name: unknown) => {
     const key = typeof name === "string" ? name.trim().toLowerCase() : ""
     return key ? reliabilityByDeveloper.get(key)?.reliability ?? null : null
+  }
+  const canonicalSafety = (name: unknown) => {
+    const key = typeof name === "string" ? name.trim().toLowerCase() : ""
+    const entry = key ? reliabilityByDeveloper.get(key) : undefined
+    return entry ? { safe_projects: entry.safeProjects, scored_projects: entry.scoredProjects } : null
   }
 
   let rows = curatedRows.length > 0
@@ -2145,11 +2157,21 @@ export async function listDevelopers(): Promise<{
     }
   }
 
-  // Whatever path produced the rows, "reliability" means the canonical column.
+  // Whatever path produced the rows, "reliability" means the canonical column,
+  // and "safe_projects" / "scored_projects" are the curated inventory's counts
+  // (null when the developer has no scored project — never a zero the source
+  // did not say).
   rows = rows.map((row) => {
     const record = row as DecisionRecord
-    const canonical = canonicalReliability(record.developer ?? (record as { name?: unknown }).name)
-    return canonical === null ? { ...record, reliability: record.reliability ?? null } : { ...record, reliability: canonical }
+    const name = record.developer ?? (record as { name?: unknown }).name
+    const canonical = canonicalReliability(name)
+    const safety = canonicalSafety(name)
+    return {
+      ...record,
+      reliability: canonical === null ? (record.reliability ?? null) : canonical,
+      safe_projects: safety ? safety.safe_projects : (typeof record.safe_projects === "number" ? record.safe_projects : null),
+      scored_projects: safety ? safety.scored_projects : null,
+    }
   })
 
   const profiles = await runOptionalQuery<{ name: string; developer_ar: string | null; logo_url: string | null; founded_year: string | null; hq: string | null }>(Prisma.sql`
