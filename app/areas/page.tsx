@@ -40,8 +40,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title:
       locale === "ar"
-        ? "ملفات مناطق دبي — العائد والسعر وبيانات العرض | Entrestate"
-        : `${metrics.totalAreas} Dubai Area Profiles — Yield, Price & Supply Data | Entrestate`,
+        ? "ملفات مناطق دبي — العائد والسعر وبيانات العرض"
+        : `${metrics.totalAreas} Dubai Area Profiles — Yield, Price & Supply Data`,
     description:
       locale === "ar"
         ? "ملفات مناطق مع متوسط السعر والعائد وسرعة المعاملات وضغط المعروض والمشاريع المقارنة، معززة ببيانات DLD."

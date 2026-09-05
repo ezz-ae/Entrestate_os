@@ -94,7 +94,7 @@ function getDocument(locale: "en" | "ar"): PolicyDocument {
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
   return {
-    title: locale === "ar" ? "المعالِجون من الباطن | Entrestate" : "Subprocessors | Entrestate",
+    title: locale === "ar" ? "المعالِجون من الباطن" : "Subprocessors",
     description:
       locale === "ar"
         ? "قائمة عامة بالمزودين التشغيليين الذين يساعدون في تشغيل Entrestate."

@@ -66,7 +66,7 @@ function getDocument(locale: "en" | "ar"): PolicyDocument {
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
   return {
-    title: locale === "ar" ? "اتفاقية معالجة البيانات | Entrestate" : "Data Processing Agreement | Entrestate",
+    title: locale === "ar" ? "اتفاقية معالجة البيانات" : "Data Processing Agreement",
     description:
       locale === "ar"
         ? "ملخص عام لمسار اتفاقية معالجة البيانات المتاح للعملاء المؤسسيين."

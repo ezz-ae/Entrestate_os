@@ -29,8 +29,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title:
       locale === "ar"
-        ? "تكامل المؤسسات العقارية — طبقة قرار Headless | Entrestate"
-        : "Enterprise Real Estate API — Headless Decision Layer | Entrestate",
+        ? "تكامل المؤسسات العقارية — طبقة قرار Headless"
+        : "Enterprise Real Estate API — Headless Decision Layer",
     description:
       locale === "ar"
         ? "أوصل Entrestate ببوابتك الحالية كطبقة استخبارات وتنفيذ محكومة، مع بيانات موثقة، وغرف صفقات منظمة، ووصول عبر API."

@@ -186,3 +186,20 @@ describe("3. the Signal Feed is computed, the snapshot is the fallback", () => {
     }
   })
 })
+
+describe("the brand is appended once", () => {
+  it("no page title carries its own ' | Entrestate' — the root template adds it", () => {
+    const walk = (dir: string, out: string[] = []): string[] => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name)
+        if (entry.isDirectory()) walk(full, out)
+        else if (/^(page|layout)\.tsx$/.test(entry.name) && full !== path.join(ROOT, "app", "layout.tsx")) out.push(full)
+      }
+      return out
+    }
+    const offenders = walk(path.join(ROOT, "app"))
+      .filter((file) => / \| Entrestate["`]/.test(stripComments(fs.readFileSync(file, "utf8"))))
+      .map((file) => path.relative(ROOT, file))
+    expect(offenders).toEqual([])
+  })
+})
