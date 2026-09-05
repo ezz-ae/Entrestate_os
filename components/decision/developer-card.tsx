@@ -20,6 +20,8 @@ type DeveloperCardProps = {
   /** @deprecated Not displayed — yield at developer scope is not meaningful and was previously mis-sourced. Keep prop optional for back-compat. */
   avg_yield?: number | null
   safe_projects?: number | null
+  /** Denominator for the coverage cell: the developer's SCORED projects, not the registry's count. */
+  scored_projects?: number | null
   logo_url?: string | null
   top_areas?: string[] | null
   top_projects?: string[] | null
@@ -183,8 +185,14 @@ export function DeveloperCard(developer: DeveloperCardProps) {
           <div>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{copy.safeCoverage}</p>
             {(() => {
+              // The ratio is stress-grade A/B projects over SCORED projects —
+              // the two counts come from the same table. Dividing by the
+              // registry's project count (99 for a developer with 12 scored
+              // projects) printed a coverage no rows supported.
               const safe = typeof developer.safe_projects === "number" ? developer.safe_projects : null
-              const total = typeof developer.projects === "number" ? developer.projects : null
+              const total = typeof developer.scored_projects === "number"
+                ? developer.scored_projects
+                : typeof developer.projects === "number" ? developer.projects : null
               if (safe === null || total === null || total <= 0) {
                 return <p className="mt-0.5 text-lg font-bold tabular-nums text-muted-foreground">—</p>
               }

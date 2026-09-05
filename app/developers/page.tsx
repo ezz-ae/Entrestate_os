@@ -5,15 +5,13 @@ import { Footer } from "@/components/footer"
 import { DeveloperCard } from "@/components/decision/developer-card"
 import { SitePagination, type SitePaginationItem } from "@/components/site-pagination"
 import { listDevelopers } from "@/lib/decision-infrastructure"
-import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { TrendingUp, Building2, BarChart3, ShieldCheck, Users2 } from "lucide-react"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { formatAed } from "@/lib/format/currency"
-import { formatDate } from "@/lib/format/date"
 import { formatInteger } from "@/lib/format/number"
 import { getPlatformMetrics } from "@/lib/platform-metrics.server"
-import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
+import { PLATFORM_METRICS_FALLBACK, coverageLabel } from "@/lib/platform-metrics"
 import { buildPaginationWindow, clampPage, parsePageParam } from "@/lib/pagination"
 
 export const dynamic = "force-dynamic"
@@ -59,7 +57,10 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
   const { filter, sort = "reliability", page } = await searchParams
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
-  const data = await listDevelopers()
+  const [data, metrics] = await Promise.all([
+    listDevelopers(),
+    getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK),
+  ])
 
   const developers = data.developers
 
@@ -114,11 +115,10 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
     { key: "price", label: isArabic ? "حسب متوسط السعر" : "By avg price" },
   ]
 
-  const freshnessLabel = data.data_as_of
-    ? formatDate(data.data_as_of, locale)
-    : null
-  const syncMeta = buildDataSyncMeta("developers", data.data_as_of)
-  const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
+  // "Audit Freshness · 5 Sep 2026" and "Data synced · <now>" were the request
+  // clock (data_as_of is stamped new Date() by every read model). The header
+  // now carries the DLD coverage line from the metrics source, or nothing.
+  const freshnessLabel = coverageLabel(metrics.coverageThrough, isArabic)
   const paginationItems: SitePaginationItem[] = buildPaginationWindow(currentPage, totalPages).map((item) =>
     typeof item === "number"
       ? {
@@ -154,11 +154,11 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
     titleLead: isArabic ? "المطورون" : "Developer",
     titleAccent: isArabic ? "الموثوقون" : "Reliability",
     headerBody: tierInsight ? `${headerBodyBase} ${tierInsight}` : headerBodyBase,
-    freshness: isArabic ? "تحديث التدقيق" : "Audit Freshness",
+    freshness: isArabic ? "تغطية البيانات" : "Data coverage",
     trackedDevelopers: isArabic ? "المطورون المتابعون" : "Tracked Developers",
     trackedDevelopersSub: isArabic ? "نشطون في سوق الإمارات" : "Active in UAE market",
     totalProjects: isArabic ? "إجمالي المشاريع" : "Total Projects",
-    totalProjectsSub: isArabic ? "عبر جميع المحافظ" : "Across all portfolios",
+    totalProjectsSub: isArabic ? "في سجل المطوّرين" : "In the developer registry",
     avgReliability: isArabic ? "متوسط الموثوقية" : "Avg Reliability",
     avgReliabilityGood: isArabic ? "السوق صحي" : "Market is healthy",
     avgReliabilityMixed: isArabic ? "جودة التنفيذ متفاوتة" : "Mixed execution quality",
@@ -204,11 +204,7 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
               <p className="text-xs font-bold text-foreground bg-secondary/50 px-3 py-1 rounded-lg border border-border/40">
                 {freshnessLabel}
               </p>
-              <p className="mt-2 text-[10px] text-muted-foreground/60">
-                {isArabic
-                  ? `آخر مزامنة للبيانات · ${syncTimestamp}`
-                  : `Data synced · ${syncTimestamp}`}
-              </p>
+
             </div>
           )}
         </header>
@@ -358,6 +354,10 @@ export default async function DevelopersPage({ searchParams }: { searchParams: P
               avg_price={typeof developer.avg_price === "number" ? developer.avg_price : null}
               safe_projects={(() => {
                 const value = (developer as unknown as { safe_projects?: unknown }).safe_projects
+                return typeof value === "number" && Number.isFinite(value) ? value : null
+              })()}
+              scored_projects={(() => {
+                const value = (developer as unknown as { scored_projects?: unknown }).scored_projects
                 return typeof value === "number" && Number.isFinite(value) ? value : null
               })()}
               logo_url={typeof developer.logo_url === "string" ? developer.logo_url : null}

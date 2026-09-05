@@ -4,17 +4,15 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ProjectCard } from "@/components/decision/project-card"
 import { listProperties } from "@/lib/decision-infrastructure"
-import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { BarChart3, TrendingUp, ShieldCheck, Zap, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { formatAed } from "@/lib/format/currency"
-import { formatDate } from "@/lib/format/date"
 import { formatInteger } from "@/lib/format/number"
 import { getTranslations } from "next-intl/server"
 import { getPlatformMetrics } from "@/lib/platform-metrics.server"
-import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
+import { PLATFORM_METRICS_FALLBACK, coverageLabel } from "@/lib/platform-metrics"
 
 export const dynamic = "force-dynamic"
 
@@ -126,11 +124,11 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
   const yields = projects.map((p) => typeof (p.rental_yield ?? p.l1_canonical_yield) === "number" ? Number(p.rental_yield ?? p.l1_canonical_yield) : null).filter((v): v is number => v !== null && v > 0)
   const avgYield = yields.length > 0 ? yields.reduce((a, b) => a + b, 0) / yields.length : null
 
-  const freshnessLabel = result.data_as_of
-    ? formatDate(result.data_as_of, locale)
-    : null
-  const syncMeta = buildDataSyncMeta("properties", result.data_as_of)
-  const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(locale === "ar" ? "ar-AE" : "en-AE")
+  // "Data Freshness · 5 Sep 2026 · Data synced · <now>" was the request clock
+  // (data_as_of is stamped new Date() by every read model). The header now
+  // carries the DLD coverage line from the metrics source, or nothing.
+  const pageMetrics = await getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK)
+  const freshnessLabel = coverageLabel(pageMetrics.coverageThrough, locale === "ar")
 
   // Base params for filter links (preserve all except the one being changed)
   const baseParams: Record<string, string | undefined> = {
@@ -235,11 +233,6 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-1">{t("freshness")}</span>
               <p className="text-xs font-bold text-foreground bg-secondary/50 px-3 py-1 rounded-lg border border-border/40">
                 {freshnessLabel}
-              </p>
-              <p className="mt-2 text-[10px] text-muted-foreground/60">
-                {locale === "ar"
-                  ? `آخر مزامنة للبيانات · ${syncTimestamp}`
-                  : `Data synced · ${syncTimestamp}`}
               </p>
             </div>
           )}

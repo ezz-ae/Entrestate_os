@@ -13,7 +13,7 @@ import { prefixLocalePath } from "@/i18n/locale"
 import { formatAed } from "@/lib/format/currency"
 import { computeMedian, getAreaPosition } from "@/lib/area-intelligence"
 import { getPlatformMetrics } from "@/lib/platform-metrics.server"
-import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
+import { PLATFORM_METRICS_FALLBACK, coverageLabel } from "@/lib/platform-metrics"
 import { buildPaginationWindow, clampPage, parsePageParam } from "@/lib/pagination"
 
 export const dynamic = "force-dynamic"
@@ -55,8 +55,11 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
   const data = await listAreas()
   const params = await searchParams
   const syncMeta = buildDataSyncMeta("areas", data.data_as_of)
-  const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE" : "en-AE")
   const isFallbackSource = data.source_view !== syncMeta.primaryView
+  // "Data synced · 05/09/2026, 3:59:23 PM" was the request clock. The line
+  // now states the DLD coverage from the metrics source, or nothing.
+  const pageMetrics = await getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK)
+  const coverage = coverageLabel(pageMetrics.coverageThrough, isArabic)
   const coverageLabels = {
     city: isArabic ? "المدينة" : "City",
     area_ar: isArabic ? "الاسم العربي" : "Arabic label",
@@ -149,11 +152,11 @@ export default async function AreasPage({ searchParams }: { searchParams: Promis
               ? "متوسط السعر، والعائد، وسرعة المعاملات، وضغط المعروض، والمشاريع المقارنة لكل منطقة، ولكل ربع، معززة ببيانات DLD."
               : "Average price, yield, transaction velocity, supply pressure, and comparable projects per area, per quarter, traced to DLD."}
           </p>
-          <p className="mt-2 text-[11px] text-muted-foreground/60">
-            {isArabic
-              ? `آخر مزامنة للبيانات · ${syncTimestamp}${isFallbackSource ? " · مصدر احتياطي" : ""}`
-              : `Data synced · ${syncTimestamp}${isFallbackSource ? " · fallback source" : ""}`}
-          </p>
+          {coverage || isFallbackSource ? (
+            <p className="mt-2 text-[11px] text-muted-foreground/60">
+              {[coverage, isFallbackSource ? (isArabic ? "مصدر احتياطي" : "fallback source") : null].filter(Boolean).join(" · ")}
+            </p>
+          ) : null}
         </header>
 
         <div className="mb-6 flex flex-wrap gap-2">

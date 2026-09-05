@@ -644,7 +644,7 @@ export default function SearchPage() {
                 </p>
                 {syncMeta ? (
                   <p className="mt-1 text-[10px] text-muted-foreground/40">
-                    {locale === "ar" ? "آخر مزامنة للبيانات" : "Data synced"} · {new Date(syncMeta.syncedAt).toLocaleString(locale === "ar" ? "ar-AE" : "en-AE")}
+                    {locale === "ar" ? "قُرئ من قاعدة البيانات" : "Read from the database"} · {new Date(syncMeta.syncedAt).toLocaleString(locale === "ar" ? "ar-AE" : "en-AE")}
                   </p>
                 ) : null}
               </div>
