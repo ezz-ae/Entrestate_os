@@ -58,6 +58,8 @@ import { localizeAnalyticsLabel } from "@/lib/format/analytics-labels"
 import { formatDecimal } from "@/lib/format/number"
 import { pickLocalizedText } from "@/lib/format/entities"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
+import { usePlatformMetrics } from "@/hooks/use-platform-metrics"
+import { coverageLabel } from "@/lib/platform-metrics"
 
 type ChatInterfaceProps = {
   initialGoldenPath?: GoldenPathId
@@ -1571,6 +1573,18 @@ export function ChatInterface({
   const isArabic = locale === "ar"
   const t = useTranslations("chat")
   const uiCopy = useMemo(() => chatUiCopy(locale), [locale])
+  // The landing chip used to say "DLD Transacted AED 4.2B Today" — a string
+  // in the messages dictionaries, the same on every day, over a table whose newest row
+  // was two weeks old. It now states the count on record and, when known,
+  // the date the record runs through; both come from /api/platform-metrics.
+  const platformMetrics = usePlatformMetrics()
+  const dldStatText = t("chatLanding.dldStat", {
+    count: new Intl.NumberFormat(isArabic ? "ar-AE-u-nu-latn" : "en-US").format(platformMetrics.dldTransactions),
+    through: (() => {
+      const coverage = coverageLabel(platformMetrics.coverageThrough, isArabic)
+      return coverage ? ` · ${coverage}` : ""
+    })(),
+  })
   const { data: session } = authClient.useSession()
   const canUpload = Boolean(session?.user)
   const [mounted, setMounted] = useState(false)
@@ -2464,8 +2478,8 @@ export function ChatInterface({
             
             <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-[11px] text-muted-foreground/50 font-bold uppercase tracking-[0.2em]">
               <span className="flex items-center gap-2 bg-emerald-500/5 px-3 py-1.5 rounded-full border border-emerald-500/10">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {t("chatLanding.dldStat")}
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {dldStatText}
               </span>
               <span className="w-1 h-1 rounded-full bg-border" />
               <span className="px-3 py-1.5">{t("chatLanding.verifiedData")}</span>

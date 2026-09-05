@@ -23,7 +23,7 @@ type PropertySortBy = "god_metric" | "price" | "yield" | "timing" | "reliability
 type SearchParams = {
   area?: string
   developer?: string
-  timing?: "BUY" | "HOLD" | "WAIT"
+  timing?: "BUY" | "HOLD" | "WAIT" | "AVOID"
   stress?: "A" | "B" | "C" | "D"
   sortBy?: PropertySortBy
   goldenVisa?: string
@@ -107,7 +107,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
 
   // Derive stats from current page
   const projects = result.projects
-  const buyCount = projects.filter((p) => (p.timing_label ?? p.l3_timing_signal) === "BUY").length
+  const buyCount = projects.filter((p) => ["BUY", "STRONG_BUY"].includes(String(p.timing_label ?? p.l3_timing_signal))).length
   const holdCount = projects.filter((p) => (p.timing_label ?? p.l3_timing_signal) === "HOLD").length
   const waitCount = projects.filter((p) => (p.timing_label ?? p.l3_timing_signal) === "WAIT").length
   const signaledCount = buyCount + holdCount + waitCount
@@ -356,12 +356,13 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
           {/* Timing signal */}
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] text-muted-foreground/60">{t("signal")}</span>
-            {(["BUY", "HOLD", "WAIT"] as const).map((signal) => {
+            {(["BUY", "HOLD", "WAIT", "AVOID"] as const).map((signal) => {
               const isActive = params.timing === signal
               const colors = {
                 BUY: isActive ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-400" : "border-emerald-500/30 bg-emerald-500/5 text-emerald-400/60 hover:bg-emerald-500/10",
                 HOLD: isActive ? "border-amber-500/60 bg-amber-500/15 text-amber-400" : "border-amber-500/30 bg-amber-500/5 text-amber-400/60 hover:bg-amber-500/10",
-                WAIT: isActive ? "border-red-500/60 bg-red-500/15 text-red-400" : "border-red-500/30 bg-red-500/5 text-red-400/60 hover:bg-red-500/10",
+                WAIT: isActive ? "border-orange-500/60 bg-orange-500/15 text-orange-400" : "border-orange-500/30 bg-orange-500/5 text-orange-400/60 hover:bg-orange-500/10",
+                AVOID: isActive ? "border-red-500/60 bg-red-500/15 text-red-400" : "border-red-500/30 bg-red-500/5 text-red-400/60 hover:bg-red-500/10",
               }[signal]
               return (
                 <Link

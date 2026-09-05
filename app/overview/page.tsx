@@ -24,7 +24,8 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { CopilotEntryLink } from "@/components/copilot-entry-link"
 import { TrustBar } from "@/components/decision/trust-bar"
-import { getHomepageContentSections, getOutcomeIntentCounts } from "@/lib/frontend-content"
+import { getInvestorProfileCounts } from "@/lib/decision-infrastructure"
+import { INVESTOR_PROFILES } from "@/lib/investor-profiles"
 import { formatAed } from "@/components/decision/formatters"
 import { Button } from "@/components/ui/button"
 import { getRequestLocale } from "@/i18n/request"
@@ -34,23 +35,16 @@ import { PLATFORM_METRICS_FALLBACK, coverageLabel } from "@/lib/platform-metrics
 
 export const dynamic = "force-dynamic"
 
-const INTENT_FALLBACKS: Record<string, number> = {
-  yield_seeking: 1510,
-  golden_visa: 1055,
-  capital_growth: 1177,
-  first_time_buyer: 3887,
-  trophy_asset: 483,
-  conservative: 1806,
-}
-
-const INTENT_META: Record<string, { label: string; description: string }> = {
-  yield_seeking:    { label: "Yield Seeking",      description: "Rental income focus, 6%+ target" },
-  golden_visa:      { label: "Golden Visa",         description: "AED 2M+ eligible inventory" },
-  capital_growth:   { label: "Capital Growth",      description: "Price appreciation potential" },
-  first_time_buyer: { label: "First-Time Buyer",    description: "Entry-point projects, <AED 1.5M" },
-  trophy_asset:     { label: "Trophy Asset",        description: "Landmark & luxury positioning" },
-  conservative:     { label: "Conservative",        description: "Grade A, low-stress, long hold" },
-}
+/*
+ * INTENT_FALLBACKS and INTENT_META used to live here: six hardcoded counts
+ * (first_time_buyer: 3887, …) copied once from a 7,015-row ingest table and
+ * printed whenever the live read returned nothing — which, on the curated
+ * view, was always, because the column they counted does not exist there.
+ * Against a 1,946-project total the top card read "3,887 · 200%". The
+ * profiles are now definitions in lib/investor-profiles.ts, counted by
+ * getInvestorProfileCounts over the same table /properties lists; when that
+ * read fails the panel says so instead of printing a remembered number.
+ */
 
 const INPUT_MODULES = [
   { label: "AI Chat", labelAr: "الدردشة الذكية", description: "Get scored answers instantly", descAr: "احصل على إجابات مصنّفة فوراً", href: "/chat", icon: Sparkles, accent: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10", border: "border-blue-200/60 dark:border-blue-500/20", tag: "Decision engine", tagAr: "محرك القرار" },
@@ -72,19 +66,17 @@ const QUICK_FILTERS = [
   { label: "BUY signal · Grade A", href: "/properties?timing=BUY&stress=A", color: "border-emerald-400/40 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/15" },
   { label: "High yield >6%", href: "/properties?yieldMin=6", color: "border-amber-400/40 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/15" },
   { label: "Golden Visa eligible", href: "/properties?intent=golden_visa", color: "border-violet-400/40 text-violet-700 bg-violet-50 hover:bg-violet-100 dark:bg-violet-500/10 dark:text-violet-400 dark:hover:bg-violet-500/15" },
-  { label: "Conservative · Grade A/B", href: "/properties?intent=conservative&stress=A", color: "border-blue-400/40 text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/15" },
+  { label: "Conservative · Grade A/B", href: "/properties?intent=conservative", color: "border-blue-400/40 text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/15" },
   { label: "First-Time Buyer", href: "/properties?intent=first_time_buyer", color: "border-sky-400/40 text-sky-700 bg-sky-50 hover:bg-sky-100 dark:bg-sky-500/10 dark:text-sky-400 dark:hover:bg-sky-500/15" },
 ]
 
-function normalizeIntentKey(value: string) {
-  return value.trim().toLowerCase().replace(/[\s-]+/g, "_")
-}
-
-function marketSentiment(buyPct: number) {
-  if (buyPct >= 38) return { label: "Bullish", sub: "Strong entry window", color: "border-emerald-500/40 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400", dot: "bg-emerald-500" }
-  if (buyPct >= 28) return { label: "Neutral", sub: "Selective opportunities", color: "border-amber-500/40 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400", dot: "bg-amber-500" }
-  return { label: "Cautious", sub: "Hold & monitor phase", color: "border-red-400/40 bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400", dot: "bg-red-400" }
-}
+/*
+ * marketSentiment() used to live here: "Bullish" above 38% BUY, "Neutral"
+ * above 28%, "Cautious" below — three opinion words on two thresholds nobody
+ * documented, pulsing in green at the top of the Decision Terminal. The
+ * product computes; it does not hold a view. The header now states the
+ * distribution itself, which is the only honest form of that badge.
+ */
 
 /*
  * formatRelativeTime() used to live here and was deleted, not repaired.
@@ -100,22 +92,27 @@ function marketSentiment(buyPct: number) {
  * PlatformMetrics.coverageThrough, and renders nothing when that is unknown.
  */
 
-function generateInsight(buyPct: number, avgYield: number | null, highConfidencePct: number, topIntent: string) {
-  const parts: string[] = []
-  parts.push(`${buyPct.toFixed(0)}% of inventory is BUY-rated`)
+type Share = { label: string; count: number; pct: number }
+
+function pctOf(count: number, total: number) {
+  return total > 0 ? (count / total) * 100 : 0
+}
+
+/** The header's one line: what the V1 engine says about the whole inventory, as shares. */
+function generateInsight(shares: Share[], avgYield: number | null, highConfidencePct: number, topProfile: string | null) {
+  const parts: string[] = [shares.map((s) => `${s.label} ${s.pct.toFixed(0)}%`).join(" · ")]
   if (avgYield !== null) parts.push(`avg yield ${avgYield.toFixed(1)}%`)
-  if (highConfidencePct >= 8) parts.push(`${highConfidencePct.toFixed(0)}% verified HIGH confidence`)
-  parts.push(`largest segment — ${INTENT_META[topIntent]?.label ?? topIntent}`)
+  parts.push(`${highConfidencePct.toFixed(0)}% HIGH confidence`)
+  if (topProfile) parts.push(`largest profile — ${topProfile}`)
   return parts.join(" · ")
 }
 
 export default async function OverviewPage() {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
-  const [homepage, pulse, intents] = await Promise.all([
-    getHomepageContentSections().catch(() => ({ data_as_of: new Date().toISOString(), sections: [] })),
+  const [pulse, profiles] = await Promise.all([
     getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK),
-    getOutcomeIntentCounts().catch(() => ({ data_as_of: new Date().toISOString(), rows: [] })),
+    getInvestorProfileCounts().catch(() => null),
   ])
 
   const totalProjects = pulse.totalProjects
@@ -123,33 +120,35 @@ export default async function OverviewPage() {
   const buySignals = pulse.buySignals
   const avgPrice = pulse.avgPrice
   const avgYield = pulse.avgYield
-  const highConfidencePct = totalProjects > 0 ? (highConfidence / totalProjects) * 100 : 0
-  const buyPct = totalProjects > 0 ? (buySignals / totalProjects) * 100 : 0
+  const highConfidencePct = pctOf(highConfidence, totalProjects)
+  const buyPct = pctOf(buySignals, totalProjects)
 
-  const intentCountMap = new Map<string, number>()
-  for (const row of intents.rows) {
-    intentCountMap.set(normalizeIntentKey(row.intent), row.count)
-  }
-
-  const intentCards = Object.keys(INTENT_META).map((key) => ({
-    key,
-    ...INTENT_META[key],
-    count: intentCountMap.get(key) ?? INTENT_FALLBACKS[key],
-  })).sort((a, b) => b.count - a.count)
-
-  const topIntent = intentCards[0]?.key ?? "first_time_buyer"
-  const notBuy = Math.max(totalProjects - buySignals, 0)
-  const holdEst = Math.round(notBuy * 0.45)
-  const waitEst = notBuy - holdEst
-
+  // Every bar is a COUNT from the metrics source. Until 2026-09-05 HOLD and
+  // WAIT were `Math.round(notBuy * 0.45)` and the remainder — an estimate
+  // dressed as a reading, on a page whose footer says "no black-box scores".
   const timingBars = [
-    { label: "BUY", count: buySignals, pct: buyPct, bar: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", desc: "Active entry window" },
-    { label: "HOLD", count: holdEst, pct: totalProjects > 0 ? (holdEst / totalProjects) * 100 : 0, bar: "bg-amber-400", text: "text-amber-600 dark:text-amber-400", desc: "Monitor, not yet" },
-    { label: "WAIT", count: waitEst, pct: totalProjects > 0 ? (waitEst / totalProjects) * 100 : 0, bar: "bg-red-400", text: "text-red-600 dark:text-red-400", desc: "Avoid current window" },
+    { label: "BUY", count: buySignals, pct: buyPct, bar: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", desc: "Active entry window", href: "/properties?timing=BUY" },
+    { label: "HOLD", count: pulse.holdSignals, pct: pctOf(pulse.holdSignals, totalProjects), bar: "bg-amber-400", text: "text-amber-600 dark:text-amber-400", desc: "Monitor, not yet", href: "/properties?timing=HOLD" },
+    { label: "WAIT", count: pulse.waitSignals, pct: pctOf(pulse.waitSignals, totalProjects), bar: "bg-orange-400", text: "text-orange-600 dark:text-orange-400", desc: "Outside the window", href: "/properties?timing=WAIT" },
+    { label: "AVOID", count: pulse.avoidSignals, pct: pctOf(pulse.avoidSignals, totalProjects), bar: "bg-red-400", text: "text-red-600 dark:text-red-400", desc: "Fails the engine's floor", href: "/properties?timing=AVOID" },
   ]
 
-  const sentiment = marketSentiment(buyPct)
-  const insightText = generateInsight(buyPct, avgYield, highConfidencePct, topIntent)
+  // Profiles: a count per definition, from the same table /properties lists.
+  // Null means the read failed and the panel says so — never a remembered number.
+  const profileCards = profiles
+    ? INVESTOR_PROFILES.map((profile) => ({
+        ...profile,
+        count: profiles.counts.find((c) => c.key === profile.key)?.count ?? 0,
+      })).sort((a, b) => b.count - a.count)
+    : null
+  const topProfile = profileCards?.[0] ? (isArabic ? profileCards[0].labelAr : profileCards[0].label) : null
+
+  const insightText = generateInsight(
+    timingBars.map((t) => ({ label: t.label, count: t.count, pct: t.pct })),
+    avgYield,
+    highConfidencePct,
+    topProfile,
+  )
   const updatedLabel = coverageLabel(pulse.coverageThrough, isArabic)
 
   const safeInt = (n: any) => {
@@ -186,10 +185,6 @@ export default async function OverviewPage() {
               <h1 className="mt-1.5 text-2xl font-bold text-foreground md:text-3xl tracking-tight">{isArabic ? "محطة القرار" : "Decision Terminal"}</h1>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <span className={`flex items-center gap-1.5 rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wider ${sentiment.color} backdrop-blur-sm shadow-sm`}>
-                <span className={`h-2 w-2 rounded-full ${sentiment.dot} animate-pulse`} />
-                {sentiment.label}
-              </span>
               <Button variant="intelligent" size="sm" asChild className="h-9 shadow-lg">
                 <CopilotEntryLink>
                   <Sparkles className="h-3.5 w-3.5 me-1" />
@@ -235,12 +230,12 @@ export default async function OverviewPage() {
             <article className="rounded-2xl border border-border bg-card p-5">
               <div className="mb-1 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-foreground">Market Timing Signals</h2>
-                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${sentiment.color}`}>{sentiment.label}</span>
+                <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">V1 engine · timing_label</span>
               </div>
               <p className="mb-4 text-[11px] text-muted-foreground">{safeInt(totalProjects).toLocaleString()} projects scored</p>
               <div className="space-y-4">
                 {timingBars.map((t) => (
-                  <div key={t.label}>
+                  <Link key={t.label} href={prefixLocalePath(t.href, locale)} className="block rounded-lg transition hover:bg-muted/30">
                     <div className="mb-1.5 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-bold ${t.text}`}>{t.label}</span>
@@ -252,9 +247,9 @@ export default async function OverviewPage() {
                       </div>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted/50">
-                      <div className={`h-full rounded-full ${t.bar}`} style={{ width: `${t.pct}%` }} />
+                      <div className={`h-full rounded-full ${t.bar}`} style={{ width: `${Math.min(100, t.pct)}%` }} />
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
               <div className="mt-4 border-t border-border/60 pt-3">
@@ -268,7 +263,7 @@ export default async function OverviewPage() {
                 <h2 className="text-sm font-semibold text-foreground">Data Quality</h2>
                 <span className="rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">{highConfidencePct.toFixed(0)}% HIGH confidence</span>
               </div>
-              <TrustBar verifiedRows={totalProjects} highConfidencePct={highConfidencePct} updatedAt={homepage.data_as_of} />
+              <TrustBar verifiedRows={totalProjects} highConfidencePct={highConfidencePct} coverage={updatedLabel} />
               <div className="mt-3 grid grid-cols-5 gap-0.5 overflow-hidden rounded-lg">
                 {(["L1", "L2", "L3", "L4", "L5"] as const).map((layer, i) => (
                   <div key={layer} className="flex flex-col items-center py-2" style={{ background: `rgba(59,130,246,${0.18 - i * 0.03})` }}>
@@ -355,33 +350,44 @@ export default async function OverviewPage() {
               <Target className="h-4 w-4 text-muted-foreground/50" />
             </div>
             <p className="mb-4 text-[11px] text-muted-foreground">Browse inventory by investment goal</p>
-            <div className="space-y-2">
-              {intentCards.map((intent, i) => {
-                const pct = totalProjects > 0 ? (intent.count / totalProjects) * 100 : 0
-                const maxCount = intentCards[0].count
-                const barPct = maxCount > 0 ? (intent.count / maxCount) * 100 : 0
-                return (
-                  <Link key={intent.key} href={`/properties?intent=${encodeURIComponent(intent.key)}`} className="group block rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          {i === 0 ? <span className="rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">TOP</span> : null}
-                          <span className="truncate text-xs font-semibold text-foreground">{intent.label}</span>
+            {profileCards ? (
+              <div className="space-y-2">
+                {profileCards.map((profile, i) => {
+                  const pct = Math.min(100, pctOf(profile.count, totalProjects))
+                  const maxCount = profileCards[0].count
+                  const barPct = maxCount > 0 ? (profile.count / maxCount) * 100 : 0
+                  return (
+                    <Link key={profile.key} href={prefixLocalePath(`/properties?intent=${encodeURIComponent(profile.key)}`, locale)} className="group block rounded-xl border border-border/60 bg-muted/20 px-3 py-2.5 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            {i === 0 ? <span className="rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">TOP</span> : null}
+                            <span className="truncate text-xs font-semibold text-foreground">{isArabic ? profile.labelAr : profile.label}</span>
+                          </div>
+                          <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{isArabic ? profile.ruleAr : profile.rule}</p>
                         </div>
-                        <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{intent.description}</p>
+                        <div className="flex flex-shrink-0 flex-col items-end gap-1">
+                          <span className="text-sm font-bold tabular-nums text-foreground">{safeInt(profile.count).toLocaleString()}</span>
+                          <span className="text-[10px] text-muted-foreground">{pct.toFixed(0)}%</span>
+                        </div>
                       </div>
-                      <div className="flex flex-shrink-0 flex-col items-end gap-1">
-                        <span className="text-sm font-bold tabular-nums text-foreground">{safeInt(intent.count).toLocaleString()}</span>
-                        <span className="text-[10px] text-muted-foreground">{(isNaN(pct) ? 0 : pct).toFixed(0)}%</span>
+                      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted/60">
+                        <div className="h-full rounded-full bg-primary/50 transition-all group-hover:bg-primary" style={{ width: `${barPct}%` }} />
                       </div>
-                    </div>
-                    <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted/60">
-                      <div className="h-full rounded-full bg-primary/50 transition-all group-hover:bg-primary" style={{ width: `${barPct}%` }} />
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
+                    </Link>
+                  )
+                })}
+                <p className="pt-1 text-[10px] text-muted-foreground">
+                  {isArabic
+                    ? "كل ملف هو قاعدة واحدة مطبّقة على المخزون المنقّح؛ المشروع الواحد قد يقع في أكثر من ملف."
+                    : "Each profile is one rule applied to the curated inventory; a project can sit in more than one."}
+                </p>
+              </div>
+            ) : (
+              <p className="rounded-xl border border-dashed border-border/60 px-3 py-4 text-[11px] text-muted-foreground">
+                {isArabic ? "تعذّرت قراءة الملفات الآن — لا أرقام بدون قراءة." : "The profiles could not be read just now — no figures without a reading."}
+              </p>
+            )}
             <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3">
               <Link href={prefixLocalePath("/properties", locale)} className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">{isArabic ? "تصفح كل المشاريع" : "Browse all projects"} <ArrowUpRight className="h-3 w-3" /></Link>
               <CopilotEntryLink className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"><Sparkles className="h-3 w-3" />{isArabic ? "افتح الدردشة الذكية" : "Open AI chat"}</CopilotEntryLink>

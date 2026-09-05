@@ -1,7 +1,11 @@
 import type { Metadata } from "next"
 
+/**
+ * No `title` here: a layout title beside a page title that already carried
+ * "| Entrestate" rendered "… | Entrestate | Entrestate" in the tab. The page
+ * names itself; the root template adds the brand once.
+ */
 export const metadata: Metadata = {
-  title: "Top Data - Entrestate",
   description:
     "Curated market intelligence and focused requests for real estate decision makers.",
 }

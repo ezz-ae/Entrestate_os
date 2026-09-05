@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { getTopDataRows } from "@/lib/frontend-content"
+import { getPlatformMetrics } from "@/lib/platform-metrics.server"
+import { PLATFORM_METRICS_FALLBACK, coverageLabel } from "@/lib/platform-metrics"
 import { TopDataSection, shouldRenderTopDataSection, deriveDistributionInsight, freshnessOf } from "@/components/top-data/top-data-section"
 import { buildDataSyncMeta } from "@/lib/data-sync-contract"
 import { getRequestLocale } from "@/i18n/request"
@@ -15,12 +17,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title:
       locale === "ar"
-        ? "بيانات السوق | Entrestate"
-        : "Live Dubai Market Signals — BUY/HOLD/AVOID Feed | Entrestate",
+        ? "بيانات السوق"
+        : "Dubai Market Signal Feed — timing, stress, yield and evidence, computed",
     description:
       locale === "ar"
         ? "بيانات السوق الحية: المشاريع المصنفة، إشارات التوقيت، درجات الضغط، ومستويات الأدلة من مخزون يتم تحديثه طوال اليوم."
-        : "Live Dubai market data across scored projects, timing signals, stress grades, and evidence levels, refreshed throughout the day.",
+        : "Dubai market data across scored projects, timing signals, stress grades and evidence levels — computed from the curated inventory and DLD transactions on every request.",
   }
 }
 
@@ -86,8 +88,11 @@ export default async function TopDataPage() {
     topData = {
       data_as_of: new Date().toISOString(),
       sections: [],
+      source: "empty",
+      scores_as_of: null,
     }
   }
+  const metrics = await getPlatformMetrics().catch(() => PLATFORM_METRICS_FALLBACK)
 
   const rowsBySection = new Map<RequiredSection, (typeof topData.sections)[number]>()
   for (const row of topData.sections) {
@@ -139,6 +144,25 @@ export default async function TopDataPage() {
   const headerIsLive = headerFreshness.state === "live"
   const headerAgeDays = headerFreshness.ageHours === null ? null : Math.floor(headerFreshness.ageHours / 24)
 
+  /**
+   * WHAT THE COMPUTATION READ. A section computed this minute from scores
+   * written in March is live as a computation and six months old as a score;
+   * both are true and the page says both. The dates come from the tables
+   * (max(updated_at) on the curated inventory, max(transaction_date) on DLD),
+   * never from the clock, and an unknown date renders as silence.
+   */
+  const scoresAsOf = topData.scores_as_of ? new Date(topData.scores_as_of) : null
+  const scoresLabel = scoresAsOf && Number.isFinite(scoresAsOf.getTime())
+    ? scoresAsOf.toLocaleDateString(isArabic ? "ar-AE-u-nu-latn" : "en-AE", { month: "short", day: "numeric", timeZone: "Asia/Dubai" })
+    : null
+  const dldCoverage = coverageLabel(metrics.coverageThrough, isArabic)
+  const vintageLine = topData.source === "computed"
+    ? [
+        scoresLabel ? (isArabic ? `الدرجات كما في ${scoresLabel}` : `Scores as written on ${scoresLabel}`) : null,
+        dldCoverage,
+      ].filter(Boolean).join(" · ") || null
+    : null
+
   const syncMeta = buildDataSyncMeta("topData", topData.data_as_of)
   const syncTimestamp = new Date(syncMeta.syncedAt).toLocaleString(isArabic ? "ar-AE-u-nu-latn" : "en-AE", {
     month: "short",
@@ -172,9 +196,12 @@ export default async function TopDataPage() {
                 ? "كل مقطع أدناه يعكس الحالة الحالية للمخزون المصنّف، ويتم تحديثه طوال اليوم من بيانات DLD ومصادر القوائم."
                 : `كل مقطع أدناه يحمل تاريخ آخر تسجيل له. أحدثها${headerAgeDays !== null ? ` عمره ${headerAgeDays} يوم` : ""}.`
               : headerIsLive
-                ? "Every section below reflects the current state of scored inventory, updated throughout the day from DLD and listing sources."
+                ? "Every section below is computed from the curated inventory and the DLD table on this request — the badge says when; the line under it says what the data covers."
                 : `Every section below carries the date it was last scored${headerAgeDays !== null ? `; the newest is ${headerAgeDays} days old` : ""}.`}
           </p>
+          {vintageLine ? (
+            <p className="mt-2 text-xs text-muted-foreground/80">{vintageLine}</p>
+          ) : null}
           {regimeLine ? (
             <p className="mt-3 inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-1.5 text-xs font-medium text-emerald-300/90">
               {regimeLine}

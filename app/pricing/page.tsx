@@ -37,7 +37,7 @@ const DISCOVERY_SURFACES = [
   { en: "Developer reliability records", ar: "سجلات موثوقية المطورين" },
   { en: "Project scoring and verdicts", ar: "تقييم المشاريع والأحكام" },
   { en: "The Signal Feed, live from the data", ar: "بث الإشارات مباشرةً من البيانات" },
-  { en: "The advisor chat — ask in your own words", ar: "المستشار — اسأل بكلامك العادي" },
+  { en: "The Decision Terminal chat — ask in your own words", ar: "شات محطة القرار — اسأل بكلامك العادي" },
 ] as const
 
 export default async function PricingPage() {
@@ -48,8 +48,8 @@ export default async function PricingPage() {
     {
       q: isArabic ? "ما الذي يأتي مع الحساب؟" : "What comes with the account?",
       a: isArabic
-        ? "طبقة الاستكشاف كاملة — البحث والبيانات والمستشار — بدون باقات وبدون ترقيات داخل المنصة."
-        : "The full discovery layer — search, the data, and the advisor — with no tiers and no in-product upgrades.",
+        ? "طبقة الاستكشاف كاملة — البحث والبيانات والشات — بدون باقات وبدون ترقيات داخل المنصة."
+        : "The full discovery layer — search, the data, and the chat — with no tiers and no in-product upgrades.",
     },
     {
       q: isArabic ? "إذاً ما الذي يُباع؟" : "Then what is for sale?",
@@ -75,8 +75,8 @@ export default async function PricingPage() {
           </h1>
           <p className="mt-4 text-base leading-relaxed text-muted-foreground md:text-lg">
             {isArabic
-              ? "حساب واحد يفتح البحث والبيانات والمستشار — استكشاف السوق من أوله لآخره. وما يجلب لك العميل التالي — الإعلانات والصفحات والمتابعة — تطبيقات تضيفها من المتجر وقت ما تحتاجها."
-              : "One account opens the search, the data, and the advisor — market discovery end to end. What wins you the next client — the ads, the pages, the follow-up — are apps you add from the store when you need them."}
+              ? "حساب واحد يفتح البحث والبيانات والشات — استكشاف السوق من أوله لآخره. وما يجلب لك العميل التالي — الإعلانات والصفحات والمتابعة — تطبيقات تضيفها من المتجر وقت ما تحتاجها."
+              : "One account opens the search, the data, and the chat — market discovery end to end. What wins you the next client — the ads, the pages, the follow-up — are apps you add from the store when you need them."}
           </p>
         </header>
 

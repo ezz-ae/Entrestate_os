@@ -3,20 +3,23 @@
 import { ShieldCheck, Database, Clock } from "lucide-react"
 import { useLocale } from "next-intl"
 
+/**
+ * The fourth cell used to print `updatedAt` — the request clock, formatted to
+ * the minute — under the word "Updated". Every read model stamps that field
+ * with `new Date()`, so the Decision Terminal's data-quality card said
+ * "Updated Sep 05, 02:44 PM" while the scores it summarised were computed in
+ * March and the newest DLD row was 21 August. The cell now takes the
+ * coverage line from lib/platform-metrics.coverageLabel — a date the data
+ * actually contains — and renders nothing when that is unknown.
+ */
 type TrustBarProps = {
   verifiedRows?: number
   highConfidencePct?: number
-  updatedAt?: string | null
+  /** coverageLabel(...) output: "DLD transactions through 21 Aug", or null. */
+  coverage?: string | null
 }
 
-function formatUpdatedAt(value: string | null | undefined, locale: string) {
-  if (!value) return "—"
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return "—"
-  return d.toLocaleString(locale === "ar" ? "ar-AE" : "en-US", { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
-}
-
-export function TrustBar({ verifiedRows, highConfidencePct, updatedAt }: TrustBarProps) {
+export function TrustBar({ verifiedRows, highConfidencePct, coverage }: TrustBarProps) {
   const locale = useLocale()
   const isArabic = locale === "ar"
   const highConfStr =
@@ -40,11 +43,15 @@ export function TrustBar({ verifiedRows, highConfidencePct, updatedAt }: TrustBa
         <span className="h-2 w-2 rounded-full bg-emerald-400" />
         <span><span className="font-medium text-foreground">{highConfStr}</span> {isArabic ? "ثقة عالية" : "high confidence"}</span>
       </div>
-      <div className="h-4 w-px bg-border/60" />
-      <div className="flex items-center gap-2 px-4 py-2.5 text-muted-foreground">
-        <Clock className="h-3.5 w-3.5" />
-        <span>{isArabic ? "تم التحديث" : "Updated"} <span className="font-medium text-foreground">{formatUpdatedAt(updatedAt, locale)}</span></span>
-      </div>
+      {coverage ? (
+        <>
+          <div className="h-4 w-px bg-border/60" />
+          <div className="flex items-center gap-2 px-4 py-2.5 text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" />
+            <span className="font-medium text-foreground">{coverage}</span>
+          </div>
+        </>
+      ) : null}
     </div>
   )
 }
