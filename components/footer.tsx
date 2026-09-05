@@ -296,7 +296,7 @@ export function Footer() {
                   {
                     value: projectCountText,
                     label: t("Scored projects", "مشاريع مصنفة"),
-                    sub: t("Engine refreshed hourly", "المحرّك يُحدَّث كل ساعة"),
+                    sub: t("Curated V1 inventory", "المخزون المنقّح V1"),
                   },
                   {
                     value: buySignalsText,
@@ -575,7 +575,7 @@ export function Footer() {
         <div className="container mx-auto px-6 py-4">
           <p className="text-[11px] leading-relaxed text-muted-foreground/60">
             {t(
-              "Entrestate is a market-intelligence layer, not a property listing marketplace, broker, or financial advisor. Verdicts and scores are evidence-backed reads of public and licensed data — they are not investment advice and do not replace legal or due-diligence review. Live counts and snapshots refresh throughout the day as new data lands.",
+              "Entrestate is a market-intelligence layer, not a property listing marketplace, broker, or financial advisor. Verdicts and scores are evidence-backed reads of public and licensed data — they are not investment advice and do not replace legal or due-diligence review. Counts are read from the database on every request, and each page states what its data covers.",
               "Entrestate طبقة استخبارات سوقية، وليست منصة قوائم عقارية أو وسيطاً أو مستشاراً مالياً. الأحكام والدرجات قراءات مدعومة بالأدلة من البيانات العامة والمرخّصة، وليست توصيات استثمارية ولا تُغني عن المراجعة القانونية. تتحدّث اللقطات على مدار اليوم مع وصول بيانات جديدة."
             )}
           </p>

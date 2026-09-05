@@ -13,6 +13,8 @@ type Props = {
   avgMarketPrice: number | null
   totalProjects: number
   buySignals: number
+  /** Projects whose price carries HIGH confidence — a count, so the share is computed here. */
+  highConfidence: number
   totalAreas: number
   ratedDevelopers: number
   dldTransactions: number
@@ -83,6 +85,7 @@ export function HeroSection({
   avgMarketPrice,
   totalProjects,
   buySignals,
+  highConfidence,
   totalAreas,
   ratedDevelopers,
   dldTransactions,
@@ -92,23 +95,36 @@ export function HeroSection({
   const locale = useLocale() as AppLocale
   const copy = COPY[locale] ?? COPY.en
 
+  // Every sublabel here is either a computed share or a description of the
+  // source. Until 2026-09-05 the first read "97% Grade A/B coverage" — a
+  // constant, while grades A and B were 12% of the scored inventory — and
+  // the BUY stat said "Refreshed each ETL pass" over an engine last run in
+  // March. A sublabel is a claim; it has to be one the numbers support.
+  const highConfidencePct = totalProjects > 0 ? Math.round((highConfidence / totalProjects) * 100) : null
   const stats = [
     {
       label: copy.stats.projects,
       value: totalProjects,
-      sublabel: locale === "ar" ? "٩٧٪ تغطية درجة A/B" : "97% Grade A/B coverage",
+      sublabel:
+        highConfidencePct === null
+          ? (locale === "ar" ? "المخزون المنقّح" : "Curated inventory")
+          : locale === "ar"
+            ? `${formatInteger(highConfidencePct, locale)}٪ بثقة سعر عالية`
+            : `${formatInteger(highConfidencePct, locale)}% HIGH price confidence`,
     },
     avgMarketPrice && avgMarketPrice > 0
       ? {
           label: copy.stats.avgPrice,
           value: formatAed(avgMarketPrice, locale, { compact: true }),
-          sublabel: locale === "ar" ? `الوسيط عبر ${formatInteger(totalAreas, locale)} منطقة` : `Median across ${formatInteger(totalAreas, locale)} areas`,
+          // It is a mean of entry prices across the scored projects; it was
+          // labelled a median across areas, which it never was.
+          sublabel: locale === "ar" ? `متوسط سعر الدخول عبر ${formatInteger(totalProjects, locale)} مشروعاً` : `Mean entry price across ${formatInteger(totalProjects, locale)} projects`,
         }
       : null,
     {
       label: copy.stats.buySignals,
       value: buySignals,
-      sublabel: locale === "ar" ? "يُحدَّث مع كل دورة ETL" : "Refreshed each ETL pass",
+      sublabel: locale === "ar" ? "إشارة التوقيت BUY أو أقوى" : "Timing signal BUY or stronger",
     },
     {
       label: copy.stats.dld,
