@@ -491,6 +491,7 @@ export default async function HomePage({
           avgMarketPrice={avgMarketPrice}
           totalProjects={totalProjects}
           buySignals={buySignals}
+          highConfidence={metrics.highConfidence}
           totalAreas={metrics.totalAreas}
           ratedDevelopers={metrics.ratedDevelopers}
           dldTransactions={metrics.dldTransactions}
