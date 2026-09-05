@@ -10,8 +10,8 @@ export async function generateMetadata(): Promise<Metadata> {
     ? "أسعار Entrestate — التحليل مع حسابك، والأدوات في المتجر"
     : "Entrestate Pricing — the analysis with your account, the tools in the store"
   const description = isArabic
-    ? "استكشاف السوق — البحث والبيانات والمستشار — يأتي مع كل حساب. وأدوات البيع تطبيقات في متجر تطبيقات Entrestate."
-    : "Market discovery — search, data, and the advisor — comes with every account. The selling tools are apps in the Entrestate App Store."
+    ? "استكشاف السوق — البحث والبيانات والشات — يأتي مع كل حساب. وأدوات البيع تطبيقات في متجر تطبيقات Entrestate."
+    : "Market discovery — search, data, and the chat — comes with every account. The selling tools are apps in the Entrestate App Store."
 
   return {
     title,

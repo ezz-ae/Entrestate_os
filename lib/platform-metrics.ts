@@ -51,18 +51,22 @@ export type PlatformMetrics = {
  * door. Silence is the honest fallback for a freshness claim.
  */
 export const PLATFORM_METRICS_FALLBACK: PlatformMetrics = {
-  dataAsOf: "2026-04-28T00:00:00.000Z",
+  dataAsOf: "2026-09-05T00:00:00.000Z",
   coverageThrough: null,
+  // Read from the curated inventory (api.projects_v1) and the DLD table on
+  // 2026-09-05 — the same population every surface now counts. Before this
+  // date the set mixed a March snapshot (2,813 · 136 BUY · 36,841) with
+  // nothing for HOLD/WAIT/AVOID, so a failed read printed a confident zero.
   totalProjects: 2813,
-  totalAreas: 167,
-  ratedDevelopers: 74,
-  strongBuySignals: 0,
-  buySignals: 136,
-  holdSignals: 0,
-  waitSignals: 0,
-  avoidSignals: 0,
-  highConfidence: 0,
-  dldTransactions: 36841,
+  totalAreas: 166,
+  ratedDevelopers: 481,
+  strongBuySignals: 126,
+  buySignals: 357,
+  holdSignals: 268,
+  waitSignals: 1162,
+  avoidSignals: 1026,
+  highConfidence: 2421,
+  dldTransactions: 46161,
   avgPrice: null,
   avgYield: null,
 }

@@ -3,7 +3,8 @@ import { TrustBar } from "@/components/decision/trust-bar"
 type Props = {
   verifiedRows: number
   highConfidencePct: number
-  updatedAt: string
+  /** coverageLabel(...) output, or null when the coverage date is unknown. */
+  coverage: string | null
   title?: string
   methodology?: string
 }
@@ -11,7 +12,7 @@ type Props = {
 export function TrustSection({
   verifiedRows,
   highConfidencePct,
-  updatedAt,
+  coverage,
   title = "Verify Every Assumption",
   methodology = "L1 Canonical → L2 Derived → L3 Dynamic → L4 External → L5 Raw",
 }: Props) {
@@ -21,7 +22,7 @@ export function TrustSection({
       <h2 className="mt-2 text-2xl font-semibold text-foreground">5-Layer Evidence Stack</h2>
       <p className="mt-2 text-sm text-muted-foreground">{methodology}</p>
       <div className="mt-4">
-        <TrustBar verifiedRows={verifiedRows} highConfidencePct={highConfidencePct} updatedAt={updatedAt} />
+        <TrustBar verifiedRows={verifiedRows} highConfidencePct={highConfidencePct} coverage={coverage} />
       </div>
     </section>
   )

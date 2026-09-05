@@ -3,6 +3,8 @@ import { MARKET_TABLES } from "@/lib/market-tables"
 import { Prisma, dbQuery } from "@/lib/db"
 import { getInventoryTableName, getInventoryTableSql } from "@/lib/inventory-table"
 import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
+import { getInvestorProfileCounts } from "@/lib/decision-infrastructure"
+import { INVESTOR_PROFILES } from "@/lib/investor-profiles"
 
 export type HomepageSectionRow = {
   id: string
@@ -319,6 +321,52 @@ type InventoryContext = {
   total: number
 }
 
+/**
+ * THE TABLE THE SIGNAL FEED COMPUTES FROM.
+ *
+ * The live section builder used to take whatever getInventoryContext() picked
+ * first — the configured table, api.projects_v1 — which is a view that keeps
+ * the decision columns but drops yield_label, affordability_tier and
+ * developer_reliability_score. Three sections then built from nothing. The
+ * curated table itself (MARKET_TABLES.inventory, canonical.inventory_clean)
+ * carries every V1 column; it is the same 2,813 rows the view exposes, so
+ * counting it changes no total. It is tried first and the ordinary resolver
+ * remains the fallback.
+ */
+async function getCuratedInventoryContext(): Promise<InventoryContext> {
+  const tableName = MARKET_TABLES.inventory
+  try {
+    const tableSql = Prisma.raw(tableName)
+    const countRows = await dbQuery<InventoryCountRow>(Prisma.sql`SELECT COUNT(*)::int AS total FROM ${tableSql}`)
+    const total = countRows[0]?.total ?? 0
+    if (total > 0) {
+      let columns = await getTableColumns(tableName).catch(() => new Set<string>())
+      if (columns.size === 0) columns = await getTableColumnsFromSample(tableSql).catch(() => new Set<string>())
+      if (columns.size > 0) return { tableName, tableSql, columns, total }
+    }
+  } catch (error) {
+    if (!isMissingRelationError(error, tableName) && !isMissingColumnError(error)) throw error
+  }
+  return getInventoryContext()
+}
+
+/** max(updated_at) of the curated table — when the scores were last written, or null. */
+async function readScoresAsOf(context: InventoryContext): Promise<string | null> {
+  const column = pickColumn(context.columns, "updated_at", "last_verified_at", "scored_at")
+  if (!column) return null
+  try {
+    const rows = await dbQuery<{ as_of: Date | string | null }>(Prisma.sql`
+      SELECT MAX(${Prisma.raw(column)}) AS as_of FROM ${context.tableSql}
+    `)
+    const value = rows[0]?.as_of
+    if (!value) return null
+    const at = value instanceof Date ? value : new Date(value)
+    return Number.isFinite(at.getTime()) ? at.toISOString() : null
+  } catch {
+    return null
+  }
+}
+
 function buildInventoryCandidates() {
   const configured = getInventoryTableName().trim()
   const candidates = [configured, ...INVENTORY_FALLBACK_TABLES]
@@ -447,7 +495,7 @@ async function buildMarketPulseSnapshot(context: InventoryContext) {
 }
 
 async function buildTopDataFallback(inventoryTotal: number) {
-  const context = await getInventoryContext()
+  const context = await getCuratedInventoryContext()
   const priceColumn = pickColumn(context.columns, "price_from_aed", "price_from")
   const yieldColumn = pickColumn(context.columns, "rental_yield")
   const timingColumn = pickColumn(context.columns, "timing_label")
@@ -456,7 +504,6 @@ async function buildTopDataFallback(inventoryTotal: number) {
   const evidenceColumn = pickColumn(context.columns, "evidence_label_v1", "evidence_level")
   const decisionColumn = pickColumn(context.columns, "decision_label_v1", "decision_label")
   const affordabilityColumn = pickColumn(context.columns, "affordability_tier", "affordability_label", "affordability")
-  const outcomeColumn = pickColumn(context.columns, "outcome_intent")
   const scoreColumn = pickColumn(context.columns, "investor_score_v1", "investor_score")
   const areaColumn = pickColumn(context.columns, "area")
   const developerColumn = pickColumn(context.columns, "developer")
@@ -555,19 +602,21 @@ async function buildTopDataFallback(inventoryTotal: number) {
           ORDER BY count DESC
         `)
       : Promise.resolve([]),
-    outcomeColumn
-      ? dbQuery(Prisma.sql`
-          SELECT
-            LOWER(TRIM(intent)) AS intent,
-            COUNT(*)::int AS count,
-            ${buildAvgSql(priceColumn)} AS avg_price,
-            ${buildAvgYieldSql(yieldColumn)} AS avg_yield
-          FROM ${context.tableSql},
-            LATERAL unnest(COALESCE(${Prisma.raw(outcomeColumn)}, ARRAY[]::text[])) AS intent
-          GROUP BY 1
-          ORDER BY count DESC
-        `)
-      : Promise.resolve([]),
+    // The six investor profiles, each a stated rule over this same table
+    // (lib/investor-profiles.ts) — not the ingest table's outcome_intent tags,
+    // which the curated inventory does not carry and which summed to more
+    // projects than exist.
+    getInvestorProfileCounts()
+      .then((profiles) =>
+        profiles
+          ? INVESTOR_PROFILES.map((profile) => ({
+              intent: profile.label,
+              rule: profile.rule,
+              count: profiles.counts.find((c) => c.key === profile.key)?.count ?? 0,
+            }))
+          : [],
+      )
+      .catch(() => []),
     scoreColumn
       ? dbQuery(Prisma.sql`
           SELECT
@@ -692,9 +741,46 @@ export async function getHomepageContentSections() {
   }
 }
 
-export async function getTopDataRows() {
-  const inventoryContext = await getInventoryContext()
+export type TopDataFeed = {
+  data_as_of: string
+  sections: TopDataRow[]
+  /** How the sections were produced — read by the page header, pinned by tests. */
+  source: "computed" | "snapshot" | "empty"
+  /** When the curated scores were last written, or null when unknown. */
+  scores_as_of: string | null
+}
+
+/**
+ * THE SIGNAL FEED IS COMPUTED, NOT REPLAYED.
+ *
+ * Until 2026-09-05 this function read api.entrestate_top_data first — fourteen
+ * JSON blobs a notebook wrote on 12 March — and only computed the sections
+ * from the database when that table was MISSING. It was never missing, so the
+ * feed showed "0 BUY signals · 177 days old" under a hero that said 761, and
+ * the honest per-section badges made the page contradict itself in one
+ * screenful. Every section can be built from the curated inventory and the
+ * DLD table on request (buildTopDataFallback — the name is historical; it is
+ * the primary path now), so that is what happens first, and the stored
+ * snapshot is the fallback for a database that cannot be read.
+ */
+export async function getTopDataRows(): Promise<TopDataFeed> {
+  const inventoryContext = await getCuratedInventoryContext()
   const inventoryTotal = inventoryContext.total > 0 ? inventoryContext.total : PLATFORM_METRICS_FALLBACK.totalProjects
+  const scoresAsOf = inventoryContext.total > 0 ? await readScoresAsOf(inventoryContext) : null
+
+  if (inventoryContext.total > 0) {
+    const computed = await buildSafeTopDataFallback(inventoryTotal)
+    if (computed.sections.length > 0) {
+      return { ...computed, source: "computed", scores_as_of: scoresAsOf }
+    }
+  }
+
+  const snapshot = await readTopDataSnapshot(inventoryTotal)
+  return { ...snapshot, scores_as_of: scoresAsOf }
+}
+
+/** The stored snapshot (api.entrestate_top_data), normalised — the fallback path. */
+async function readTopDataSnapshot(inventoryTotal: number): Promise<Omit<TopDataFeed, "scores_as_of">> {
   let rows: TopDataRow[] = []
 
   try {
@@ -706,7 +792,7 @@ export async function getTopDataRows() {
     `)
   } catch (error) {
     if (isMissingRelationError(error, "entrestate_top_data") || isMissingColumnError(error)) {
-      return buildSafeTopDataFallback(inventoryTotal)
+      return { data_as_of: new Date().toISOString(), sections: [], source: "empty" }
     }
     throw error
   }
@@ -780,6 +866,7 @@ export async function getTopDataRows() {
   return {
     data_as_of: new Date().toISOString(),
     sections: normalizedRows,
+    source: normalizedRows.length > 0 ? "snapshot" : "empty",
   }
 }
 
@@ -803,32 +890,6 @@ export async function getMarketPulseSummary() {
   return {
     data_as_of: new Date().toISOString(),
     summary,
-  }
-}
-
-export async function getOutcomeIntentCounts() {
-  const context = await getInventoryContext()
-  const outcomeColumn = pickColumn(context.columns, "outcome_intent")
-  if (!outcomeColumn) {
-    return {
-      data_as_of: new Date().toISOString(),
-      rows: [],
-    }
-  }
-
-  const rows = await dbQuery<Array<{ intent: string; count: number }>[number]>(Prisma.sql`
-    SELECT
-      LOWER(TRIM(intent)) AS intent,
-      COUNT(*)::int AS count
-    FROM ${context.tableSql},
-      LATERAL unnest(COALESCE(${Prisma.raw(outcomeColumn)}, ARRAY[]::text[])) AS intent
-    GROUP BY 1
-    ORDER BY count DESC
-  `)
-
-  return {
-    data_as_of: new Date().toISOString(),
-    rows,
   }
 }
 

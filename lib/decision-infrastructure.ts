@@ -15,6 +15,15 @@ import {
   getStatusTableName,
   getStatusTableSql,
 } from "@/lib/inventory-table"
+import {
+  FIRST_TIME_BUYER_MAX_AED,
+  GOLDEN_VISA_MIN_AED,
+  INVESTOR_PROFILES,
+  TROPHY_MIN_AED,
+  YIELD_SEEKING_MIN_PCT,
+  normalizeInvestorProfileKey,
+  type InvestorProfileKey,
+} from "@/lib/investor-profiles"
 
 const STATEMENT_TIMEOUT_MS = 9000
 
@@ -117,6 +126,59 @@ const CURATED_PROJECT_SORT_EXPRESSIONS: Record<SortBy, Prisma.Sql> = {
   reliability: Prisma.sql`developer_reliability_score`,
 }
 
+/**
+ * THE SIX INVESTOR PROFILES, AS SQL — one clause per profile, over the curated
+ * row aliased `t`. lib/investor-profiles.ts states each rule in words; this is
+ * the same rule in the only other form it has. The overview's count and the
+ * /properties?intent= list both go through here, so they cannot disagree.
+ */
+export function curatedProfileClause(key: InvestorProfileKey): Prisma.Sql {
+  switch (key) {
+    case "first_time_buyer":
+      return Prisma.sql`(${CURATED_PRICE_EXPR} > 0 AND ${CURATED_PRICE_EXPR} < ${FIRST_TIME_BUYER_MAX_AED})`
+    case "golden_visa":
+      return Prisma.sql`(
+        COALESCE(${CURATED_PRICE_EXPR}, 0) >= ${GOLDEN_VISA_MIN_AED}
+        OR LOWER(COALESCE(${CURATED_GOLDEN_VISA}, 'false')) IN ('true', 'yes', '1')
+      )`
+    case "yield_seeking":
+      return Prisma.sql`(${CURATED_RENTAL_YIELD} >= ${YIELD_SEEKING_MIN_PCT})`
+    case "conservative":
+      return Prisma.sql`(UPPER(COALESCE(${CURATED_STRESS_GRADE}, '')) IN ('A', 'B'))`
+    case "capital_growth":
+      return Prisma.sql`(UPPER(COALESCE(${CURATED_TIMING_LABEL}, '')) IN ('BUY', 'STRONG_BUY'))`
+    case "trophy_asset":
+      return Prisma.sql`(${CURATED_PRICE_EXPR} >= ${TROPHY_MIN_AED})`
+  }
+}
+
+export type InvestorProfileCount = { key: InvestorProfileKey; count: number }
+
+/**
+ * How many curated projects each profile's rule admits — six FILTER counts in
+ * one pass over the one table. Returns null, never zeros, when the table
+ * cannot be read: a panel that says "0 First-Time Buyer projects" over an
+ * unreachable database is the invented number this replaces.
+ */
+export async function getInvestorProfileCounts(): Promise<{ data_as_of: string; total: number; counts: InvestorProfileCount[] } | null> {
+  if (!USE_CURATED_PROPERTIES_VIEW) return null
+  const selections = INVESTOR_PROFILES.map(
+    (profile) => Prisma.sql`COUNT(*) FILTER (WHERE ${curatedProfileClause(profile.key)})::int AS ${Prisma.raw(`"${profile.key}"`)}`,
+  )
+  const rows = await runQuery<Record<string, unknown>>(Prisma.sql`
+    SELECT COUNT(*)::int AS total, ${Prisma.join(selections, ", ")}
+    FROM ${PROPERTIES_TABLE_SQL} t
+  `)
+  const row = rows[0]
+  const total = toNumber(row?.total) ?? 0
+  if (!row || total <= 0) return null
+  return {
+    data_as_of: new Date().toISOString(),
+    total,
+    counts: INVESTOR_PROFILES.map((profile) => ({ key: profile.key, count: toNumber(row[profile.key]) ?? 0 })),
+  }
+}
+
 const UAE_CITIES = [
   "dubai",
   "abu dhabi",
@@ -172,7 +234,7 @@ export type PropertyFilters = {
   budgetMinAed?: number
   bedsMin?: number
   bedsMax?: number
-  timingSignal?: "BUY" | "HOLD" | "WAIT"
+  timingSignal?: "BUY" | "HOLD" | "WAIT" | "AVOID"
   stressGradeMin?: "A" | "B" | "C" | "D"
   goldenVisaRequired?: boolean
 }
@@ -959,7 +1021,13 @@ function buildPropertyClauses(filters?: PropertyFilters, locale?: string, useCur
     )
   }
   if (filters.intent) {
-    if (!USE_CURATED_PROPERTIES_VIEW) {
+    if (useCurated) {
+      // Was a no-op on the curated view: /properties?intent=first_time_buyer
+      // listed all 2,813 projects under a card that said 3,887. The profile
+      // is now the same rule the overview counts with.
+      const key = normalizeInvestorProfileKey(filters.intent)
+      if (key) clauses.push(curatedProfileClause(key))
+    } else {
       clauses.push(Prisma.sql`outcome_intent @> ARRAY[${filters.intent}]::text[]`)
     }
   }
@@ -988,9 +1056,15 @@ function buildPropertyClauses(filters?: PropertyFilters, locale?: string, useCur
     }
   }
   if (filters.timingSignal) {
+    // BUY is the window, and STRONG_BUY is inside it: the overview counts
+    // them together (PlatformMetrics.buySignals), so the list behind
+    // "View all BUY-rated projects" must admit both or the count and the
+    // list disagree by every STRONG_BUY row.
+    const signal = filters.timingSignal.toUpperCase()
+    const curatedLabels = signal === "BUY" ? ["BUY", "STRONG_BUY"] : [signal]
     clauses.push(
       useCurated
-        ? Prisma.sql`timing_label = ${filters.timingSignal}`
+        ? Prisma.sql`UPPER(COALESCE(${CURATED_TIMING_LABEL}, '')) IN (${toSqlList(curatedLabels)})`
         : Prisma.sql`l3_timing_signal = ${filters.timingSignal}`,
     )
   }

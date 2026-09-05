@@ -90,7 +90,7 @@ export default async function DashboardPage() {
           </p>
         </header>
 
-        <TrustBar verifiedRows={projects} highConfidencePct={highConfidencePct} updatedAt={pulse.data_as_of} />
+        <TrustBar verifiedRows={projects} highConfidencePct={highConfidencePct} coverage={null} />
 
         <section className="relative mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(950px_circle_at_50%_-15%,rgba(59,130,246,0.2),transparent_58%)]" />
