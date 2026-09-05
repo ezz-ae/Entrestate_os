@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   if (!detail) {
     return {
-      title: locale === "ar" ? "المطور غير موجود | Entrestate" : "Developer not found | Entrestate",
+      title: locale === "ar" ? "المطور غير موجود" : "Developer not found",
       alternates: getLocaleAlternates(`/developers/${slug}`, locale),
     }
   }
@@ -31,8 +31,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const profile = developer.profile as Record<string, unknown> | null
   const developerName = pickLocalizedText(locale, profile?.developer_ar, developer.developer, locale === "ar" ? "المطور" : "Developer")
   const title = locale === "ar"
-    ? `${developerName} — موثوقية المطور وسجله | Entrestate`
-    : `${developerName} — Developer reliability and track record | Entrestate`
+    ? `${developerName} — موثوقية المطور وسجله`
+    : `${developerName} — Developer reliability and track record`
   const description = locale === "ar"
     ? `${developerName} مع درجة الموثوقية، وكفاءة التشغيل، وعدد المشاريع، والتواجد الجغرافي، وروابط مباشرة إلى المشاريع المتصلة.`
     : `${developerName} with reliability score, operating efficiency, project count, area presence, and direct links to connected projects.`

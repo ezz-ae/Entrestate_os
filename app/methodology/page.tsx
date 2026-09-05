@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
 
   return {
-    title: locale === "ar" ? "المنهجية | Entrestate" : "Methodology | Entrestate",
+    title: locale === "ar" ? "المنهجية" : "Methodology",
     description:
       locale === "ar"
         ? "كيف تُحوّل Entrestate المدخلات إلى أحكام قابلة للمراجعة: طبقات الأدلة L1–L5، عتبات Decision Label، والحواجز الصلبة."

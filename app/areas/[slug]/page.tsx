@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   if (!detail) {
     return {
-      title: locale === "ar" ? "المنطقة غير موجودة | Entrestate" : "Area not found | Entrestate",
+      title: locale === "ar" ? "المنطقة غير موجودة" : "Area not found",
       alternates: getLocaleAlternates(`/areas/${slug}`, locale),
     }
   }
@@ -32,8 +32,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const profile = area.profile as Record<string, unknown> | null
   const areaName = pickLocalizedText(locale, profile?.area_ar, area.area, locale === "ar" ? "المنطقة" : "Area")
   const title = locale === "ar"
-    ? `${areaName} — ملف المنطقة والأدلة | Entrestate`
-    : `${areaName} — Area intelligence and evidence | Entrestate`
+    ? `${areaName} — ملف المنطقة والأدلة`
+    : `${areaName} — Area intelligence and evidence`
   const description = locale === "ar"
     ? `${areaName} مع متوسط السعر، ومتوسط العائد، وضغط المعروض، وفرص الشراء، وروابط مباشرة إلى المشاريع النشطة والمطورين المرتبطين.`
     : `${areaName} with average price, yield, supply pressure, BUY signals, and direct links to active projects and linked developers.`

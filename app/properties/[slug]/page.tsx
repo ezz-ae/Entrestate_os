@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   if (!detail) {
     return {
-      title: locale === "ar" ? "المشروع غير موجود | Entrestate" : "Project not found | Entrestate",
+      title: locale === "ar" ? "المشروع غير موجود" : "Project not found",
       alternates: getLocaleAlternates(`/properties/${slug}`, locale),
     }
   }
@@ -36,8 +36,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const area = pickLocalizedText(locale, project.area_ar, project.final_area ?? project.area, locale === "ar" ? "دبي" : "Dubai")
   const developer = pickLocalizedText(locale, project.developer_ar, project.developer, locale === "ar" ? "المطور" : "Developer")
   const title = locale === "ar"
-    ? `${name} — تقييم المشروع والأدلة | Entrestate`
-    : `${name} — Project score and evidence | Entrestate`
+    ? `${name} — تقييم المشروع والأدلة`
+    : `${name} — Project score and evidence`
   const description = locale === "ar"
     ? `${name} في ${area} من ${developer}. راجع الحكم المدعوم بالأدلة، إشارة التوقيت، طبقة الضغط، وحسابات العائد من صفحة المشروع الكاملة.`
     : `${name} in ${area} by ${developer}. Review the evidence-backed verdict, timing signal, stress layer, and yield calculations from the full project page.`

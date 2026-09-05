@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
 
   return {
-    title: locale === "ar" ? "سياسة الخصوصية | Entrestate" : "Privacy Policy | Entrestate",
+    title: locale === "ar" ? "سياسة الخصوصية" : "Privacy Policy",
     description:
       locale === "ar"
         ? "كيف تتعامل Entrestate مع بيانات الحساب واستخدام المنصة وطلبات الدعم ومخرجات الأدوات."

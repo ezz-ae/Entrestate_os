@@ -39,8 +39,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title:
       locale === "ar"
-        ? `موثوقية مطوري دبي — ${formatter.format(metrics.ratedDevelopers)} مطوراً مُقيّماً | Entrestate`
-        : `Dubai Developer Reliability Scores — ${formatter.format(metrics.ratedDevelopers)} Rated | Entrestate`,
+        ? `موثوقية مطوري دبي — ${formatter.format(metrics.ratedDevelopers)} مطوراً مُقيّماً`
+        : `Dubai Developer Reliability Scores — ${formatter.format(metrics.ratedDevelopers)} Rated`,
     description:
       locale === "ar"
         ? "تتبّع أداء المطورين عبر الاتساق ومعدل التسليم وسلامة المشاريع وجودة التنفيذ، مع درجات موثوقية للمطورين أصحاب السجل الموثق."

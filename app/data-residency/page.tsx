@@ -68,7 +68,7 @@ function getDocument(locale: "en" | "ar"): PolicyDocument {
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
   return {
-    title: locale === "ar" ? "توطين البيانات | Entrestate" : "Data Residency | Entrestate",
+    title: locale === "ar" ? "توطين البيانات" : "Data Residency",
     description:
       locale === "ar"
         ? "أين تُعالج بيانات العملاء داخل Entrestate وكيف تتم حماية النقل العابر للحدود."

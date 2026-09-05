@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale()
 
   return {
-    title: locale === "ar" ? "سياسة ملفات الارتباط | Entrestate" : "Cookie Policy | Entrestate",
+    title: locale === "ar" ? "سياسة ملفات الارتباط" : "Cookie Policy",
     description:
       locale === "ar"
         ? "كيف تستخدم Entrestate ملفات الارتباط والتخزين المحلي لتثبيت الجلسة وتحسين الأداء وحفظ التفضيلات."
