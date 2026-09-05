@@ -2,90 +2,89 @@ import Link from "next/link"
 import { CheckCircle2, Clock, Database, AlertCircle, Server, Shield, Zap, BarChart3 } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { getDataFreshnessStatus, getMarketPulse } from "@/lib/decision-infrastructure"
+import { getPlatformMetrics } from "@/lib/platform-metrics.server"
+import { PLATFORM_METRICS_FALLBACK, coverageLabel } from "@/lib/platform-metrics"
+import { getTopDataRows } from "@/lib/frontend-content"
 import { getNumberLocale, getDateLocale } from "@/lib/format/locale"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath, type AppLocale } from "@/i18n/locale"
 
 export const dynamic = "force-dynamic"
 
-function getServices(locale: AppLocale) {
-  if (locale === "ar") {
-    return [
-      {
-        name: "مساعد القرار",
-        status: "يعمل",
-        detail: "إجابات مباشرة وبث حي عبر Claude Sonnet 4.6",
-        icon: Zap,
-      },
-      {
-        name: "تغذية بيانات السوق",
-        status: "يعمل",
-        detail: "خط معالجة من عشر مراحل والدورات تُغلق في موعدها",
-        icon: Database,
-      },
-      {
-        name: "محرك القرار",
-        status: "يعمل",
-        detail: "قراءة المشاريع والمناطق والمطورين متاحة الآن",
-        icon: BarChart3,
-      },
-      {
-        name: "الدخول والصلاحيات",
-        status: "يعمل",
-        detail: "جلسات المستخدمين تصدر بشكل طبيعي عبر Neon Auth (تسجيل جوجل)",
-        icon: Shield,
-      },
-      {
-        name: "التقارير والمخرجات",
-        status: "يعمل",
-        detail: "حفظ الملفات والنتائج داخل Neon يعمل بدون انقطاع",
-        icon: Server,
-      },
-      {
-        name: "مكتب المستثمر",
-        status: "يعمل",
-        detail: "لوحات السوق والمذكرات السريعة متاحة للفِرق",
-        icon: BarChart3,
-      },
-    ]
-  }
+/**
+ * WHAT A STATUS PAGE MAY SAY.
+ *
+ * Until 2026-09-05 every row here was a constant: six services "Operational",
+ * "10-phase pipeline · Last cycle completed on schedule", "Streaming
+ * responses live", and the banner "All systems operational" was derived from
+ * those constants — a status page that could not fail. Meanwhile the newest
+ * DLD row was 21 August and the scores were written in March.
+ *
+ * Now the two rows that CAN be measured are: the data feed states the DLD
+ * coverage it actually read (count and newest date, with the age), and the
+ * scoring engine states how many projects carry scores and when those were
+ * written. A row whose read failed says "Unreadable" and turns the banner
+ * amber. The rows that cannot be measured from here (auth, reports, the chat
+ * model) describe what the service does, and claim no cadence.
+ */
+type Measured = {
+  dldCount: number | null
+  coverage: string | null
+  coverageAgeDays: number | null
+  scoredCount: number | null
+  scoresAsOf: string | null
+  readable: boolean
+}
+
+function getServices(locale: AppLocale, m: Measured) {
+  const ar = locale === "ar"
+  const ok = ar ? "يعمل" : "Operational"
+  const bad = ar ? "غير مقروء" : "Unreadable"
+  const n = (v: number | null) => (v === null ? "—" : v.toLocaleString(getNumberLocale(locale)))
+  const scoresDate = m.scoresAsOf
+    ? new Date(m.scoresAsOf).toLocaleDateString(getDateLocale(locale), { month: "short", day: "numeric", timeZone: "Asia/Dubai" })
+    : null
+  const age = m.coverageAgeDays === null ? "" : ar ? ` (منذ ${m.coverageAgeDays} يوم)` : ` (${m.coverageAgeDays} days ago)`
 
   return [
     {
-      name: "Decision Terminal",
-      status: "Operational",
-      detail: "Streaming responses live · Claude Sonnet 4.6",
+      name: ar ? "محطة القرار" : "Decision Terminal",
+      status: ok,
+      detail: ar ? "كل إجابة تعرض خطواتها وأدلتها" : "Every answer streams with its steps and its evidence",
       icon: Zap,
     },
     {
-      name: "Market data feed",
-      status: "Operational",
-      detail: "10-phase pipeline · Last cycle completed on schedule",
+      name: ar ? "تغذية بيانات السوق" : "Market data feed",
+      status: m.readable ? ok : bad,
+      detail: m.readable
+        ? `${n(m.dldCount)} ${ar ? "صفقة DLD" : "DLD transactions"}${m.coverage ? ` · ${m.coverage}${age}` : ""}`
+        : ar ? "تعذّرت قراءة جدول الصفقات الآن" : "The transactions table could not be read just now",
       icon: Database,
     },
     {
-      name: "Scoring engine",
-      status: "Operational",
-      detail: "Properties, Areas, Developers scoring active",
+      name: ar ? "محرك التقييم" : "Scoring engine",
+      status: m.readable ? ok : bad,
+      detail: m.readable
+        ? `${n(m.scoredCount)} ${ar ? "مشروعاً مقيّماً" : "projects scored"}${scoresDate ? (ar ? ` · الدرجات كما في ${scoresDate}` : ` · scores as written on ${scoresDate}`) : ""}`
+        : ar ? "تعذّرت قراءة المخزون المنقّح الآن" : "The curated inventory could not be read just now",
       icon: BarChart3,
     },
     {
-      name: "Authentication",
-      status: "Operational",
-      detail: "Neon Auth · Session issuance normal",
+      name: ar ? "تسجيل الدخول" : "Authentication",
+      status: ok,
+      detail: ar ? "Neon Auth · جلسة واحدة عبر .entrestate.com" : "Neon Auth · one session across .entrestate.com",
       icon: Shield,
     },
     {
-      name: "Report generation",
-      status: "Operational",
-      detail: "Artifact persistence to Neon active",
+      name: ar ? "التقارير والمخرجات" : "Report generation",
+      status: ok,
+      detail: ar ? "حفظ الملفات والنتائج داخل Neon" : "Artifacts persisted to Neon",
       icon: Server,
     },
     {
-      name: "Investor desk",
-      status: "Operational",
-      detail: "Market views and briefs available",
+      name: ar ? "مكتب المستثمر" : "Investor desk",
+      status: ok,
+      detail: ar ? "لوحات السوق والمذكرات متاحة" : "Market views and briefs available",
       icon: BarChart3,
     },
   ]
@@ -96,7 +95,7 @@ function getSloTargets(locale: AppLocale) {
     return [
       { metric: "استقرار المنصة", target: "99.5%", period: "شهريًا" },
       { metric: "زمن استجابة API p95", target: "< 800 ms", period: "بشكل مستمر" },
-      { metric: "حداثة البيانات", target: "< 24 h", period: "مع كل دورة تشغيل" },
+      { metric: "تغطية البيانات", target: "مذكورة على كل صفحة", period: "دائماً" },
       { metric: "زمن الرجوع الآمن", target: "< 60 s", period: "عند الحاجة" },
     ]
   }
@@ -104,7 +103,7 @@ function getSloTargets(locale: AppLocale) {
   return [
     { metric: "Platform uptime", target: "99.5%", period: "Monthly" },
     { metric: "API p95 response", target: "< 800 ms", period: "Continuous" },
-    { metric: "Data freshness", target: "< 24 h", period: "Per pipeline cycle" },
+    { metric: "Data coverage", target: "Stated on every page", period: "Always" },
     { metric: "Rollback RTO", target: "< 60 s", period: "Per incident" },
   ]
 }
@@ -161,37 +160,15 @@ function getGovernanceLinks(locale: AppLocale) {
   ]
 }
 
-async function getSnapshotSummary() {
-  try {
-    const [pulse, freshness] = await Promise.all([getMarketPulse(), getDataFreshnessStatus()])
-    const summary = pulse.summary as Record<string, unknown> | null
-    const projects = typeof summary?.projects === "number" ? summary.projects : null
-    const highConfidence = pulse.confidence_distribution.find((item) => String(item.label ?? "").toUpperCase() === "HIGH")
-    const buySignals = pulse.timing_signals.find((item) => String(item.label ?? "").toUpperCase() === "BUY")
-    const freshnessRow = freshness.row as Record<string, unknown> | null
-    const freshnessTimestamp =
-      (typeof freshnessRow?.data_as_of === "string" && freshnessRow.data_as_of) ||
-      (typeof freshnessRow?.as_of === "string" && freshnessRow.as_of) ||
-      (typeof freshnessRow?.generated_at === "string" && freshnessRow.generated_at) ||
-      (typeof freshnessRow?.updated_at === "string" && freshnessRow.updated_at) ||
-      null
-
-    return {
-      generated: freshnessTimestamp ?? pulse.data_as_of,
-      masterCount: projects,
-      mediaCount: buySignals?.count ?? null,
-      scoredCount: highConfidence?.count ?? null,
-    }
-  } catch {
-    return { generated: null, masterCount: null, mediaCount: null, scoredCount: null }
-  }
-}
-
-function formatTs(value: string | null | undefined, locale: AppLocale) {
-  if (!value) return locale === "ar" ? "غير متاح" : "Not available"
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return value
-  return d.toLocaleString(getDateLocale(locale), { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+async function getSnapshotSummary(): Promise<{ metrics: typeof PLATFORM_METRICS_FALLBACK; scoresAsOf: string | null; readable: boolean }> {
+  // The same metrics source every other page reads — /status used to count
+  // through getMarketPulse (the old population, 1,946) while the footer
+  // beneath it said 2,813.
+  const [metrics, feed] = await Promise.all([
+    getPlatformMetrics().then((m) => ({ m, ok: true })).catch(() => ({ m: PLATFORM_METRICS_FALLBACK, ok: false })),
+    getTopDataRows().catch(() => null),
+  ])
+  return { metrics: metrics.m, scoresAsOf: feed?.scores_as_of ?? null, readable: metrics.ok && metrics.m.coverageThrough !== null }
 }
 
 function formatIncidentDate(value: string, locale: AppLocale) {
@@ -203,11 +180,22 @@ function formatIncidentDate(value: string, locale: AppLocale) {
 export default async function StatusPage() {
   const locale = await getRequestLocale()
   const isArabic = locale === "ar"
-  const services = getServices(locale)
+  const snapshot = await getSnapshotSummary()
+  const coverage = coverageLabel(snapshot.metrics.coverageThrough, locale === "ar")
+  const coverageAgeDays = snapshot.metrics.coverageThrough
+    ? Math.max(0, Math.floor((Date.now() - new Date(snapshot.metrics.coverageThrough).getTime()) / 86_400_000))
+    : null
+  const services = getServices(locale, {
+    dldCount: snapshot.readable ? snapshot.metrics.dldTransactions : null,
+    coverage,
+    coverageAgeDays,
+    scoredCount: snapshot.readable ? snapshot.metrics.totalProjects : null,
+    scoresAsOf: snapshot.scoresAsOf,
+    readable: snapshot.readable,
+  })
   const sloTargets = getSloTargets(locale)
   const incidents = getIncidents(locale)
   const governanceLinks = getGovernanceLinks(locale)
-  const snapshot = await getSnapshotSummary()
   const numberLocale = getNumberLocale(locale)
   const allOperational = services.every((service) => service.status === (isArabic ? "يعمل" : "Operational"))
 
@@ -264,9 +252,11 @@ export default async function StatusPage() {
                   : "Partial service disruption"}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
+              {/* "Last checked <now>" was the request clock. The line now says
+                  what the check READ — the coverage — or that it read nothing. */}
               {isArabic
-                ? `${services.length.toLocaleString(numberLocale)} خدمات تحت المراقبة · آخر فحص ${formatTs(snapshot.generated, locale)}`
-                : `${services.length} services monitored · Last checked ${formatTs(snapshot.generated, locale)}`}
+                ? `${services.length.toLocaleString(numberLocale)} خدمات تحت المراقبة${coverage ? ` · ${coverage}` : ""}`
+                : `${services.length} services monitored${coverage ? ` · ${coverage}` : ""}`}
             </p>
           </div>
         </div>
@@ -309,26 +299,28 @@ export default async function StatusPage() {
             <h2 className="text-sm font-semibold text-foreground">
               {isArabic ? "لقطة سريعة من البيانات" : "Market data snapshot"}
             </h2>
-            <span className="ml-auto text-xs text-muted-foreground">
-              <Clock className="mr-1 inline h-3 w-3" />
-              {formatTs(snapshot.generated, locale)}
-            </span>
+            {coverage ? (
+              <span className="ml-auto text-xs text-muted-foreground">
+                <Clock className="mr-1 inline h-3 w-3" />
+                {coverage}
+              </span>
+            ) : null}
           </div>
           <div className="grid grid-cols-1 divide-x divide-border/50 md:grid-cols-3">
             {[
               {
-                label: isArabic ? "المشاريع في المستودع" : "Projects in master",
-                value: snapshot.masterCount?.toLocaleString(numberLocale) ?? "—",
+                label: isArabic ? "المشاريع المقيّمة" : "Scored projects",
+                value: snapshot.readable ? snapshot.metrics.totalProjects.toLocaleString(numberLocale) : "—",
                 color: "text-sky-300",
               },
               {
-                label: isArabic ? "صفوف الثقة العالية" : "High confidence rows",
-                value: snapshot.scoredCount?.toLocaleString(numberLocale) ?? "—",
+                label: isArabic ? "ثقة سعر عالية" : "HIGH price confidence",
+                value: snapshot.readable ? snapshot.metrics.highConfidence.toLocaleString(numberLocale) : "—",
                 color: "text-emerald-300",
               },
               {
                 label: isArabic ? "إشارات BUY" : "BUY timing signals",
-                value: snapshot.mediaCount?.toLocaleString(numberLocale) ?? "—",
+                value: snapshot.readable ? snapshot.metrics.buySignals.toLocaleString(numberLocale) : "—",
                 color: "text-emerald-300",
               },
             ].map((item) => (
