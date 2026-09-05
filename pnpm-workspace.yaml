@@ -1,10 +1,15 @@
-allowBuilds:
-  '@parcel/watcher': set this to true or false
-  '@prisma/client': set this to true or false
-  '@prisma/engines': set this to true or false
-  '@sentry-internal/node-cpu-profiler': set this to true or false
-  '@swc/core': set this to true or false
-  core-js: set this to true or false
-  esbuild: set this to true or false
-  prisma: set this to true or false
-  sharp: set this to true or false
+# pnpm 10+ reads build-script permissions from here, not from the `pnpm`
+# field in package.json (pnpm 11 ignores that field outright). This is the
+# same list that field carried, plus the two native modules pnpm 11 flagged.
+# A placeholder version of this file ("set this to true or false") was
+# written by pnpm 11 during a local build and slipped into PR #36.
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@sentry-internal/node-cpu-profiler'
+  - '@swc/core'
+  - core-js
+  - esbuild
+  - prisma
+  - sharp

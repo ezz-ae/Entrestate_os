@@ -126,9 +126,12 @@ describe("the repository root stays readable", () => {
     // to open on "CODEX_FRONTEND (2).md" and "Entrestate_Data_Agent_Task_List
     // (1) (1).docx"; the planning documents now live in docs/archive/.
     const ALLOWED_ROOT_DOCS = new Set(["README.md", "LICENSE.md", "NOTICE.md", "site-map.md"])
+    // pnpm's own two files are configuration, not documents: the lockfile,
+    // and pnpm-workspace.yaml, where pnpm 10+ keeps onlyBuiltDependencies.
+    const PNPM_CONFIG = new Set(["pnpm-lock.yaml", "pnpm-workspace.yaml"])
     const offenders = tracked()
       .filter((f) => !f.includes("/") && /\.(md|html|docx|pdf|yaml|yml)$/i.test(f))
-      .filter((f) => !ALLOWED_ROOT_DOCS.has(f) && f !== "pnpm-lock.yaml")
+      .filter((f) => !ALLOWED_ROOT_DOCS.has(f) && !PNPM_CONFIG.has(f))
     expect(offenders).toEqual([])
   })
 })
