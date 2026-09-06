@@ -1,5 +1,4 @@
 import { getRequestId } from "@/lib/api-errors"
-import { hasTierAccess } from "@/lib/tier-access"
 import { getSyncedUser } from "@/lib/auth/sync"
 import { prisma } from "@/lib/prisma"
 
@@ -19,13 +18,9 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     })
   }
 
-  if (!await hasTierAccess(request, "team")) {
-    return new Response(JSON.stringify({ error: "Team tier required", requestId }), {
-      status: 403,
-      headers: { "Content-Type": "application/json" },
-    })
-  }
-
+  // No tier gate — see app/api/reports/generate/route.ts. A report belongs to
+  // an account, which the sign-in check above already establishes, and the
+  // team scoping below keeps a report inside the team that owns it.
   const { id } = await context.params
   const teamId = user.profile?.teamId
   const report = await prisma.assistantReport.findFirst({
