@@ -22,7 +22,8 @@ import { faqSchema } from "@/lib/seo/schema"
  * what the account gives instead of calling it free. The owner's second rule,
  * verbatim: "بلاش نستخدم فري لأنها دايماً بتعطي انطباع بالغير أهمية" — the
  * word cheapens what it describes. The included layer is called what it IS:
- * market discovery / the full market analysis. The selling work is apps in
+ * market discovery / the full computed market (the product computes; it does
+ * not analyse or advise — the owner's line, and the award text's). The selling work is apps in
  * the store. lib/pricing/plans.ts and the Tap/checkout plumbing stay in
  * the codebase, dormant and still pinned by tests/pricing-money.test.ts — a
  * money path is decommissioned by unlinking it, not by deleting the guard
@@ -70,8 +71,8 @@ export default async function PricingPage() {
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-foreground md:text-6xl">
             {isArabic
-              ? "تحليل السوق كامل — مع حسابك."
-              : "The full market analysis comes with your account."}
+              ? "السوق محسوب بالكامل — مع حسابك."
+              : "The full computed market comes with your account."}
           </h1>
           <p className="mt-4 text-base leading-relaxed text-muted-foreground md:text-lg">
             {isArabic

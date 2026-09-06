@@ -7,8 +7,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const isArabic = locale === "ar"
   const alternates = getLocaleAlternates("/pricing", locale)
   const title = isArabic
-    ? "أسعار Entrestate — التحليل مع حسابك، والأدوات في المتجر"
-    : "Entrestate Pricing — the analysis with your account, the tools in the store"
+    ? "أسعار Entrestate — السوق المحسوب مع حسابك، والأدوات في المتجر"
+    : "Entrestate Pricing — the computed market with your account, the tools in the store"
   const description = isArabic
     ? "استكشاف السوق — البحث والبيانات والشات — يأتي مع كل حساب. وأدوات البيع تطبيقات في متجر تطبيقات Entrestate."
     : "Market discovery — search, data, and the chat — comes with every account. The selling tools are apps in the Entrestate App Store."
