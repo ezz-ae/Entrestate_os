@@ -68,6 +68,7 @@ import { getUserProfile } from "@/lib/profile/queries"
 import { normalizeLocale } from "@/i18n/locale"
 import { getEnterpriseConfig } from "@/lib/enterprise-config"
 import { getLatestNotebookProvenance } from "@/lib/notebook-provenance"
+import { resolveRequestAccountKey } from "@/lib/tier-access"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -206,7 +207,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid request payload", requestId }, { status: 400 })
     }
 
-    const headerAccountKey = request.headers.get("x-entrestate-account-key")?.trim() || request.headers.get("x-entrestate-user-id")?.trim()
+    // The account this request may act as — the session, or an internal
+    // caller that presented INTERNAL_API_SECRET. It used to be whatever
+    // `x-entrestate-account-key` said, so anyone could spend anyone's
+    // allowance and read their tier. See lib/tier-access.ts.
+    const trustedAccountKey = await resolveRequestAccountKey(request)
     let entitlement = {
       accountKey: null,
       tier: "free",
@@ -215,7 +220,7 @@ export async function POST(request: Request) {
       status: null,
     }
     try {
-      entitlement = await getCurrentEntitlement(headerAccountKey)
+      entitlement = await getCurrentEntitlement(trustedAccountKey)
     } catch (error) {
       console.error("Copilot entitlement lookup failed; using discovery fallback.", { requestId, error })
     }

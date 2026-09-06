@@ -23,8 +23,14 @@ export async function GET(request: Request) {
       )
     }
 
-    const sessionUser = await getSessionUser()
-    const accountKey = queryAccountKey || sessionUser?.id || null
+    // THE SESSION DECIDES WHOSE SUBSCRIPTION THIS IS. `queryAccountKey` used
+    // to win, so a signed-in buyer could start a subscription that lands on
+    // somebody else's account, and an unauthenticated caller could start one
+    // on any account by naming it. The query key is now honoured only when
+    // there is no session at all — the operator path — and never over a
+    // signed-in identity.
+    const sessionUser = await getSessionUser().catch(() => null)
+    const accountKey = sessionUser?.id || queryAccountKey || null
 
     if (!accountKey) {
       return NextResponse.json(
@@ -33,16 +39,23 @@ export async function GET(request: Request) {
       )
     }
 
-    // Validate coupon if provided
+    // A CODE THAT DOES NOT VALIDATE STOPS THE CHECKOUT. It used to be dropped
+    // in silence — the buyer typed a code, saw no error, and was sent to
+    // PayPal to approve the full price. Someone who mistypes a discount they
+    // were given should be told, not charged the difference and left to find
+    // it on the statement.
     let discountPct = 0
     let validatedCouponCode: string | null = null
     if (couponCode) {
       const couponResult = await validateCoupon(couponCode, accountKey)
-      if (couponResult.valid) {
-        discountPct = couponResult.coupon.discount_pct
-        validatedCouponCode = couponResult.coupon.code
+      if (!couponResult.valid) {
+        return NextResponse.json(
+          { error: `That code is not valid for this account: ${couponCode}`, requestId },
+          { status: 400 },
+        )
       }
-      // Invalid coupon — silently proceed without discount
+      discountPct = couponResult.coupon.discount_pct
+      validatedCouponCode = couponResult.coupon.code
     }
 
     const existingEntitlement = await getEntitlementByAccountKey(accountKey)
