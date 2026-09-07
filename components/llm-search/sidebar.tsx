@@ -524,21 +524,37 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
     }
 
     initialPromptRef.current = promptParam
-    setInput(promptParam)
+    // Sent, not typed in: it used to be put in the box first and cleared when
+    // the answer finished, which is the same "still sitting there" the
+    // composer had. It returns to the box only if it never left.
     void sendPrompt(promptParam).then((sent) => {
-      if (sent) {
-        setInput("")
-      }
+      if (!sent) setInput(promptParam)
     })
   }, [promptParam, openPanel, isSidebarOpen, openSidebar, sendPrompt])
 
+  /**
+   * THE BOX EMPTIES WHEN THE MESSAGE LEAVES, NOT WHEN THE ANSWER ARRIVES.
+   *
+   * `sendPrompt` awaits `sendMessage`, and the AI SDK resolves that only when
+   * the whole streamed reply has finished — so clearing after it left the
+   * typed words in the composer for the entire answer. The owner: "you send
+   * something to the AI and it stays in the text box raw — it goes and waits,
+   * and it leaves you not understanding." The sentence appears twice, once in
+   * the thread and once still in the box, and pressing send looks like it did
+   * nothing.
+   *
+   * Emptied first; the words come BACK only if the send failed, which is the
+   * one case where the reader still needs them.
+   */
   const submitMessage = async (event?: FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement>) => {
     event?.preventDefault()
 
-    const submitted = await sendPrompt(input)
-    if (submitted) {
-      setInput("")
-    }
+    const value = input.trim()
+    if (!value) return
+
+    setInput("")
+    const submitted = await sendPrompt(value)
+    if (!submitted) setInput(value)
   }
 
   // If the global sidebar is open, force the panel open.
