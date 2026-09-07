@@ -545,9 +545,21 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
   const effectiveOpenPanel = authenticated
     ? (isSidebarOpen ? (openPanel ?? "chat") : openPanel)
     : (isSidebarOpen ? openPanel ?? "chat" : null)
+  /**
+   * `w-full`, NOT `w-screen`. The mobile drawer is a full-width panel, and
+   * `w-screen` sets `width: 100vw` — the LAYOUT viewport, which on a phone is
+   * not always the width the reader can see. When the two differ (a pinch, a
+   * browser that keeps the layout viewport at its unscrolled width while the
+   * URL bar animates), a 100vw panel is wider than the screen and everything
+   * in it is cut on the right with no ellipsis: the account card's button
+   * showing "Vie", a description ending mid-word, the bottom tab bar's last
+   * item reading "Clo". `w-full` inside a container pinned `inset-x-0` is
+   * whatever the browser says the width is, which is the only number that
+   * cannot be wrong.
+   */
   const sidebarWidthClass = authenticated
-    ? (effectiveOpenPanel ? "w-screen md:w-[420px]" : "w-[72px]")
-    : "w-screen md:w-[420px]"
+    ? (effectiveOpenPanel ? "w-full md:w-[420px]" : "w-[72px]")
+    : "w-full md:w-[420px]"
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 768px)")
@@ -1035,7 +1047,10 @@ export function LlmSidebar({ authenticated = true }: { authenticated?: boolean }
       {isSidebarOpen && (
         <div className="fixed inset-0 z-[55] bg-background/80 backdrop-blur-sm md:hidden animate-in fade-in duration-300" onClick={handleCloseSidebar} />
       )}
-      <div className={`fixed inset-y-0 left-0 rtl:left-auto rtl:right-0 z-[60] h-[100dvh] max-h-[100dvh] transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full pointer-events-none'}`}>
+      {/* inset-x-0 so the panel's `w-full` is the screen. The slide direction
+          still comes from the transform, which is what carried the RTL side
+          before; pinning both edges is what makes the width honest. */}
+      <div className={`fixed inset-x-0 inset-y-0 z-[60] h-[100dvh] max-h-[100dvh] overflow-x-hidden transition-transform duration-300 ease-out md:hidden ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full pointer-events-none'}`}>
         {sidebarContent}
       </div>
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />

@@ -981,7 +981,7 @@ export function TimeMachineRolodex() {
 
                               {/* Masthead row */}
                               <div className="flex items-center justify-between">
-                                <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/30">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/30">
                                   {isArabic ? "أبحاث Entrestate" : "Entrestate Research"}
                                 </p>
                                 {card.category && (
@@ -1002,7 +1002,7 @@ export function TimeMachineRolodex() {
                                 <p className="mt-4 text-base leading-relaxed text-muted-foreground line-clamp-3">
                                   {card.subtitle}
                                 </p>
-                                <p className="mt-5 text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/30">
+                                <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/30">
                                   {copy.byEngine}
                                 </p>
                               </div>
@@ -1020,7 +1020,7 @@ export function TimeMachineRolodex() {
 
                             {/* ── Side rail — topics ── */}
                             <div className="hidden md:flex w-[148px] shrink-0 flex-col border-s border-border/30 bg-card/20 p-5 pt-8">
-                              <p className="mb-3 text-[8px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/25">
+                              <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/25">
                                 {copy.topics}
                               </p>
                               <div className="flex flex-col gap-2">
@@ -1035,10 +1035,10 @@ export function TimeMachineRolodex() {
                               </div>
                               <div className="mt-auto space-y-1.5 border-t border-border/20 pt-4">
                                 {card.readTime && (
-                                  <p className="text-[9px] text-muted-foreground/30">{card.readTime}</p>
+                                  <p className="text-[10px] text-muted-foreground/30">{card.readTime}</p>
                                 )}
                                 {card.author && (
-                                  <p className="text-[9px] text-muted-foreground/25">{card.author}</p>
+                                  <p className="text-[10px] text-muted-foreground/25">{card.author}</p>
                                 )}
                               </div>
                             </div>
@@ -1166,11 +1166,11 @@ export function TimeMachineRolodex() {
                       "
                     </div>
                     <div className="flex items-center justify-between">
-                      <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/30">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/30">
                         {isArabic ? "أبحاث Entrestate" : "Entrestate Research"}
                       </p>
                       {hc.category && (
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-medium text-primary">
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
                           {hc.category}
                         </span>
                       )}
@@ -1181,7 +1181,7 @@ export function TimeMachineRolodex() {
                       </p>
                       <div className="mt-2 flex flex-wrap gap-1">
                         {htopics.slice(0, 3).map((t) => (
-                          <span key={t} className="rounded border border-border/30 px-1.5 py-0.5 text-[9px] text-muted-foreground/40">
+                          <span key={t} className="rounded border border-border/30 px-1.5 py-0.5 text-[10px] text-muted-foreground/40">
                             {t}
                           </span>
                         ))}

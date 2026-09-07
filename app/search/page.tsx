@@ -492,7 +492,7 @@ export default function SearchPage() {
                 <SlidersHorizontal className="h-3 w-3" />
                 {copy.filters}
                 {activeFilterCount > 0 && (
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                     {activeFilterCount}
                   </span>
                 )}
@@ -740,19 +740,19 @@ export default function SearchPage() {
                       {/* Metrics strip */}
                       <div className="grid grid-cols-3 gap-2">
                         <div className="rounded-lg border border-border/30 bg-background/40 px-3 py-2 text-center">
-                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">{copy.price}</p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/40">{copy.price}</p>
                           <p className="mt-0.5 text-xs font-semibold tabular-nums text-foreground">
                             {formatAed(priceValue, locale, { compact: true, fallback: "—" })}
                           </p>
                         </div>
                         <div className="rounded-lg border border-border/30 bg-background/40 px-3 py-2 text-center">
-                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">{copy.yield}</p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/40">{copy.yield}</p>
                           <p className={`mt-0.5 text-xs font-semibold tabular-nums ${typeof yieldValue === "number" ? "text-emerald-400" : "text-foreground"}`}>
                             {yieldLabel}
                           </p>
                         </div>
                         <div className="rounded-lg border border-border/30 bg-background/40 px-3 py-2 text-center">
-                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground/40">{copy.score}</p>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground/40">{copy.score}</p>
                           <p className={`mt-0.5 text-xs font-semibold tabular-nums ${score && score >= 70 ? "text-primary" : "text-foreground"}`}>
                             {formatInteger(scoreValue, locale)}
                           </p>

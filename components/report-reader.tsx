@@ -238,7 +238,7 @@ function parseContent(
         <div key={idx} ref={setRef as React.RefCallback<HTMLDivElement>} className={`${paraClass} mb-5 mt-14`}>
           <div className="mb-3 flex items-center gap-3">
             <div className="h-px flex-1" style={{ background: "linear-gradient(to right, var(--reader-gold) 0%, transparent 70%)", opacity: 0.5 }} />
-            <span className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ color: "var(--reader-gold)", opacity: 0.6 }}>§</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: "var(--reader-gold)", opacity: 0.6 }}>§</span>
           </div>
           <h2
             className="font-serif text-2xl font-bold tracking-tight"
@@ -1523,7 +1523,7 @@ export function ReportReader({
                   </span>
                 )}
                 <span
-                  className="text-[9px] font-semibold uppercase tracking-[0.2em]"
+                  className="text-[10px] font-semibold uppercase tracking-[0.2em]"
                   style={{ color: "var(--reader-muted)", opacity: 0.5 }}
                 >
                   {locale === "ar" ? "بحث موقّع من Entrestate" : "Signed by Entrestate Research"}
@@ -1622,7 +1622,7 @@ export function ReportReader({
               style={{ background: "var(--reader-focus-bg)", border: "1px solid var(--reader-border)", color: "var(--reader-muted)" }}
             >
               <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: "var(--reader-border)" }}>
-                <span className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{ opacity: 0.6 }}>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ opacity: 0.6 }}>
                   {copy.disclaimerTitle}
                 </span>
                 <div className="h-px flex-1" style={{ background: "var(--reader-border)" }} />

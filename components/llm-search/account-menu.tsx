@@ -99,7 +99,7 @@ export function AccountMenu({ isOpen, onClose }: AccountMenuProps) {
           <button className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-accent rounded transition-colors group">
             <div className="relative">
               <Image src="/avatars/avatar-01.svg" alt="Profile" width={24} height={24} className="rounded-full object-cover" />
-              <span className="absolute -bottom-1 -right-1 text-[8px] font-bold bg-primary text-primary-foreground px-1 rounded">
+              <span className="absolute -bottom-1 -right-1 text-[10px] font-bold bg-primary text-primary-foreground px-1 rounded">
                 pro
               </span>
             </div>
