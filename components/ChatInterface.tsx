@@ -2127,7 +2127,11 @@ export function ChatInterface({
           message:
             typeof createPayload?.error === "string"
               ? createPayload.error
-              : "Could not create shortlist (Team tier may be required).",
+              // Not "Team tier may be required": the shortlist needs an
+              // account, not a plan — /pricing says the chat comes with the
+              // account, and nothing sells a Team tier. See
+              // app/api/watchlists/route.ts.
+              : "Could not create shortlist. Sign in and try again.",
         })
         return
       }

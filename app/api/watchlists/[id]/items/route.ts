@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { getRequestId } from "@/lib/api-errors"
 import { addWatchlistItem } from "@/lib/runtime-store"
-import { hasTierAccess } from "@/lib/tier-access"
+import { getSyncedUser } from "@/lib/auth/sync"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -12,10 +12,27 @@ const schema = z.object({
   slug: z.string().trim().min(1).max(180).optional(),
 })
 
+/**
+ * NO TIER GATE HERE — /pricing says the Decision Terminal chat is included.
+ *
+ * This is one of the chat's own two actions ("Save to shortlist" and
+ * "Generate report" in components/ChatInterface.tsx). Both refused every
+ * caller with 403 "Team tier required", so the chat rendered
+ * "Could not create shortlist (Team tier may be required)" to everybody —
+ * on a product whose pricing page states, in both languages, that the chat
+ * and the discovery layer come with the account, and where nothing sells a
+ * Team tier at all (app/pricing/page.tsx: "THE TERMINAL DOES NOT SELL
+ * SUBSCRIPTIONS ANY MORE"). A gate for a plan that cannot be bought is not a
+ * paywall; it is a closed door with no handle.
+ *
+ * What is still required is an ACCOUNT — a shortlist and a report belong to
+ * somebody — which the sign-in check below is.
+ */
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const requestId = getRequestId(request)
-  if (!await hasTierAccess(request, "team")) {
-    return NextResponse.json({ error: "Team tier required", requestId }, { status: 403 })
+  const user = await getSyncedUser()
+  if (!user) {
+    return NextResponse.json({ error: "Sign in to save a shortlist.", requestId }, { status: 401 })
   }
 
   const body = await request.json()
