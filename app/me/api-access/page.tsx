@@ -15,6 +15,12 @@ export default async function ApiAccessPage() {
 
   return (
     <div className="space-y-6">
+      {/* THE HOST IN EVERY EXAMPLE IS WHERE THE API ACTUALLY ANSWERS.
+          These read `https://entrestate.com/api/v1/...`, and app/api/v1 —
+          listings, market-feed, connections — exists only in THIS deployment.
+          The business site has no /api/v1 directory and no rewrite pointing
+          at one, so every documented command a person copied returned a 404
+          from the wrong host. */}
       <header>
         <h1 className="text-2xl font-bold">API access</h1>
         <p className="text-sm text-muted-foreground">
@@ -31,10 +37,10 @@ export default async function ApiAccessPage() {
             Read market pulse and public listings without a paid connection. Use this when you want Entrestate data on your site without bringing your own inventory into the platform.
           </p>
           <pre className="overflow-x-auto rounded bg-muted/40 p-3 text-xs font-mono">{`# Public market pulse
-curl https://entrestate.com/api/v1/market-feed?type=dashboard
+curl https://terminal.entrestate.com/api/v1/market-feed?type=dashboard
 
 # Public listing feed
-curl https://entrestate.com/api/v1/market-feed?type=listings`}</pre>
+curl https://terminal.entrestate.com/api/v1/market-feed?type=listings`}</pre>
           <Link href={prefixLocalePath("/docs/partners-apis", locale)} className="inline-flex items-center gap-1 text-sm text-primary hover:underline">
             Open API docs <ExternalLink className="h-3 w-3" />
           </Link>
@@ -50,11 +56,11 @@ curl https://entrestate.com/api/v1/market-feed?type=listings`}</pre>
             This is the paid layer: read your own listings, write listings into Entrestate, and connect the output to your platform or CRM.
           </p>
           <pre className="overflow-x-auto rounded bg-muted/40 p-3 text-xs font-mono">{`# List YOUR listings (paid)
-curl https://entrestate.com/api/v1/listings \\
+curl https://terminal.entrestate.com/api/v1/listings \\
   -H "x-api-key: ent_live_..."
 
 # Push a listing (paid)
-curl -X POST https://entrestate.com/api/v1/listings \\
+curl -X POST https://terminal.entrestate.com/api/v1/listings \\
   -H "x-api-key: ent_live_..." \\
   -H "Content-Type: application/json" \\
   -d '{"name":"Marina Heights 2BR","area":"Dubai Marina","priceAed":2500000,"yieldPct":7.2,"source":"api"}'`}</pre>

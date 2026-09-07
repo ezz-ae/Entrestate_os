@@ -11,6 +11,7 @@ import { Navbar } from "@/components/navbar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
+import { capabilityMinTier, hasCapability } from "@/lib/entitlement-gates"
 import { getRequestLocale } from "@/i18n/request"
 import { prefixLocalePath } from "@/i18n/locale"
 import { requireSyncedUser } from "@/lib/auth/guard"
@@ -30,7 +31,11 @@ export default async function ApiKeysPage() {
   const activeKeyCount = await prisma.apiKey.count({
     where: { userId: user.id },
   })
-  const canCreateKeys = entitlement.tier === "institutional"
+  // The same rule the route enforces, from the same table — see
+  // app/api/account/api-keys/route.ts. This page used to say institutional
+  // while lib/entitlement-gates.ts said `api_keys: "pro"`.
+  const canCreateKeys = hasCapability(entitlement.tier, "api_keys")
+  const keysMinTier = capabilityMinTier("api_keys")
 
   return (
     <main className="min-h-screen bg-background" dir={isArabic ? "rtl" : "ltr"}>
@@ -50,9 +55,12 @@ export default async function ApiKeysPage() {
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                 <Zap className="h-3.5 w-3.5" />
+                {/* The tier is read from the capability table, never typed
+                    here — the two used to disagree, and the reader was the
+                    one who found out. */}
                 {canCreateKeys
-                  ? isArabic ? "وصول مؤسسي مفعّل" : "Institutional access enabled"
-                  : isArabic ? "ميزة مؤسسية" : "Institutional feature"}
+                  ? isArabic ? "وصول API مفعّل" : "API access enabled"
+                  : isArabic ? `متاح مع خطة ${keysMinTier}` : `Included from the ${keysMinTier} plan`}
               </div>
               <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
                 {isArabic ? "اتصالات API" : "API connections"}
@@ -67,7 +75,7 @@ export default async function ApiKeysPage() {
             {!canCreateKeys ? (
               <Button asChild variant="outline">
                 <Link href={prefixLocalePath("/pricing", locale)}>
-                  {isArabic ? "الترقية إلى المؤسسية" : "Upgrade to institutional"}
+                  {isArabic ? `الترقية إلى ${keysMinTier}` : `Upgrade to ${keysMinTier}`}
                 </Link>
               </Button>
             ) : null}
@@ -161,7 +169,7 @@ export default async function ApiKeysPage() {
               </ul>
               {!canCreateKeys ? (
                 <Badge variant="outline" className="mt-4">
-                  {isArabic ? "الإنشاء متاح للمؤسسية فقط" : "Creation is limited to institutional accounts"}
+                  {isArabic ? `الإنشاء متاح من خطة ${keysMinTier}` : `Creating a key is included from the ${keysMinTier} plan`}
                 </Badge>
               ) : null}
             </section>

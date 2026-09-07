@@ -56,6 +56,8 @@ export type AccountHomeProps = {
     listingsCount: number
     alertsCount: number
     apps: Array<{ id: string; name: string; status: string }>
+    /** "On your account" — the credit ledger, where the welcome credit lands. */
+    credit: { balanceAed: string } | null
     wallet: { balanceAed: string } | null
     workspaces: Array<{ company: string; url: string; enterUrl: string }>
     canCreateWorkspace: boolean
@@ -166,6 +168,7 @@ export function AccountHome(props: AccountHomeProps) {
     !isFree && { k: "listings", label: C.yoursListings, value: String(yours.listingsCount), href: L("/me/listings") },
     !isFree && yours.alertsCount > 0 && { k: "alerts", label: C.yoursAlerts, value: String(yours.alertsCount), href: L("/me/feed") },
     yours.apps.length > 0 && { k: "apps", label: C.yoursApps, value: yours.apps.map((a) => a.name).join(" · "), href: yours.accountUrl ?? undefined, external: true },
+    yours.credit && { k: "credit", label: C.yoursCredit, value: `AED ${yours.credit.balanceAed}`, href: yours.accountUrl ?? undefined, external: true },
     yours.wallet && { k: "wallet", label: C.yoursWallet, value: `AED ${yours.wallet.balanceAed}`, href: yours.accountUrl ?? undefined, external: true },
     yours.workspaces.length > 0 && { k: "workspace", label: C.yoursWorkspace, value: yours.workspaces.map((w) => w.company).join(" · "), href: yours.workspaces[0].enterUrl, external: true },
   ].filter(Boolean) as Array<{ k: string; label: string; value: string; href?: string; external?: boolean }>
