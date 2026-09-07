@@ -2,6 +2,7 @@ import "server-only"
 import { dbQuery, Prisma } from "@/lib/db"
 import { PLATFORM_METRICS_FALLBACK, withPlatformMetricFallback, type PlatformMetrics } from "@/lib/platform-metrics"
 import { platformStats } from "@/lib/stats/platformStats"
+import { sharedRead } from "@/lib/read-cache"
 
 type CoverageRow = {
   count: number
@@ -71,10 +72,19 @@ async function readDldCoverage(): Promise<DldCoverage> {
   return { count: PLATFORM_METRICS_FALLBACK.dldTransactions, through: null }
 }
 
+/**
+ * The two reads behind every metric on the product, shared for a window. They
+ * are pure aggregates over the curated inventory and the DLD table — no
+ * cookies, no session, nothing per-person — and they are what made
+ * /en/overview take nine and a half seconds cold. See lib/read-cache.ts.
+ */
+const readStats = sharedRead("platform-stats", () => platformStats())
+const readCoverage = sharedRead("dld-coverage", () => readDldCoverage())
+
 export async function getPlatformMetrics(): Promise<PlatformMetrics> {
   const [stats, dld] = await Promise.all([
-    platformStats().catch(() => null),
-    readDldCoverage().catch(() => ({
+    readStats().catch(() => null),
+    readCoverage().catch(() => ({
       count: PLATFORM_METRICS_FALLBACK.dldTransactions,
       through: null,
     })),
@@ -83,7 +93,11 @@ export async function getPlatformMetrics(): Promise<PlatformMetrics> {
   return withPlatformMetricFallback({
     // Still "now" on failure, and that is correct for THIS field — it dates the
     // response, not the data. The freshness claim lives in coverageThrough.
-    dataAsOf: stats?.dataAsOf ?? new Date().toISOString(),
+    // Deliberately outside the shared read: this dates the RESPONSE, not the
+    // data, so it is stamped per request even when the counts came from the
+    // window. The freshness claim a reader sees is coverageThrough, which is
+    // a data date and correctly cached with the data it describes.
+    dataAsOf: new Date().toISOString(),
     coverageThrough: dld.through,
     totalProjects: stats?.totalProjects,
     totalAreas: stats?.totalAreas,

@@ -15,6 +15,7 @@ import {
   getStatusTableName,
   getStatusTableSql,
 } from "@/lib/inventory-table"
+import { sharedRead } from "@/lib/read-cache"
 import {
   FIRST_TIME_BUYER_MAX_AED,
   GOLDEN_VISA_MIN_AED,
@@ -160,7 +161,14 @@ export type InvestorProfileCount = { key: InvestorProfileKey; count: number }
  * cannot be read: a panel that says "0 First-Time Buyer projects" over an
  * unreachable database is the invented number this replaces.
  */
-export async function getInvestorProfileCounts(): Promise<{ data_as_of: string; total: number; counts: InvestorProfileCount[] } | null> {
+/**
+ * One pass over the curated inventory, six FILTER counts. Pure, public, and
+ * one of the two queries that made /en/overview take nine seconds cold — so
+ * the read is shared for a window. See lib/read-cache.ts.
+ */
+export const getInvestorProfileCounts = sharedRead("investor-profile-counts", () => readInvestorProfileCounts())
+
+async function readInvestorProfileCounts(): Promise<{ data_as_of: string; total: number; counts: InvestorProfileCount[] } | null> {
   if (!USE_CURATED_PROPERTIES_VIEW) return null
   const selections = INVESTOR_PROFILES.map(
     (profile) => Prisma.sql`COUNT(*) FILTER (WHERE ${curatedProfileClause(profile.key)})::int AS ${Prisma.raw(`"${profile.key}"`)}`,

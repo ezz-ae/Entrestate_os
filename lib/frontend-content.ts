@@ -5,6 +5,7 @@ import { getInventoryTableName, getInventoryTableSql } from "@/lib/inventory-tab
 import { PLATFORM_METRICS_FALLBACK } from "@/lib/platform-metrics"
 import { getInvestorProfileCounts } from "@/lib/decision-infrastructure"
 import { INVESTOR_PROFILES } from "@/lib/investor-profiles"
+import { sharedRead } from "@/lib/read-cache"
 
 export type HomepageSectionRow = {
   id: string
@@ -763,7 +764,16 @@ export type TopDataFeed = {
  * the primary path now), so that is what happens first, and the stored
  * snapshot is the fallback for a database that cannot be read.
  */
-export async function getTopDataRows(): Promise<TopDataFeed> {
+/**
+ * The Signal Feed, computed on request from the curated inventory — and the
+ * third page that took whole seconds to answer (/en/top-data, 5.8s cold).
+ * Same reasoning as the metrics: the rows change when the engine runs, not
+ * per visitor, so the computation is shared for a window rather than repeated
+ * for each one. Nothing here reads a session. See lib/read-cache.ts.
+ */
+export const getTopDataRows = sharedRead("top-data-rows", () => buildTopDataRows())
+
+async function buildTopDataRows(): Promise<TopDataFeed> {
   const inventoryContext = await getCuratedInventoryContext()
   const inventoryTotal = inventoryContext.total > 0 ? inventoryContext.total : PLATFORM_METRICS_FALLBACK.totalProjects
   const scoresAsOf = inventoryContext.total > 0 ? await readScoresAsOf(inventoryContext) : null
