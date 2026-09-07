@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { ColumnDefinition, COLUMN_REGISTRY, EvidenceLayer, LAYER_LABELS, TIER_LABELS } from "@/lib/registry/columns"
 import { prefixLocalePath } from "@/i18n/locale"
 
@@ -32,12 +31,6 @@ export function ColumnRegistryTable({ title = "Column Registry v1.0", columns = 
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">Column Registry</p>
           <h3 className="text-xl font-semibold text-foreground">{title}</h3>
         </div>
-        <Link
-          href={prefixLocalePath("/column-registry", "en")}
-          className="text-xs font-semibold uppercase tracking-[0.3em] text-primary hover:underline"
-        >
-          View full spec
-        </Link>
       </div>
 
       <div className="mt-6 grid gap-4">

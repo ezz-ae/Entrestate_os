@@ -29,8 +29,12 @@ export default function ReportsLibraryError({
           >
             {t("retry")}
           </button>
+          {/* /reports/generated is hidden ("an intermediate report list nothing
+              links to"), so offering it from the error page handed a reader
+              who had already hit an error a second one. The account's own
+              report list is the place to send them. */}
           <Link
-            href={prefixLocalePath("/reports/generated", locale as "en" | "ar")}
+            href={prefixLocalePath("/account/reports", locale as "en" | "ar")}
             className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:border-accent/40"
           >
             {t("openGenerated")}

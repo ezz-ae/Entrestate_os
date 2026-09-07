@@ -214,3 +214,36 @@ describe("one definition of who may hold an API key", () => {
     expect(api).toContain("https://terminal.entrestate.com/api/v1/listings")
   })
 })
+
+describe("the account is one place, and its buttons work", () => {
+  it("the home has a door into the rest of the account", () => {
+    const home = stripComments(read("components/me/account-home.tsx"))
+    expect(home).toMatch(/href=\{L\("\/account"\)\}/)
+    expect(ACCOUNT_HOME_COPY.yoursAccount.length).toBeGreaterThan(5)
+    for (const banned of ACCOUNT_HOME_INSIDER_WORDS) {
+      expect(banned.test(ACCOUNT_HOME_COPY.yoursAccount), String(banned)).toBe(false)
+      expect(banned.test(ACCOUNT_HOME_COPY.yoursAccountCta), String(banned)).toBe(false)
+    }
+  })
+
+  it("…and /account shows what the account has, from the same reader /me uses", () => {
+    const hub = stripComments(read("app/account/page.tsx"))
+    expect(hub).toContain("const holdings = await getBusinessAccountSummary()")
+    expect(hub).toContain("holdings.credit")
+    expect(hub).toContain("holdings.wallet")
+    expect(hub).toContain("holdings.apps")
+    expect(hub).toContain("holdings.workspaces")
+  })
+
+  it("…and says so when the business cannot be reached, instead of showing nothing", () => {
+    const hub = stripComments(read("app/account/page.tsx"))
+    expect(hub).toContain("copy.holdingsUnreachable")
+    expect(hub).toMatch(/holdings \? \(/)
+  })
+
+  it("the API card names the tier the capability table names", () => {
+    const hub = stripComments(read("app/account/page.tsx"))
+    expect(hub).toContain('capabilityMinTier("api_keys")')
+    expect(hub).not.toMatch(/reserved for institutional teams/)
+  })
+})

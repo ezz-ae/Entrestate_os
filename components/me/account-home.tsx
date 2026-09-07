@@ -323,8 +323,20 @@ export function AccountHome(props: AccountHomeProps) {
               {C.yoursEmpty}
             </div>
           )}
+          {/* The way into the rest of the account. See yoursAccount in
+              lib/me/account-home-copy.ts for what was missing. */}
+          <Link
+            href={L("/account")}
+            className="mt-auto flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-xs transition hover:bg-muted/60"
+          >
+            <span className="text-muted-foreground">{C.yoursAccount}</span>
+            <span className="flex shrink-0 items-center gap-1 font-semibold text-primary">
+              {C.yoursAccountCta}
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+            </span>
+          </Link>
           {isFree ? (
-            <div className="mt-auto flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-xs text-muted-foreground">
               <span>{C.proNudge}</span>
               <Link href={L("/pricing")} className="shrink-0 font-semibold text-primary hover:underline">{C.proCta}</Link>
             </div>

@@ -52,7 +52,7 @@
     "errorTitle": "We hit a loading issue",
     "errorBody": "The report library failed to render this request. You can retry immediately or open generated reports.",
     "retry": "Try again",
-    "openGenerated": "Open generated reports"
+    "openGenerated": "Open your reports"
   },
   "chatPage": {
     "subscriptionActivated": "Subscription activated. Your new tier is syncing now."

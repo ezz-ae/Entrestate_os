@@ -59,6 +59,12 @@ export const ACCOUNT_HOME_COPY = {
   yoursCredit: "On your account",
   yoursWallet: "Ads wallet",
   yoursWorkspace: "Your workspace",
+  // THE DOOR THIS PAGE DID NOT HAVE. /account carries the plan, billing,
+  // notebooks, reports and keys, and this home — the post-login landing — had
+  // no link to it at all; its money and apps rows point off-site instead. So
+  // "one account" read as two products that had never met.
+  yoursAccount: "Plan, billing and keys",
+  yoursAccountCta: "Open your account",
   yoursProTag: "Pro",
   yoursOpen: "Open",
   yoursSeePlans: "See plans",
