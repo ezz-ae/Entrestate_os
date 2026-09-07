@@ -9,17 +9,39 @@ import { resolvePaidTier, type BillingCadence, type BillingProcessor, type PaidT
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
+/** Both cadences this route sells renew; neither may start on a one-time charge. */
+const RECURRING_CADENCES: BillingCadence[] = ["monthly", "annual"]
+
 export async function GET(request: Request) {
   const requestId = getRequestId(request)
   const requestUrl = new URL(request.url)
   const locale = normalizeLocale(request.headers.get("x-entrestate-locale"))
   const tier = resolvePaidTier(requestUrl.searchParams.get("tier"))
   const cadence = (requestUrl.searchParams.get("cadence") === "annual" ? "annual" : "monthly") as BillingCadence
+  /**
+   * WHICH RAIL, AND WHY IT MATTERS WHICH.
+   *
+   * These two processors are not interchangeable here. Stripe creates a
+   * SUBSCRIPTION; lib/payments/tap.ts `createTapCharge` POSTs to
+   * `/v2/charges`, which is a ONE-TIME charge — and app/api/webhooks/tap
+   * then writes an entitlement with status ACTIVE and no end, which nothing
+   * ever expires. So a buyer routed to Tap for a plan labelled "Monthly" in
+   * app/checkout/page.tsx pays once and holds the tier forever.
+   *
+   * The country default made that the common case, not the rare one:
+   * `?? "AE"` meant a MISSING x-vercel-ip-country header — every local run,
+   * every non-Vercel host, every proxied request — chose Tap. The default is
+   * now the empty string, so an unknown country takes the recurring rail.
+   *
+   * Tap stays reachable for the region it was added for, and stays first for
+   * an explicit `?processor=tap`; the recurring-plan question is answered
+   * below, where a cadence that repeats will not start on a one-time charge.
+   */
   const processorOverride = requestUrl.searchParams.get("processor")
   const processor =
     processorOverride === "stripe" || processorOverride === "tap"
       ? processorOverride
-      : (["AE", "SA"].includes(request.headers.get("x-vercel-ip-country") ?? "AE") ? "tap" : "stripe") as BillingProcessor
+      : (["AE", "SA"].includes(request.headers.get("x-vercel-ip-country") ?? "") ? "tap" : "stripe") as BillingProcessor
 
   if (!tier) {
     return NextResponse.json(
@@ -77,7 +99,13 @@ export async function GET(request: Request) {
         return response
       }
 
-      if (candidate === "tap" && isTapAvailable()) {
+      // A recurring plan does not start on a one-time charge. `createTapCharge`
+      // takes the money once; nothing renews it and nothing expires the tier
+      // it grants, so the customer would pay one month and keep the plan, and
+      // the business would show a subscriber who never pays again. Until Tap
+      // is wired to an agreement rather than a charge, a monthly or annual
+      // cadence uses Stripe, or reaches a person through /contact.
+      if (candidate === "tap" && isTapAvailable() && !RECURRING_CADENCES.includes(cadence)) {
         const checkoutUrl = await createTapCharge({
           tier,
           cadence,

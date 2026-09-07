@@ -87,11 +87,31 @@ function parseStripeSignature(signatureHeader: string) {
   }
 }
 
+/**
+ * Stripe signs `${timestamp}.${body}` — the timestamp is inside the signature
+ * so a replayed request keeps a valid one forever. Checking only the HMAC
+ * therefore accepts any body that was ever legitimately signed, replayed any
+ * number of times, at any later date: a captured
+ * `customer.subscription.updated` re-activates a cancelled subscription, and a
+ * captured `checkout.session.completed` re-grants a tier after a refund.
+ * Stripe's own guidance is a tolerance window; five minutes is theirs.
+ */
+const STRIPE_TIMESTAMP_TOLERANCE_SECONDS = 300
+
 export function verifyStripeWebhookSignature(rawBody: string, signatureHeader: string) {
   const secret = getRequiredEnv("STRIPE_WEBHOOK_SECRET")
   const { timestamp, v1 } = parseStripeSignature(signatureHeader)
   if (!timestamp || !v1) {
     throw new Error("Stripe signature header is malformed")
+  }
+
+  const signedAt = Number(timestamp)
+  if (!Number.isFinite(signedAt)) {
+    throw new Error("Stripe signature timestamp is not a number")
+  }
+  const ageSeconds = Math.abs(Date.now() / 1000 - signedAt)
+  if (ageSeconds > STRIPE_TIMESTAMP_TOLERANCE_SECONDS) {
+    throw new Error("Stripe signature timestamp is outside the tolerance window")
   }
 
   const signedPayload = `${timestamp}.${rawBody}`

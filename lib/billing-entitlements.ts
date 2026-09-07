@@ -119,11 +119,14 @@ async function ensureTables() {
         )
       `)
 
-      await prisma.$executeRawUnsafe(`
-        INSERT INTO billing_coupons (code, discount_pct, applies_to, max_redemptions, active)
-        VALUES ('try9o', 90, 'first_month', NULL, TRUE)
-        ON CONFLICT (code) DO NOTHING
-      `)
+      // NO COUPON IS SEEDED HERE. This block used to INSERT 'try9o' — 90% off
+      // the first month, `max_redemptions NULL` (unlimited), `active TRUE` —
+      // into whatever database the first billing read touched, production
+      // included. A discount is a commercial decision with a number and an
+      // end; a schema bootstrap is not the place one gets made, and a table
+      // that creates its own 90%-off code with no redemption limit is a
+      // revenue hole that nobody chose to open. Coupons are inserted
+      // deliberately, by an operator, with a limit.
 
       await prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS billing_coupon_redemptions (

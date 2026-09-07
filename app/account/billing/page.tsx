@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { CheckCircle2, CreditCard, ExternalLink, History, Zap } from "lucide-react"
+import { AlertTriangle, CheckCircle2, CreditCard, ExternalLink, History, Zap } from "lucide-react"
 
 import { AccountSectionNav } from "@/components/account/account-section-nav"
 import { AccountBillingControls } from "@/components/account-billing-controls"
@@ -115,19 +115,37 @@ export default async function BillingPage({
           />
         </header>
 
+        {/* A GREEN TICK IS AN ANSWER, NOT A DECORATION. This banner used to
+            render the emerald box and the checkmark for ANY value of
+            ?billing= — including the two failures that redirect here:
+            `billing=error` and `billing=missing_subscription`
+            (app/api/billing/paypal/return/route.ts). A buyer whose payment
+            failed was shown a tick. Success is now the only state that looks
+            like success, and the two failures say what to do next. */}
         {billingState ? (
-          <div className="mt-6 flex items-start gap-3 rounded-3xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4 text-sm text-foreground">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
-            <p>
-              {billingState === "success"
-                ? isArabic
+          billingState === "success" ? (
+            <div className="mt-6 flex items-start gap-3 rounded-3xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4 text-sm text-foreground">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-500" />
+              <p>
+                {isArabic
                   ? "تم تحديث حالة الاشتراك بنجاح."
-                  : "Your subscription status was updated successfully."
-                : isArabic
-                  ? "هناك تحديث متعلق بالفوترة. راجع الحالة الحالية أدناه."
-                  : "There is a billing-related update. Review the current state below."}
-            </p>
-          </div>
+                  : "Your subscription status was updated successfully."}
+              </p>
+            </div>
+          ) : (
+            <div className="mt-6 flex items-start gap-3 rounded-3xl border border-amber-500/25 bg-amber-500/5 px-5 py-4 text-sm text-foreground">
+              <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-500" />
+              <p>
+                {billingState === "missing_subscription"
+                  ? isArabic
+                    ? "لم نستلم رقم اشتراك من مزوّد الدفع، فلم يتغيّر شيء في حسابك. الحالة الحالية أدناه — أعد المحاولة أو تواصل معنا."
+                    : "The payment provider returned no subscription, so nothing on your account changed. The current state is below — try again, or contact us."
+                  : isArabic
+                    ? "لم تكتمل عملية الفوترة ولم يتغيّر شيء في حسابك. الحالة الحالية أدناه — أعد المحاولة أو تواصل معنا."
+                    : "The billing step did not complete and nothing on your account changed. The current state is below — try again, or contact us."}
+              </p>
+            </div>
+          )
         ) : null}
 
         <section className="mt-6 grid gap-3 sm:grid-cols-3">

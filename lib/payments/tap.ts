@@ -77,9 +77,19 @@ export async function createTapCharge(input: CreateTapChargeInput) {
   return transactionUrl
 }
 
+/**
+ * FAILS CLOSED. This returned `true` when TAP_WEBHOOK_SECRET was unset, which
+ * made an unconfigured deployment's webhook an open grant endpoint: a POST of
+ * {"id":"x","status":"CAPTURED","metadata":{"accountKey":"…","tier":"institutional"}}
+ * to /api/webhooks/tap wrote an ACTIVE institutional entitlement for any
+ * account key, with no signature at all. Stripe's verifier throws when its
+ * secret is missing (lib/payments/stripe.ts `getRequiredEnv`); this one
+ * shrugged. An unconfigured webhook accepts nothing — configuring it is the
+ * step that opens it, never the step that closes it.
+ */
 export function verifyTapSignature(rawBody: string, headerHash: string) {
   const secret = process.env.TAP_WEBHOOK_SECRET?.trim()
-  if (!secret) return true
+  if (!secret) return false
   if (!headerHash) return false
 
   const digest = crypto.createHmac("sha256", secret).update(rawBody).digest()

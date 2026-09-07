@@ -7,9 +7,14 @@ import { resolvePaidTier } from "@/lib/pricing/plans"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
+/**
+ * "authorized" is a hold on a card, not money taken — a charge can be
+ * authorized and then never captured, or voided. It used to grant the tier,
+ * so an abandoned checkout entitled the buyer. Only a captured charge does.
+ */
 function isTapSuccess(status: string | null | undefined) {
   const normalized = status?.toLowerCase() ?? ""
-  return normalized === "captured" || normalized === "authorized" || normalized === "success"
+  return normalized === "captured" || normalized === "success"
 }
 
 export async function POST(request: Request) {

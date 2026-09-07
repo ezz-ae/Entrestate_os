@@ -74,6 +74,7 @@ import { formatAed as formatAedValue } from "@/lib/format/currency"
 import { formatDecimal, formatInteger } from "@/lib/format/number"
 import { getInventoryTableSql } from "@/lib/inventory-table"
 import { getEnterpriseConfig } from "@/lib/enterprise-config"
+import { resolveRequestAccountKey } from "@/lib/tier-access"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -880,8 +881,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid request payload.", requestId, request_id: requestId }, { status: 400 })
     }
 
-    const headerAccountKey = request.headers.get("x-entrestate-account-key")?.trim() || request.headers.get("x-entrestate-user-id")?.trim()
-    const entitlement = await getCurrentEntitlement(headerAccountKey)
+    // The account this request may act as — the session, or an internal
+    // caller that presented INTERNAL_API_SECRET. It used to be whatever
+    // `x-entrestate-account-key` said, so anyone could spend anyone's
+    // allowance and read their tier. See lib/tier-access.ts.
+    const trustedAccountKey = await resolveRequestAccountKey(request)
+    const entitlement = await getCurrentEntitlement(trustedAccountKey)
     const usageAccountKey = entitlement.accountKey || getAnonymousCopilotAccountKey(request)
     const { allowed, usage } = await safeConsumeCopilotUsage(usageAccountKey, entitlement.tier)
 

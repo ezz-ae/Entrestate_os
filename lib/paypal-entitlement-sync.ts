@@ -71,7 +71,17 @@ export async function syncPaypalSubscriptionEntitlement(input: SyncInput): Promi
   const baseTier = planTier !== "free" ? planTier : customTier !== "free" ? customTier : fallbackTier
   const effectiveTier = resolveTierFromStatus(baseTier, subscription.status, fallbackTier, input.eventType)
 
-  const accountKey = input.accountKeyHint?.trim() || parsedCustom.accountKey || existing?.account_key || null
+  // WHOSE SUBSCRIPTION THIS IS COMES FROM PAYPAL, NOT FROM THE URL.
+  // `accountKeyHint` used to win this expression, and it is filled from the
+  // `accountKey` query parameter on /api/billing/paypal/return. Since the
+  // subscription itself is verified but the owner was not, anyone could take
+  // a real subscription id and copy its tier onto their own account:
+  //   /api/billing/paypal/return?subscription_id=<real>&accountKey=<mine>
+  // The custom_id PayPal returns is the only party to this that the caller
+  // cannot write, so it decides. The hint is now the last resort — used only
+  // when PayPal carried no custom_id and no row exists yet, which is the
+  // recovery case it was added for.
+  const accountKey = parsedCustom.accountKey || existing?.account_key || input.accountKeyHint?.trim() || null
 
   if (accountKey) {
     await upsertPaypalEntitlement({
