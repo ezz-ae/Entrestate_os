@@ -240,7 +240,7 @@ export default async function OverviewPage() {
                     <div className="mb-1.5 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-bold ${t.text}`}>{t.label}</span>
-                        <span className="text-[10px] text-muted-foreground">{t.desc}</span>
+                        <span className="text-[11px] text-muted-foreground">{t.desc}</span>
                       </div>
                       <div className="text-right">
                         <span className="text-xs font-semibold tabular-nums text-foreground">{safeInt(t.count).toLocaleString()}</span>
@@ -268,11 +268,11 @@ export default async function OverviewPage() {
               <div className="mt-3 grid grid-cols-5 gap-0.5 overflow-hidden rounded-lg">
                 {(["L1", "L2", "L3", "L4", "L5"] as const).map((layer, i) => (
                   <div key={layer} className="flex flex-col items-center py-2" style={{ background: `rgba(59,130,246,${0.18 - i * 0.03})` }}>
-                    <span className="text-[9px] font-bold text-blue-700 dark:text-blue-300">{layer}</span>
+                    <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300">{layer}</span>
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-center text-[10px] text-muted-foreground">{isArabic ? "مرجعي ← مشتق ← ديناميكي ← خارجي ← خام" : "Canonical → Derived → Dynamic → External → Raw"}</p>
+              <p className="mt-2 text-center text-[11px] text-muted-foreground">{isArabic ? "مرجعي ← مشتق ← ديناميكي ← خارجي ← خام" : "Canonical → Derived → Dynamic → External → Raw"}</p>
             </article>
           </div>
 
@@ -296,7 +296,7 @@ export default async function OverviewPage() {
                         <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
                       </div>
                       <div className="mt-6">
-                        <span className={`mb-1 inline-block rounded-full border ${mod.border} px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider ${mod.accent} opacity-70`}>{isArabic ? mod.tagAr : mod.tag}</span>
+                        <span className={`mb-1 inline-block rounded-full border ${mod.border} px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${mod.accent} opacity-70`}>{isArabic ? mod.tagAr : mod.tag}</span>
                         <p className="text-sm font-semibold text-foreground">{isArabic ? mod.labelAr : mod.label}</p>
                         <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{isArabic ? mod.descAr : mod.description}</p>
                       </div>
@@ -334,7 +334,7 @@ export default async function OverviewPage() {
                         <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
                       </div>
                       <div className="mt-6">
-                        <span className={`mb-1 inline-block rounded-full border ${mod.border} px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider ${mod.accent} opacity-70`}>{isArabic ? mod.tagAr : mod.tag}</span>
+                        <span className={`mb-1 inline-block rounded-full border ${mod.border} px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${mod.accent} opacity-70`}>{isArabic ? mod.tagAr : mod.tag}</span>
                         <p className="text-sm font-semibold text-foreground">{isArabic ? mod.labelAr : mod.label}</p>
                         <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{isArabic ? mod.descAr : mod.description}</p>
                       </div>
@@ -362,10 +362,10 @@ export default async function OverviewPage() {
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            {i === 0 ? <span className="rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">TOP</span> : null}
+                            {i === 0 ? <span className="rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">TOP</span> : null}
                             <span className="truncate text-xs font-semibold text-foreground">{isArabic ? profile.labelAr : profile.label}</span>
                           </div>
-                          <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{isArabic ? profile.ruleAr : profile.rule}</p>
+                          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{isArabic ? profile.ruleAr : profile.rule}</p>
                         </div>
                         <div className="flex flex-shrink-0 flex-col items-end gap-1">
                           <span className="text-sm font-bold tabular-nums text-foreground">{safeInt(profile.count).toLocaleString()}</span>
@@ -378,7 +378,7 @@ export default async function OverviewPage() {
                     </Link>
                   )
                 })}
-                <p className="pt-1 text-[10px] text-muted-foreground">
+                <p className="pt-1 text-[11px] text-muted-foreground">
                   {isArabic
                     ? "كل ملف هو قاعدة واحدة مطبّقة على المخزون المنقّح؛ المشروع الواحد قد يقع في أكثر من ملف."
                     : "Each profile is one rule applied to the curated inventory; a project can sit in more than one."}

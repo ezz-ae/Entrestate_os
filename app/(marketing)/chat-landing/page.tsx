@@ -355,7 +355,7 @@ export default function ChatLandingPage() {
                   </div>
                   <div>
                     <div className="font-mono text-[10px] font-bold mb-1 text-primary/70 group-hover:text-primary transition-colors tracking-tight">{cmd.title}</div>
-                    <div className="text-[9px] text-muted-foreground/55 font-medium leading-snug group-hover:text-muted-foreground/80 transition-colors">{cmd.desc}</div>
+                    <div className="text-[10px] text-muted-foreground/55 font-medium leading-snug group-hover:text-muted-foreground/80 transition-colors">{cmd.desc}</div>
                   </div>
                 </motion.div>
               ))}

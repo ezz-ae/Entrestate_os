@@ -2974,7 +2974,7 @@ export function ChatInterface({
                 <div className="mt-3 grid grid-cols-2 gap-1.5">
                   {riskMetrics.map((item) => (
                     <div key={item.label} className="rounded-lg border border-border/50 bg-background/40 px-2.5 py-2">
-                      <p className="text-[9px] uppercase tracking-wider text-muted-foreground">{item.label}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{item.label}</p>
                       <p className="mt-0.5 text-xs font-semibold tabular-nums text-foreground">{item.value}</p>
                     </div>
                   ))}
