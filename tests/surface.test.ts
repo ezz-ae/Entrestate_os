@@ -62,10 +62,36 @@ function pageRoutes(): string[] {
  */
 const RETIRED_TREES = ["seq"]
 
-/** Every path the LIVE app links to, from any href / push / nav config. */
-function linkedPaths(): Set<string> {
+/**
+ * Every path the LIVE app links to, from any href / push / nav config.
+ *
+ * TWO PATTERNS, BECAUSE ONE OF THEM COULD NOT SEE THIS CODEBASE. The first is
+ * the plain form — `href="/x"`, `router.push("/x")`. But nearly every link
+ * here is locale-aware and written `href={prefixLocalePath("/x", locale)}`,
+ * and after `href` comes `={prefixLocalePath(` — which the first pattern does
+ * not match. So the scanner reported 89 linked routes when the real number is
+ * 99, and the rule this file exists to enforce — "hiding a linked route turns
+ * a working button into a 404" — passed while NINE hidden routes were linked
+ * from live screens: the login page's "Forgot password?", the billing page's
+ * "Open billing activity", both "New listing" buttons on /me/listings, a
+ * router.push from /markets, and the checkout an unauthenticated buyer is
+ * redirected to. A guard that cannot see the codebase's own idiom is a guard
+ * that reports success.
+ */
+function linkedPaths(reachableOnly = false): Set<string> {
   const out = new Set<string>()
   const PAT = /(?:href|path|to|url|push|replace|redirect)\s*[=:(]\s*[`'"](\/[a-zA-Z0-9/[\]._-]*)/g
+  // The locale-aware form, wherever it appears — including inside a template
+  // literal, an object field, or a bare `const x = prefixLocalePath("/y")`.
+  const PAT_LOCALE = /prefixLocalePath\(\s*[`'"](\/[a-zA-Z0-9/[\]._-]*)/g
+  const hiddenDir = (full: string) => {
+    const rel = path.relative(path.join(ROOT, "app"), full)
+    if (rel.startsWith("..")) return false
+    const route = "/" + path.dirname(rel).replace(/\\/g, "/").replace(/^\.$/, "").replace(/\/?\([^/]+\)/g, "").replace(/^\//, "")
+    const clean = route === "/" ? "/" : route.replace(/\/+$/, "")
+    return Object.keys(HIDDEN_ROUTES).some((h) => clean === h || clean.startsWith(`${h}/`))
+  }
+
   const walk = (dir: string) => {
     let entries: fs.Dirent[]
     try { entries = fs.readdirSync(dir, { withFileTypes: true }) } catch { return }
@@ -74,8 +100,10 @@ function linkedPaths(): Set<string> {
       const full = path.join(dir, e.name)
       if (e.isDirectory()) walk(full)
       else if (/\.(ts|tsx)$/.test(e.name)) {
+        if (reachableOnly && hiddenDir(full)) continue
         const src = fs.readFileSync(full, "utf8")
         for (const m of src.matchAll(PAT)) out.add(m[1].replace(/\/+$/, "") || "/")
+        for (const m of src.matchAll(PAT_LOCALE)) out.add(m[1].replace(/\/+$/, "") || "/")
       }
     }
   }
@@ -87,7 +115,15 @@ function linkedPaths(): Set<string> {
 }
 
 const routes = pageRoutes()
+/** Everything the code links to — the question "is this route part of the product". */
 const linked = linkedPaths()
+/**
+ * Everything a VISITOR can press — the question "does hiding this break a
+ * button". A link written inside a hidden page cannot be pressed, so /tables
+ * pointing at /t/{id}, and /column-registry pointing at itself, are not broken
+ * buttons; the login page's "Forgot password?" is.
+ */
+const reachablyLinked = linkedPaths(true)
 
 const isLinked = (r: string) => {
   if (linked.has(r)) return true
@@ -115,7 +151,7 @@ describe("the product surface", () => {
   it("never hides a page something links to", () => {
     // Hiding a linked route turns a working button into a 404 — worse than the
     // page it was hiding.
-    const broken = Object.keys(HIDDEN_ROUTES).filter((h) => linked.has(h))
+    const broken = Object.keys(HIDDEN_ROUTES).filter((h) => reachablyLinked.has(h))
     expect(broken, "these are linked from the app and must not be hidden").toEqual([])
   })
 

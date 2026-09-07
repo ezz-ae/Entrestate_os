@@ -63,11 +63,9 @@ export const HIDDEN_ROUTES: Record<string, string> = {
   // logo all send an authenticated person there. The guard caught this on its
   // first run, which is the entire argument for the guard: hiding it would have
   // turned every successful sign-in into a 404.
-  '/me/listings/new': 'a create-listing form nothing links to, inside the real workspace',
   '/workspace/daas': 'a parallel build of the market feed',
   '/workspace/imports': 'a parallel build of import, unfinished',
   '/workspace/math-tools': 'a parallel build of the tools surface',
-  '/workspace/saved-searches': 'a parallel build of saved searches',
   '/workspace/search': 'a parallel build of search, which lives on /search',
   '/workspace/agent-creator': 'a parallel build of the agent builder',
   '/notebook': 'the research notebook, unfinished and unlinked',
@@ -94,12 +92,23 @@ export const HIDDEN_ROUTES: Record<string, string> = {
   '/image-playground': 'a creative surface retired in favour of the workspace studio',
   '/timeline': 'a creative surface retired in favour of the workspace studio',
 
+  // ── Three that came back, 2026-09-07 ──────────────────────────────────────
+  // /me/listings/new ("a create-listing form nothing links to"),
+  // /account/billing-activity ("billing detail with no billing surface linking
+  // to it") and /workspace/saved-searches were hidden on the strength of the
+  // guard's own answer — and the guard could not see this codebase's links.
+  // tests/surface.test.ts matched `href="/x"` but not
+  // `href={prefixLocalePath("/x", locale)}`, which is how nearly every link
+  // here is written, so it reported 89 linked routes against a real 99 and
+  // passed while /me/listings' two "New listing" buttons, /account/billing's
+  // "Open billing activity" and a router.push from /markets all led to a 404.
+  // All three pages are real and gated; they are back on the product.
+
   // ── Settings and account, split across two builds ──────────────────────────
   '/settings/brand': 'settings split across two builds; this half is unreachable',
   '/settings/configuration': 'settings split across two builds; this half is unreachable',
   '/settings/profile': 'settings split across two builds; this half is unreachable',
   '/settings/tier': 'settings split across two builds; this half is unreachable',
-  '/account/billing-activity': 'billing detail with no billing surface linking to it',
 
   // ── Commerce that is not wired ─────────────────────────────────────────────
   // /plans already redirects to /pricing in proxy.ts; the page underneath is a

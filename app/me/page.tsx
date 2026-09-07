@@ -63,6 +63,10 @@ export default async function MeHomePage() {
         listingsCount: bundle.listingsCount,
         alertsCount: bundle.alerts.length,
         apps: account?.apps.map((a) => ({ id: a.id, name: a.name, status: a.status })) ?? [],
+        // Both amounts the account carries. Only the ads wallet was passed, so
+        // the row a person actually looks for — the credit the business site
+        // promises "on your account" — was missing from the account home.
+        credit: account?.credit ? { balanceAed: account.credit.balanceAed } : null,
         wallet: account?.wallet ? { balanceAed: account.wallet.balanceAed } : null,
         workspaces: account?.workspaces.map((w) => ({ company: w.company, url: w.url, enterUrl: w.enterUrl })) ?? [],
         canCreateWorkspace: account?.canCreateWorkspace ?? false,

@@ -56,6 +56,8 @@ export type AccountHomeProps = {
     listingsCount: number
     alertsCount: number
     apps: Array<{ id: string; name: string; status: string }>
+    /** "On your account" — the credit ledger, where the welcome credit lands. */
+    credit: { balanceAed: string } | null
     wallet: { balanceAed: string } | null
     workspaces: Array<{ company: string; url: string; enterUrl: string }>
     canCreateWorkspace: boolean
@@ -166,6 +168,7 @@ export function AccountHome(props: AccountHomeProps) {
     !isFree && { k: "listings", label: C.yoursListings, value: String(yours.listingsCount), href: L("/me/listings") },
     !isFree && yours.alertsCount > 0 && { k: "alerts", label: C.yoursAlerts, value: String(yours.alertsCount), href: L("/me/feed") },
     yours.apps.length > 0 && { k: "apps", label: C.yoursApps, value: yours.apps.map((a) => a.name).join(" · "), href: yours.accountUrl ?? undefined, external: true },
+    yours.credit && { k: "credit", label: C.yoursCredit, value: `AED ${yours.credit.balanceAed}`, href: yours.accountUrl ?? undefined, external: true },
     yours.wallet && { k: "wallet", label: C.yoursWallet, value: `AED ${yours.wallet.balanceAed}`, href: yours.accountUrl ?? undefined, external: true },
     yours.workspaces.length > 0 && { k: "workspace", label: C.yoursWorkspace, value: yours.workspaces.map((w) => w.company).join(" · "), href: yours.workspaces[0].enterUrl, external: true },
   ].filter(Boolean) as Array<{ k: string; label: string; value: string; href?: string; external?: boolean }>
@@ -320,8 +323,20 @@ export function AccountHome(props: AccountHomeProps) {
               {C.yoursEmpty}
             </div>
           )}
+          {/* The way into the rest of the account. See yoursAccount in
+              lib/me/account-home-copy.ts for what was missing. */}
+          <Link
+            href={L("/account")}
+            className="mt-auto flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-xs transition hover:bg-muted/60"
+          >
+            <span className="text-muted-foreground">{C.yoursAccount}</span>
+            <span className="flex shrink-0 items-center gap-1 font-semibold text-primary">
+              {C.yoursAccountCta}
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+            </span>
+          </Link>
           {isFree ? (
-            <div className="mt-auto flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-xs text-muted-foreground">
               <span>{C.proNudge}</span>
               <Link href={L("/pricing")} className="shrink-0 font-semibold text-primary hover:underline">{C.proCta}</Link>
             </div>

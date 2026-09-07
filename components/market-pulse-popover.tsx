@@ -200,8 +200,13 @@ export function MarketPulsePopover({ className, compact = false }: { className?:
           <Link href={prefixLocalePath("/market-score", locale)} className="text-xs text-accent hover:text-accent/80">
             {t("View score dashboard", "عرض لوحة الدرجة")}
           </Link>
-          <Link href={prefixLocalePath("/agent-runtime", locale)} className="inline-flex items-center gap-1 text-xs text-foreground">
-            {t("Open match desk", "افتح مكتب المطابقة")}
+          {/* /agent-runtime is hidden on purpose — lib/surface.ts calls it
+              "an internal runtime view, not a customer page" — and that
+              reasoning stands. What was wrong was this link, which offered it
+              from a live popover and landed the reader on a 404. The reader
+              is sent to the screen this popover is about instead. */}
+          <Link href={prefixLocalePath("/top-data", locale)} className="inline-flex items-center gap-1 text-xs text-foreground">
+            {t("Open the signal feed", "افتح بث الإشارات")}
             <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>

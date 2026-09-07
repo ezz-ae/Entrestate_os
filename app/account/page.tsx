@@ -20,6 +20,8 @@ import { Navbar } from "@/components/navbar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
+import { getBusinessAccountSummary } from "@/lib/business-account"
+import { capabilityMinTier } from "@/lib/entitlement-gates"
 import { requireSyncedUser } from "@/lib/auth/guard"
 import { getCopilotDailyUsage } from "@/lib/copilot-usage"
 import { prisma } from "@/lib/prisma"
@@ -135,6 +137,20 @@ export default async function AccountPage({
     prisma.apiKey.count({ where: { userId: user.id } }),
   ])
 
+  /**
+   * WHAT THE ACCOUNT ACTUALLY HAS, ON THE PAGE THAT CALLS ITSELF THE ACCOUNT.
+   *
+   * This hub showed the plan, the notebooks, the reports and the keys — and
+   * nothing about the money, the apps or the workspace, which are the three
+   * things a person opens an account page to check. Those lived only on /me,
+   * which in turn has no link to here, so "one account" read as two products
+   * that had never met. Same reader /me uses, so the two cannot disagree.
+   *
+   * Null means the business could not be reached — said so below, rather than
+   * dropping the rows and letting a balance look like zero.
+   */
+  const holdings = await getBusinessAccountSummary()
+
   const copy = {
     eyebrow: isArabic ? "واجهة الحساب" : "Account hub",
     title: isArabic ? `أهلاً، ${user.name || user.email || "عضو Entrestate"}` : `Welcome, ${user.name || user.email || "Entrestate member"}`,
@@ -163,6 +179,18 @@ export default async function AccountPage({
       ? "الترتيب المقترح لاستخدام المنصة من دون إرباك."
       : "The recommended order for using the platform without overwhelm.",
     snapshot: isArabic ? "ملخص الحساب" : "Account snapshot",
+    holdings: isArabic ? "على حسابك" : "On your account",
+    holdingsSub: isArabic
+      ? "الرصيد والتطبيقات ومساحة العمل — على نفس الحساب."
+      : "Balance, apps and your workspace — all on this same account.",
+    holdingsCredit: isArabic ? "على حسابك" : "On your account",
+    holdingsWallet: isArabic ? "محفظة الإعلانات" : "Ads wallet",
+    holdingsApps: isArabic ? "التطبيقات" : "Apps",
+    holdingsWorkspace: isArabic ? "مساحة العمل" : "Your workspace",
+    holdingsOpen: isArabic ? "افتح الحساب بالكامل" : "Open the full account",
+    holdingsUnreachable: isArabic
+      ? "تعذّر قراءة الرصيد والتطبيقات الآن. لم يتغيّر شيء — حاول بعد قليل."
+      : "The balance and apps could not be read just now. Nothing has changed — try again shortly.",
     usageTitle: isArabic ? "استخدام المساعد" : "Assistant usage",
     workspaceTitle: isArabic ? "حالة المكتبة" : "Workspace status",
     status: isArabic ? "الحالة" : "Status",
@@ -247,7 +275,13 @@ export default async function AccountPage({
     },
     {
       title: isArabic ? "API" : "API",
-      description: isArabic ? "مفاتيح الربط للفرق المؤسسية فقط." : "Connection keys reserved for institutional teams.",
+      // The tier comes from the capability table, not from a sentence typed
+      // here. This card said institutional while lib/entitlement-gates.ts says
+      // `api_keys: "pro"` — the same disagreement the keys page and its route
+      // carried, and the reader is the one who finds out.
+      description: isArabic
+        ? `مفاتيح الربط، متاحة من خطة ${capabilityMinTier("api_keys")}.`
+        : `Connection keys, included from the ${capabilityMinTier("api_keys")} plan.`,
       href: "/account/api-keys",
       stat: entitlement.tier === "institutional" ? apiKeyCount : isArabic ? "مؤسسي" : "Institutional",
       icon: LayoutGrid,
@@ -426,6 +460,51 @@ export default async function AccountPage({
           </div>
 
           <aside className="space-y-6">
+            {/* The money, the apps and the workspace — the three things this
+                page did not show. See `holdings` above for why. */}
+            <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+              <h2 className="text-xl font-semibold text-foreground">{copy.holdings}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{copy.holdingsSub}</p>
+
+              {holdings ? (
+                <>
+                  <dl className="mt-5 grid gap-3">
+                    {holdings.credit ? (
+                      <div className="rounded-2xl border border-border/70 bg-background/60 px-4 py-3">
+                        <dt className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.holdingsCredit}</dt>
+                        <dd className="mt-1 text-sm font-semibold text-foreground" dir="ltr">AED {holdings.credit.balanceAed}</dd>
+                      </div>
+                    ) : null}
+                    {holdings.wallet ? (
+                      <div className="rounded-2xl border border-border/70 bg-background/60 px-4 py-3">
+                        <dt className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.holdingsWallet}</dt>
+                        <dd className="mt-1 text-sm font-semibold text-foreground" dir="ltr">AED {holdings.wallet.balanceAed}</dd>
+                      </div>
+                    ) : null}
+                    {holdings.apps.length > 0 ? (
+                      <div className="rounded-2xl border border-border/70 bg-background/60 px-4 py-3">
+                        <dt className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.holdingsApps}</dt>
+                        <dd className="mt-1 text-sm font-semibold text-foreground">{holdings.apps.map((a) => a.name).join(" · ")}</dd>
+                      </div>
+                    ) : null}
+                    {holdings.workspaces.length > 0 ? (
+                      <div className="rounded-2xl border border-border/70 bg-background/60 px-4 py-3">
+                        <dt className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{copy.holdingsWorkspace}</dt>
+                        <dd className="mt-1 text-sm font-semibold text-foreground">{holdings.workspaces.map((w) => w.company).join(" · ")}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                  <Button asChild variant="outline" className="mt-5 w-full">
+                    <a href={holdings.accountUrl}>{copy.holdingsOpen}</a>
+                  </Button>
+                </>
+              ) : (
+                <p className="mt-5 rounded-2xl border border-border/70 bg-background/60 px-4 py-3 text-sm text-muted-foreground">
+                  {copy.holdingsUnreachable}
+                </p>
+              )}
+            </section>
+
             <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>

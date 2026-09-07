@@ -4,6 +4,7 @@ import { getSyncedUser } from "@/lib/auth/sync"
 import { getRequestId } from "@/lib/api-errors"
 import crypto from "node:crypto"
 import { getCurrentEntitlement } from "@/lib/account-entitlement"
+import { capabilityMinTier, hasCapability } from "@/lib/entitlement-gates"
 import { buildApiKeyPrefix, hashApiKey } from "@/lib/api-keys"
 
 export async function GET(request: Request) {
@@ -33,9 +34,20 @@ export async function POST(request: Request) {
   const user = await getSyncedUser()
   if (!user) return NextResponse.json({ error: "Unauthorized", requestId }, { status: 401 })
 
+  // ONE DEFINITION OF WHO MAY HOLD A KEY, and it is not typed here.
+  // lib/entitlement-gates.ts says `api_keys: "pro"`, and the plan comparison
+  // it feeds prints "API keys + programmatic access" as a Pro feature — while
+  // this route, and the page in front of it, hardcoded `institutional`. So
+  // /me/api-access offered a paying Pro user a "Manage API keys" button that
+  // led to a screen headed "Institutional feature", and any key they tried to
+  // create came back 403. Two gates disagreeing about what was sold is worse
+  // than either answer; the capability table is the answer.
   const entitlement = await getCurrentEntitlement()
-  if (entitlement.tier !== "institutional") {
-    return NextResponse.json({ error: "Institutional tier required", requestId }, { status: 403 })
+  if (!hasCapability(entitlement.tier, "api_keys")) {
+    return NextResponse.json(
+      { error: `API keys require the ${capabilityMinTier("api_keys")} plan or above.`, requestId },
+      { status: 403 },
+    )
   }
 
   try {

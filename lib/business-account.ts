@@ -39,6 +39,15 @@ export type BusinessAccountWorkspace = {
 export type BusinessAccountSummary = {
   name: string | null
   email: string | null
+  /**
+   * "On your account" — the credit ledger, where the AED 500 the business site
+   * promises actually lands. This reader used to carry only the ads wallet,
+   * so a person who redeemed the welcome credit on entrestate.com saw AED 500
+   * there and "Ads wallet AED 0.00" here: same account, and the number the
+   * whole offer is about did not exist on the surface called the account.
+   * Null when the business is on an older build that does not send it.
+   */
+  credit: { balanceAed: string; pockets: Array<{ scope: string; label: string; amountAed: string }> } | null
   wallet: { accountNo: string; balanceAed: string; heldAed: string; pendingTopUps: number } | null
   apps: BusinessAccountApp[]
   /**
@@ -67,6 +76,7 @@ export async function getBusinessAccountSummary(): Promise<BusinessAccountSummar
     const data = (await res.json()) as Record<string, unknown>
     const account = (data.account ?? {}) as Record<string, unknown>
     const wallet = data.wallet as Record<string, unknown> | null
+    const creditRaw = data.credit as Record<string, unknown> | null
     const links = (data.links ?? {}) as Record<string, unknown>
     const apps = Array.isArray(data.apps)
       ? data.apps.flatMap((raw): BusinessAccountApp[] => {
@@ -96,6 +106,20 @@ export async function getBusinessAccountSummary(): Promise<BusinessAccountSummar
     return {
       name: typeof account.name === "string" ? account.name : null,
       email: typeof account.email === "string" ? account.email : null,
+      credit:
+        creditRaw && typeof creditRaw.balanceAed === "string"
+          ? {
+              balanceAed: creditRaw.balanceAed,
+              pockets: Array.isArray(creditRaw.pockets)
+                ? creditRaw.pockets.flatMap((raw) => {
+                    const r = (raw ?? {}) as Record<string, unknown>
+                    return typeof r.scope === "string" && typeof r.label === "string" && typeof r.amountAed === "string"
+                      ? [{ scope: r.scope, label: r.label, amountAed: r.amountAed }]
+                      : []
+                  })
+                : [],
+            }
+          : null,
       wallet:
         wallet && typeof wallet.balanceAed === "string" && typeof wallet.accountNo === "string"
           ? {

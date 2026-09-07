@@ -51,8 +51,20 @@ export const ACCOUNT_HOME_COPY = {
   yoursListings: "Your listings",
   yoursAlerts: "Alerts",
   yoursApps: "Apps on this account",
+  // Two amounts, because the account has two. "On your account" is the credit
+  // ledger — where the AED 500 the business site promises lands, spendable on
+  // the bills — and it is the figure a person is looking for. "Ads wallet" is
+  // the Ads Coin balance beside it. This screen used to show only the second,
+  // so a person who had just been given the first saw AED 0.00 here.
+  yoursCredit: "On your account",
   yoursWallet: "Ads wallet",
   yoursWorkspace: "Your workspace",
+  // THE DOOR THIS PAGE DID NOT HAVE. /account carries the plan, billing,
+  // notebooks, reports and keys, and this home — the post-login landing — had
+  // no link to it at all; its money and apps rows point off-site instead. So
+  // "one account" read as two products that had never met.
+  yoursAccount: "Plan, billing and keys",
+  yoursAccountCta: "Open your account",
   yoursProTag: "Pro",
   yoursOpen: "Open",
   yoursSeePlans: "See plans",
