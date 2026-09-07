@@ -137,7 +137,11 @@ describe("investor profiles are definitions, applied once", () => {
   it("the list behind /properties?intent= is the same rule the card counts", () => {
     const di = stripComments(read("lib/decision-infrastructure.ts"))
     expect(di).toContain("export function curatedProfileClause(key: InvestorProfileKey)")
-    expect(di).toContain("export async function getInvestorProfileCounts()")
+    // Shared for a window (lib/read-cache.ts) — the same one-pass query, not
+    // recomputed for every visitor. The rule is where the counts come from,
+    // not how often they are read.
+    expect(di).toContain('export const getInvestorProfileCounts = sharedRead("investor-profile-counts"')
+    expect(di).toContain("async function readInvestorProfileCounts()")
     expect(di).toMatch(/const key = normalizeInvestorProfileKey\(filters\.intent\)\s*\n\s*if \(key\) clauses\.push\(curatedProfileClause\(key\)\)/)
     // one count per profile, in one pass, from the properties table
     expect(di).toMatch(/COUNT\(\*\) FILTER \(WHERE \$\{curatedProfileClause\(profile\.key\)\}\)::int/)
@@ -153,6 +157,13 @@ describe("investor profiles are definitions, applied once", () => {
 
 describe("3. the Signal Feed is computed, the snapshot is the fallback", () => {
   const content = stripComments(read("lib/frontend-content.ts"))
+
+  it("the feed is shared for a window, not recomputed per visitor", () => {
+    // /en/top-data took 5.8s cold because the whole computation ran again for
+    // every reader. Same rows, one read. See lib/read-cache.ts.
+    expect(content).toContain('export const getTopDataRows = sharedRead("top-data-rows"')
+    expect(content).toContain("async function buildTopDataRows()")
+  })
 
   it("getTopDataRows computes first and reads api.entrestate_top_data only after", () => {
     const computedAt = content.indexOf('source: "computed"')
