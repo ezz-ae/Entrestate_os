@@ -2021,13 +2021,21 @@ export function ChatInterface({
     if (!promptParam) return
     if (initialPromptRef.current === promptParam) return
     initialPromptRef.current = promptParam
-    setInput(promptParam)
 
-    if (!hasConversation) {
-      void sendPrompt(promptParam).then((sent) => {
-        if (sent) setInput("")
-      })
+    if (hasConversation) {
+      // A conversation is already open, so the prompt from the URL is an
+      // invitation rather than a message: it goes into the box for the reader
+      // to send or edit.
+      setInput(promptParam)
+      return
     }
+
+    // Nothing to interrupt — it is sent, so it never touches the box. It used
+    // to be typed in first and cleared when the answer finished, which is the
+    // same "still sitting there" the composer had.
+    void sendPrompt(promptParam).then((sent) => {
+      if (!sent) setInput(promptParam)
+    })
   }, [hasConversation, searchParams, sendPrompt])
 
   const activateSlashCommand = async (command: SlashCommand) => {
@@ -2045,10 +2053,10 @@ export function ChatInterface({
         const command = filteredSlashCommands[slashActiveIndex] ?? filteredSlashCommands[0]
         if (command) await activateSlashCommand(command)
       } else {
+        // Same rule as submitMessage: gone on send, back only on failure.
+        setInput("")
         const submitted = await sendPrompt(value)
-        if (submitted) {
-          setInput("")
-        }
+        if (!submitted) setInput(value)
       }
       return
     }
@@ -2082,6 +2090,21 @@ export function ChatInterface({
     }
   }
 
+  /**
+   * THE BOX EMPTIES WHEN THE MESSAGE LEAVES, NOT WHEN THE ANSWER ARRIVES.
+   *
+   * `sendPrompt` awaits `sendMessage`, and the AI SDK resolves that only when
+   * the whole streamed reply has finished. Clearing the textarea after it
+   * therefore left the typed words sitting in the box for the entire answer —
+   * the owner: "you send something to the AI and it stays in the text box raw
+   * — it goes and waits, and it leaves you not understanding." The person sees
+   * their sentence twice, once in the thread and once still in the composer,
+   * and cannot tell whether pressing send did anything.
+   *
+   * So the box is emptied first and the words are put BACK if the send failed
+   * — the one case where the reader still needs them. `activateSlashCommand`
+   * below already did it this way.
+   */
   const submitMessage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const value = input.trim()
@@ -2093,10 +2116,9 @@ export function ChatInterface({
       return
     }
 
+    setInput("")
     const submitted = await sendPrompt(value)
-    if (submitted) {
-      setInput("")
-    }
+    if (!submitted) setInput(value)
   }
 
   const runRiskBriefInChat = async () => {
@@ -2558,9 +2580,10 @@ export function ChatInterface({
             ) : null}
           </div>
           <div className="flex items-center gap-2">
-            <span className={`flex items-center gap-1.5 text-xs ${status === "streaming" ? "text-primary" : "text-muted-foreground"}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${status === "streaming" ? "animate-pulse bg-primary" : "bg-emerald-400"}`} />
-              {status === "streaming" ? heroCopy.analysing : heroCopy.ready}
+            {/* Busy is busy: waiting for the first token is not "Ready". */}
+            <span className={`flex items-center gap-1.5 text-xs ${isBusy ? "text-primary" : "text-muted-foreground"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${isBusy ? "animate-pulse bg-primary" : "bg-emerald-400"}`} />
+              {isBusy ? heroCopy.analysing : heroCopy.ready}
             </span>
             <Button
               type="button"
@@ -2687,7 +2710,15 @@ export function ChatInterface({
             )
           })}
 
-          {status === "streaming" ? (
+          {/* `isBusy`, NOT `streaming`. The AI SDK's status is "submitted"
+              from the moment the request leaves until the FIRST token comes
+              back — and for a question that runs tool calls against the
+              database that is the longest part of the wait. Keying the dots
+              on "streaming" meant the person pressed send, watched their
+              message land, and then sat in front of a still screen with no
+              sign anything was happening. The sidebar's thread already used
+              isBusy (components/llm-search/sidebar.tsx); this one did not. */}
+          {isBusy ? (
             <div className="mr-auto max-w-[92%]">
               <div className="inline-flex items-center gap-2.5 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card/90 to-background/85 px-4 py-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
@@ -2758,12 +2789,17 @@ export function ChatInterface({
                     disabled={submitBlocked} 
                     className="gap-2 rounded-xl h-10 px-5 bg-primary shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
                   >
-                    {status === "streaming" ? (
+                    {/* The button is disabled from the moment of sending
+                        (submitBlocked includes isBusy), so it must also LOOK
+                        that way — it used to keep saying "Send" through the
+                        whole pre-token wait, which reads as a button that did
+                        not work. */}
+                    {isBusy ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Send className="h-4 w-4" />
                     )}
-                    <span className="font-bold">{status === "streaming" ? (locale === "ar" ? "جارٍ التحليل..." : "Analysing…") : (locale === "ar" ? "إرسال" : "Send")}</span>
+                    <span className="font-bold">{isBusy ? (locale === "ar" ? "جارٍ التحليل..." : "Analysing…") : (locale === "ar" ? "إرسال" : "Send")}</span>
                   </Button>
                 </div>
               </div>
